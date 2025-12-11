@@ -122,7 +122,7 @@ function EquipmentDisplay({ items }: EquipmentDisplayProps) {
   items.forEach((item) => equippedByType.set(item.type, item));
 
   return (
-    <div className="flex flex-col xs:flex-row gap-1 xs:gap-1.5">
+    <div className="flex flex-col xs:flex-row gap-1 xs:gap-1.5 overflow-hidden">
       {ALL_ITEM_TYPES.map((type) => {
         const item = equippedByType.get(type);
         return item ? (
@@ -270,13 +270,13 @@ function EquipmentSlot({ item }: EquipmentSlotProps) {
           </Tooltip>
         </TooltipProvider>
         {/* Inline stats display for desktop */}
-        <div className="hidden sm:flex flex-col min-w-0">
-          <span className={cn('pixel-text text-pixel-xs font-medium truncate', rarityTextColor)}>
+        <div className="hidden sm:block min-w-0">
+          <div className={cn('pixel-text text-pixel-xs font-medium break-words', rarityTextColor)}>
             {item.name}
-          </span>
-          <span className="pixel-text text-pixel-xs text-success truncate">
+          </div>
+          <div className="pixel-text text-pixel-xs text-success break-words">
             {statText}
-          </span>
+          </div>
         </div>
       </div>
     </>
