@@ -25,15 +25,15 @@ export function CombatHeader() {
   const isLastEnemy = currentRoom === roomsPerFloor && currentEnemy;
 
   return (
-    <div className="pixel-panel flex items-center justify-between rounded-lg p-2 sm:p-3">
+    <div className="pixel-panel flex items-center justify-between gap-2 rounded-lg p-2 sm:p-3">
       {/* Left side: Floor info */}
-      <div className="flex items-center gap-3">
-        <div>
-          <h2 className="pixel-text text-pixel-base text-primary font-bold">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
+        <div className="min-w-0">
+          <h2 className="pixel-text text-pixel-sm xs:text-pixel-base text-primary font-bold truncate">
             Floor {currentFloor}
           </h2>
-          <div className="flex items-center gap-2 pixel-text text-pixel-xs">
-            <span className="text-slate-400">Room:</span>
+          <div className="flex items-center gap-1 xs:gap-2 pixel-text text-pixel-2xs xs:text-pixel-xs flex-wrap">
+            <span className="text-slate-400 hidden xs:inline">Room:</span>
             <EnemyProgressIndicators
               total={roomsPerFloor}
               defeated={enemiesDefeated}
@@ -52,12 +52,12 @@ export function CombatHeader() {
       </div>
 
       {/* Right side: Controls */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-1 xs:gap-2 sm:gap-3 flex-shrink-0">
         {/* Gold display */}
-        <div className="pixel-panel-dark rounded px-2 py-1 text-center">
-          <div className="pixel-text text-pixel-xs text-slate-400">Gold</div>
-          <div className="pixel-text text-pixel-sm text-gold font-bold flex items-center gap-1">
-            {player.gold} <span className="text-pixel-sm">💰</span>
+        <div className="pixel-panel-dark rounded px-1.5 xs:px-2 py-1 text-center">
+          <div className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">Gold</div>
+          <div className="pixel-text text-pixel-xs xs:text-pixel-sm text-gold font-bold flex items-center gap-0.5 xs:gap-1">
+            {player.gold} <span className="text-pixel-xs xs:text-pixel-sm">💰</span>
           </div>
         </div>
 
@@ -74,15 +74,17 @@ export function CombatHeader() {
           onClick={actions.togglePause}
           aria-label={isPaused ? "Resume combat" : "Pause combat"}
           className={cn(
-            "pixel-button h-8 w-8 sm:h-9 sm:w-9",
+            "pixel-button h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9",
             isPaused && "bg-warning/20 border-warning"
           )}
         >
           {isPaused ? <Play className="h-3 w-3 sm:h-4 sm:w-4" /> : <Pause className="h-3 w-3 sm:h-4 sm:w-4" />}
         </Button>
 
-        {/* Keyboard shortcuts help */}
-        <KeyboardShortcutsHelp />
+        {/* Keyboard shortcuts help - hidden on very small screens */}
+        <div className="hidden xs:block">
+          <KeyboardShortcutsHelp />
+        </div>
       </div>
     </div>
   );
@@ -140,7 +142,7 @@ function SpeedControls({ currentSpeed, onSetSpeed }: SpeedControlsProps) {
           variant={currentSpeed === speed ? "default" : "ghost"}
           size="sm"
           className={cn(
-            "pixel-text text-pixel-xs h-7 sm:h-8 px-2 sm:px-3",
+            "pixel-text text-pixel-2xs xs:text-pixel-xs h-6 xs:h-7 sm:h-8 px-1.5 xs:px-2 sm:px-3",
             currentSpeed === speed && "bg-primary text-primary-foreground"
           )}
           onClick={() => onSetSpeed(speed)}

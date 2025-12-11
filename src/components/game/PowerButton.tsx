@@ -77,7 +77,7 @@ export function PowerButton({ power, currentMana, onUse, disabled }: PowerButton
             onClick={onUse}
             disabled={!canUse}
             className={cn(
-              'pixel-panel-dark relative flex flex-col items-center gap-0.5 p-2 min-w-[70px] sm:min-w-[80px] min-h-[56px] rounded border transition-all overflow-hidden',
+              'pixel-panel-dark relative flex flex-col items-center gap-0.5 p-1.5 xs:p-2 min-w-[60px] xs:min-w-[70px] sm:min-w-[80px] min-h-[50px] xs:min-h-[56px] rounded border transition-all overflow-hidden',
               canUse && 'border-primary/40 hover:border-primary/70 hover:bg-primary/10 cursor-pointer',
               !canUse && 'opacity-50 cursor-not-allowed border-slate-700/30'
             )}
@@ -91,8 +91,8 @@ export function PowerButton({ power, currentMana, onUse, disabled }: PowerButton
                 aria-hidden="true"
               />
             )}
-            <span className={cn("text-xl sm:text-2xl relative z-10", isOnCooldown && "opacity-50")} aria-hidden="true">{power.icon}</span>
-            <span className={cn("pixel-text text-pixel-2xs font-medium relative z-10 text-slate-200", isOnCooldown && "opacity-50")}>{power.name}</span>
+            <span className={cn("text-lg xs:text-xl sm:text-2xl relative z-10", isOnCooldown && "opacity-50")} aria-hidden="true">{power.icon}</span>
+            <span className={cn("pixel-text text-pixel-2xs font-medium relative z-10 text-slate-200 truncate max-w-full", isOnCooldown && "opacity-50")}>{power.name}</span>
             <span className={cn("pixel-text text-pixel-2xs relative z-10", isOnCooldown ? "text-slate-400" : "text-mana")} aria-hidden="true">
               {isOnCooldown ? `${Math.ceil(power.currentCooldown)}s` : `${power.manaCost} MP`}
             </span>
