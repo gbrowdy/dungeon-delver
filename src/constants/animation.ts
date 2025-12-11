@@ -16,6 +16,7 @@ export const ANIMATION_TIMING = {
 
   // Death animations
   DEATH_ANIMATION: 500,            // Death sprite animation duration
+  PLAYER_DEATH_PAUSE: 1500,        // Extended pause after player death before transitioning
 
   // Phase transitions
   ENTERING_PHASE: 800,             // Walking into combat arena

@@ -59,6 +59,7 @@ const INITIAL_STATE: GameState = {
   itemPityCounter: 0,
   shopItems: [],
   availablePowers: [],
+  isTransitioning: false,
 };
 
 export function useGameState() {
@@ -947,6 +948,10 @@ export function useGameState() {
   // Also stop combat if player is dying (reached 0 HP)
   const shouldRunCombatLoop = state.gamePhase === GAME_PHASE.COMBAT && !state.isPaused && !!state.currentEnemy && !state.currentEnemy.isDying && !state.player?.isDying;
 
+  // Separate condition for timers (regen/cooldowns) - should run during combat even without enemy
+  // This allows cooldowns to continue ticking during room transitions
+  const shouldRunCombatTimers = state.gamePhase === GAME_PHASE.COMBAT && !state.isPaused && !state.player?.isDying;
+
   // Get hero and enemy speed stats for attack timing
   const heroSpeed = state.player?.currentStats.speed ?? 10;
   const enemySpeed = state.currentEnemy?.speed ?? 10;
@@ -965,31 +970,21 @@ export function useGameState() {
   });
 
   // Use extracted combat timers hook for HP/MP regen and power cooldowns
-  useCombatTimers(setState, shouldRunCombatLoop);
+  // Uses separate condition so cooldowns continue during room transitions
+  useCombatTimers(setState, shouldRunCombatTimers);
 
   // Called when walk animation completes (after enemy already cleared)
-  // This spawns the next enemy or shows floor complete
+  // This clears the transitioning flag - the recovery useEffect will handle spawning
   const handleTransitionComplete = useCallback(() => {
     setState((prev: GameState) => {
       if (prev.gamePhase !== GAME_PHASE.COMBAT) return prev;
       if (prev.currentEnemy) return prev; // Enemy shouldn't exist at this point
 
-      // Don't transition if there's a pending level up - wait for player to dismiss it
-      if (prev.pendingLevelUp) return prev;
-
-      // Don't transition if game is paused (item drop popup showing)
-      if (prev.isPaused) return prev;
-
-      if (prev.currentRoom < prev.roomsPerFloor) {
-        // Spawn next enemy - will trigger entering animation
-        setTimeout(nextRoom, 0);
-      } else {
-        // Floor complete
-        setTimeout(showFloorComplete, 0);
-      }
-      return prev;
+      // Clear transitioning flag - walk animation is complete
+      // The recovery useEffect will detect this and spawn the next enemy
+      return { ...prev, isTransitioning: false };
     });
-  }, [nextRoom, showFloorComplete]);
+  }, []);
 
   // Initial room spawn - only when entering combat phase with no enemy at room 0
   // The animation-driven transitions handle subsequent rooms
@@ -1055,6 +1050,8 @@ export function useGameState() {
     if (droppedItem) return;
     // Only for rooms after the first (initial spawn is handled separately)
     if (state.currentRoom === 0) return;
+    // Don't spawn while hero is walking to next room - wait for animation to complete
+    if (state.isTransitioning) return;
 
     // All conditions met - spawn next enemy or show floor complete
     if (state.currentRoom < state.roomsPerFloor) {
@@ -1069,6 +1066,7 @@ export function useGameState() {
     state.pendingLevelUp,
     state.currentRoom,
     state.roomsPerFloor,
+    state.isTransitioning,
     droppedItem,
     nextRoom,
     showFloorComplete,

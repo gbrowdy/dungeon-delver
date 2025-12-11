@@ -155,7 +155,7 @@ export function DeathScreen({ player, floor, room, onUpgrade, onRetry, onAbandon
           <div className="flex items-center justify-center gap-3">
             <span className="text-3xl sm:text-4xl">💀</span>
             <h1 className="pixel-title text-base sm:text-lg md:text-xl font-bold tracking-wider uppercase">
-              <span className="pixel-glow-red bg-gradient-to-r from-red-400 via-red-500 to-red-600 bg-clip-text text-transparent">
+              <span className="pixel-glow-red bg-gradient-to-r from-red-300 via-red-400 to-orange-400 bg-clip-text text-transparent">
                 Fallen in Battle
               </span>
             </h1>

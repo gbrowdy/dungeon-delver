@@ -206,6 +206,7 @@ export function useProgressionActions({
         combatLog: [`Entering Floor ${prev.currentFloor + 1}... Health and Mana restored!`],
         shopItems: [],
         availablePowers: [],
+        isTransitioning: false,
       };
     });
   }, [setState]);
@@ -235,6 +236,7 @@ export function useProgressionActions({
       itemPityCounter: 0,
       shopItems: [],
       availablePowers: [],
+      isTransitioning: false,
     });
   }, [clearCombatTimeouts, setLastCombatEvent, setState]);
 
@@ -273,6 +275,7 @@ export function useProgressionActions({
         gamePhase: GAME_PHASE.COMBAT,
         isPaused: false,
         pauseReason: null,
+        isTransitioning: false,
         combatLog: [...prev.combatLog, `Retrying Floor ${prev.currentFloor}...`],
       };
     });

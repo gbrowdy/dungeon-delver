@@ -156,59 +156,87 @@ interface PixelSlashProps {
 type PixelDef = [number, number, string][];
 
 const WEAPONS: Record<string, PixelDef> = {
-  // Warrior sword - classic longsword
+  // Warrior sword - classic longsword with fuller and pommel
   sword: [
-    // Blade
-    [0, 6, '#a0a0a0'], [1, 5, '#ffffff'], [2, 4, '#ffffff'], [3, 3, '#ffffff'],
-    [4, 2, '#ffffff'], [5, 1, '#e0e0e0'], [6, 0, '#c0c0c0'],
+    // Blade with fuller groove
+    [0, 6, '#808080'], [1, 5, '#e0e0e0'], [2, 4, '#ffffff'], [3, 3, '#ffffff'],
+    [4, 2, '#ffffff'], [5, 1, '#e0e0e0'], [6, 0, '#c0c0c0'], [7, 0, '#a0a0a0'],
     // Edge highlight
-    [1, 6, '#e0e0e0'], [2, 5, '#f0f0f0'], [3, 4, '#f0f0f0'], [4, 3, '#e0e0e0'],
-    // Guard
-    [0, 7, '#fbbf24'], [1, 7, '#f59e0b'], [2, 7, '#fbbf24'],
-    // Handle
-    [1, 8, '#8b4513'], [1, 9, '#8b4513'], [1, 10, '#fbbf24'],
+    [1, 6, '#c0c0c0'], [2, 5, '#f0f0f0'], [3, 4, '#f8f8f8'], [4, 3, '#f0f0f0'], [5, 2, '#e0e0e0'],
+    // Fuller (dark groove down center)
+    [2, 6, '#909090'], [3, 5, '#a0a0a0'], [4, 4, '#a0a0a0'], [5, 3, '#a0a0a0'],
+    // Crossguard
+    [0, 7, '#fbbf24'], [1, 7, '#f59e0b'], [2, 7, '#ffd700'], [3, 7, '#f59e0b'], [4, 7, '#fbbf24'],
+    // Handle with grip
+    [2, 8, '#8b4513'], [2, 9, '#654321'], [2, 10, '#8b4513'],
+    [1, 8, '#654321'], [3, 8, '#654321'],
+    // Pommel
+    [1, 11, '#fbbf24'], [2, 11, '#ffd700'], [3, 11, '#fbbf24'],
   ],
-  // Rogue dagger - short and quick
+  // Rogue dagger - sleek curved blade
   dagger: [
-    // Blade
-    [2, 4, '#c0c0c0'], [3, 3, '#ffffff'], [4, 2, '#ffffff'], [5, 1, '#e0e0e0'],
-    // Edge
-    [3, 4, '#e0e0e0'], [4, 3, '#f0f0f0'],
-    // Guard
-    [1, 5, '#a855f7'], [2, 5, '#9333ea'],
-    // Handle
-    [1, 6, '#4a4a4a'], [1, 7, '#3a3a3a'],
+    // Curved blade
+    [3, 3, '#c0c0c0'], [4, 2, '#e0e0e0'], [5, 1, '#ffffff'], [6, 1, '#f0f0f0'],
+    [2, 4, '#a0a0a0'], [3, 4, '#d0d0d0'], [4, 3, '#f0f0f0'], [5, 2, '#f8f8f8'],
+    // Sharp edge
+    [4, 4, '#b0b0b0'], [5, 3, '#e0e0e0'], [6, 2, '#e0e0e0'],
+    // Ornate guard
+    [1, 5, '#7c3aed'], [2, 5, '#a855f7'], [3, 5, '#9333ea'],
+    [2, 6, '#6b21a8'],
+    // Wrapped handle
+    [2, 7, '#3a3a3a'], [2, 8, '#2a2a2a'], [2, 9, '#3a3a3a'],
+    [1, 7, '#2a2a2a'], [3, 7, '#2a2a2a'],
   ],
-  // Mage staff - magical with orb
+  // Mage staff - ornate with larger glowing orb
   staff: [
-    // Shaft
-    [2, 3, '#8b4513'], [2, 4, '#8b4513'], [2, 5, '#a0522d'], [2, 6, '#8b4513'],
-    [2, 7, '#8b4513'], [2, 8, '#a0522d'],
-    // Orb
-    [1, 1, '#3b82f6'], [2, 0, '#60a5fa'], [3, 1, '#3b82f6'],
-    [2, 1, '#93c5fd'], [2, 2, '#2563eb'],
-    // Orb glow
-    [0, 1, '#3b82f680'], [4, 1, '#3b82f680'], [2, -1, '#60a5fa80'],
+    // Wooden shaft with runes
+    [3, 4, '#8b4513'], [3, 5, '#a0522d'], [3, 6, '#8b4513'],
+    [3, 7, '#a0522d'], [3, 8, '#8b4513'], [3, 9, '#a0522d'],
+    [2, 5, '#654321'], [4, 6, '#654321'], // wood grain
+    // Ornate orb housing
+    [2, 2, '#4b5563'], [4, 2, '#4b5563'],
+    [2, 3, '#6b7280'], [4, 3, '#6b7280'],
+    // Large magical orb
+    [2, 0, '#60a5fa'], [3, 0, '#3b82f6'], [4, 0, '#60a5fa'],
+    [1, 1, '#3b82f6'], [2, 1, '#93c5fd'], [3, 1, '#dbeafe'], [4, 1, '#93c5fd'], [5, 1, '#3b82f6'],
+    [2, 2, '#3b82f6'], [3, 2, '#93c5fd'], [4, 2, '#3b82f6'],
+    // Orb glow (translucent)
+    [0, 0, '#60a5fa60'], [5, 0, '#60a5fa60'], [6, 1, '#3b82f660'],
+    [0, 1, '#3b82f680'], [6, 1, '#3b82f680'], [3, -1, '#93c5fd80'],
+    // Bottom cap
+    [2, 10, '#6b7280'], [3, 10, '#4b5563'], [4, 10, '#6b7280'],
   ],
-  // Paladin mace - heavy and holy
+  // Paladin mace - holy war hammer with radiance
   mace: [
-    // Head
-    [3, 0, '#fbbf24'], [4, 0, '#f59e0b'], [5, 0, '#fbbf24'],
-    [2, 1, '#f59e0b'], [3, 1, '#ffffff'], [4, 1, '#fbbf24'], [5, 1, '#f59e0b'],
-    [3, 2, '#f59e0b'], [4, 2, '#fbbf24'], [5, 2, '#f59e0b'],
-    // Shaft
-    [4, 3, '#a0a0a0'], [4, 4, '#8b4513'], [4, 5, '#8b4513'],
-    [4, 6, '#8b4513'], [4, 7, '#a0522d'],
+    // Hammer head with holy symbol
+    [3, 0, '#f59e0b'], [4, 0, '#fbbf24'], [5, 0, '#ffd700'], [6, 0, '#fbbf24'], [7, 0, '#f59e0b'],
+    [2, 1, '#fbbf24'], [3, 1, '#ffd700'], [4, 1, '#ffffff'], [5, 1, '#ffd700'], [6, 1, '#ffd700'], [7, 1, '#fbbf24'], [8, 1, '#f59e0b'],
+    [3, 2, '#f59e0b'], [4, 2, '#fbbf24'], [5, 2, '#ffd700'], [6, 2, '#fbbf24'], [7, 2, '#f59e0b'],
+    // Vertical holy line
+    [5, 3, '#ffd700'],
+    // Metal shaft
+    [5, 4, '#c0c0c0'], [5, 5, '#a0a0a0'], [5, 6, '#c0c0c0'],
+    [4, 4, '#909090'], [6, 4, '#909090'], // shaft shading
+    // Leather grip
+    [4, 7, '#8b4513'], [5, 7, '#a0522d'], [6, 7, '#8b4513'],
+    [5, 8, '#8b4513'], [5, 9, '#a0522d'],
+    // Holy glow
+    [2, 0, '#ffd70040'], [8, 0, '#ffd70040'], [3, -1, '#ffffff30'], [7, -1, '#ffffff30'],
   ],
-  // Enemy claw
+  // Enemy claw - vicious talons with blood
   claw: [
-    // Three claws
-    [1, 0, '#ff4444'], [2, 1, '#ffffff'], [3, 2, '#ff6666'],
-    [3, 0, '#ff4444'], [4, 1, '#ffffff'], [5, 2, '#ff6666'],
-    [5, 0, '#ff4444'], [6, 1, '#ffffff'], [7, 2, '#ff6666'],
-    // Palm
-    [2, 3, '#4a4a4a'], [3, 3, '#3a3a3a'], [4, 3, '#4a4a4a'], [5, 3, '#3a3a3a'],
-    [3, 4, '#2a2a2a'], [4, 4, '#2a2a2a'],
+    // Three sharp claws
+    [1, 0, '#ff2222'], [2, 1, '#ff4444'], [3, 2, '#ff6666'], [4, 3, '#cc4444'],
+    [4, 0, '#ff2222'], [5, 1, '#ff4444'], [6, 2, '#ff6666'], [7, 3, '#cc4444'],
+    [7, 0, '#ff2222'], [8, 1, '#ff4444'], [9, 2, '#ff6666'], [10, 3, '#cc4444'],
+    // Claw tips (sharp points)
+    [0, 0, '#ffffff'], [3, 0, '#ffffff'], [6, 0, '#ffffff'],
+    [1, 1, '#f0f0f0'], [4, 1, '#f0f0f0'], [7, 1, '#f0f0f0'],
+    // Dark palm/knuckles
+    [3, 4, '#2a2a2a'], [4, 4, '#1a1a1a'], [5, 4, '#2a2a2a'], [6, 4, '#1a1a1a'], [7, 4, '#2a2a2a'],
+    [4, 5, '#1a1a1a'], [5, 5, '#0a0a0a'], [6, 5, '#1a1a1a'],
+    // Blood drips
+    [2, 2, '#8b0000'], [5, 2, '#8b0000'], [8, 2, '#8b0000'],
   ],
 };
 

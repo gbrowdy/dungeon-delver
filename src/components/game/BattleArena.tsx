@@ -117,6 +117,7 @@ export function BattleArena({
     heroFlash,
     enemyFlash,
     hitStop,
+    playerDeathEffect,
     removeEffect,
   } = useBattleAnimation(enemy, lastCombatEvent, isPaused, gamePhase, animationOptions);
 
@@ -290,7 +291,7 @@ export function BattleArena({
                         ? "bg-gradient-to-r from-warning to-warning/80"
                         : "bg-gradient-to-r from-success to-success/80"
                   )}
-                  style={{ width: `${(player.currentStats.health / player.currentStats.maxHealth) * 100}%` }}
+                  style={{ width: `${Math.max(0, (player.currentStats.health / player.currentStats.maxHealth) * 100)}%` }}
                 />
               </div>
               <div className={cn(
@@ -514,8 +515,20 @@ export function BattleArena({
         </div>
 
 
+        {/* Player death overlay */}
+        {playerDeathEffect && (
+          <div className="absolute inset-0 bg-gradient-to-t from-health/60 via-black/80 to-black/60 flex items-center justify-center animate-fade-in">
+            <div className="text-center">
+              <div className="text-5xl sm:text-6xl mb-4 animate-pulse">💀</div>
+              <div className="pixel-title text-xl sm:text-2xl md:text-3xl font-bold text-health animate-pulse pixel-glow-red">
+                DEFEATED
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Pause overlay */}
-        {isPaused && (
+        {isPaused && !playerDeathEffect && (
           <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
             <div className="pixel-title text-base sm:text-lg md:text-xl font-bold text-white animate-pulse">PAUSED</div>
           </div>

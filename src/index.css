@@ -343,6 +343,11 @@ All colors MUST be HSL.
   50% { opacity: 0.5; }
 }
 
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
 @keyframes sprite-hit {
   0%, 100% { filter: brightness(1); }
   50% { filter: brightness(2); }
@@ -427,6 +432,10 @@ All colors MUST be HSL.
 
 .animate-pulse-fast {
   animation: pulse-fast 0.3s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
 }
 
 .animate-sprite-hit {

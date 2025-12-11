@@ -96,7 +96,7 @@ export function useRoomTransitions(
   }, [nextRoom]);
 
   // Called when death animation completes (before hero walks)
-  // This clears the dying enemy so it disappears before transitioning
+  // This clears the dying enemy and marks transition as starting
   const handleEnemyDeathAnimationComplete = useCallback(() => {
     setState((prev: GameState) => {
       // Only clear if enemy is dying
@@ -111,6 +111,7 @@ export function useRoomTransitions(
       return {
         ...prev,
         currentEnemy: null,
+        isTransitioning: true, // Hero is now walking to next room
       };
     });
   }, [setState]);
