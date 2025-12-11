@@ -91,7 +91,11 @@ export function useCombatTimers(
         // Update powers with reduced cooldowns
         let anyChanged = false;
         const updatedPowers = powers.map((p: Power) => {
-          const newCooldown = Math.max(0, p.currentCooldown - tickSeconds);
+          let newCooldown = Math.max(0, p.currentCooldown - tickSeconds);
+          // Snap to 0 if very close (prevents floating point issues causing cooldown to "freeze" near 0)
+          if (newCooldown > 0 && newCooldown < 0.05) {
+            newCooldown = 0;
+          }
           // Track if any meaningful change occurred (avoid floating point noise)
           if (Math.abs(newCooldown - p.currentCooldown) >= 0.001) {
             anyChanged = true;
