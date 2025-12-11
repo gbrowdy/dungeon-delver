@@ -1,40 +1,39 @@
 import { useState, useEffect } from 'react';
 import { CombatEvent } from '@/hooks/useBattleAnimation';
 import { Player, Enemy } from '@/types/game';
+import { COMBAT_EVENT_TYPE } from '@/constants/enums';
 
 /**
  * Formats a combat event into a screen reader announcement.
+ * Uses the discriminated union CombatEvent type for type-safe event handling.
  */
 function formatCombatAnnouncement(event: CombatEvent | null, playerName: string, enemyName: string | undefined): string {
   if (!event) return '';
 
   switch (event.type) {
-    case 'PLAYER_ATTACK':
-      if (event.isDodged) {
-        return `${enemyName || 'Enemy'} dodged your attack.`;
-      }
+    case COMBAT_EVENT_TYPE.PLAYER_ATTACK:
       return `You ${event.isCrit ? 'critically ' : ''}hit ${enemyName || 'enemy'} for ${event.damage} damage.`;
 
-    case 'ENEMY_ATTACK':
-      if (event.isBlocked) {
-        return `You blocked ${enemyName || 'enemy'}'s attack, reducing damage to ${event.damage}.`;
+    case COMBAT_EVENT_TYPE.PLAYER_DODGE:
+      return `You dodged ${enemyName || 'enemy'}'s attack.`;
+
+    case COMBAT_EVENT_TYPE.ENEMY_ATTACK:
+      return `${enemyName || 'Enemy'} ${event.isCrit ? 'critically ' : ''}attacks for ${event.damage} damage.`;
+
+    case COMBAT_EVENT_TYPE.PLAYER_HIT:
+      if (event.targetDied) {
+        return `${playerName} has fallen in battle.`;
       }
-      if (event.isDodged) {
-        return `You dodged ${enemyName || 'enemy'}'s attack.`;
+      return `You took ${event.damage} damage${event.isCrit ? ' (critical hit)' : ''}.`;
+
+    case COMBAT_EVENT_TYPE.ENEMY_HIT:
+      if (event.targetDied) {
+        return `${enemyName || 'Enemy'} defeated!`;
       }
-      return `${enemyName || 'Enemy'} ${event.isCrit ? 'critically ' : ''}hit you for ${event.damage} damage.`;
+      return `${enemyName || 'Enemy'} took ${event.damage} damage${event.isCrit ? ' (critical hit)' : ''}.`;
 
-    case 'PLAYER_POWER':
-      return `You used ${event.powerName || 'a power'}${event.damage ? `, dealing ${event.damage} damage` : ''}.`;
-
-    case 'ENEMY_DEATH':
-      return `${enemyName || 'Enemy'} defeated!`;
-
-    case 'PLAYER_DEATH':
-      return `${playerName} has fallen in battle.`;
-
-    case 'LEVEL_UP':
-      return `Level up! You are now level ${event.newLevel}.`;
+    case COMBAT_EVENT_TYPE.PLAYER_POWER:
+      return `You used a power, dealing ${event.damage} damage${event.isCrit ? ' (critical hit)' : ''}.`;
 
     default:
       return '';
