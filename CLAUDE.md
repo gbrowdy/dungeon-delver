@@ -277,3 +277,33 @@ tasks/                           # Local only - NOT committed to git
 2. Store all improvement plans, code reviews, and task lists in `tasks/`
 3. The `tasks/` directory is in `.gitignore` and won't be pushed to remote
 4. Update CLAUDE.md if task work results in architectural changes that future sessions need to know about
+
+## Git Conventions
+
+This project uses **conventional commits**. Format: `type(scope): description`
+
+### Commit Types:
+- `feat` - New feature
+- `fix` - Bug fix
+- `refactor` - Code refactoring (no functional change)
+- `docs` - Documentation changes
+- `chore` - Build, config, dependencies
+- `test` - Adding or updating tests
+- `style` - Code style/formatting (no functional change)
+
+### Examples:
+```bash
+feat(combat): add poison status effect
+fix(ui): prevent button double-click
+refactor(hooks): extract useCombatActions from useGameState
+docs: update CLAUDE.md with new architecture
+chore: add vitest testing dependencies
+test(hooks): add useItemEffects unit tests
+```
+
+### Scope (optional):
+- `hooks` - React hooks
+- `ui` - UI components
+- `combat` - Combat system
+- `utils` - Utility functions
+- `types` - TypeScript types
