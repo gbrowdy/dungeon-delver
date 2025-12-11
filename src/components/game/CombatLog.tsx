@@ -79,42 +79,44 @@ function formatLogEntry(log: string): LogEntry {
 
 /**
  * CombatLog - Displays a scrollable log of combat events with pixel art styling.
+ * Hidden on very small mobile screens to reduce visual clutter.
  */
 export function CombatLog({ logs }: CombatLogProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Scroll to bottom when logs change
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Scroll within the container only, don't use scrollIntoView which can jump the page
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
   }, [logs]);
 
   return (
-    <div className="pixel-panel rounded-lg overflow-hidden">
-      <div className="px-2 py-1.5 border-b border-slate-700/50">
-        <h3 className="pixel-text text-pixel-sm text-slate-400">Combat Log</h3>
+    // Hide on very small screens (< 360px) to save space
+    <div className="pixel-panel rounded-lg overflow-hidden hidden xs:block">
+      <div className="px-2 py-1 border-b border-slate-700/50">
+        <h3 className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">Combat Log</h3>
       </div>
       <div
         ref={scrollRef}
-        className="h-24 sm:h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent"
+        className="h-16 xs:h-20 sm:h-24 md:h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent"
         role="log"
         aria-live="polite"
         aria-label="Combat log"
       >
-        <div className="p-2 space-y-0.5">
-          {logs.map((log, i) => {
+        <div className="p-1.5 xs:p-2 space-y-0.5">
+          {logs.slice(-10).map((log, i) => {
             const { icon, color, text } = formatLogEntry(log);
             return (
               <div
                 key={i}
-                className="flex items-start gap-1.5 animate-in fade-in slide-in-from-bottom-1 duration-200"
+                className="flex items-start gap-1 xs:gap-1.5"
               >
-                <span className="text-pixel-sm flex-shrink-0 mt-0.5" aria-hidden="true">{icon}</span>
-                <span className={cn('pixel-text text-pixel-xs leading-relaxed', color)}>{text}</span>
+                <span className="text-pixel-xs xs:text-pixel-sm flex-shrink-0 mt-0.5" aria-hidden="true">{icon}</span>
+                <span className={cn('pixel-text text-pixel-2xs xs:text-pixel-xs leading-relaxed', color)}>{text}</span>
               </div>
             );
           })}
-          <div ref={bottomRef} />
         </div>
       </div>
     </div>
