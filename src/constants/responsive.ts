@@ -6,10 +6,12 @@
  */
 
 /**
- * Standard Tailwind breakpoints for reference.
+ * Tailwind breakpoints for reference.
  * These values are used in the responsive layout patterns below.
+ * Custom xs breakpoint added for very small mobile screens (320-359px).
  */
 export const BREAKPOINTS = {
+  xs: '360px',  // Very small mobile (320-359px handled at base)
   sm: '640px',  // Mobile landscape
   md: '768px',  // Tablet
   lg: '1024px', // Desktop

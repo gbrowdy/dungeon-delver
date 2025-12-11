@@ -210,7 +210,7 @@ function StatsGrid({
   goldFind,
 }: StatsGridProps) {
   return (
-    <div className="mt-1.5 grid grid-cols-5 sm:grid-cols-10 gap-1">
+    <div className="mt-1.5 grid grid-cols-4 xs:grid-cols-5 sm:grid-cols-10 gap-1">
       <StatItem icon="⚔️" label="ATK" value={attack} />
       <StatItem icon="🛡️" label="DEF" value={defense} />
       <StatItem icon="💨" label="SPD" value={speed} />

@@ -68,12 +68,12 @@ function ManaBar({ current, max }: ManaBarProps) {
   const percentage = (current / max) * 100;
 
   return (
-    <div className="flex items-center gap-2 mb-2">
-      <h3 className="pixel-text text-pixel-xs text-slate-400">Powers</h3>
-      <div className="flex-1 flex items-center gap-1.5">
-        <span className="pixel-text text-pixel-xs text-mana font-bold">MP</span>
+    <div className="flex items-center gap-1.5 xs:gap-2 mb-2">
+      <h3 className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">Powers</h3>
+      <div className="flex-1 flex items-center gap-1 xs:gap-1.5">
+        <span className="pixel-text text-pixel-2xs xs:text-pixel-xs text-mana font-bold">MP</span>
         <div
-          className="flex-1 max-w-32 pixel-progress-bar h-1.5 rounded overflow-hidden"
+          className="flex-1 max-w-24 xs:max-w-32 pixel-progress-bar h-1.5 rounded overflow-hidden"
           role="progressbar"
           aria-valuenow={Math.floor(current)}
           aria-valuemin={0}
@@ -85,7 +85,7 @@ function ManaBar({ current, max }: ManaBarProps) {
             style={{ width: `${percentage}%` }}
           />
         </div>
-        <span className="pixel-text text-pixel-xs text-slate-400">
+        <span className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">
           {Math.floor(current)}/{max}
         </span>
       </div>
@@ -114,7 +114,7 @@ function BlockButton({ isBlocking, currentMana, canUse, onActivate }: BlockButto
         <TooltipTrigger asChild>
           <button
             className={cn(
-              'pixel-panel-dark flex flex-col items-center gap-0.5 p-2 min-w-[70px] sm:min-w-[80px] min-h-[56px] rounded border transition-all',
+              'pixel-panel-dark flex flex-col items-center gap-0.5 p-1.5 xs:p-2 min-w-[60px] xs:min-w-[70px] sm:min-w-[80px] min-h-[50px] xs:min-h-[56px] rounded border transition-all',
               canActivate && 'border-info/40 hover:border-info/70 hover:bg-info/10 cursor-pointer',
               !canActivate && 'opacity-50 cursor-not-allowed border-slate-700/30',
               isBlocking && 'bg-info/20 border-info/60'
@@ -123,7 +123,7 @@ function BlockButton({ isBlocking, currentMana, canUse, onActivate }: BlockButto
             disabled={isDisabled}
             aria-label={`Block: Reduce damage by 50% from next attack. Costs ${COMBAT_BALANCE.BLOCK_MANA_COST} mana.${isBlocking ? ' Currently active.' : ''}`}
           >
-            <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-info" aria-hidden="true" />
+            <Shield className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-info" aria-hidden="true" />
             <span className="pixel-text text-pixel-2xs font-medium text-slate-200">Block</span>
             <span className="pixel-text text-pixel-2xs text-mana">
               {COMBAT_BALANCE.BLOCK_MANA_COST} MP
