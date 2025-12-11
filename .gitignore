@@ -25,5 +25,9 @@ Thumbs.db
 debug-*.js
 test-*.js
 
+# E2E test artifacts
+e2e/screenshots/
+playwright-report/
+
 # Claude Code
 .claude

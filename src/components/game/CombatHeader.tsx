@@ -26,51 +26,33 @@ export function CombatHeader() {
 
   return (
     <div className="pixel-panel rounded-lg p-2 sm:p-3">
-      {/* Mobile layout: Stack vertically */}
-      <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2">
+      {/* Header layout - single row with flexible spacing */}
+      <div className="flex items-center justify-between gap-1 xs:gap-2">
         {/* Left side: Floor info */}
-        <div className="flex items-center justify-between xs:justify-start gap-2 sm:gap-3 min-w-0 flex-shrink">
-          <div className="min-w-0 flex-1">
-            <h2 className="pixel-text text-pixel-sm xs:text-pixel-base text-primary font-bold truncate">
-              Floor {currentFloor}
-            </h2>
-            <div className="flex items-center gap-1 xs:gap-2 pixel-text text-pixel-2xs xs:text-pixel-xs flex-wrap">
-              <span className="text-slate-400 hidden sm:inline">Room:</span>
-              <EnemyProgressIndicators
-                total={roomsPerFloor}
-                defeated={enemiesDefeated}
-                hasCurrent={!!currentEnemy}
-              />
-              <span className="text-slate-400">
-                {enemiesRemaining} left
+        <div className="min-w-0">
+          <h2 className="pixel-text text-pixel-sm xs:text-pixel-base text-primary font-bold whitespace-nowrap">
+            Floor {currentFloor}
+          </h2>
+          <div className="flex items-center gap-1 xs:gap-2 pixel-text text-pixel-2xs xs:text-pixel-xs">
+            <span className="text-slate-400 hidden sm:inline">Room:</span>
+            <EnemyProgressIndicators
+              total={roomsPerFloor}
+              defeated={enemiesDefeated}
+              hasCurrent={!!currentEnemy}
+            />
+            <span className="text-slate-400 whitespace-nowrap">
+              {enemiesRemaining} left
+            </span>
+            {isLastEnemy && (
+              <span className="text-gold font-bold animate-pulse">
+                BOSS!
               </span>
-              {isLastEnemy && (
-                <span className="text-gold font-bold animate-pulse">
-                  BOSS!
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Gold display - inline with floor info on mobile */}
-          <div className="pixel-panel-dark rounded px-1.5 xs:px-2 py-1 text-center flex-shrink-0 xs:hidden">
-            <div className="pixel-text text-pixel-2xs text-slate-400">Gold</div>
-            <div className="pixel-text text-pixel-xs text-gold font-bold flex items-center gap-0.5">
-              {player.gold} <span className="text-pixel-xs">💰</span>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Right side: Controls */}
+        {/* Right side: Controls - always visible */}
         <div className="flex items-center gap-1 xs:gap-2 sm:gap-3 flex-shrink-0">
-          {/* Gold display - separate on larger screens */}
-          <div className="hidden xs:block pixel-panel-dark rounded px-2 py-1 text-center">
-            <div className="pixel-text text-pixel-xs text-slate-400">Gold</div>
-            <div className="pixel-text text-pixel-sm text-gold font-bold flex items-center gap-1">
-              {player.gold} <span className="text-pixel-sm">💰</span>
-            </div>
-          </div>
-
           {/* Speed Controls */}
           <SpeedControls
             currentSpeed={combatSpeed}
@@ -91,8 +73,8 @@ export function CombatHeader() {
             {isPaused ? <Play className="h-3 w-3 sm:h-4 sm:w-4" /> : <Pause className="h-3 w-3 sm:h-4 sm:w-4" />}
           </Button>
 
-          {/* Keyboard shortcuts help - hidden on very small screens */}
-          <div className="hidden xs:block">
+          {/* Keyboard shortcuts help - only on desktop (useless on touch) */}
+          <div className="hidden sm:block">
             <KeyboardShortcutsHelp />
           </div>
         </div>

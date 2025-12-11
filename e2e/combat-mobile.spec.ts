@@ -47,6 +47,46 @@ test.describe('Combat Screen Mobile Layout', () => {
     expect(hasHorizontalScroll).toBe(false);
   });
 
+  test('combat with equipped items screenshot', async ({ page }, testInfo) => {
+    test.setTimeout(60000); // Allow time for items to drop
+    // Click Start Game
+    const startButton = page.getByRole('button', { name: /start game/i });
+    await expect(startButton).toBeVisible({ timeout: 5000 });
+    await startButton.click();
+
+    await page.waitForTimeout(1000);
+
+    // Click on Warrior class card
+    const warriorCard = page.locator('text=WARRIOR').first();
+    await expect(warriorCard).toBeVisible({ timeout: 5000 });
+    await warriorCard.click();
+    await page.waitForTimeout(500);
+
+    // Click "Begin as Warrior" button
+    const beginButton = page.getByRole('button', { name: /begin as/i });
+    await expect(beginButton).toBeVisible({ timeout: 5000 });
+    await beginButton.click();
+
+    // Wait for combat, let it run at 3x speed for a while to hopefully get items
+    await page.waitForTimeout(2000);
+
+    // Click 3x speed button
+    const speed3x = page.getByRole('button', { name: /3x/i });
+    if (await speed3x.isVisible()) {
+      await speed3x.click();
+    }
+
+    // Wait for combat to progress - enemies may drop items
+    // Run longer to increase chances of item drops (RNG-based)
+    await page.waitForTimeout(30000);
+
+    // Take screenshot
+    await page.screenshot({
+      path: `e2e/screenshots/${testInfo.project.name}-combat-with-items.png`,
+      fullPage: false,
+    });
+  });
+
   test('combat screen fits within viewport without scrolling', async ({ page }) => {
     // Navigate to combat
     const startButton = page.getByRole('button', { name: /start game/i });

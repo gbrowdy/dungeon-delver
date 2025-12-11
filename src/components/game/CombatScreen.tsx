@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { GameState, CombatSpeed, Item } from '@/types/game';
 import { BattleArena } from './BattleArena';
 import { CombatLog } from './CombatLog';
@@ -118,6 +118,11 @@ export function CombatScreen({
     ...keyboardHandlers,
     enabled: battlePhase === 'combat',
   });
+
+  // Scroll to top when combat screen mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   if (!player) return null;
 

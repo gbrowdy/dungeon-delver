@@ -7,6 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { TouchTooltip } from '@/components/ui/touch-tooltip';
 import { formatItemStatBonus } from '@/utils/itemUtils';
 
 /**
@@ -45,11 +46,17 @@ export function PlayerStatsPanel() {
         goldFind={player.currentStats.goldFind || 0}
       />
 
-      {/* XP Progress */}
-      <XPProgressBar
-        current={player.experience}
-        max={player.experienceToNext}
-      />
+      {/* Gold and XP Progress */}
+      <div className="mt-1.5 xs:mt-2 space-y-1">
+        <div className="flex items-center gap-1 pixel-text text-pixel-2xs xs:text-pixel-xs">
+          <span className="text-slate-400">Gold:</span>
+          <span className="text-gold font-bold">{player.gold}💰</span>
+        </div>
+        <XPProgressBar
+          current={player.experience}
+          max={player.experienceToNext}
+        />
+      </div>
     </div>
   );
 }
@@ -90,6 +97,7 @@ function getClassIcon(playerClass: string): string {
 
 /**
  * EquipmentDisplay - Shows equipped items with pixel-styled slots.
+ * On mobile, shows item stats inline since tooltips don't work well with touch.
  */
 interface EquipmentDisplayProps {
   items: Item[];
@@ -97,7 +105,7 @@ interface EquipmentDisplayProps {
 
 function EquipmentDisplay({ items }: EquipmentDisplayProps) {
   return (
-    <div className="flex gap-1.5">
+    <div className="flex flex-col xs:flex-row gap-1 xs:gap-1.5">
       {items.map((item) => (
         <EquipmentSlot key={item.id} item={item} />
       ))}
@@ -147,38 +155,62 @@ function EquipmentSlot({ item }: EquipmentSlotProps) {
 
   const itemHasEffect = !!item.effect;
 
+  const tooltipContent = (
+    <>
+      <div className={cn('pixel-text text-pixel-sm font-medium', rarityTextColor)}>
+        {item.name}
+      </div>
+      <div className="pixel-text text-pixel-xs text-slate-400 capitalize">{item.rarity} {item.type}</div>
+      <div className="pixel-text text-pixel-xs text-success mt-1">{statText}</div>
+      {item.effect && (
+        <div className="pixel-text text-pixel-xs text-accent mt-1 font-medium">{item.effect.description}</div>
+      )}
+    </>
+  );
+
+  const itemButton = (
+    <button
+      className={cn(
+        'pixel-panel-dark w-8 h-8 sm:w-10 sm:h-10 rounded border-2 flex items-center justify-center cursor-pointer transition-all hover:scale-110 relative',
+        RARITY_BORDER_COLORS[item.rarity] || 'border-gray-500',
+        RARITY_BG_COLORS[item.rarity] || 'bg-gray-500/10'
+      )}
+      aria-label={`${item.name}: ${item.rarity} ${item.type}. ${statText}${item.effect ? `. ${item.effect.description}` : ''}`}
+    >
+      <span className="text-base" aria-hidden="true">{item.icon}</span>
+      {itemHasEffect && (
+        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-accent rounded-full border border-background flex items-center justify-center text-[6px]" aria-hidden="true">
+          ✨
+        </span>
+      )}
+    </button>
+  );
+
+  // Mobile: Touch tooltip (tap to reveal)
+  // Desktop: Standard hover tooltip
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            className={cn(
-              'pixel-panel-dark w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded border-2 flex items-center justify-center cursor-pointer transition-all hover:scale-110 relative',
-              RARITY_BORDER_COLORS[item.rarity] || 'border-gray-500',
-              RARITY_BG_COLORS[item.rarity] || 'bg-gray-500/10'
-            )}
-            aria-label={`${item.name}: ${item.rarity} ${item.type}. ${statText}${item.effect ? `. ${item.effect.description}` : ''}`}
-          >
-            <span className="text-sm xs:text-base" aria-hidden="true">{item.icon}</span>
-            {itemHasEffect && (
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 xs:w-2.5 xs:h-2.5 bg-accent rounded-full border border-background flex items-center justify-center text-[6px]" aria-hidden="true">
-                ✨
-              </span>
-            )}
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="pixel-panel max-w-xs">
-          <div className={cn('pixel-text text-pixel-sm font-medium', rarityTextColor)}>
-            {item.name}
-          </div>
-          <div className="pixel-text text-pixel-xs text-slate-400 capitalize">{item.rarity} {item.type}</div>
-          <div className="pixel-text text-pixel-xs text-success mt-1">{statText}</div>
-          {item.effect && (
-            <div className="pixel-text text-pixel-xs text-accent mt-1 font-medium">{item.effect.description}</div>
-          )}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <>
+      {/* Mobile: TouchTooltip for tap-to-reveal */}
+      <div className="xs:hidden">
+        <TouchTooltip content={tooltipContent} side="bottom">
+          {itemButton}
+        </TouchTooltip>
+      </div>
+
+      {/* Desktop: Standard hover tooltip */}
+      <div className="hidden xs:block">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {itemButton}
+            </TooltipTrigger>
+            <TooltipContent side="top" className="pixel-panel max-w-xs">
+              {tooltipContent}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    </>
   );
 }
 
@@ -257,7 +289,7 @@ function XPProgressBar({ current, max }: XPProgressBarProps) {
   const percentage = (current / max) * 100;
 
   return (
-    <div className="mt-1.5 xs:mt-2">
+    <div>
       <div className="flex justify-between pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400 mb-0.5 xs:mb-1">
         <span>XP</span>
         <span>{current}/{max}</span>
