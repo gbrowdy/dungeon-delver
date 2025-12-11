@@ -31,3 +31,6 @@ playwright-report/
 
 # Claude Code
 .claude
+
+# Task/improvement documents (local only)
+tasks/
