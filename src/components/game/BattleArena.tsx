@@ -255,8 +255,8 @@ export function BattleArena({
               />
             </div>
 
-            {/* Hero HP and turn progress bars */}
-            <div className="absolute -top-8 xs:-top-10 left-1/2 -translate-x-1/2 w-14 xs:w-16 sm:w-20">
+            {/* Hero HP and turn progress bars - positioned higher to avoid name badge overlap */}
+            <div className="absolute -top-10 xs:-top-12 sm:-top-10 left-1/2 -translate-x-1/2 w-14 xs:w-16 sm:w-20">
               {/* Turn progress bar - above HP */}
               {phase === BATTLE_PHASE.COMBAT && displayEnemy && !displayEnemy.isDying && (
                 <div className="mb-0.5 xs:mb-1 h-1 bg-gray-800 rounded-full overflow-hidden">
@@ -360,9 +360,9 @@ export function BattleArena({
                 )}
               </div>
 
-              {/* Enemy HP and turn progress bars - hide when dying */}
+              {/* Enemy HP and turn progress bars - hide when dying, positioned higher */}
               {!displayEnemy.isDying && (
-                <div className="absolute -top-8 xs:-top-10 left-1/2 -translate-x-1/2 w-14 xs:w-18 sm:w-24">
+                <div className="absolute -top-10 xs:-top-12 sm:-top-10 left-1/2 -translate-x-1/2 w-14 xs:w-18 sm:w-24">
                   {/* Turn progress bar - above HP */}
                   {phase === BATTLE_PHASE.COMBAT && (
                     <div className="mb-0.5 xs:mb-1 h-1 bg-gray-800 rounded-full overflow-hidden">
@@ -395,9 +395,9 @@ export function BattleArena({
                 <div className="absolute -top-24 left-1/2 -translate-x-1/2 text-2xl animate-bounce">👑</div>
               )}
 
-              {/* Intent display - above enemy, hide when dying, simplified on mobile */}
+              {/* Intent display - inline with HP bar on mobile to prevent overflow */}
               {!displayEnemy.isDying && displayEnemy.intent && (
-                <div className="absolute -top-16 xs:-top-20 left-1/2 -translate-x-1/2 bg-black/80 rounded px-1 xs:px-1.5 py-0.5 border border-health/50">
+                <div className="absolute -top-14 xs:-top-16 sm:-top-20 left-1/2 -translate-x-1/2 bg-black/80 rounded px-1 xs:px-1.5 py-0.5 border border-health/50">
                   <div className="flex items-center gap-0.5 xs:gap-1 text-xs whitespace-nowrap">
                     <span className="text-sm xs:text-base">{displayEnemy.intent.icon}</span>
                     <span className="text-health/90 font-medium text-pixel-2xs xs:text-xs hidden xs:inline">
@@ -458,26 +458,25 @@ export function BattleArena({
         {/* Effects layer */}
         <EffectsLayer effects={effects} onEffectComplete={removeEffect} />
 
-        {/* Top info bar - simplified on mobile */}
-        <div className="absolute top-1 xs:top-2 left-1 xs:left-2 right-1 xs:right-2 flex justify-between items-start pointer-events-none gap-1">
-          {/* Player name badge - compact on mobile */}
-          <div className="pixel-panel-dark rounded px-1 xs:px-2 py-0.5 xs:py-1 flex-shrink-0">
-            <span className="pixel-text text-pixel-xs xs:text-pixel-sm sm:text-pixel-base text-gold font-bold">{player.name}</span>
-            <span className="pixel-text text-pixel-2xs xs:text-pixel-xs text-gray-300 ml-1 xs:ml-2">Lv.{player.level}</span>
+        {/* Top info bar - hidden on mobile to prevent overlap with HP bars */}
+        <div className="absolute top-1 xs:top-2 left-1 xs:left-2 right-1 xs:right-2 justify-between items-start pointer-events-none gap-1 hidden sm:flex">
+          {/* Player name badge - visible only on sm+ screens */}
+          <div className="pixel-panel-dark rounded px-2 py-1 flex-shrink-0">
+            <span className="pixel-text text-pixel-sm text-gold font-bold">{player.name}</span>
+            <span className="pixel-text text-pixel-xs text-gray-300 ml-2">Lv.{player.level}</span>
           </div>
-          {/* Enemy info - hide stats on very small screens */}
+          {/* Enemy info - visible only on sm+ screens */}
           {displayEnemy && !displayEnemy.isDying && (
-            <div className="pixel-panel-dark rounded px-1 xs:px-2 py-0.5 xs:py-1 text-right max-w-[120px] xs:max-w-[150px] sm:max-w-[200px] flex-shrink min-w-0">
-              <span className={cn('pixel-text text-pixel-xs xs:text-pixel-sm sm:text-pixel-base font-bold truncate block', displayEnemy.isBoss ? 'text-gold' : 'text-health')}>
+            <div className="pixel-panel-dark rounded px-2 py-1 text-right max-w-[200px] flex-shrink min-w-0">
+              <span className={cn('pixel-text text-pixel-sm font-bold truncate block', displayEnemy.isBoss ? 'text-gold' : 'text-health')}>
                 {displayEnemy.name}
               </span>
-              {/* Hide stats on smallest screens */}
-              <div className="pixel-text text-pixel-2xs text-gray-400 hidden xs:block">
+              <div className="pixel-text text-pixel-2xs text-gray-400">
                 ATK:{displayEnemy.attack} DEF:{displayEnemy.defense}
               </div>
-              {/* Enemy abilities - hide on mobile to reduce clutter */}
+              {/* Enemy abilities */}
               {displayEnemy.abilities.length > 0 && (
-                <div className="hidden sm:flex flex-wrap gap-1 mt-1 justify-end">
+                <div className="flex flex-wrap gap-1 mt-1 justify-end">
                   {displayEnemy.abilities.map(ability => (
                     <div
                       key={ability.id}

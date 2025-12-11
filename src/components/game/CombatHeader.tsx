@@ -25,65 +25,76 @@ export function CombatHeader() {
   const isLastEnemy = currentRoom === roomsPerFloor && currentEnemy;
 
   return (
-    <div className="pixel-panel flex items-center justify-between gap-2 rounded-lg p-2 sm:p-3">
-      {/* Left side: Floor info */}
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
-        <div className="min-w-0">
-          <h2 className="pixel-text text-pixel-sm xs:text-pixel-base text-primary font-bold truncate">
-            Floor {currentFloor}
-          </h2>
-          <div className="flex items-center gap-1 xs:gap-2 pixel-text text-pixel-2xs xs:text-pixel-xs flex-wrap">
-            <span className="text-slate-400 hidden xs:inline">Room:</span>
-            <EnemyProgressIndicators
-              total={roomsPerFloor}
-              defeated={enemiesDefeated}
-              hasCurrent={!!currentEnemy}
-            />
-            <span className="text-slate-400">
-              {enemiesRemaining} left
-            </span>
-            {isLastEnemy && (
-              <span className="text-gold font-bold animate-pulse">
-                BOSS!
+    <div className="pixel-panel rounded-lg p-2 sm:p-3">
+      {/* Mobile layout: Stack vertically */}
+      <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-2">
+        {/* Left side: Floor info */}
+        <div className="flex items-center justify-between xs:justify-start gap-2 sm:gap-3 min-w-0 flex-shrink">
+          <div className="min-w-0 flex-1">
+            <h2 className="pixel-text text-pixel-sm xs:text-pixel-base text-primary font-bold truncate">
+              Floor {currentFloor}
+            </h2>
+            <div className="flex items-center gap-1 xs:gap-2 pixel-text text-pixel-2xs xs:text-pixel-xs flex-wrap">
+              <span className="text-slate-400 hidden sm:inline">Room:</span>
+              <EnemyProgressIndicators
+                total={roomsPerFloor}
+                defeated={enemiesDefeated}
+                hasCurrent={!!currentEnemy}
+              />
+              <span className="text-slate-400">
+                {enemiesRemaining} left
               </span>
+              {isLastEnemy && (
+                <span className="text-gold font-bold animate-pulse">
+                  BOSS!
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Gold display - inline with floor info on mobile */}
+          <div className="pixel-panel-dark rounded px-1.5 xs:px-2 py-1 text-center flex-shrink-0 xs:hidden">
+            <div className="pixel-text text-pixel-2xs text-slate-400">Gold</div>
+            <div className="pixel-text text-pixel-xs text-gold font-bold flex items-center gap-0.5">
+              {player.gold} <span className="text-pixel-xs">💰</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right side: Controls */}
+        <div className="flex items-center gap-1 xs:gap-2 sm:gap-3 flex-shrink-0">
+          {/* Gold display - separate on larger screens */}
+          <div className="hidden xs:block pixel-panel-dark rounded px-2 py-1 text-center">
+            <div className="pixel-text text-pixel-xs text-slate-400">Gold</div>
+            <div className="pixel-text text-pixel-sm text-gold font-bold flex items-center gap-1">
+              {player.gold} <span className="text-pixel-sm">💰</span>
+            </div>
+          </div>
+
+          {/* Speed Controls */}
+          <SpeedControls
+            currentSpeed={combatSpeed}
+            onSetSpeed={actions.setCombatSpeed}
+          />
+
+          {/* Pause/Play */}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={actions.togglePause}
+            aria-label={isPaused ? "Resume combat" : "Pause combat"}
+            className={cn(
+              "pixel-button h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9",
+              isPaused && "bg-warning/20 border-warning"
             )}
+          >
+            {isPaused ? <Play className="h-3 w-3 sm:h-4 sm:w-4" /> : <Pause className="h-3 w-3 sm:h-4 sm:w-4" />}
+          </Button>
+
+          {/* Keyboard shortcuts help - hidden on very small screens */}
+          <div className="hidden xs:block">
+            <KeyboardShortcutsHelp />
           </div>
-        </div>
-      </div>
-
-      {/* Right side: Controls */}
-      <div className="flex items-center gap-1 xs:gap-2 sm:gap-3 flex-shrink-0">
-        {/* Gold display */}
-        <div className="pixel-panel-dark rounded px-1.5 xs:px-2 py-1 text-center">
-          <div className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">Gold</div>
-          <div className="pixel-text text-pixel-xs xs:text-pixel-sm text-gold font-bold flex items-center gap-0.5 xs:gap-1">
-            {player.gold} <span className="text-pixel-xs xs:text-pixel-sm">💰</span>
-          </div>
-        </div>
-
-        {/* Speed Controls */}
-        <SpeedControls
-          currentSpeed={combatSpeed}
-          onSetSpeed={actions.setCombatSpeed}
-        />
-
-        {/* Pause/Play */}
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={actions.togglePause}
-          aria-label={isPaused ? "Resume combat" : "Pause combat"}
-          className={cn(
-            "pixel-button h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9",
-            isPaused && "bg-warning/20 border-warning"
-          )}
-        >
-          {isPaused ? <Play className="h-3 w-3 sm:h-4 sm:w-4" /> : <Pause className="h-3 w-3 sm:h-4 sm:w-4" />}
-        </Button>
-
-        {/* Keyboard shortcuts help - hidden on very small screens */}
-        <div className="hidden xs:block">
-          <KeyboardShortcutsHelp />
         </div>
       </div>
     </div>

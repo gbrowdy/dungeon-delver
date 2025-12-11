@@ -178,11 +178,11 @@ export function CombatScreen({
             isStunned={isHeroStunned}
           />
 
+          {/* Powers and abilities - immediately after battle on mobile for easy access */}
+          <PowersPanel />
+
           {/* Player stats, equipment, and XP */}
           <PlayerStatsPanel />
-
-          {/* Powers and abilities */}
-          <PowersPanel />
 
           {/* Combat event log */}
           <CombatLog logs={combatLog} />
