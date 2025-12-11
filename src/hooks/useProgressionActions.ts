@@ -6,13 +6,15 @@ import { CombatEvent } from '@/hooks/useBattleAnimation';
 import { calculateStats } from '@/hooks/useCharacterSetup';
 import { GameFlowEvent } from '@/hooks/useGameFlow';
 import { useTrackedTimeouts } from '@/hooks/useTrackedTimeouts';
+import { usePauseControl } from '@/hooks/usePauseControl';
 import {
   STAT_UPGRADE_VALUES,
   calculateUpgradeCost,
   UPGRADE_CONFIG,
 } from '@/constants/game';
 import { GAME_PHASE, PAUSE_REASON } from '@/constants/enums';
-import { logStateTransition, logPauseChange } from '@/utils/gameLogger';
+import { logStateTransition } from '@/utils/gameLogger';
+import { deepClonePlayer } from '@/utils/stateUtils';
 
 interface UseProgressionActionsOptions {
   setState: React.Dispatch<React.SetStateAction<GameState>>;
@@ -42,6 +44,9 @@ export function useProgressionActions({
   // Track timeouts for proper cleanup on unmount
   const { createTrackedTimeout } = useTrackedTimeouts();
 
+  // Use pause control hook for consistent pause/unpause behavior
+  const { pause, unpause } = usePauseControl({ setState });
+
   // Apply a stat upgrade on floor completion (costs gold)
   const applyFloorUpgrade = useCallback((upgradeId: string) => {
     const config = UPGRADE_CONFIG[upgradeId];
@@ -57,10 +62,7 @@ export function useProgressionActions({
 
       if (prev.player.gold < cost) return prev;
 
-      const player = {
-        ...prev.player,
-        baseStats: { ...prev.player.baseStats },  // Deep copy to avoid mutation issues
-      };
+      const player = deepClonePlayer(prev.player);
       player.gold -= cost;
 
       // Increment purchase count
@@ -155,28 +157,24 @@ export function useProgressionActions({
   const dismissLevelUp = useCallback(() => {
     // Check if there's a pending item drop that should show next
     if (droppedItem) {
-      logPauseChange(true, PAUSE_REASON.ITEM_DROP, 'level_up_to_item_drop');
       setState((prev: GameState) => ({
         ...prev,
         pendingLevelUp: null,
-        isPaused: true,
-        pauseReason: PAUSE_REASON.ITEM_DROP,
       }));
+      pause(PAUSE_REASON.ITEM_DROP, 'level_up_to_item_drop');
       // Don't dispatch LEVEL_UP_DISMISSED - item popup will handle the transition
     } else {
-      logPauseChange(false, null, 'dismiss_level_up');
       setState((prev: GameState) => ({
         ...prev,
         pendingLevelUp: null,
-        isPaused: false,
-        pauseReason: null,
       }));
+      unpause('dismiss_level_up');
       // Dispatch event after state update to trigger next transition
       // Use tracked timeout to ensure React has processed the state update first
       // (setState is async, so getState() would return stale state if called synchronously)
       createTrackedTimeout(() => dispatchFlowEvent?.({ type: 'LEVEL_UP_DISMISSED' }), 0);
     }
-  }, [setState, dispatchFlowEvent, droppedItem, createTrackedTimeout]);
+  }, [setState, dispatchFlowEvent, droppedItem, createTrackedTimeout, pause, unpause]);
 
   const continueFromFloorComplete = useCallback(() => {
     setState((prev: GameState) => {

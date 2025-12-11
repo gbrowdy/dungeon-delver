@@ -28,6 +28,8 @@ import {
 } from '@/constants/enums';
 import { logPauseChange } from '@/utils/gameLogger';
 import { generateEventId } from '@/utils/eventId';
+import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+import type { PauseReasonType } from '@/constants/enums';
 
 /**
  * Parameters for the combat actions hook
@@ -75,12 +77,8 @@ export function useCombatActions({
       // Skip if enemy is dying or player is dying
       if (prev.currentEnemy.isDying || prev.player.isDying) return prev;
 
-      const player = {
-        ...prev.player,
-        baseStats: { ...prev.player.baseStats },  // Deep copy to avoid mutation issues
-        currentStats: { ...prev.player.currentStats },  // Deep copy currentStats too
-      };
-      const enemy = { ...prev.currentEnemy };
+      const player = deepClonePlayer(prev.player);
+      const enemy = deepCloneEnemy(prev.currentEnemy);
       let logs: string[] = [];
 
       // Process turn-start effects (status effects, buffs, turn-start items)
@@ -94,11 +92,11 @@ export function useCombatActions({
       // If stunned, skip attack and return
       if (turnStartResult.isStunned) {
         logs.push(`💫 You are stunned and cannot act!`);
+        prev.combatLog.add(logs);
         return {
           ...prev,
           player: updatedPlayer,
           currentEnemy: enemy,
-          combatLog: [...prev.combatLog, ...logs],
         };
       }
 
@@ -127,27 +125,29 @@ export function useCombatActions({
       logs.push(`You deal ${finalDamage} damage to ${enemy.name}`);
 
       // Emit player attack event immediately
-      setLastCombatEvent({
+      const playerAttackEvent: import('@/hooks/useBattleAnimation').PlayerAttackEvent = {
         type: COMBAT_EVENT_TYPE.PLAYER_ATTACK,
         damage: finalDamage,
         isCrit: damageResult.isCrit,
         timestamp: Date.now(),
         id: generateEventId(),
-      });
+      };
+      setLastCombatEvent(playerAttackEvent);
 
       // Check if enemy will die from this hit
       const enemyWillDie = enemy.health <= 0;
 
       // Schedule enemy hit event after player attack starts (scaled by speed)
       const scaledHitDelay = Math.floor(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY / combatSpeed);
-      scheduleCombatEvent({
+      const enemyHitEvent: import('@/hooks/useBattleAnimation').EnemyHitEvent = {
         type: COMBAT_EVENT_TYPE.ENEMY_HIT,
         damage: finalDamage,
         isCrit: damageResult.isCrit,
         timestamp: Date.now(),
         id: generateEventId(),
         targetDied: enemyWillDie,
-      }, scaledHitDelay);
+      };
+      scheduleCombatEvent(enemyHitEvent, scaledHitDelay);
 
       // === CHECK ENEMY DEATH ===
       // Use ref for atomic check to prevent race conditions from async setState
@@ -183,11 +183,11 @@ export function useCombatActions({
           logPauseChange(true, PAUSE_REASON.ITEM_DROP, 'enemy_defeated_item_drop');
         }
 
+        prev.combatLog.add(deathResult.logs);
         return {
           ...prev,
           player: deathResult.player,
           currentEnemy: deathResult.enemy,
-          combatLog: [...prev.combatLog, ...deathResult.logs],
           // If leveled up, set pending level up and pause
           pendingLevelUp: deathResult.leveledUp ? deathResult.player.level : prev.pendingLevelUp,
           // Always derive isPaused from pauseReason
@@ -197,11 +197,11 @@ export function useCombatActions({
         };
       }
 
+      prev.combatLog.add(logs);
       return {
         ...prev,
         player: playerAfterEffects,
         currentEnemy: enemy,
-        combatLog: [...prev.combatLog, ...logs],
       };
     });
   }, [setState, setLastCombatEvent, setDroppedItem, scheduleCombatEvent, combatSpeed, enemyDeathProcessedRef]);
@@ -225,8 +225,8 @@ export function useCombatActions({
       // Skip if enemy is dying or player is dying
       if (prev.currentEnemy.isDying || prev.player.isDying) return prev;
 
-      const player = { ...prev.player };
-      const enemy = { ...prev.currentEnemy };
+      const player = deepClonePlayer(prev.player);
+      const enemy = deepCloneEnemy(prev.currentEnemy);
       const logs: string[] = [];
 
       // Tick down enemy ability cooldowns
@@ -400,32 +400,33 @@ export function useCombatActions({
 
       const playerWillDie = player.currentStats.health <= 0;
 
-      scheduleCombatEvent({
+      const enemyAttackEvent: import('@/hooks/useBattleAnimation').EnemyAttackEvent = {
         type: COMBAT_EVENT_TYPE.ENEMY_ATTACK,
         damage: enemyDamage,
         isCrit: enemyCrit,
         timestamp: Date.now(),
         id: generateEventId(),
-      }, scaledEnemyAttackDelay);
+      };
+      scheduleCombatEvent(enemyAttackEvent, scaledEnemyAttackDelay);
 
       if (enemyDamage > 0) {
-        scheduleCombatEvent({
+        const playerHitEvent: import('@/hooks/useBattleAnimation').PlayerHitEvent = {
           type: COMBAT_EVENT_TYPE.PLAYER_HIT,
           damage: enemyDamage,
           isCrit: enemyCrit,
           timestamp: Date.now(),
           id: generateEventId(),
           targetDied: playerWillDie,
-        }, scaledPlayerHitDelay);
+        };
+        scheduleCombatEvent(playerHitEvent, scaledPlayerHitDelay);
       } else if (enemyIntent?.type !== 'ability') {
-        scheduleCombatEvent({
+        const playerDodgeEvent: import('@/hooks/useBattleAnimation').PlayerDodgeEvent = {
           type: COMBAT_EVENT_TYPE.PLAYER_DODGE,
-          damage: 0,
-          isCrit: false,
           isMiss: true,
           timestamp: Date.now(),
           id: generateEventId(),
-        }, scaledPlayerHitDelay);
+        };
+        scheduleCombatEvent(playerDodgeEvent, scaledPlayerHitDelay);
       }
 
       // Reset blocking after enemy has attacked
@@ -441,19 +442,19 @@ export function useCombatActions({
         player.isDying = true;
         logs.push(`💀 You have been defeated...`);
 
+        prev.combatLog.add(logs);
         return {
           ...prev,
           player,
           currentEnemy: enemy,
-          combatLog: [...prev.combatLog, ...logs],
         };
       }
 
+      prev.combatLog.add(logs);
       return {
         ...prev,
         player,
         currentEnemy: enemy,
-        combatLog: [...prev.combatLog, ...logs],
       };
     });
   }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef]);
@@ -481,10 +482,10 @@ export function useCombatActions({
         },
       };
 
+      prev.combatLog.add('🛡️ Bracing for impact!');
       return {
         ...prev,
         player,
-        combatLog: [...prev.combatLog, '🛡️ Bracing for impact!'],
       };
     });
   }, [setState]);
