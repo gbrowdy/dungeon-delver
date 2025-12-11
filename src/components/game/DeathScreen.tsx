@@ -240,25 +240,15 @@ export function DeathScreen({ player, floor, room, onUpgrade, onRetry, onAbandon
                   </div>
                 )}
                 {/* Equipment inline */}
-                <div className="flex-1 grid grid-cols-3 gap-1">
+                <div className="flex-1 flex flex-col gap-1">
                   {ALL_ITEM_TYPES.map((type) => {
                     const item = player.equippedItems.find((i) => i.type === type);
 
-                    const slotContent = (
-                      <div
-                        className={cn(
-                          'pixel-panel-dark flex items-center justify-center rounded p-1.5 border h-full cursor-pointer',
-                          item ? RARITY_COLORS[item.rarity] : 'border-dashed border-slate-600/30'
-                        )}
-                      >
-                        <span className="text-lg">{item ? item.icon : TYPE_ICONS[type]}</span>
-                      </div>
-                    );
-
                     if (item) {
+                      const rarityTextColor = RARITY_COLORS[item.rarity].split(' ').pop() || 'text-slate-400';
                       const tooltipContent = (
                         <>
-                          <div className={cn('pixel-text text-pixel-sm font-medium', RARITY_COLORS[item.rarity].split(' ').pop())}>
+                          <div className={cn('pixel-text text-pixel-sm font-medium', rarityTextColor)}>
                             {item.name}
                           </div>
                           <div className="pixel-text text-pixel-xs text-slate-400 capitalize">{item.rarity} {item.type}</div>
@@ -271,14 +261,36 @@ export function DeathScreen({ player, floor, room, onUpgrade, onRetry, onAbandon
 
                       return (
                         <TouchTooltip key={type} content={tooltipContent} side="top">
-                          {slotContent}
+                          <div
+                            className={cn(
+                              'pixel-panel-dark flex items-center gap-2 rounded px-2 py-1 border cursor-pointer',
+                              RARITY_COLORS[item.rarity]
+                            )}
+                          >
+                            <span className="text-base">{item.icon}</span>
+                            <div className="flex-1 min-w-0 hidden sm:block">
+                              <div className={cn('pixel-text text-pixel-xs font-medium truncate', rarityTextColor)}>
+                                {item.name}
+                              </div>
+                              <div className="pixel-text text-pixel-xs text-success truncate">
+                                {formatItemStatBonus(item)}
+                              </div>
+                            </div>
+                          </div>
                         </TouchTooltip>
                       );
                     }
 
+                    // Empty slot - more visible styling
                     return (
-                      <div key={type}>
-                        {slotContent}
+                      <div
+                        key={type}
+                        className="pixel-panel-dark flex items-center gap-2 rounded px-2 py-1 border-2 border-dashed border-slate-600/50 opacity-50"
+                      >
+                        <span className="text-base text-slate-500">{TYPE_ICONS[type]}</span>
+                        <span className="pixel-text text-pixel-xs text-slate-500 hidden sm:inline">
+                          No {TYPE_LABELS[type]}
+                        </span>
                       </div>
                     );
                   })}

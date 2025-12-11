@@ -6,6 +6,7 @@ import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
 import { calculateUpgradeCost, STAT_UPGRADE_VALUES, StatUpgradeType } from '@/constants/game';
 import { PowerChoice, isPowerUpgrade } from '@/data/powers';
+import { formatItemStatBonus } from '@/utils/itemUtils';
 
 const RARITY_COLORS: Record<Item['rarity'], string> = {
   common: 'border-rarity-common bg-rarity-common/10 text-rarity-common',
@@ -282,18 +283,42 @@ export function FloorCompleteScreen({
                   {ALL_ITEM_TYPES.map((type) => {
                     const item = getEquippedItem(type);
                     const isHighlighted = highlightedSlot === type;
+
+                    if (item) {
+                      return (
+                        <div
+                          key={type}
+                          className={cn(
+                            'pixel-panel-dark flex items-center gap-2 rounded px-2 py-1 border transition-all',
+                            RARITY_COLORS[item.rarity],
+                            isHighlighted && 'ring-2 ring-primary scale-[1.02]'
+                          )}
+                        >
+                          <span className="text-sm">{item.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className={cn('pixel-text text-pixel-xs font-medium truncate', RARITY_TEXT[item.rarity])}>
+                              {item.name}
+                            </div>
+                            <div className="pixel-text text-pixel-xs text-success truncate">
+                              {formatItemStatBonus(item)}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Empty slot - more visible styling
                     return (
                       <div
                         key={type}
                         className={cn(
-                          'pixel-panel-dark flex items-center gap-2 rounded px-2 py-1 border transition-all',
-                          item ? RARITY_COLORS[item.rarity] : 'border-dashed border-slate-600/30',
+                          'pixel-panel-dark flex items-center gap-2 rounded px-2 py-1 border-2 border-dashed border-slate-600/50 opacity-50 transition-all',
                           isHighlighted && 'ring-2 ring-primary scale-[1.02]'
                         )}
                       >
-                        <span className="text-sm">{item ? item.icon : TYPE_ICONS[type]}</span>
-                        <span className={cn('pixel-text text-pixel-xs', item ? RARITY_TEXT[item.rarity] : 'text-slate-500')}>
-                          {item ? item.name : `No ${TYPE_LABELS[type]}`}
+                        <span className="text-sm text-slate-500">{TYPE_ICONS[type]}</span>
+                        <span className="pixel-text text-pixel-xs text-slate-500">
+                          No {TYPE_LABELS[type]}
                         </span>
                       </div>
                     );
