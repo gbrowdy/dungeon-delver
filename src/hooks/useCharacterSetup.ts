@@ -7,6 +7,7 @@ import { FLOOR_CONFIG } from '@/constants/game';
 import { COMBAT_BALANCE } from '@/constants/balance';
 import { GAME_PHASE, BUFF_STAT } from '@/constants/enums';
 import { logStateTransition } from '@/utils/gameLogger';
+import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
 
 /**
  * Pure function to calculate a player's current stats based on base stats,
@@ -109,13 +110,16 @@ export function useCharacterSetup(
 
     logStateTransition(GAME_PHASE.CLASS_SELECT, GAME_PHASE.COMBAT, `select_class:${characterClass}`);
 
+    const combatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
+    combatLog.add(`${classData.name} begins their adventure!`);
+
     setState((prev: GameState) => ({
       ...prev,
       player,
       gamePhase: GAME_PHASE.COMBAT,
       currentFloor: 1,
       currentRoom: 0,
-      combatLog: [`${classData.name} begins their adventure!`],
+      combatLog,
       combatSpeed: 1,
     }));
   }, [setState]);

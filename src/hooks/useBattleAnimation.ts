@@ -12,16 +12,64 @@ import {
   CombatEventType,
 } from '@/constants/enums';
 
-export interface CombatEvent {
-  type: CombatEventType;
-  damage: number;
-  isCrit: boolean;
-  isMiss?: boolean;
+// Base fields shared by all combat events
+interface BaseCombatEvent {
   timestamp: number;
   id: string; // Unique ID for deduplication
-  targetDied?: boolean; // Flag indicating the target died from this hit (for player death)
-  powerId?: string; // For PLAYER_POWER events - which power was used
 }
+
+// Player attack event
+export interface PlayerAttackEvent extends BaseCombatEvent {
+  type: typeof COMBAT_EVENT_TYPE.PLAYER_ATTACK;
+  damage: number;
+  isCrit: boolean;
+}
+
+// Player power/ability event
+export interface PlayerPowerEvent extends BaseCombatEvent {
+  type: typeof COMBAT_EVENT_TYPE.PLAYER_POWER;
+  powerId: string;
+  damage: number;
+  isCrit: boolean;
+}
+
+// Player dodge event
+export interface PlayerDodgeEvent extends BaseCombatEvent {
+  type: typeof COMBAT_EVENT_TYPE.PLAYER_DODGE;
+  isMiss: true;
+}
+
+// Enemy attack event
+export interface EnemyAttackEvent extends BaseCombatEvent {
+  type: typeof COMBAT_EVENT_TYPE.ENEMY_ATTACK;
+  damage: number;
+  isCrit: boolean;
+}
+
+// Enemy hit event
+export interface EnemyHitEvent extends BaseCombatEvent {
+  type: typeof COMBAT_EVENT_TYPE.ENEMY_HIT;
+  damage: number;
+  isCrit: boolean;
+  targetDied?: boolean; // Flag indicating the enemy died from this hit
+}
+
+// Player hit event
+export interface PlayerHitEvent extends BaseCombatEvent {
+  type: typeof COMBAT_EVENT_TYPE.PLAYER_HIT;
+  damage: number;
+  isCrit: boolean;
+  targetDied?: boolean; // Flag indicating the player died from this hit
+}
+
+// Discriminated union of all combat events
+export type CombatEvent =
+  | PlayerAttackEvent
+  | PlayerPowerEvent
+  | PlayerDodgeEvent
+  | EnemyAttackEvent
+  | EnemyHitEvent
+  | PlayerHitEvent;
 
 interface SpriteState {
   state: SpriteStateType;
@@ -258,7 +306,8 @@ export function useBattleAnimation(
 
         setHeroState({ state: SPRITE_STATE.ATTACK, frame: 0 }); // Casting pose
         setHeroCasting(true);
-        setCastingPowerId(lastCombatEvent.powerId || null);
+        // Type narrowing: TypeScript now knows this is PlayerPowerEvent
+        setCastingPowerId(lastCombatEvent.powerId);
 
         createTrackedTimeout(() => {
           setHeroCasting(false);

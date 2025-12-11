@@ -6,13 +6,16 @@ import { CombatEvent } from '@/hooks/useBattleAnimation';
 import { calculateStats } from '@/hooks/useCharacterSetup';
 import { GameFlowEvent } from '@/hooks/useGameFlow';
 import { useTrackedTimeouts } from '@/hooks/useTrackedTimeouts';
+import { usePauseControl } from '@/hooks/usePauseControl';
 import {
   STAT_UPGRADE_VALUES,
   calculateUpgradeCost,
   UPGRADE_CONFIG,
 } from '@/constants/game';
 import { GAME_PHASE, PAUSE_REASON } from '@/constants/enums';
-import { logStateTransition, logPauseChange } from '@/utils/gameLogger';
+import { logStateTransition } from '@/utils/gameLogger';
+import { deepClonePlayer } from '@/utils/stateUtils';
+import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
 
 interface UseProgressionActionsOptions {
   setState: React.Dispatch<React.SetStateAction<GameState>>;
@@ -42,6 +45,9 @@ export function useProgressionActions({
   // Track timeouts for proper cleanup on unmount
   const { createTrackedTimeout } = useTrackedTimeouts();
 
+  // Use pause control hook for consistent pause/unpause behavior
+  const { pause, unpause } = usePauseControl({ setState });
+
   // Apply a stat upgrade on floor completion (costs gold)
   const applyFloorUpgrade = useCallback((upgradeId: string) => {
     const config = UPGRADE_CONFIG[upgradeId];
@@ -57,10 +63,7 @@ export function useProgressionActions({
 
       if (prev.player.gold < cost) return prev;
 
-      const player = {
-        ...prev.player,
-        baseStats: { ...prev.player.baseStats },  // Deep copy to avoid mutation issues
-      };
+      const player = deepClonePlayer(prev.player);
       player.gold -= cost;
 
       // Increment purchase count
@@ -104,10 +107,10 @@ export function useProgressionActions({
         displayValue = `+${value}`;
       }
 
+      prev.combatLog.add(`Purchased ${displayValue} ${label}!`);
       return {
         ...prev,
         player,
-        combatLog: [...prev.combatLog, `Purchased ${displayValue} ${label}!`],
       };
     });
   }, [setState]);
@@ -139,10 +142,13 @@ export function useProgressionActions({
       const shouldOfferPowers = prev.currentFloor % 2 === 0;
       const powerChoices = shouldOfferPowers ? getPowerChoices(prev.player.powers, 2) : [];
 
+      // Clear combat log for new floor
+      const newCombatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
+
       return {
         ...prev,
         gamePhase: GAME_PHASE.FLOOR_COMPLETE,
-        combatLog: [], // Clear combat log on floor complete
+        combatLog: newCombatLog,
         shopItems: items,
         availablePowers: powerChoices,
       };
@@ -155,28 +161,24 @@ export function useProgressionActions({
   const dismissLevelUp = useCallback(() => {
     // Check if there's a pending item drop that should show next
     if (droppedItem) {
-      logPauseChange(true, PAUSE_REASON.ITEM_DROP, 'level_up_to_item_drop');
       setState((prev: GameState) => ({
         ...prev,
         pendingLevelUp: null,
-        isPaused: true,
-        pauseReason: PAUSE_REASON.ITEM_DROP,
       }));
+      pause(PAUSE_REASON.ITEM_DROP, 'level_up_to_item_drop');
       // Don't dispatch LEVEL_UP_DISMISSED - item popup will handle the transition
     } else {
-      logPauseChange(false, null, 'dismiss_level_up');
       setState((prev: GameState) => ({
         ...prev,
         pendingLevelUp: null,
-        isPaused: false,
-        pauseReason: null,
       }));
+      unpause('dismiss_level_up');
       // Dispatch event after state update to trigger next transition
       // Use tracked timeout to ensure React has processed the state update first
       // (setState is async, so getState() would return stale state if called synchronously)
       createTrackedTimeout(() => dispatchFlowEvent?.({ type: 'LEVEL_UP_DISMISSED' }), 0);
     }
-  }, [setState, dispatchFlowEvent, droppedItem, createTrackedTimeout]);
+  }, [setState, dispatchFlowEvent, droppedItem, createTrackedTimeout, pause, unpause]);
 
   const continueFromFloorComplete = useCallback(() => {
     setState((prev: GameState) => {
@@ -197,13 +199,16 @@ export function useProgressionActions({
       // Reset power cooldowns for fresh start on new floor
       player.powers = player.powers.map((p: Power) => ({ ...p, currentCooldown: 0 }));
 
+      const combatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
+      combatLog.add(`Entering Floor ${prev.currentFloor + 1}... Health and Mana restored!`);
+
       return {
         ...prev,
         player,
         currentFloor: prev.currentFloor + 1,
         currentRoom: 0,
         gamePhase: GAME_PHASE.COMBAT,
-        combatLog: [`Entering Floor ${prev.currentFloor + 1}... Health and Mana restored!`],
+        combatLog,
         shopItems: [],
         availablePowers: [],
         isTransitioning: false,
@@ -227,7 +232,7 @@ export function useProgressionActions({
       currentFloor: 1,
       currentRoom: 0,
       roomsPerFloor: 5,
-      combatLog: [],
+      combatLog: new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE),
       gamePhase: GAME_PHASE.MENU,
       isPaused: false,
       pauseReason: null,
@@ -267,6 +272,7 @@ export function useProgressionActions({
       player.lastPowerUsed = null;
       player.isDying = false; // Clear dying state on retry
 
+      prev.combatLog.add(`Retrying Floor ${prev.currentFloor}...`);
       return {
         ...prev,
         player,
@@ -276,7 +282,6 @@ export function useProgressionActions({
         isPaused: false,
         pauseReason: null,
         isTransitioning: false,
-        combatLog: [...prev.combatLog, `Retrying Floor ${prev.currentFloor}...`],
       };
     });
   }, [clearCombatTimeouts, setLastCombatEvent, setState]);

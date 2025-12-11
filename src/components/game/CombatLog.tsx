@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
+import { CircularBuffer } from '@/utils/circularBuffer';
+
 /**
  * Props for the CombatLog component.
  */
 interface CombatLogProps {
-  logs: string[];
+  logs: CircularBuffer<string>;
 }
 
 interface LogEntry {
@@ -83,13 +85,14 @@ function formatLogEntry(log: string): LogEntry {
  */
 export function CombatLog({ logs }: CombatLogProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const logsArray = logs.toArray();
 
   useEffect(() => {
     // Scroll within the container only, don't use scrollIntoView which can jump the page
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [logs]);
+  }, [logsArray.length]);
 
   return (
     // Hide on very small screens (< 360px) to save space
@@ -105,7 +108,7 @@ export function CombatLog({ logs }: CombatLogProps) {
         aria-label="Combat log"
       >
         <div className="p-1.5 xs:p-2 space-y-0.5">
-          {logs.slice(-10).map((log, i) => {
+          {logsArray.slice(-10).map((log, i) => {
             const { icon, color, text } = formatLogEntry(log);
             return (
               <div
