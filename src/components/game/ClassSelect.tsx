@@ -207,7 +207,7 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
           style={{ borderColor: activeClass ? `${classColors[activeClass].border}40` : 'rgba(100, 100, 120, 0.2)' }}
         >
           {activeClass ? (
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 min-h-[120px] sm:min-h-[100px]">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6">
               {/* Left: Class info */}
               <div className="flex-1 space-y-3 min-w-0">
                 <div className="flex items-start gap-3">
@@ -225,7 +225,7 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
                     >
                       {CLASS_DATA[activeClass].name}
                     </h3>
-                    <p className="pixel-text text-pixel-xs text-slate-400 mt-1 leading-relaxed h-[32px] sm:h-[28px] overflow-hidden">
+                    <p className="pixel-text text-pixel-xs text-slate-400 mt-1 leading-relaxed">
                       {CLASS_DATA[activeClass].description}
                     </p>
                   </div>
@@ -252,7 +252,7 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
               </div>
 
               {/* Right: Starting power */}
-              <div className="sm:w-64 min-w-0 flex-shrink-0">
+              <div className="md:w-64 min-w-0 flex-shrink-0">
                 <div className="pixel-power-box h-full" style={{ borderColor: classColors[activeClass].border }}>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xl sm:text-2xl" aria-hidden="true">{CLASS_DATA[activeClass].startingPower.icon}</span>
@@ -279,7 +279,7 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
             </div>
           ) : (
             /* Placeholder content when no class is selected */
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 min-h-[120px] sm:min-h-[100px]">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6">
               <div className="flex-1 space-y-3 min-w-0">
                 <div className="flex items-start gap-3">
                   <span className="text-4xl sm:text-5xl flex-shrink-0 opacity-30" aria-hidden="true">
@@ -289,7 +289,7 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
                     <h3 className="pixel-text text-pixel-base uppercase text-slate-500">
                       Select a Hero
                     </h3>
-                    <p className="pixel-text text-pixel-xs text-slate-600 mt-1 leading-relaxed h-[32px] sm:h-[28px] overflow-hidden">
+                    <p className="pixel-text text-pixel-xs text-slate-600 mt-1 leading-relaxed">
                       Hover over or click a hero above to see their stats and abilities
                     </p>
                   </div>
@@ -307,7 +307,7 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
               </div>
 
               {/* Placeholder power box */}
-              <div className="sm:w-64 min-w-0 flex-shrink-0">
+              <div className="md:w-64 min-w-0 flex-shrink-0">
                 <div className="pixel-power-box h-full opacity-50" style={{ borderColor: 'rgba(100, 100, 120, 0.3)' }}>
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xl sm:text-2xl opacity-30" aria-hidden="true">✨</span>

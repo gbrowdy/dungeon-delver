@@ -62,6 +62,9 @@ function getIntentDescription(intent: EnemyIntent): string {
   return 'Physical damage';
 }
 
+// Shared positioning classes for HP bars above sprites (keeps hero and enemy in sync)
+const HP_BAR_POSITION = "-top-10 xs:-top-12 sm:-top-10";
+
 interface BattleArenaProps {
   player: Player;
   enemy: Enemy | null;
@@ -170,7 +173,7 @@ export function BattleArena({
         {lowHealthWarning && "Warning: Health is critically low!"}
       </div>
 
-      <div className="relative w-full h-40 xs:h-48 sm:h-56 md:h-64 lg:h-80 rounded-lg overflow-hidden pixel-panel border-2 border-slate-700/50">
+      <div className="relative w-full h-44 xs:h-52 sm:h-56 md:h-64 lg:h-80 rounded-lg overflow-hidden pixel-panel border-2 border-slate-700/50">
         {/* Sky/Background */}
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-950 via-slate-900 to-transparent opacity-80" />
 
@@ -256,7 +259,7 @@ export function BattleArena({
             </div>
 
             {/* Hero HP and turn progress bars - positioned higher to avoid name badge overlap */}
-            <div className="absolute -top-10 xs:-top-12 sm:-top-10 left-1/2 -translate-x-1/2 w-14 xs:w-16 sm:w-20">
+            <div className={`absolute ${HP_BAR_POSITION} left-1/2 -translate-x-1/2 w-14 xs:w-16 sm:w-20`}>
               {/* Turn progress bar - above HP */}
               {phase === BATTLE_PHASE.COMBAT && displayEnemy && !displayEnemy.isDying && (
                 <div className="mb-0.5 xs:mb-1 h-1 bg-gray-800 rounded-full overflow-hidden">
@@ -360,9 +363,9 @@ export function BattleArena({
                 )}
               </div>
 
-              {/* Enemy HP and turn progress bars - hide when dying, positioned higher */}
+              {/* Enemy HP and turn progress bars - centered above enemy, same spacing as hero */}
               {!displayEnemy.isDying && (
-                <div className="absolute -top-10 xs:-top-12 sm:-top-10 left-1/2 -translate-x-1/2 w-14 xs:w-18 sm:w-24">
+                <div className={`absolute ${HP_BAR_POSITION} left-1/2 -translate-x-1/2 w-14 xs:w-18 sm:w-24`}>
                   {/* Turn progress bar - above HP */}
                   {phase === BATTLE_PHASE.COMBAT && (
                     <div className="mb-0.5 xs:mb-1 h-1 bg-gray-800 rounded-full overflow-hidden">
@@ -390,23 +393,40 @@ export function BattleArena({
                 </div>
               )}
 
-              {/* Boss crown - hide when dying */}
-              {displayEnemy.isBoss && !displayEnemy.isDying && (
-                <div className="absolute -top-24 left-1/2 -translate-x-1/2 text-2xl animate-bounce">👑</div>
+              {/* Intent display - to the left of HP bar on mobile, above HP bar on desktop */}
+              {!displayEnemy.isDying && displayEnemy.intent && (
+                <>
+                  {/* Mobile: Intent to the left of HP bar, vertically aligned with HP_BAR_POSITION */}
+                  <div
+                    className="sm:hidden absolute -top-10 xs:-top-12 right-[calc(50%+2rem)] xs:right-[calc(50%+2.5rem)] bg-black/90 rounded px-1 py-0.5 border border-health/50 max-w-[72px]"
+                    aria-label={`Enemy intends to ${displayEnemy.intent.type === 'ability' && displayEnemy.intent.ability ? displayEnemy.intent.ability.name : 'Attack'}`}
+                  >
+                    <div className="flex items-start gap-0.5">
+                      <span className="text-xs leading-none flex-shrink-0">{displayEnemy.intent.icon}</span>
+                      <span className="text-health/90 font-medium text-pixel-2xs leading-tight">
+                        {displayEnemy.intent.type === 'ability' && displayEnemy.intent.ability
+                          ? displayEnemy.intent.ability.name
+                          : 'Attack'}
+                      </span>
+                    </div>
+                  </div>
+                  {/* Desktop: Intent above HP bar with full name */}
+                  <div className="hidden sm:block absolute -top-20 left-1/2 -translate-x-1/2 bg-black/80 rounded px-1.5 py-0.5 border border-health/50">
+                    <div className="flex items-center gap-1 text-xs whitespace-nowrap">
+                      <span className="text-base">{displayEnemy.intent.icon}</span>
+                      <span className="text-health/90 font-medium text-xs">
+                        {displayEnemy.intent.type === 'ability' && displayEnemy.intent.ability
+                          ? displayEnemy.intent.ability.name
+                          : 'Attack'}
+                      </span>
+                    </div>
+                  </div>
+                </>
               )}
 
-              {/* Intent display - inline with HP bar on mobile to prevent overflow */}
-              {!displayEnemy.isDying && displayEnemy.intent && (
-                <div className="absolute -top-14 xs:-top-16 sm:-top-20 left-1/2 -translate-x-1/2 bg-black/80 rounded px-1 xs:px-1.5 py-0.5 border border-health/50">
-                  <div className="flex items-center gap-0.5 xs:gap-1 text-xs whitespace-nowrap">
-                    <span className="text-sm xs:text-base">{displayEnemy.intent.icon}</span>
-                    <span className="text-health/90 font-medium text-pixel-2xs xs:text-xs hidden xs:inline">
-                      {displayEnemy.intent.type === 'ability' && displayEnemy.intent.ability
-                        ? displayEnemy.intent.ability.name
-                        : 'Attack'}
-                    </span>
-                  </div>
-                </div>
+              {/* Boss crown - hide when dying */}
+              {displayEnemy.isBoss && !displayEnemy.isDying && (
+                <div className="absolute -top-16 sm:-top-24 left-1/2 -translate-x-1/2 text-xl sm:text-2xl animate-bounce">👑</div>
               )}
 
               {/* Enemy status indicators - hide when dying */}

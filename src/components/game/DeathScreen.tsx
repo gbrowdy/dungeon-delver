@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Player, Item, ItemType, UpgradePurchases } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
 import { calculateUpgradeCost, STAT_UPGRADE_VALUES, StatUpgradeType } from '@/constants/game';
 import { formatItemStatBonus } from '@/utils/itemUtils';
+import { TouchTooltip } from '@/components/ui/touch-tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -242,26 +243,42 @@ export function DeathScreen({ player, floor, room, onUpgrade, onRetry, onAbandon
                 <div className="flex-1 grid grid-cols-3 gap-1">
                   {ALL_ITEM_TYPES.map((type) => {
                     const item = player.equippedItems.find((i) => i.type === type);
-                    return (
+
+                    const slotContent = (
                       <div
-                        key={type}
                         className={cn(
-                          'pixel-panel-dark flex flex-col rounded px-1.5 py-1 border',
+                          'pixel-panel-dark flex items-center justify-center rounded p-1.5 border h-full cursor-pointer',
                           item ? RARITY_COLORS[item.rarity] : 'border-dashed border-slate-600/30'
                         )}
-                        title={item?.effect ? item.effect.description : undefined}
                       >
-                        <div className="flex items-center gap-1">
-                          <span className="text-sm">{item ? item.icon : TYPE_ICONS[type]}</span>
-                          <span className={cn('pixel-text text-pixel-2xs truncate', item ? 'text-slate-200' : 'text-slate-500')}>
-                            {item ? item.name : TYPE_LABELS[type]}
-                          </span>
-                        </div>
-                        {item && (
-                          <span className="pixel-text text-pixel-2xs text-success truncate">
-                            {formatItemStatBonus(item)}
-                          </span>
-                        )}
+                        <span className="text-lg">{item ? item.icon : TYPE_ICONS[type]}</span>
+                      </div>
+                    );
+
+                    if (item) {
+                      const tooltipContent = (
+                        <>
+                          <div className={cn('pixel-text text-pixel-sm font-medium', RARITY_COLORS[item.rarity].split(' ').pop())}>
+                            {item.name}
+                          </div>
+                          <div className="pixel-text text-pixel-xs text-slate-400 capitalize">{item.rarity} {item.type}</div>
+                          <div className="pixel-text text-pixel-xs text-success mt-1">{formatItemStatBonus(item)}</div>
+                          {item.effect && (
+                            <div className="pixel-text text-pixel-xs text-accent mt-1 font-medium">{item.effect.description}</div>
+                          )}
+                        </>
+                      );
+
+                      return (
+                        <TouchTooltip key={type} content={tooltipContent} side="top">
+                          {slotContent}
+                        </TouchTooltip>
+                      );
+                    }
+
+                    return (
+                      <div key={type}>
+                        {slotContent}
                       </div>
                     );
                   })}
