@@ -150,12 +150,13 @@ export function BattleArena({
                 isFlashing={enemyFlash}
                 hitStop={hitStop}
                 turnProgress={enemyProgress}
+                intent={displayEnemy.intent}
               />
 
-              {/* Enemy intent display - positioned relative to enemy */}
+              {/* Enemy intent display - mobile only (desktop handled in CharacterSprite) */}
               {displayEnemy.intent && (
                 <div
-                  className="absolute bottom-16"
+                  className="absolute bottom-16 sm:hidden"
                   style={{ left: '75%', transform: 'translateX(-50%)' }}
                 >
                   <EnemyIntentDisplay
