@@ -16,7 +16,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { processItemEffects, ItemEffectContext } from '../useItemEffects';
 import { Player, Item } from '@/types/game';
-import { ITEM_EFFECT_TRIGGER, EFFECT_TYPE } from '@/constants/enums';
+import { ITEM_EFFECT_TRIGGER, EFFECT_TYPE, ItemEffectTriggerType, EffectType } from '@/constants/enums';
 
 // Helper function to create a minimal test player
 function createTestPlayer(overrides?: Partial<Player>): Player {
@@ -102,8 +102,8 @@ function createTestItem(
     description: 'Test item with effect',
     icon: '🔮',
     effect: {
-      trigger: trigger as any,
-      type: effectType as any,
+      trigger: trigger as ItemEffectTriggerType,
+      type: effectType as EffectType,
       value,
       chance,
       description: 'Test effect',
