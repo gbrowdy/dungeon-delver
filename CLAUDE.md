@@ -307,3 +307,59 @@ test(hooks): add useItemEffects unit tests
 - `combat` - Combat system
 - `utils` - Utility functions
 - `types` - TypeScript types
+
+## Task Execution Workflow
+
+For complex multi-file tasks, use the **Task Document + Parallel Agents** pattern:
+
+### 1. Create Task Document
+Create `tasks/<TASK_NAME>_TASKS.md` with:
+- Numbered tasks in strict priority order (1.1, 1.2, 2.1, etc.)
+- Clear scope and acceptance criteria per task
+- Priority levels: High (1.x) → Medium (2.x-5.x) → Low (6.x+)
+
+Example structure:
+```markdown
+# Task Name
+
+## Priority 1 (High) - Critical Issues
+### Task 1.1: [Title]
+**File(s)**: `path/to/file.ts`
+**Issue**: Description of the problem
+**Solution**: What needs to be done
+**Acceptance**: How to verify it's complete
+
+### Task 1.2: [Title]
+...
+
+## Priority 2 (Medium) - Important Improvements
+### Task 2.1: [Title]
+...
+```
+
+### 2. Execute with Parallel Agents
+- Create feature branch: `<type>/<feature-name>` (e.g., `fix/code-robustness`)
+- Launch 3-5 parallel subagents using the Task tool
+- Each agent works on ONE task from the document in priority order
+- Each agent creates a sub-branch: `<feature>/<task-id>` off the feature branch
+- Agents use conventional commits
+
+### 3. Coordinate and Merge
+- Review agent work as it completes
+- Merge task branches into feature branch
+- Mark completed tasks in document
+- Launch next batch of agents for remaining tasks
+- Repeat until all tasks done
+
+### 4. Finalize
+- Run tests and lint: `npm run lint && npx vitest run`
+- Open PR from feature branch to main
+- Address review comments
+
+**Trigger phrases**: "work through tasks", "execute task document", "fan out agents", "parallel task execution"
+
+### Guidelines:
+1. **Strict priority order** - Always start with Task 1.1, then 1.2, etc.
+2. **Fan out, don't do directly** - Coordinator reviews, agents implement
+3. **One task per agent** - Clear ownership and focused commits
+4. **Update as you go** - Mark tasks complete in the document after merging
