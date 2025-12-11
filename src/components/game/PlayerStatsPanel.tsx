@@ -12,14 +12,15 @@ import { formatItemStatBonus } from '@/utils/itemUtils';
 /**
  * PlayerStatsPanel - Displays player info, equipment, stats grid, and XP bar.
  * Styled with pixel art / 8-bit retro aesthetic.
+ * Compact layout on mobile to reduce visual clutter.
  */
 export function PlayerStatsPanel() {
   const player = useCombatPlayer();
 
   return (
-    <div className="pixel-panel rounded-lg p-2 sm:p-3">
-      {/* Header: Player info and equipment */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+    <div className="pixel-panel rounded-lg p-1.5 xs:p-2 sm:p-3">
+      {/* Header: Player info and equipment - more compact on mobile */}
+      <div className="flex items-center justify-between flex-wrap gap-1 xs:gap-2">
         <PlayerInfo
           name={player.name}
           playerClass={player.class}
@@ -30,7 +31,7 @@ export function PlayerStatsPanel() {
         )}
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid - only show primary stats on very small screens */}
       <StatsGrid
         attack={player.currentStats.attack}
         defense={player.currentStats.defense}
@@ -64,11 +65,11 @@ interface PlayerInfoProps {
 
 function PlayerInfo({ name, playerClass, level }: PlayerInfoProps) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-2xl" aria-hidden="true">{getClassIcon(playerClass)}</span>
+    <div className="flex items-center gap-1 xs:gap-2">
+      <span className="text-lg xs:text-xl sm:text-2xl" aria-hidden="true">{getClassIcon(playerClass)}</span>
       <div>
-        <div className="pixel-text text-pixel-base text-amber-200 font-bold">{name}</div>
-        <div className="pixel-text text-pixel-xs text-slate-400">Level {level}</div>
+        <div className="pixel-text text-pixel-xs xs:text-pixel-sm sm:text-pixel-base text-amber-200 font-bold">{name}</div>
+        <div className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">Level {level}</div>
       </div>
     </div>
   );
@@ -152,15 +153,15 @@ function EquipmentSlot({ item }: EquipmentSlotProps) {
         <TooltipTrigger asChild>
           <button
             className={cn(
-              'pixel-panel-dark w-9 h-9 sm:w-10 sm:h-10 rounded border-2 flex items-center justify-center cursor-pointer transition-all hover:scale-110 relative',
+              'pixel-panel-dark w-7 h-7 xs:w-8 xs:h-8 sm:w-10 sm:h-10 rounded border-2 flex items-center justify-center cursor-pointer transition-all hover:scale-110 relative',
               RARITY_BORDER_COLORS[item.rarity] || 'border-gray-500',
               RARITY_BG_COLORS[item.rarity] || 'bg-gray-500/10'
             )}
             aria-label={`${item.name}: ${item.rarity} ${item.type}. ${statText}${item.effect ? `. ${item.effect.description}` : ''}`}
           >
-            <span className="text-base" aria-hidden="true">{item.icon}</span>
+            <span className="text-sm xs:text-base" aria-hidden="true">{item.icon}</span>
             {itemHasEffect && (
-              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-accent rounded-full border border-background flex items-center justify-center text-[6px]" aria-hidden="true">
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 xs:w-2.5 xs:h-2.5 bg-accent rounded-full border border-background flex items-center justify-center text-[6px]" aria-hidden="true">
                 ✨
               </span>
             )}
@@ -236,10 +237,10 @@ interface StatItemProps {
 
 function StatItem({ icon, label, value }: StatItemProps) {
   return (
-    <div className="pixel-panel-dark flex flex-col items-center text-center rounded p-1.5 sm:p-2">
-      <span className="text-pixel-sm" aria-hidden="true">{icon}</span>
-      <span className="pixel-text text-pixel-xs text-slate-400">{label}</span>
-      <span className="pixel-text text-pixel-sm font-medium text-slate-200">{value}</span>
+    <div className="pixel-panel-dark flex flex-col items-center text-center rounded p-1 xs:p-1.5 sm:p-2">
+      <span className="text-pixel-xs xs:text-pixel-sm" aria-hidden="true">{icon}</span>
+      <span className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">{label}</span>
+      <span className="pixel-text text-pixel-2xs xs:text-pixel-xs sm:text-pixel-sm font-medium text-slate-200">{value}</span>
     </div>
   );
 }
@@ -256,13 +257,13 @@ function XPProgressBar({ current, max }: XPProgressBarProps) {
   const percentage = (current / max) * 100;
 
   return (
-    <div className="mt-2">
-      <div className="flex justify-between pixel-text text-pixel-xs text-slate-400 mb-1">
-        <span>Experience</span>
-        <span>{current} / {max}</span>
+    <div className="mt-1.5 xs:mt-2">
+      <div className="flex justify-between pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400 mb-0.5 xs:mb-1">
+        <span>XP</span>
+        <span>{current}/{max}</span>
       </div>
       <div
-        className="pixel-progress-bar h-2.5 rounded overflow-hidden"
+        className="pixel-progress-bar h-2 xs:h-2.5 rounded overflow-hidden"
         role="progressbar"
         aria-valuenow={current}
         aria-valuemin={0}

@@ -170,7 +170,7 @@ export function BattleArena({
         {lowHealthWarning && "Warning: Health is critically low!"}
       </div>
 
-      <div className="relative w-full h-48 sm:h-56 md:h-64 lg:h-80 rounded-lg overflow-hidden pixel-panel border-2 border-slate-700/50">
+      <div className="relative w-full h-40 xs:h-48 sm:h-56 md:h-64 lg:h-80 rounded-lg overflow-hidden pixel-panel border-2 border-slate-700/50">
         {/* Sky/Background */}
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-950 via-slate-900 to-transparent opacity-80" />
 
@@ -256,10 +256,10 @@ export function BattleArena({
             </div>
 
             {/* Hero HP and turn progress bars */}
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-16 sm:w-20">
+            <div className="absolute -top-8 xs:-top-10 left-1/2 -translate-x-1/2 w-14 xs:w-16 sm:w-20">
               {/* Turn progress bar - above HP */}
               {phase === BATTLE_PHASE.COMBAT && displayEnemy && !displayEnemy.isDying && (
-                <div className="mb-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                <div className="mb-0.5 xs:mb-1 h-1 bg-gray-800 rounded-full overflow-hidden">
                   <div
                     className={cn(
                       "h-full transition-none",
@@ -273,7 +273,7 @@ export function BattleArena({
               )}
               {/* HP bar */}
               <div className={cn(
-                "h-2 bg-gray-800 rounded-full overflow-hidden border",
+                "h-1.5 xs:h-2 bg-gray-800 rounded-full overflow-hidden border",
                 player.currentStats.health / player.currentStats.maxHealth <= 0.25
                   ? "border-health animate-pulse"
                   : "border-gray-600"
@@ -291,7 +291,7 @@ export function BattleArena({
                 />
               </div>
               <div className={cn(
-                "pixel-text text-pixel-xs text-center mt-0.5 font-bold drop-shadow-lg",
+                "pixel-text text-pixel-2xs xs:text-pixel-xs text-center mt-0.5 font-bold drop-shadow-lg",
                 player.currentStats.health / player.currentStats.maxHealth <= 0.25 ? "text-health" : "text-white"
               )}>
                 {Math.max(0, Math.floor(player.currentStats.health))}/{player.currentStats.maxHealth}
@@ -362,10 +362,10 @@ export function BattleArena({
 
               {/* Enemy HP and turn progress bars - hide when dying */}
               {!displayEnemy.isDying && (
-                <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-18 sm:w-24">
+                <div className="absolute -top-8 xs:-top-10 left-1/2 -translate-x-1/2 w-14 xs:w-18 sm:w-24">
                   {/* Turn progress bar - above HP */}
                   {phase === BATTLE_PHASE.COMBAT && (
-                    <div className="mb-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="mb-0.5 xs:mb-1 h-1 bg-gray-800 rounded-full overflow-hidden">
                       <div
                         className="h-full transition-none bg-gradient-to-r from-health to-health/80"
                         style={{ width: `${enemyProgress * 100}%` }}
@@ -373,7 +373,7 @@ export function BattleArena({
                     </div>
                   )}
                   {/* HP bar */}
-                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden border border-gray-600">
+                  <div className="h-1.5 xs:h-2 bg-gray-800 rounded-full overflow-hidden border border-gray-600">
                     <div
                       className={cn(
                         'h-full transition-all duration-300',
@@ -384,7 +384,7 @@ export function BattleArena({
                       style={{ width: `${Math.max(0, (displayEnemy.health / displayEnemy.maxHealth) * 100)}%` }}
                     />
                   </div>
-                  <div className="pixel-text text-pixel-xs text-center text-white mt-0.5 font-bold drop-shadow-lg">
+                  <div className="pixel-text text-pixel-2xs xs:text-pixel-xs text-center text-white mt-0.5 font-bold drop-shadow-lg">
                     {Math.max(0, displayEnemy.health)}/{displayEnemy.maxHealth}
                   </div>
                 </div>
@@ -395,12 +395,12 @@ export function BattleArena({
                 <div className="absolute -top-24 left-1/2 -translate-x-1/2 text-2xl animate-bounce">👑</div>
               )}
 
-              {/* Intent display - above enemy, hide when dying */}
+              {/* Intent display - above enemy, hide when dying, simplified on mobile */}
               {!displayEnemy.isDying && displayEnemy.intent && (
-                <div className="absolute -top-20 left-1/2 -translate-x-1/2 bg-black/80 rounded px-1.5 py-0.5 border border-health/50">
-                  <div className="flex items-center gap-1 text-xs whitespace-nowrap">
-                    <span className="text-base">{displayEnemy.intent.icon}</span>
-                    <span className="text-health/90 font-medium">
+                <div className="absolute -top-16 xs:-top-20 left-1/2 -translate-x-1/2 bg-black/80 rounded px-1 xs:px-1.5 py-0.5 border border-health/50">
+                  <div className="flex items-center gap-0.5 xs:gap-1 text-xs whitespace-nowrap">
+                    <span className="text-sm xs:text-base">{displayEnemy.intent.icon}</span>
+                    <span className="text-health/90 font-medium text-pixel-2xs xs:text-xs hidden xs:inline">
                       {displayEnemy.intent.type === 'ability' && displayEnemy.intent.ability
                         ? displayEnemy.intent.ability.name
                         : 'Attack'}
@@ -458,31 +458,34 @@ export function BattleArena({
         {/* Effects layer */}
         <EffectsLayer effects={effects} onEffectComplete={removeEffect} />
 
-        {/* Top info bar */}
-        <div className="absolute top-2 left-2 right-2 flex justify-between items-start pointer-events-none">
-          <div className="pixel-panel-dark rounded px-2 py-1">
-            <span className="pixel-text text-pixel-base text-gold font-bold">{player.name}</span>
-            <span className="pixel-text text-pixel-xs text-gray-300 ml-2">Lv.{player.level}</span>
+        {/* Top info bar - simplified on mobile */}
+        <div className="absolute top-1 xs:top-2 left-1 xs:left-2 right-1 xs:right-2 flex justify-between items-start pointer-events-none gap-1">
+          {/* Player name badge - compact on mobile */}
+          <div className="pixel-panel-dark rounded px-1 xs:px-2 py-0.5 xs:py-1 flex-shrink-0">
+            <span className="pixel-text text-pixel-xs xs:text-pixel-sm sm:text-pixel-base text-gold font-bold">{player.name}</span>
+            <span className="pixel-text text-pixel-2xs xs:text-pixel-xs text-gray-300 ml-1 xs:ml-2">Lv.{player.level}</span>
           </div>
+          {/* Enemy info - hide stats on very small screens */}
           {displayEnemy && !displayEnemy.isDying && (
-            <div className="pixel-panel-dark rounded px-2 py-1 text-right max-w-[200px]">
-              <span className={cn('pixel-text text-pixel-base font-bold', displayEnemy.isBoss ? 'text-gold' : 'text-health')}>
+            <div className="pixel-panel-dark rounded px-1 xs:px-2 py-0.5 xs:py-1 text-right max-w-[120px] xs:max-w-[150px] sm:max-w-[200px] flex-shrink min-w-0">
+              <span className={cn('pixel-text text-pixel-xs xs:text-pixel-sm sm:text-pixel-base font-bold truncate block', displayEnemy.isBoss ? 'text-gold' : 'text-health')}>
                 {displayEnemy.name}
               </span>
-              <div className="pixel-text text-pixel-xs text-gray-400">
-                ATK: {displayEnemy.attack} DEF: {displayEnemy.defense} SPD: {displayEnemy.speed}
+              {/* Hide stats on smallest screens */}
+              <div className="pixel-text text-pixel-2xs text-gray-400 hidden xs:block">
+                ATK:{displayEnemy.attack} DEF:{displayEnemy.defense}
               </div>
-              {/* Enemy abilities */}
+              {/* Enemy abilities - hide on mobile to reduce clutter */}
               {displayEnemy.abilities.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1 justify-end">
+                <div className="hidden sm:flex flex-wrap gap-1 mt-1 justify-end">
                   {displayEnemy.abilities.map(ability => (
                     <div
                       key={ability.id}
-                      className="bg-health/20 border border-health/50 rounded px-1.5 py-0.5 flex items-center gap-0.5"
+                      className="bg-health/20 border border-health/50 rounded px-1 py-0.5 flex items-center gap-0.5"
                       title={ability.description}
                     >
-                      <span className="text-pixel-sm">{ability.icon}</span>
-                      <span className="pixel-text text-pixel-xs text-health/90">{ability.name}</span>
+                      <span className="text-pixel-xs">{ability.icon}</span>
+                      <span className="pixel-text text-pixel-2xs text-health/90">{ability.name}</span>
                     </div>
                   ))}
                 </div>
