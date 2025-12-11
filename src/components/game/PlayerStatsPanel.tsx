@@ -122,7 +122,7 @@ function EquipmentDisplay({ items }: EquipmentDisplayProps) {
   items.forEach((item) => equippedByType.set(item.type, item));
 
   return (
-    <div className="flex flex-col xs:flex-row gap-1 xs:gap-1.5 overflow-hidden">
+    <div className="flex flex-col xs:flex-row gap-1 xs:gap-1.5">
       {ALL_ITEM_TYPES.map((type) => {
         const item = equippedByType.get(type);
         return item ? (

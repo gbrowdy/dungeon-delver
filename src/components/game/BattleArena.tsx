@@ -156,7 +156,7 @@ export function BattleArena({
               {/* Enemy intent display - mobile only (desktop handled in CharacterSprite) */}
               {displayEnemy.intent && (
                 <div
-                  className="absolute bottom-16 sm:hidden"
+                  className="absolute bottom-16"
                   style={{ left: '75%', transform: 'translateX(-50%)' }}
                 >
                   <EnemyIntentDisplay
