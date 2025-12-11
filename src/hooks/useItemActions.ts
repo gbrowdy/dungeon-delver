@@ -119,11 +119,11 @@ export function useItemActions({
         ? `Replaced ${replacedItem.name} with ${item.name}!`
         : `Claimed ${item.name}!`;
 
+      prev.combatLog.add(message);
       return {
         ...prev,
         player,
         shopItems: prev.shopItems.filter((_, i) => i !== itemIndex),
-        combatLog: [...prev.combatLog, message],
       };
     });
   }, [setState]);
@@ -149,10 +149,10 @@ export function useItemActions({
         ? `Equipped ${droppedItem.name}, replacing ${replacedItem.name}!`
         : `Equipped ${droppedItem.name}!`;
 
+      prev.combatLog.add(message);
       return {
         ...prev,
         player,
-        combatLog: [...prev.combatLog, message],
       };
     });
 

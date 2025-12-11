@@ -15,6 +15,7 @@ import {
 import { GAME_PHASE, PAUSE_REASON } from '@/constants/enums';
 import { logStateTransition } from '@/utils/gameLogger';
 import { deepClonePlayer } from '@/utils/stateUtils';
+import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
 
 interface UseProgressionActionsOptions {
   setState: React.Dispatch<React.SetStateAction<GameState>>;
@@ -106,10 +107,10 @@ export function useProgressionActions({
         displayValue = `+${value}`;
       }
 
+      prev.combatLog.add(`Purchased ${displayValue} ${label}!`);
       return {
         ...prev,
         player,
-        combatLog: [...prev.combatLog, `Purchased ${displayValue} ${label}!`],
       };
     });
   }, [setState]);
@@ -141,10 +142,13 @@ export function useProgressionActions({
       const shouldOfferPowers = prev.currentFloor % 2 === 0;
       const powerChoices = shouldOfferPowers ? getPowerChoices(prev.player.powers, 2) : [];
 
+      // Clear combat log for new floor
+      const newCombatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
+
       return {
         ...prev,
         gamePhase: GAME_PHASE.FLOOR_COMPLETE,
-        combatLog: [], // Clear combat log on floor complete
+        combatLog: newCombatLog,
         shopItems: items,
         availablePowers: powerChoices,
       };
@@ -195,13 +199,16 @@ export function useProgressionActions({
       // Reset power cooldowns for fresh start on new floor
       player.powers = player.powers.map((p: Power) => ({ ...p, currentCooldown: 0 }));
 
+      const combatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
+      combatLog.add(`Entering Floor ${prev.currentFloor + 1}... Health and Mana restored!`);
+
       return {
         ...prev,
         player,
         currentFloor: prev.currentFloor + 1,
         currentRoom: 0,
         gamePhase: GAME_PHASE.COMBAT,
-        combatLog: [`Entering Floor ${prev.currentFloor + 1}... Health and Mana restored!`],
+        combatLog,
         shopItems: [],
         availablePowers: [],
         isTransitioning: false,
@@ -225,7 +232,7 @@ export function useProgressionActions({
       currentFloor: 1,
       currentRoom: 0,
       roomsPerFloor: 5,
-      combatLog: [],
+      combatLog: new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE),
       gamePhase: GAME_PHASE.MENU,
       isPaused: false,
       pauseReason: null,
@@ -265,6 +272,7 @@ export function useProgressionActions({
       player.lastPowerUsed = null;
       player.isDying = false; // Clear dying state on retry
 
+      prev.combatLog.add(`Retrying Floor ${prev.currentFloor}...`);
       return {
         ...prev,
         player,
@@ -274,7 +282,6 @@ export function useProgressionActions({
         isPaused: false,
         pauseReason: null,
         isTransitioning: false,
-        combatLog: [...prev.combatLog, `Retrying Floor ${prev.currentFloor}...`],
       };
     });
   }, [clearCombatTimeouts, setLastCombatEvent, setState]);
