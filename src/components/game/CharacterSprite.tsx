@@ -1,4 +1,4 @@
-import { Player, Enemy, ActiveBuff, StatusEffect } from '@/types/game';
+import { Player, Enemy, ActiveBuff, StatusEffect, EnemyIntent } from '@/types/game';
 import { PixelSprite } from './PixelSprite';
 import { PixelSlash, PixelSpell, PixelShield } from './BattleEffects';
 import { BATTLE_PHASE } from '@/constants/enums';
@@ -30,6 +30,9 @@ interface CharacterSpriteProps {
   // Status
   statusEffects?: StatusEffect[];
   activeBuffs?: ActiveBuff[];
+
+  // Enemy intent (for enemy sprites only)
+  intent?: EnemyIntent | null;
 }
 
 export function CharacterSprite({
@@ -48,6 +51,7 @@ export function CharacterSprite({
   isStunned = false,
   statusEffects = [],
   activeBuffs = [],
+  intent = null,
 }: CharacterSpriteProps) {
   const isHero = type === 'hero';
   const direction = isHero ? 'right' : 'left';
@@ -196,6 +200,18 @@ export function CharacterSprite({
           )}>
             {Math.max(0, Math.floor(currentHealth))}/{maxHealth}
           </div>
+
+          {/* Enemy intent - positioned above the HP bar container (desktop only) */}
+          {!isHero && intent && (
+            <div className="hidden sm:block absolute -top-9 left-1/2 -translate-x-1/2 bg-black/80 rounded px-1.5 py-0.5 border border-health/50 whitespace-nowrap">
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-base">{intent.icon}</span>
+                <span className="text-health/90 font-medium text-xs">
+                  {intent.type === 'ability' && intent.ability ? intent.ability.name : 'Attack'}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
