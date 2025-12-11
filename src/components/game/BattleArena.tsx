@@ -3,7 +3,7 @@ import { Player, Enemy } from '@/types/game';
 import { EffectsLayer, ScreenShake } from './BattleEffects';
 import { useBattleAnimation, CombatEvent } from '@/hooks/useBattleAnimation';
 import { cn } from '@/lib/utils';
-import { BATTLE_PHASE, BattlePhaseType } from '@/constants/enums';
+import { BattlePhaseType } from '@/constants/enums';
 import { CharacterSprite } from './CharacterSprite';
 import { EnemyIntentDisplay } from './EnemyIntentDisplay';
 import { BattleOverlay } from './BattleOverlay';
@@ -138,14 +138,7 @@ export function BattleArena({
 
           {/* Enemy */}
           {displayEnemy && (
-            <div
-              className={cn(
-                "absolute bottom-16",
-                displayEnemy.isDying && "transition-opacity duration-500 opacity-50",
-                phase === BATTLE_PHASE.ENTERING && "animate-enemy-enter"
-              )}
-              style={{ left: '75%', transform: 'translateX(-50%)' }}
-            >
+            <>
               <CharacterSprite
                 type="enemy"
                 character={displayEnemy}
@@ -159,14 +152,19 @@ export function BattleArena({
                 turnProgress={enemyProgress}
               />
 
-              {/* Enemy intent display */}
+              {/* Enemy intent display - positioned relative to enemy */}
               {displayEnemy.intent && (
-                <EnemyIntentDisplay
-                  intent={displayEnemy.intent}
-                  isDying={displayEnemy.isDying ?? false}
-                />
+                <div
+                  className="absolute bottom-16"
+                  style={{ left: '75%', transform: 'translateX(-50%)' }}
+                >
+                  <EnemyIntentDisplay
+                    intent={displayEnemy.intent}
+                    isDying={displayEnemy.isDying ?? false}
+                  />
+                </div>
               )}
-            </div>
+            </>
           )}
         </div>
 
