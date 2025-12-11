@@ -30,15 +30,16 @@ import { logPauseChange } from '@/utils/gameLogger';
 import { generateEventId } from '@/utils/eventId';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import type { PauseReasonType } from '@/constants/enums';
+import type { CombatEvent } from '@/hooks/useBattleAnimation';
 
 /**
  * Parameters for the combat actions hook
  */
 export interface UseCombatActionsParams {
   setState: React.Dispatch<React.SetStateAction<GameState>>;
-  setLastCombatEvent: (event: any) => void;
+  setLastCombatEvent: (event: CombatEvent | null) => void;
   setDroppedItem: (item: Item | null) => void;
-  scheduleCombatEvent: (event: any, delay: number) => void;
+  scheduleCombatEvent: (event: CombatEvent, delay: number) => void;
   combatSpeed: number;
   enemyDeathProcessedRef: React.MutableRefObject<string | null>;
   playerDeathProcessedRef: React.MutableRefObject<boolean>;

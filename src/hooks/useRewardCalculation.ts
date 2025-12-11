@@ -96,7 +96,7 @@ export function processLevelUp(player: Player): {
 } {
   const logs: string[] = [];
   let leveledUp = false;
-  let updatedPlayer = deepClonePlayer(player);
+  const updatedPlayer = deepClonePlayer(player);
 
   while (updatedPlayer.experience >= updatedPlayer.experienceToNext) {
     updatedPlayer.experience -= updatedPlayer.experienceToNext;

@@ -226,7 +226,7 @@ export function usePowerActions(context: PowerActivationContext) {
         currentEnemy: enemy,
       };
     });
-  }, [setState, setLastCombatEvent, scheduleCombatEvent, enemyDeathProcessedRef, combatSpeed]);
+  }, [setState, setLastCombatEvent, scheduleCombatEvent, enemyDeathProcessedRef]);
 
   return {
     usePower,
