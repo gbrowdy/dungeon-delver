@@ -9,6 +9,7 @@ npm run dev      # Start development server with HMR
 npm run build    # Production build
 npm run lint     # Run ESLint
 npm run preview  # Preview production build
+npx vitest run   # Run unit tests
 ```
 
 ## Tech Stack
@@ -19,6 +20,7 @@ npm run preview  # Preview production build
 - **Routing**: react-router-dom v6
 - **Forms**: React Hook Form + Zod validation
 - **Icons**: Lucide React
+- **Testing**: Vitest + jsdom
 
 ## Project Structure
 
@@ -52,7 +54,7 @@ On death: `defeat` screen with upgrade options, then retry (same floor) or aband
 
 ### State Management
 
-**Central State**: `useGameState()` hook (975 lines) orchestrates all game logic by composing:
+**Central State**: `useGameState()` hook (340 lines) orchestrates all game logic by composing:
 - `useCombatLoop` - Attack timing with separate hero/enemy timers
 - `useBattleAnimation` - Sprite states, effects, battle phases
 - `useCombatTimers` - HP/MP regen, power cooldowns (independent 500ms tick)
@@ -60,6 +62,11 @@ On death: `defeat` screen with upgrade options, then retry (same floor) or aband
 - `useRoomTransitions` - Floor/room progression, death handling
 - `useItemActions` - Item equipping, power learning
 - `useEventQueue` - Animation event scheduling (prevents setTimeout cascades)
+- `useCombatActions` - Hero attack, enemy attack, block actions
+- `usePowerActions` - Power activation and cooldown management
+- `useRewardCalculation` - XP, gold, item drops, level-up processing
+- `useItemEffects` - Centralized item effect processing
+- `usePauseControl` - Pause/unpause state management
 
 **Combat Context**: `CombatContext.tsx` provides typed access to combat state for UI components:
 ```tsx
@@ -70,13 +77,19 @@ const { player, enemy, combatState, actions } = useCombat();
 
 | File | Purpose |
 |------|---------|
-| `hooks/useGameState.ts` | Central game state orchestration |
+| `hooks/useGameState.ts` | Central game state orchestration (340 lines) |
+| `hooks/useCombatActions.ts` | Hero/enemy attack logic (497 lines) |
+| `hooks/usePowerActions.ts` | Power activation (232 lines) |
+| `hooks/useRewardCalculation.ts` | XP/gold/item drops (207 lines) |
+| `hooks/useItemEffects.ts` | Item effect processing (131 lines) |
+| `hooks/combatActionHelpers.ts` | Combat calculation helpers (322 lines) |
 | `hooks/useCombatLoop.ts` | Tick-based combat timing |
-| `hooks/useBattleAnimation.ts` | Animation state machine |
+| `hooks/useBattleAnimation.ts` | Animation state machine + CombatEvent types |
 | `contexts/CombatContext.tsx` | Combat UI state provider |
 | `types/game.ts` | All TypeScript interfaces |
 | `components/game/Game.tsx` | Phase router |
-| `components/game/BattleArena.tsx` | Battle visualization |
+| `components/game/BattleArena.tsx` | Battle visualization (220 lines) |
+| `components/game/CombatErrorBoundary.tsx` | Error recovery for combat |
 | `components/game/FloorCompleteScreen.tsx` | Rewards/upgrades UI |
 
 ### Data Files
@@ -206,3 +219,61 @@ Path aliases: `@/components`, `@/lib`, `@/hooks`, `@/types`, `@/data`, `@/consta
 2. Game components go in `components/game/`
 3. Use `cn()` from `@/lib/utils` for conditional classes
 4. Follow responsive patterns from `constants/responsive.ts`
+
+## Utility Functions
+
+### State Cloning (`utils/stateUtils.ts`)
+Always use deep clone utilities when modifying player/enemy state to prevent mutation bugs:
+```typescript
+import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+
+const updatedPlayer = deepClonePlayer(player);
+updatedPlayer.currentStats.health -= damage;
+```
+
+### Combat Log (`utils/circularBuffer.ts`)
+Combat log uses a circular buffer (100 entries max) to prevent unbounded memory growth:
+```typescript
+state.combatLog.add('Player attacks for 25 damage!');
+const logs = state.combatLog.toArray(); // For rendering
+```
+
+### Item Effects (`hooks/useItemEffects.ts`)
+Centralized item effect processing - use `processItemEffects()` instead of inline effect handling:
+```typescript
+import { processItemEffects } from '@/hooks/useItemEffects';
+
+const result = processItemEffects({
+  player,
+  items: player.equipment,
+  trigger: ITEM_EFFECT_TRIGGER.ON_HIT,
+  enemy,
+  damage,
+});
+```
+
+## Testing
+
+Unit tests are in `__tests__/` directories adjacent to the code they test:
+- `src/hooks/__tests__/useItemEffects.test.ts` - Item effect processing tests
+- `src/utils/__tests__/stateUtils.test.ts` - Deep clone immutability tests
+
+Run tests with `npx vitest run` or `npx vitest` for watch mode.
+
+## Task Documents
+
+**IMPORTANT**: Task planning documents, code reviews, and improvement tracking files should be stored in the `tasks/` directory, which is gitignored.
+
+```
+tasks/                           # Local only - NOT committed to git
+├── CODE_ROBUSTNESS_TASKS.md    # Refactoring task tracking
+├── MOBILE_IMPROVEMENTS.md       # Mobile UI improvements
+├── typescript-review.md         # Code review documents
+└── ...                          # Other planning/review docs
+```
+
+### Guidelines for Task Documents:
+1. **Never commit task documents** - They are for local development tracking only
+2. Store all improvement plans, code reviews, and task lists in `tasks/`
+3. The `tasks/` directory is in `.gitignore` and won't be pushed to remote
+4. Update CLAUDE.md if task work results in architectural changes that future sessions need to know about
