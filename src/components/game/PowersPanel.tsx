@@ -1,0 +1,162 @@
+import { Shield } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useCombat } from '@/contexts/CombatContext';
+import { PowerButton } from './PowerButton';
+import { COMBAT_BALANCE } from '@/constants/balance';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+/**
+ * PowersPanel - Displays mana bar, block button, power buttons, and combo indicator.
+ * Styled with pixel art / 8-bit retro aesthetic.
+ */
+export function PowersPanel() {
+  const { player, combatState, actions } = useCombat();
+  const { canUsePowers } = combatState;
+
+  return (
+    <div className="pixel-panel rounded-lg p-2 sm:p-3">
+      {/* Mana bar header */}
+      <ManaBar
+        current={player.currentStats.mana}
+        max={player.currentStats.maxMana}
+      />
+
+      {/* Powers grid */}
+      <div className="flex flex-wrap gap-1.5">
+        {/* Block Button */}
+        <BlockButton
+          isBlocking={player.isBlocking}
+          currentMana={player.currentStats.mana}
+          canUse={canUsePowers}
+          onActivate={actions.activateBlock}
+        />
+
+        {/* Power buttons */}
+        {player.powers.map(power => (
+          <PowerButton
+            key={power.id}
+            power={power}
+            currentMana={player.currentStats.mana}
+            onUse={() => actions.usePower(power.id)}
+            disabled={!canUsePowers}
+          />
+        ))}
+      </div>
+
+      {/* Combo indicator */}
+      {player.comboCount > 0 && (
+        <ComboIndicator count={player.comboCount} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * ManaBar - Shows current mana with a pixel-styled progress bar.
+ */
+interface ManaBarProps {
+  current: number;
+  max: number;
+}
+
+function ManaBar({ current, max }: ManaBarProps) {
+  const percentage = (current / max) * 100;
+
+  return (
+    <div className="flex items-center gap-2 mb-2">
+      <h3 className="pixel-text text-pixel-xs text-slate-400">Powers</h3>
+      <div className="flex-1 flex items-center gap-1.5">
+        <span className="pixel-text text-pixel-xs text-mana font-bold">MP</span>
+        <div
+          className="flex-1 max-w-32 pixel-progress-bar h-1.5 rounded overflow-hidden"
+          role="progressbar"
+          aria-valuenow={Math.floor(current)}
+          aria-valuemin={0}
+          aria-valuemax={max}
+          aria-label={`Mana: ${Math.floor(current)} of ${max}`}
+        >
+          <div
+            className="pixel-progress-fill h-full bg-gradient-to-r from-mana to-mana/80 transition-all duration-300"
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+        <span className="pixel-text text-pixel-xs text-slate-400">
+          {Math.floor(current)}/{max}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * BlockButton - Pixel-styled button to activate the block ability.
+ */
+interface BlockButtonProps {
+  isBlocking: boolean;
+  currentMana: number;
+  canUse: boolean;
+  onActivate: () => void;
+}
+
+function BlockButton({ isBlocking, currentMana, canUse, onActivate }: BlockButtonProps) {
+  const canAfford = currentMana >= COMBAT_BALANCE.BLOCK_MANA_COST;
+  const isDisabled = !canUse || isBlocking || !canAfford;
+  const canActivate = !isDisabled;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            className={cn(
+              'pixel-panel-dark flex flex-col items-center gap-0.5 p-2 min-w-[70px] sm:min-w-[80px] min-h-[56px] rounded border transition-all',
+              canActivate && 'border-info/40 hover:border-info/70 hover:bg-info/10 cursor-pointer',
+              !canActivate && 'opacity-50 cursor-not-allowed border-slate-700/30',
+              isBlocking && 'bg-info/20 border-info/60'
+            )}
+            onClick={onActivate}
+            disabled={isDisabled}
+            aria-label={`Block: Reduce damage by 50% from next attack. Costs ${COMBAT_BALANCE.BLOCK_MANA_COST} mana.${isBlocking ? ' Currently active.' : ''}`}
+          >
+            <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-info" aria-hidden="true" />
+            <span className="pixel-text text-pixel-2xs font-medium text-slate-200">Block</span>
+            <span className="pixel-text text-pixel-2xs text-mana">
+              {COMBAT_BALANCE.BLOCK_MANA_COST} MP
+            </span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="pixel-panel">
+          <p className="pixel-text text-pixel-xs">Reduce damage by 50% from next attack</p>
+          <p className="pixel-text text-pixel-2xs text-mana mt-1">{COMBAT_BALANCE.BLOCK_MANA_COST} MP</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+/**
+ * ComboIndicator - Shows the current combo multiplier with pixel styling.
+ */
+interface ComboIndicatorProps {
+  count: number;
+}
+
+function ComboIndicator({ count }: ComboIndicatorProps) {
+  const bonusDamage = count * 10;
+
+  return (
+    <div
+      className="mt-2 pixel-text text-pixel-sm text-warning animate-pulse flex items-center gap-1"
+      role="status"
+      aria-live="polite"
+    >
+      <span className="text-sm">🔥</span>
+      <span>{count}x Combo Active (+{bonusDamage}% damage)</span>
+    </div>
+  );
+}

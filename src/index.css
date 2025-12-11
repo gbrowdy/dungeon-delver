@@ -1,0 +1,973 @@
+/* Import Press Start 2P font for pixel art text */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 240 10% 8%;
+    --foreground: 45 30% 90%;
+
+    --card: 240 10% 12%;
+    --card-foreground: 45 30% 90%;
+
+    --popover: 240 10% 12%;
+    --popover-foreground: 45 30% 90%;
+
+    --primary: 35 90% 55%;
+    --primary-foreground: 240 10% 8%;
+
+    --secondary: 240 10% 18%;
+    --secondary-foreground: 45 30% 90%;
+
+    --muted: 240 10% 18%;
+    --muted-foreground: 45 15% 65%;
+
+    --accent: 280 60% 50%;
+    --accent-foreground: 45 30% 90%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 45 30% 90%;
+
+    --border: 240 10% 20%;
+    --input: 240 10% 20%;
+    --ring: 35 90% 55%;
+
+    --radius: 0.5rem;
+
+    /* Game-specific semantic colors */
+    --health: 0 84% 60%;
+    --health-foreground: 0 0% 100%;
+    --mana: 221 83% 53%;
+    --mana-foreground: 0 0% 100%;
+    --xp: 45 93% 47%;
+    --xp-foreground: 0 0% 0%;
+    --gold: 48 96% 53%;
+    --gold-foreground: 0 0% 0%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 0 0% 0%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+
+    /* Rarity colors */
+    --rarity-common: 0 0% 60%;
+    --rarity-uncommon: 142 76% 36%;
+    --rarity-rare: 217 91% 60%;
+    --rarity-epic: 280 60% 50%;
+    --rarity-legendary: 48 96% 53%;
+
+    --sidebar-background: 240 10% 10%;
+    --sidebar-foreground: 45 30% 90%;
+    --sidebar-primary: 35 90% 55%;
+    --sidebar-primary-foreground: 240 10% 8%;
+    --sidebar-accent: 240 10% 18%;
+    --sidebar-accent-foreground: 45 30% 90%;
+    --sidebar-border: 240 10% 20%;
+    --sidebar-ring: 35 90% 55%;
+  }
+
+  .dark {
+    --background: 240 10% 8%;
+    --foreground: 45 30% 90%;
+
+    --card: 240 10% 12%;
+    --card-foreground: 45 30% 90%;
+
+    --popover: 240 10% 12%;
+    --popover-foreground: 45 30% 90%;
+
+    --primary: 35 90% 55%;
+    --primary-foreground: 240 10% 8%;
+
+    --secondary: 240 10% 18%;
+    --secondary-foreground: 45 30% 90%;
+
+    --muted: 240 10% 18%;
+    --muted-foreground: 45 15% 65%;
+
+    --accent: 280 60% 50%;
+    --accent-foreground: 45 30% 90%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 45 30% 90%;
+
+    --border: 240 10% 20%;
+    --input: 240 10% 20%;
+    --ring: 35 90% 55%;
+
+    /* Game-specific semantic colors (dark) */
+    --health: 0 84% 60%;
+    --health-foreground: 0 0% 100%;
+    --mana: 221 83% 53%;
+    --mana-foreground: 0 0% 100%;
+    --xp: 45 93% 47%;
+    --xp-foreground: 0 0% 0%;
+    --gold: 48 96% 53%;
+    --gold-foreground: 0 0% 0%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 0 0% 0%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+
+    /* Rarity colors (dark) */
+    --rarity-common: 0 0% 60%;
+    --rarity-uncommon: 142 76% 36%;
+    --rarity-rare: 217 91% 60%;
+    --rarity-epic: 280 60% 50%;
+    --rarity-legendary: 48 96% 53%;
+
+    --sidebar-background: 240 10% 10%;
+    --sidebar-foreground: 45 30% 90%;
+    --sidebar-primary: 35 90% 55%;
+    --sidebar-primary-foreground: 240 10% 8%;
+    --sidebar-accent: 240 10% 18%;
+    --sidebar-accent-foreground: 45 30% 90%;
+    --sidebar-border: 240 10% 20%;
+    --sidebar-ring: 35 90% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    /* Base font size - larger for better readability with pixel fonts */
+    font-size: 16px;
+  }
+
+  /* Scale up on larger desktop screens */
+  @media (min-width: 1024px) {
+    html {
+      font-size: 18px;
+    }
+  }
+
+  @media (min-width: 1440px) {
+    html {
+      font-size: 20px;
+    }
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    /* Minimum readable size for pixel fonts */
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+}
+
+/* Landscape orientation handling for mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Reduce battle arena height in landscape */
+  .battle-arena-landscape {
+    @apply h-36;
+  }
+
+  /* Compact stats grid in landscape */
+  .stats-landscape {
+    @apply grid-cols-6;
+  }
+
+  /* Reduce vertical spacing in landscape */
+  .space-landscape {
+    @apply space-y-2;
+  }
+}
+
+/* Ensure minimum touch targets */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  .touchable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Enhanced focus indicators for accessibility */
+*:focus-visible {
+  outline: 3px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --ring: 45 100% 60%;
+    --muted-foreground: 45 20% 70%;
+  }
+
+  *:focus-visible {
+    outline-width: 4px;
+    outline-offset: 3px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Battle Arena Animations */
+@keyframes scroll-ground {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes damage-float {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(-40px);
+  }
+}
+
+@keyframes slash {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5) rotate(-15deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.2) rotate(15deg);
+  }
+}
+
+@keyframes slash-draw {
+  0% {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes spell-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+}
+
+@keyframes particle {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--particle-angle, 0deg)) translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--particle-angle, 0deg)) translateX(40px);
+    opacity: 0;
+  }
+}
+
+@keyframes shake-light {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+@keyframes shake-medium {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-4px); }
+  30% { transform: translateX(4px); }
+  50% { transform: translateX(-4px); }
+  70% { transform: translateX(4px); }
+  90% { transform: translateX(-2px); }
+}
+
+@keyframes shake-heavy {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translate(-6px, 2px); }
+  20% { transform: translate(6px, -2px); }
+  30% { transform: translate(-6px, 2px); }
+  40% { transform: translate(6px, -2px); }
+  50% { transform: translate(-4px, 1px); }
+  60% { transform: translate(4px, -1px); }
+  70% { transform: translate(-4px, 1px); }
+  80% { transform: translate(4px, -1px); }
+  90% { transform: translate(-2px, 0); }
+}
+
+@keyframes flash {
+  0% { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+
+@keyframes pulse-fast {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes sprite-hit {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(2); }
+}
+
+@keyframes sprite-walk {
+  0%, 50% { transform: translateY(0); }
+  25% { transform: translateY(-2px); }
+  75% { transform: translateY(-2px); }
+}
+
+@keyframes enemy-enter {
+  0% {
+    transform: translateX(-50%) translateX(200%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes floor-complete {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animation utility classes - using CSS variables from animation.ts */
+/* Variables are injected at runtime: --anim-ground-scroll-cycle, --anim-damage-float, etc. */
+.animate-scroll-ground {
+  animation: scroll-ground var(--anim-ground-scroll-cycle, 3s) linear infinite;
+}
+
+.animate-damage-float {
+  animation: damage-float var(--anim-damage-float, 1s) ease-out forwards;
+}
+
+.animate-slash {
+  animation: slash var(--anim-slash-effect, 0.3s) ease-out forwards;
+}
+
+.animate-slash-draw {
+  animation: slash-draw var(--anim-slash-effect, 0.3s) ease-out forwards;
+}
+
+.animate-spell-burst {
+  animation: spell-burst var(--anim-spell-burst, 0.5s) ease-out forwards;
+}
+
+.animate-particle {
+  animation: particle var(--anim-spell-burst, 0.5s) ease-out forwards;
+}
+
+.animate-shake-light {
+  animation: shake-light var(--anim-screen-shake-light, 0.2s) ease-in-out;
+}
+
+.animate-shake-medium {
+  animation: shake-medium var(--anim-screen-shake-medium, 0.3s) ease-in-out;
+}
+
+.animate-shake-heavy {
+  animation: shake-heavy var(--anim-screen-shake-heavy, 0.4s) ease-in-out;
+}
+
+.animate-flash {
+  animation: flash var(--anim-hit-flash, 0.1s) ease-out forwards;
+}
+
+.animate-pulse-fast {
+  animation: pulse-fast 0.3s ease-in-out infinite;
+}
+
+.animate-sprite-hit {
+  animation: sprite-hit var(--anim-hit-flash, 0.1s) ease-in-out;
+}
+
+.animate-sprite-walk {
+  animation: sprite-walk 0.4s ease-in-out infinite;
+}
+
+.animate-enemy-enter {
+  animation: enemy-enter var(--anim-entering-phase, 0.8s) ease-out both;
+}
+
+.animate-floor-complete {
+  animation: floor-complete 0.6s ease-out forwards;
+  background: radial-gradient(circle, rgba(234,179,8,0.2) 0%, transparent 70%);
+}
+
+/* Hero attack swipe effect */
+@keyframes hero-swipe {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px) rotate(-45deg) scale(0.5);
+  }
+  30% {
+    opacity: 1;
+    transform: translateX(10px) rotate(15deg) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(30px) rotate(30deg) scale(0.8);
+  }
+}
+
+.animate-hero-swipe {
+  animation: hero-swipe var(--anim-hero-attack-duration, 0.4s) ease-out forwards;
+}
+
+/* Enemy attack swipe effect */
+@keyframes enemy-swipe {
+  0% {
+    opacity: 0;
+    transform: translateX(20px) rotate(45deg) scale(0.5);
+  }
+  30% {
+    opacity: 1;
+    transform: translateX(-10px) rotate(-15deg) scale(1.3);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-30px) rotate(-30deg) scale(0.8);
+  }
+}
+
+.animate-enemy-swipe {
+  animation: enemy-swipe var(--anim-enemy-attack-duration, 0.5s) ease-out forwards;
+}
+
+/* Pixel art weapon double-swing animation */
+/* Weapon swings from upward (-45deg) to horizontal (0deg) twice */
+@keyframes weapon-double-swing {
+  /* First swing */
+  0% {
+    transform: rotate(-45deg);
+  }
+  20% {
+    transform: rotate(10deg);
+  }
+  /* Return for second swing */
+  40% {
+    transform: rotate(-35deg);
+  }
+  /* Second swing */
+  60% {
+    transform: rotate(15deg);
+  }
+  /* Hold briefly then fade */
+  80% {
+    transform: rotate(10deg);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(10deg);
+    opacity: 0;
+  }
+}
+
+.animate-weapon-double-swing {
+  animation: weapon-double-swing 0.45s ease-in-out forwards;
+}
+
+/* Impact flash */
+@keyframes weapon-flash {
+  0%, 15% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  35% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  55% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  80% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-weapon-flash {
+  animation: weapon-flash 0.45s ease-out forwards;
+}
+
+/* Spell animations */
+@keyframes spell-fireball {
+  0% { transform: translateX(-30px) scale(0.5); opacity: 0; }
+  20% { transform: translateX(0) scale(1); opacity: 1; }
+  80% { transform: translateX(40px) scale(1.1); opacity: 1; }
+  100% { transform: translateX(60px) scale(0.8); opacity: 0; }
+}
+.animate-spell-fireball { animation: spell-fireball 0.5s ease-out forwards; }
+
+@keyframes flame-flicker {
+  0%, 100% { opacity: 0.8; transform: scaleY(1); }
+  50% { opacity: 1; transform: scaleY(1.2); }
+}
+.animate-flame-flicker { animation: flame-flicker 0.15s ease-in-out infinite; }
+
+@keyframes spell-lightning {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  20% { opacity: 0.3; }
+  30% { opacity: 1; }
+  50% { opacity: 0.5; }
+  60% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.animate-spell-lightning { animation: spell-lightning 0.4s ease-out forwards; }
+
+@keyframes lightning-flash {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.6; filter: brightness(2); }
+}
+.animate-lightning-flash { animation: lightning-flash 0.1s ease-in-out infinite; }
+
+@keyframes spell-ice {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  30% { transform: scale(1) rotate(20deg); opacity: 1; }
+  70% { transform: scale(1.1) rotate(-10deg); opacity: 1; }
+  100% { transform: scale(0.9) rotate(0deg); opacity: 0; }
+}
+.animate-spell-ice { animation: spell-ice 0.5s ease-out forwards; }
+
+@keyframes ice-shard {
+  0% { transform: rotate(var(--rotation, 0deg)) scaleY(0); opacity: 0; }
+  40% { transform: rotate(var(--rotation, 0deg)) scaleY(1.2); opacity: 1; }
+  100% { transform: rotate(var(--rotation, 0deg)) scaleY(0.8); opacity: 0; }
+}
+.animate-ice-shard { animation: ice-shard 0.4s ease-out forwards; }
+
+@keyframes spell-poison {
+  0% { opacity: 0; transform: scale(0.5); }
+  30% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.3); }
+}
+.animate-spell-poison { animation: spell-poison 0.6s ease-out forwards; }
+
+@keyframes poison-bubble {
+  0% { transform: scale(0) translateY(0); opacity: 0; }
+  30% { transform: scale(1) translateY(-5px); opacity: 0.8; }
+  70% { transform: scale(1.2) translateY(-10px); opacity: 0.6; }
+  100% { transform: scale(0.8) translateY(-15px); opacity: 0; }
+}
+.animate-poison-bubble { animation: poison-bubble 0.5s ease-out forwards; }
+
+@keyframes spell-holy {
+  0% { opacity: 0; transform: scale(0.3); }
+  30% { opacity: 1; transform: scale(1); }
+  70% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1.3); }
+}
+.animate-spell-holy { animation: spell-holy 0.5s ease-out forwards; }
+
+@keyframes holy-ray {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--rotation, 0deg)) scaleY(0); }
+  30% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rotation, 0deg)) scaleY(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--rotation, 0deg)) scaleY(1.5); }
+}
+.animate-holy-ray { animation: holy-ray 0.4s ease-out forwards; }
+
+@keyframes spell-dark {
+  0% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+  100% { opacity: 0; transform: scale(1.2) rotate(360deg); }
+}
+.animate-spell-dark { animation: spell-dark 0.5s ease-out forwards; }
+
+@keyframes dark-swirl {
+  0% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(90deg); }
+  100% { opacity: 0; transform: scale(0.5) rotate(180deg); }
+}
+.animate-dark-swirl { animation: dark-swirl 0.4s ease-out forwards; }
+
+@keyframes spell-earth {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.animate-spell-earth { animation: spell-earth 0.5s ease-out forwards; }
+
+@keyframes earth-rock {
+  0% { transform: translateY(20px) scale(0); opacity: 0; }
+  30% { transform: translateY(0) scale(1.2); opacity: 1; }
+  60% { transform: translateY(-10px) scale(1); opacity: 1; }
+  100% { transform: translateY(-20px) scale(0.8); opacity: 0; }
+}
+.animate-earth-rock { animation: earth-rock 0.4s ease-out forwards; }
+
+@keyframes spell-buff {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.animate-spell-buff { animation: spell-buff 0.6s ease-out forwards; }
+
+@keyframes buff-particle {
+  0% { transform: translateY(0) scale(0); opacity: 0; }
+  30% { transform: translateY(-10px) scale(1); opacity: 1; }
+  70% { transform: translateY(-30px) scale(0.8); opacity: 0.8; }
+  100% { transform: translateY(-50px) scale(0.5); opacity: 0; }
+}
+.animate-buff-particle { animation: buff-particle 0.5s ease-out forwards; }
+
+/* Shield effect animations */
+@keyframes shield-appear {
+  0% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.animate-shield-appear { animation: shield-appear 0.3s ease-out forwards; }
+
+@keyframes shield-pulse {
+  0%, 100% { opacity: 0.9; filter: brightness(1); }
+  50% { opacity: 1; filter: brightness(1.2); }
+}
+.animate-shield-pulse { animation: shield-pulse 1.5s ease-in-out infinite; }
+
+@keyframes shield-outline {
+  0% { stroke-dasharray: 0 300; stroke-dashoffset: 0; }
+  100% { stroke-dasharray: 300 0; stroke-dashoffset: 0; }
+}
+.animate-shield-outline { animation: shield-outline 0.4s ease-out forwards; }
+
+@keyframes shield-particle {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--rotation, 0deg)) translateY(-35px) scale(0); }
+  50% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--rotation, 0deg)) translateY(-45px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--rotation, 0deg)) translateY(-55px) scale(0.5); }
+}
+.animate-shield-particle { animation: shield-particle 1s ease-out infinite; }
+
+@keyframes shield-hit {
+  0% { transform: scale(1); filter: brightness(1); }
+  25% { transform: scale(1.15); filter: brightness(1.5); }
+  50% { transform: scale(0.95); filter: brightness(1.2); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+.animate-shield-hit { animation: shield-hit 0.3s ease-out forwards; }
+
+/* Ripple effect for buttons */
+@keyframes ripple {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.5;
+  }
+  100% {
+    width: 200px;
+    height: 200px;
+    opacity: 0;
+  }
+}
+
+.animate-ripple {
+  animation: ripple 0.6s ease-out forwards;
+}
+
+/* ================================
+   PIXEL ART / 8-BIT RETRO STYLES
+   ================================ */
+
+/* Pixel art font classes */
+.pixel-font {
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+}
+
+.pixel-title {
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  text-shadow:
+    3px 3px 0 #1a1a2e,
+    -1px -1px 0 #1a1a2e,
+    1px -1px 0 #1a1a2e,
+    -1px 1px 0 #1a1a2e;
+  letter-spacing: 0.05em;
+}
+
+.pixel-text {
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+}
+
+/* Pixel glow effects */
+.pixel-glow {
+  filter: drop-shadow(0 0 8px rgba(251, 146, 60, 0.6))
+          drop-shadow(0 0 20px rgba(251, 146, 60, 0.3));
+}
+
+.pixel-glow-red {
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6))
+          drop-shadow(0 0 20px rgba(239, 68, 68, 0.3));
+}
+
+.pixel-glow-green {
+  filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.6))
+          drop-shadow(0 0 20px rgba(34, 197, 94, 0.3));
+}
+
+.pixel-glow-blue {
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6))
+          drop-shadow(0 0 20px rgba(59, 130, 246, 0.3));
+}
+
+.pixel-glow-gold {
+  filter: drop-shadow(0 0 8px rgba(234, 179, 8, 0.6))
+          drop-shadow(0 0 20px rgba(234, 179, 8, 0.3));
+}
+
+/* Pixel art panel/card styling */
+.pixel-panel {
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+  border: 2px solid rgba(100, 100, 120, 0.3);
+  image-rendering: pixelated;
+  box-shadow:
+    inset -2px -2px 0 rgba(0, 0, 0, 0.4),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.05);
+}
+
+.pixel-panel-dark {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(0, 0, 0, 0.6) 100%);
+  border: 2px solid rgba(100, 100, 120, 0.2);
+  box-shadow:
+    inset -2px -2px 0 rgba(0, 0, 0, 0.5),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.02);
+}
+
+/* Pixel art button styling */
+.pixel-button {
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  image-rendering: pixelated;
+  box-shadow:
+    inset -2px -2px 0 rgba(0, 0, 0, 0.3),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.2);
+  border-bottom: 4px solid rgba(0, 0, 0, 0.4);
+  transition: all 0.1s ease;
+}
+
+.pixel-button:hover {
+  transform: translateY(-1px);
+}
+
+.pixel-button:active {
+  border-bottom-width: 2px;
+  transform: translateY(2px);
+}
+
+/* Pixel diamond divider shape */
+.pixel-diamond {
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+}
+
+/* Pixel stat box */
+.pixel-stat-box {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(100, 100, 120, 0.3);
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-size: 0.625rem; /* 10px at base, scales with html font size */
+}
+
+/* Pixel corner decorations */
+.pixel-corners {
+  position: relative;
+}
+
+.pixel-corners::before,
+.pixel-corners::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.pixel-corners::before {
+  top: -4px;
+  left: -4px;
+}
+
+.pixel-corners::after {
+  top: -4px;
+  right: -4px;
+}
+
+/* Pixel art torch animations */
+@keyframes torch-flicker {
+  0%, 100% {
+    box-shadow:
+      0 -4px 0 0 #ffaa00,
+      0 -8px 0 0 #ffdd00,
+      4px -4px 0 0 #ff8800,
+      -4px -4px 0 0 #ff8800;
+    opacity: 1;
+  }
+  25% {
+    box-shadow:
+      0 -4px 0 0 #ffaa00,
+      0 -8px 0 0 #ffdd00,
+      4px -4px 0 0 #ff8800;
+    opacity: 0.9;
+  }
+  50% {
+    box-shadow:
+      0 -4px 0 0 #ffaa00,
+      4px -4px 0 0 #ff8800,
+      -4px -4px 0 0 #ff8800;
+    opacity: 1;
+  }
+  75% {
+    box-shadow:
+      0 -4px 0 0 #ffaa00,
+      0 -8px 0 0 #ffdd00,
+      -4px -4px 0 0 #ff8800;
+    opacity: 0.95;
+  }
+}
+
+.pixel-torch-flame {
+  width: 8px;
+  height: 12px;
+  background: #ff6b00;
+  animation: torch-flicker 1.5s infinite;
+  image-rendering: pixelated;
+}
+
+/* Pixel star twinkle animation */
+@keyframes pixel-twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.pixel-star {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #ffd700;
+  box-shadow:
+    4px 0 0 0 #ffd700,
+    -4px 0 0 0 #ffd700,
+    0 4px 0 0 #ffd700,
+    0 -4px 0 0 #ffd700;
+  animation: pixel-twinkle 3s infinite;
+}
+
+/* Pixel progress bar */
+.pixel-progress-bar {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid rgba(100, 100, 120, 0.3);
+  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+.pixel-progress-fill {
+  height: 100%;
+  image-rendering: pixelated;
+  box-shadow: inset -2px -2px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Pixel border animation */
+@keyframes pixel-border-pulse {
+  0%, 100% {
+    border-color: rgba(251, 146, 60, 0.5);
+    box-shadow: 0 0 10px rgba(251, 146, 60, 0.3);
+  }
+  50% {
+    border-color: rgba(251, 146, 60, 0.8);
+    box-shadow: 0 0 20px rgba(251, 146, 60, 0.5);
+  }
+}
+
+.pixel-border-pulse {
+  animation: pixel-border-pulse 2s ease-in-out infinite;
+}
+
+/* Scanline overlay effect (optional retro CRT look) */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1) 0px,
+    rgba(0, 0, 0, 0.1) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+}
+
+/* Reduced motion support for pixel art animations */
+@media (prefers-reduced-motion: reduce) {
+  .pixel-torch-flame,
+  .pixel-star,
+  .pixel-border-pulse {
+    animation: none;
+  }
+}

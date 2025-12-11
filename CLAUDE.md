@@ -1,0 +1,208 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Build & Development Commands
+
+```bash
+npm run dev      # Start development server with HMR
+npm run build    # Production build
+npm run lint     # Run ESLint
+npm run preview  # Preview production build
+```
+
+## Tech Stack
+
+- **Framework**: React 18.3 + TypeScript 5.8 + Vite 5.4
+- **Styling**: Tailwind CSS 3.4 with shadcn/ui components (40+ components)
+- **State**: React hooks + Context API (`useGameState` orchestrates, `CombatContext` for UI)
+- **Routing**: react-router-dom v6
+- **Forms**: React Hook Form + Zod validation
+- **Icons**: Lucide React
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── game/           # Game-specific components (21 files)
+│   └── ui/             # shadcn/ui component library
+├── contexts/           # React Context providers
+├── constants/          # Configuration, balance, animations, responsive
+├── data/               # Game content (classes, enemies, powers, items)
+├── hooks/              # Custom React hooks (18 files)
+├── lib/                # Utilities (utils.ts with cn())
+├── pages/              # Page-level components
+├── types/              # TypeScript type definitions
+└── utils/              # Utility functions
+```
+
+## Architecture
+
+This is a roguelike browser game with auto-combat mechanics.
+
+### Game Flow
+
+Phases defined in `GameState.gamePhase`:
+```
+menu → class-select → combat → floor-complete → combat → ... → defeat
+```
+
+On death: `defeat` screen with upgrade options, then retry (same floor) or abandon (restart).
+
+### State Management
+
+**Central State**: `useGameState()` hook (975 lines) orchestrates all game logic by composing:
+- `useCombatLoop` - Attack timing with separate hero/enemy timers
+- `useBattleAnimation` - Sprite states, effects, battle phases
+- `useCombatTimers` - HP/MP regen, power cooldowns (independent 500ms tick)
+- `useCharacterSetup` - Class selection, stat calculation
+- `useRoomTransitions` - Floor/room progression, death handling
+- `useItemActions` - Item equipping, power learning
+- `useEventQueue` - Animation event scheduling (prevents setTimeout cascades)
+
+**Combat Context**: `CombatContext.tsx` provides typed access to combat state for UI components:
+```tsx
+const { player, enemy, combatState, actions } = useCombat();
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `hooks/useGameState.ts` | Central game state orchestration |
+| `hooks/useCombatLoop.ts` | Tick-based combat timing |
+| `hooks/useBattleAnimation.ts` | Animation state machine |
+| `contexts/CombatContext.tsx` | Combat UI state provider |
+| `types/game.ts` | All TypeScript interfaces |
+| `components/game/Game.tsx` | Phase router |
+| `components/game/BattleArena.tsx` | Battle visualization |
+| `components/game/FloorCompleteScreen.tsx` | Rewards/upgrades UI |
+
+### Data Files
+
+| File | Contents |
+|------|----------|
+| `data/classes.ts` | 4 classes: Warrior, Mage, Rogue, Paladin |
+| `data/enemies.ts` | Enemy generation with tier/ability system |
+| `data/powers.ts` | Unlockable powers with upgrade system |
+| `data/items.ts` | Equipment generation by type/rarity |
+
+### Constants Files
+
+| File | Contents |
+|------|----------|
+| `constants/game.ts` | Combat timing, level scaling, floor config |
+| `constants/balance.ts` | Combat balance, rewards, item effects |
+| `constants/enums.ts` | Game phases, status effects, rarities |
+| `constants/animation.ts` | Animation timing (30+ values as CSS vars) |
+| `constants/responsive.ts` | Breakpoints, layouts, touch targets |
+
+## Combat System
+
+### Timing
+- Base attack interval: 2500ms at 1x speed (divided by speed multiplier)
+- Speed stat converts to attack intervals (base 10 = reference)
+- Hero gets 50ms jitter advantage for speed ties
+- Combat speeds: 1x, 2x, 3x
+
+### Mechanics
+- **Auto-attack**: Automatic with manual power activation
+- **Damage**: `(ATK - DEF) * variance(0.85-1.15) * crit(2.5x if applies)`
+- **Blocking**: 40% damage reduction, costs 15 mana
+- **Powers**: Mana cost + cooldown, upgradeable to level 3
+- **Status Effects**: Poison, Stun, Slow, Bleed
+
+### Enemy System
+- **Tiers**: Common, Uncommon, Rare, Boss
+- **Abilities**: Multi-hit, Poison, Stun, Heal, Enrage, Shield
+- **Intent**: Displayed before enemy acts
+- **Scaling**: +45% stats per floor, +8% per room
+
+## Character Classes
+
+| Class | HP | ATK | DEF | SPD | Starting Power | Special |
+|-------|-----|-----|-----|-----|----------------|---------|
+| Warrior | 55 | 8 | 4 | 8 | Berserker Rage | High health |
+| Mage | 38 | 10 | 2 | 10 | Fireball | High damage |
+| Rogue | 42 | 9 | 3 | 15 | Shadow Strike | +10% gold find |
+| Paladin | 50 | 7 | 5 | 7 | Divine Heal | +0.5 HP regen |
+
+## Progression Systems
+
+### Leveling
+- Base XP: 150 (scales 1.5x per level)
+- Level-up bonuses: +5 HP, +1 ATK, +0 DEF, +3 Mana
+
+### Upgrades (at death screen)
+12 purchasable stat upgrades with scaling costs:
+HP, ATK, DEF, Crit, Dodge, Mana, Speed, HP Regen, MP Regen, Cooldown Speed, Crit Damage, Gold Find
+
+### Items
+- **Types**: Weapon, Armor, Accessory
+- **Rarities**: Common → Uncommon → Rare → Epic → Legendary
+- **Effects**: Rare+ items have special triggers (on_hit, on_crit, on_kill, etc.)
+
+### Powers
+- Upgradeable to level 3
+- Per level: +25% value, -0.5s cooldown, -10% mana cost
+
+## UI Components
+
+### Main Screens
+- `MainMenu.tsx` - Start screen
+- `ClassSelect.tsx` - Character selection
+- `CombatScreen.tsx` - Battle container (wraps with CombatProvider)
+- `FloorCompleteScreen.tsx` - Rewards selection
+- `DeathScreen.tsx` - Upgrade purchasing
+
+### Combat Components
+- `BattleArena.tsx` - Sprites, effects, accessibility announcements
+- `CombatHeader.tsx` - Floor info, pause/speed controls
+- `PlayerStatsPanel.tsx` - Stats grid, equipment display
+- `PowersPanel.tsx` - Power buttons with cooldowns
+- `CombatLog.tsx` - Combat event history
+- `BattleEffects.tsx` - Visual effects layer (shake, damage floats, spells)
+
+### Popups
+- `LevelUpPopup.tsx` - Level up notification
+- `ItemDropPopup.tsx` - Item claiming
+
+## Accessibility Features
+
+- **Keyboard shortcuts**: Space (pause), 1-5 (powers), B (block), [/]/\ (speed)
+- **Screen reader**: ARIA labels, live regions for combat events
+- **Reduced motion**: `useReducedMotion()` hook + CSS `prefers-reduced-motion`
+- **Touch targets**: 44px minimum (WCAG 2.5)
+- **Focus indicators**: 3px ring with high contrast mode support
+- **Responsive**: Mobile-first design with breakpoints at 640/768/1024/1280px
+
+## shadcn/ui
+
+UI components in `src/components/ui/`. Add new components:
+```bash
+npx shadcn@latest add <component-name>
+```
+
+Path aliases: `@/components`, `@/lib`, `@/hooks`, `@/types`, `@/data`, `@/constants`, `@/contexts`
+
+## Code Patterns
+
+### Adding a New Power
+1. Add to `data/powers.ts` with id, name, icon, manaCost, cooldown, effect
+2. Power automatically appears in floor-complete rewards
+
+### Adding a New Enemy
+1. Add to enemy name arrays in `data/enemies.ts` by tier
+2. Configure abilities in `ENEMY_ABILITIES`
+
+### Modifying Combat Balance
+1. Check `constants/balance.ts` for combat mechanics
+2. Check `constants/game.ts` for timing and scaling
+3. Enemy scaling in `data/enemies.ts` `generateEnemy()`
+
+### Adding UI Components
+1. Use shadcn/ui base components from `components/ui/`
+2. Game components go in `components/game/`
+3. Use `cn()` from `@/lib/utils` for conditional classes
+4. Follow responsive patterns from `constants/responsive.ts`

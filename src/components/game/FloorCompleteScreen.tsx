@@ -1,0 +1,618 @@
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Player, Item, ItemType, UpgradePurchases } from '@/types/game';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { PixelSprite } from './PixelSprite';
+import { cn } from '@/lib/utils';
+import { calculateUpgradeCost, STAT_UPGRADE_VALUES, StatUpgradeType } from '@/constants/game';
+import { PowerChoice, isPowerUpgrade } from '@/data/powers';
+
+const RARITY_COLORS: Record<Item['rarity'], string> = {
+  common: 'border-rarity-common bg-rarity-common/10 text-rarity-common',
+  uncommon: 'border-rarity-uncommon bg-rarity-uncommon/10 text-rarity-uncommon',
+  rare: 'border-rarity-rare bg-rarity-rare/10 text-rarity-rare',
+  epic: 'border-rarity-epic bg-rarity-epic/10 text-rarity-epic',
+  legendary: 'border-rarity-legendary bg-rarity-legendary/10 text-rarity-legendary',
+};
+
+const RARITY_TEXT: Record<Item['rarity'], string> = {
+  common: 'text-rarity-common',
+  uncommon: 'text-rarity-uncommon',
+  rare: 'text-rarity-rare',
+  epic: 'text-rarity-epic',
+  legendary: 'text-rarity-legendary',
+};
+
+const TYPE_LABELS: Record<ItemType, string> = {
+  weapon: 'Weapon',
+  armor: 'Armor',
+  accessory: 'Accessory',
+};
+
+const TYPE_ICONS: Record<ItemType, string> = {
+  weapon: '⚔️',
+  armor: '🛡️',
+  accessory: '💍',
+};
+
+const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
+
+// Stat upgrade configuration
+interface StatUpgradeConfig {
+  id: string;
+  upgradeType: StatUpgradeType;
+  icon: string;
+  stat: string;
+  formatValue: (value: number) => string;
+}
+
+const STAT_UPGRADE_CONFIGS: StatUpgradeConfig[] = [
+  { id: 'hp-up', upgradeType: 'HP', icon: '❤️', stat: 'health', formatValue: (v) => `+${v} HP` },
+  { id: 'atk-up', upgradeType: 'ATTACK', icon: '⚔️', stat: 'attack', formatValue: (v) => `+${v} ATK` },
+  { id: 'def-up', upgradeType: 'DEFENSE', icon: '🛡️', stat: 'defense', formatValue: (v) => `+${v} DEF` },
+  { id: 'crit-up', upgradeType: 'CRIT', icon: '💥', stat: 'critChance', formatValue: (v) => `+${v}% CRIT` },
+  { id: 'dodge-up', upgradeType: 'DODGE', icon: '🌀', stat: 'dodgeChance', formatValue: (v) => `+${v}% DODGE` },
+  { id: 'mana-up', upgradeType: 'MANA', icon: '💠', stat: 'mana', formatValue: (v) => `+${v} MP` },
+  { id: 'speed-up', upgradeType: 'SPEED', icon: '💨', stat: 'speed', formatValue: (v) => `+${v} SPD` },
+  { id: 'hpregen-up', upgradeType: 'HP_REGEN', icon: '💗', stat: 'hpRegen', formatValue: (v) => `+${v} HP/s` },
+  { id: 'mpregen-up', upgradeType: 'MP_REGEN', icon: '💎', stat: 'mpRegen', formatValue: (v) => `+${v} MP/s` },
+  { id: 'cooldown-up', upgradeType: 'COOLDOWN_SPEED', icon: '⚡', stat: 'cooldownSpeed', formatValue: (v) => `+${Math.floor(v * 100)}% CD` },
+  { id: 'critdmg-up', upgradeType: 'CRIT_DAMAGE', icon: '🎯', stat: 'critDamage', formatValue: (v) => `+${Math.floor(v * 100)}% Crit` },
+  { id: 'goldfind-up', upgradeType: 'GOLD_FIND', icon: '🪙', stat: 'goldFind', formatValue: (v) => `+${Math.floor(v * 100)}% Gold` },
+];
+
+// Get the current cost for an upgrade based on purchase count
+function getUpgradeCost(upgradeType: StatUpgradeType, purchases: UpgradePurchases): number {
+  return calculateUpgradeCost(upgradeType, purchases[upgradeType]);
+}
+
+interface FloorCompleteScreenProps {
+  player: Player;
+  floor: number;
+  shopItems: Item[];
+  availablePowers: PowerChoice[];
+  onClaimItem: (index: number) => void;
+  onLearnPower: (index: number) => void;
+  onUpgrade: (upgradeId: string) => void;
+  onContinue: () => void;
+}
+
+export function FloorCompleteScreen({
+  player,
+  floor,
+  shopItems,
+  availablePowers,
+  onClaimItem,
+  onLearnPower,
+  onUpgrade,
+  onContinue,
+}: FloorCompleteScreenProps) {
+  const [spriteState, setSpriteState] = useState<'idle' | 'walk'>('walk');
+  const [highlightedSlot, setHighlightedSlot] = useState<ItemType | null>(null);
+  const [itemClaimed, setItemClaimed] = useState(false);
+  const [highlightedStat, setHighlightedStat] = useState<string | null>(null);
+  const [isLoadingRewards, setIsLoadingRewards] = useState(true);
+
+  // Victory walk animation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSpriteState('idle');
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Simulate reward generation loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoadingRewards(false);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [floor]);
+
+  // Memoize equipped items map for O(1) lookup
+  const equippedItemsMap = useMemo(() => {
+    const map = new Map<ItemType, Item>();
+    player.equippedItems.forEach((item) => {
+      map.set(item.type, item);
+    });
+    return map;
+  }, [player.equippedItems]);
+
+  const getEquippedItem = useCallback((type: ItemType): Item | undefined => {
+    return equippedItemsMap.get(type);
+  }, [equippedItemsMap]);
+
+  const compareStats = useCallback((newItem: Item, oldItem: Item | undefined) => {
+    if (!oldItem) return null;
+
+    const comparisons: { stat: string; diff: number }[] = [];
+    const allStats = new Set([
+      ...Object.keys(newItem.statBonus),
+      ...Object.keys(oldItem.statBonus),
+    ]);
+
+    allStats.forEach((stat) => {
+      const newVal = (newItem.statBonus as Record<string, number>)[stat] || 0;
+      const oldVal = (oldItem.statBonus as Record<string, number>)[stat] || 0;
+      const diff = newVal - oldVal;
+      if (diff !== 0) {
+        comparisons.push({ stat, diff });
+      }
+    });
+
+    return comparisons;
+  }, []);
+
+  const handleClaimItem = (index: number) => {
+    const item = shopItems[index];
+    if (!item) return;
+
+    try {
+      onClaimItem(index);
+      setItemClaimed(true);
+      setHighlightedSlot(item.type);
+      setTimeout(() => setHighlightedSlot(null), 800);
+    } catch (error) {
+      console.error('Failed to claim item:', error);
+    }
+  };
+
+  const handleUpgrade = (config: StatUpgradeConfig) => {
+    const cost = getUpgradeCost(config.upgradeType, player.upgradePurchases);
+    if (player.gold < cost) return;
+    onUpgrade(config.id);
+    setHighlightedStat(config.stat);
+    setTimeout(() => setHighlightedStat(null), 800);
+  };
+
+  const getStatClass = (stat: string) => {
+    if (highlightedStat === stat) {
+      return 'ring-2 ring-primary bg-primary/20 scale-105';
+    }
+    return '';
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-2 sm:p-4 relative overflow-hidden">
+      {/* Dark atmospheric background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-amber-900/10 rounded-full blur-[120px]" />
+      </div>
+
+      {/* Pixel stars scattered in background */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <div className="pixel-star" style={{ top: '8%', left: '12%', animationDelay: '0s' }} />
+        <div className="pixel-star" style={{ top: '18%', right: '15%', animationDelay: '0.5s' }} />
+        <div className="pixel-star" style={{ top: '55%', left: '5%', animationDelay: '1s' }} />
+        <div className="pixel-star" style={{ top: '70%', right: '8%', animationDelay: '1.5s' }} />
+        <div className="pixel-star" style={{ top: '12%', left: '55%', animationDelay: '0.7s' }} />
+        <div className="pixel-star" style={{ top: '88%', left: '40%', animationDelay: '1.2s' }} />
+      </div>
+
+      <div className="relative z-10 max-w-5xl w-full space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <div className="text-5xl sm:text-6xl mb-2">🏆</div>
+          <h1 className="pixel-title text-lg sm:text-xl md:text-2xl font-bold tracking-wider uppercase">
+            <span className="pixel-glow-gold bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 bg-clip-text text-transparent">
+              Floor {floor} Complete!
+            </span>
+          </h1>
+
+          {/* Pixel divider */}
+          <div className="flex justify-center items-center gap-2 pt-2" aria-hidden="true">
+            <div className="pixel-diamond bg-amber-500" />
+            <div className="w-12 sm:w-20 h-[2px] bg-gradient-to-r from-amber-500/80 to-transparent" />
+            <div className="pixel-diamond bg-amber-400" />
+            <div className="w-12 sm:w-20 h-[2px] bg-gradient-to-l from-amber-500/80 to-transparent" />
+            <div className="pixel-diamond bg-amber-500" />
+          </div>
+
+          <p className="pixel-text text-pixel-xs text-slate-400 tracking-wider pt-2">
+            Choose your rewards and prepare for the next challenge
+          </p>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+          {/* Left: Character Panel */}
+          <div className="pixel-panel rounded-lg p-4">
+            <div className="flex flex-col items-center gap-3">
+              {/* Sprite Display */}
+              <div className="relative pixel-panel-dark rounded-lg p-3 border-2 border-primary/50">
+                <PixelSprite
+                  type={player.class}
+                  state={spriteState}
+                  direction="right"
+                  scale={4}
+                  frame={0}
+                />
+                <div className="absolute inset-0 bg-primary/10 rounded-lg animate-pulse" />
+              </div>
+              <div className="text-center">
+                <div className="pixel-text text-pixel-sm text-amber-200">{player.name}</div>
+                <div className="pixel-text text-pixel-xs text-slate-400">Level {player.level}</div>
+              </div>
+
+              {/* Resource Bars - show full since player gets restored on continue */}
+              <div className="w-full space-y-1.5">
+                <PixelStatBar
+                  label="HP"
+                  current={player.currentStats.maxHealth}
+                  max={player.currentStats.maxHealth}
+                  color="red"
+                  highlighted={highlightedStat === 'health'}
+                />
+                <PixelStatBar
+                  label="MP"
+                  current={player.currentStats.maxMana}
+                  max={player.currentStats.maxMana}
+                  color="blue"
+                  highlighted={highlightedStat === 'mana'}
+                />
+              </div>
+
+              {/* Stat Boxes - Combat Stats */}
+              <div className="grid grid-cols-3 gap-1 w-full">
+                <PixelStatBox icon="⚔️" label="ATK" value={player.currentStats.attack} className={getStatClass('attack')} />
+                <PixelStatBox icon="🛡️" label="DEF" value={player.currentStats.defense} className={getStatClass('defense')} />
+                <PixelStatBox icon="💨" label="SPD" value={player.currentStats.speed} className={getStatClass('speed')} />
+                <PixelStatBox icon="💥" label="CRIT" value={`${player.currentStats.critChance}%`} className={getStatClass('critChance')} />
+                <PixelStatBox icon="🎯" label="CDMG" value={`${Math.floor(player.currentStats.critDamage * 100)}%`} className={getStatClass('critDamage')} />
+                <PixelStatBox icon="🌀" label="DODGE" value={`${player.currentStats.dodgeChance}%`} className={getStatClass('dodgeChance')} />
+              </div>
+
+              {/* Stat Boxes - Regen & Utility */}
+              <div className="grid grid-cols-4 gap-1 w-full">
+                <PixelStatBox icon="💗" label="HP/s" value={player.currentStats.hpRegen.toFixed(1)} className={getStatClass('hpRegen')} />
+                <PixelStatBox icon="💎" label="MP/s" value={player.currentStats.mpRegen.toFixed(1)} className={getStatClass('mpRegen')} />
+                <PixelStatBox icon="⚡" label="CD" value={`${Math.floor(player.currentStats.cooldownSpeed * 100)}%`} className={getStatClass('cooldownSpeed')} />
+                <PixelStatBox icon="🪙" label="GOLD+" value={`${Math.floor(player.currentStats.goldFind * 100)}%`} className={getStatClass('goldFind')} />
+              </div>
+
+              {/* Gold Display */}
+              <div className="w-full">
+                <PixelStatBox icon="💰" label="GOLD" value={player.gold} className="bg-gold/10" />
+              </div>
+
+              {/* Equipment Slots */}
+              <div className="w-full">
+                <div className="pixel-text text-pixel-xs text-slate-400 mb-1.5">Equipment</div>
+                <div className="space-y-1">
+                  {ALL_ITEM_TYPES.map((type) => {
+                    const item = getEquippedItem(type);
+                    const isHighlighted = highlightedSlot === type;
+                    return (
+                      <div
+                        key={type}
+                        className={cn(
+                          'pixel-panel-dark flex items-center gap-2 rounded px-2 py-1 border transition-all',
+                          item ? RARITY_COLORS[item.rarity] : 'border-dashed border-slate-600/30',
+                          isHighlighted && 'ring-2 ring-primary scale-[1.02]'
+                        )}
+                      >
+                        <span className="text-sm">{item ? item.icon : TYPE_ICONS[type]}</span>
+                        <span className={cn('pixel-text text-pixel-xs', item ? RARITY_TEXT[item.rarity] : 'text-slate-500')}>
+                          {item ? item.name : `No ${TYPE_LABELS[type]}`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Center: Item Rewards */}
+          <div className="space-y-4">
+            <div className="pixel-panel rounded-lg p-4">
+              <h3 className="pixel-text text-pixel-sm text-primary mb-3 flex items-center gap-2">
+                🎁 Choose One Item Reward
+                {itemClaimed && <span className="text-slate-400">(Claimed)</span>}
+              </h3>
+
+              {/* Loading skeleton */}
+              {isLoadingRewards ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="pixel-panel-dark p-3 rounded border border-slate-700/30">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-8 w-8 rounded" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-3 w-24" />
+                          <Skeleton className="h-2 w-36" />
+                        </div>
+                        <Skeleton className="h-6 w-14 rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : shopItems.length > 0 && !itemClaimed ? (
+                <div className="space-y-2">
+                  {shopItems.map((item, index) => {
+                    const currentItem = getEquippedItem(item.type);
+                    const comparison = compareStats(item, currentItem);
+                    const isUpgrade = comparison
+                      ? comparison.reduce((sum, c) => sum + c.diff, 0) > 0
+                      : true;
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={cn(
+                          'pixel-panel-dark p-3 rounded border cursor-pointer transition-all hover:scale-[1.02]',
+                          RARITY_COLORS[item.rarity]
+                        )}
+                        onClick={() => handleClaimItem(index)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{item.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className={cn('pixel-text text-pixel-sm font-medium', RARITY_TEXT[item.rarity])}>
+                              {item.name}
+                            </div>
+                            <div className="pixel-text text-pixel-xs text-slate-400">
+                              {Object.entries(item.statBonus)
+                                .map(([stat, val]) => `+${val} ${stat}`)
+                                .join(', ')}
+                            </div>
+                          </div>
+                          <Button size="sm" className="pixel-button text-pixel-xs h-6 px-2">
+                            {currentItem ? 'Replace' : 'Claim'}
+                          </Button>
+                        </div>
+
+                        {/* Visual stat comparison */}
+                        {currentItem && comparison && comparison.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-white/10">
+                            <div className="flex items-center gap-2 pixel-text text-pixel-xs mb-1.5">
+                              <span className="text-slate-400">vs {currentItem.icon} {currentItem.name}</span>
+                              {isUpgrade ? (
+                                <span className="text-success ml-auto font-medium">↑ Upgrade</span>
+                              ) : (
+                                <span className="text-health ml-auto font-medium">↓ Downgrade</span>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              {comparison.map(({ stat, diff }) => (
+                                <div key={stat} className="flex items-center gap-2 pixel-text text-pixel-xs">
+                                  <span className="w-12 text-slate-400 capitalize truncate">{stat}</span>
+                                  <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                                    <div
+                                      className={cn(
+                                        'h-full rounded-full',
+                                        diff > 0 ? 'bg-success' : 'bg-health'
+                                      )}
+                                      style={{ width: `${Math.min(Math.abs(diff) * 10, 100)}%` }}
+                                    />
+                                  </div>
+                                  <span className={cn('w-8 text-right font-mono', diff > 0 ? 'text-success' : 'text-health')}>
+                                    {diff > 0 ? '+' : ''}{diff}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : !itemClaimed ? (
+                <p className="pixel-text text-pixel-xs text-slate-500 text-center py-4">
+                  No items available
+                </p>
+              ) : (
+                <p className="pixel-text text-pixel-xs text-success text-center py-4">
+                  ✓ Item claimed!
+                </p>
+              )}
+            </div>
+
+            {/* Power Choice */}
+            {availablePowers.length > 0 && (
+              <div className="pixel-panel rounded-lg p-4 border-2 border-primary/30">
+                <h3 className="pixel-text text-pixel-sm text-primary mb-3 flex items-center gap-2">
+                  ✨ Choose a Power!
+                </h3>
+                <div className="space-y-2">
+                  {availablePowers.map((choice, index) => {
+                    const isUpgrade = isPowerUpgrade(choice);
+
+                    if (isUpgrade) {
+                      return (
+                        <div
+                          key={`upgrade-${choice.powerId}`}
+                          className="pixel-panel-dark p-3 rounded border border-gold/30 hover:border-gold/60 transition-all cursor-pointer"
+                          onClick={() => onLearnPower(index)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <span className="text-2xl">{choice.powerIcon}</span>
+                              <span className="absolute -top-1 -right-1 pixel-text text-pixel-xs bg-gold text-black px-1 rounded font-bold">
+                                +{choice.newLevel - 1}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="pixel-text text-pixel-sm font-bold text-gold">{choice.powerName}</h4>
+                                <span className="pixel-text text-pixel-xs bg-gold/20 text-gold px-1 py-0.5 rounded">
+                                  Lv.{choice.currentLevel} → Lv.{choice.newLevel}
+                                </span>
+                              </div>
+                              <p className="pixel-text text-pixel-xs text-slate-400">{choice.description}</p>
+                            </div>
+                            <Button size="sm" className="pixel-button text-pixel-xs h-6 px-2 bg-gold hover:bg-gold/90 text-black">
+                              Upgrade
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div
+                          key={choice.id}
+                          className="pixel-panel-dark p-3 rounded border border-info/30 hover:border-info/60 transition-all cursor-pointer"
+                          onClick={() => onLearnPower(index)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{choice.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="pixel-text text-pixel-sm font-bold text-primary">{choice.name}</h4>
+                                <span className="pixel-text text-pixel-xs bg-info/20 text-info px-1 py-0.5 rounded">
+                                  NEW
+                                </span>
+                              </div>
+                              <p className="pixel-text text-pixel-xs text-slate-400">{choice.description}</p>
+                              <div className="flex gap-2 mt-1 pixel-text text-pixel-xs text-slate-500">
+                                <span>💧 {choice.manaCost} MP</span>
+                                <span>⏱️ {choice.cooldown}s CD</span>
+                              </div>
+                            </div>
+                            <Button size="sm" className="pixel-button text-pixel-xs h-6 px-2">
+                              Learn
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    }
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right: Stat Upgrades */}
+          <div className="pixel-panel rounded-lg p-4">
+            <h3 className="pixel-text text-pixel-sm text-gold mb-3 flex items-center gap-2">
+              💰 Spend Gold on Upgrades
+            </h3>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+              {STAT_UPGRADE_CONFIGS.map((config) => {
+                const cost = getUpgradeCost(config.upgradeType, player.upgradePurchases);
+                const value = STAT_UPGRADE_VALUES[config.upgradeType];
+                const purchaseCount = player.upgradePurchases[config.upgradeType];
+                const canAfford = player.gold >= cost;
+                return (
+                  <button
+                    key={config.id}
+                    onClick={() => handleUpgrade(config)}
+                    disabled={!canAfford}
+                    className={cn(
+                      'pixel-panel-dark flex flex-col items-center p-2 rounded border transition-all text-center relative min-h-[55px]',
+                      canAfford
+                        ? 'border-gold/30 hover:border-gold/60 hover:scale-105 cursor-pointer'
+                        : 'border-slate-700/30 opacity-50 cursor-not-allowed'
+                    )}
+                  >
+                    {purchaseCount > 0 && (
+                      <span className="absolute top-0.5 right-0.5 pixel-text text-pixel-xs bg-primary/30 text-primary px-0.5 rounded">
+                        x{purchaseCount}
+                      </span>
+                    )}
+                    <span className="text-base">{config.icon}</span>
+                    <span className="pixel-text text-pixel-xs font-medium">{config.formatValue(value)}</span>
+                    <span className="pixel-text text-pixel-xs text-gold">{cost} 💰</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Powers Display */}
+            {player.powers.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-slate-700/30">
+                <div className="pixel-text text-pixel-xs text-slate-400 mb-2">Powers</div>
+                <div className="flex flex-wrap gap-1">
+                  {player.powers.map((power) => (
+                    <div
+                      key={power.id}
+                      className="pixel-panel-dark flex items-center gap-1 border border-mana/30 rounded px-2 py-1"
+                      title={power.description}
+                    >
+                      <span className="text-sm">{power.icon}</span>
+                      <span className="pixel-text text-pixel-xs">{power.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Continue Button */}
+        <div className="flex justify-center pt-2">
+          <Button
+            onClick={onContinue}
+            className="pixel-button text-pixel-sm px-8 sm:px-12 py-3 sm:py-4 bg-orange-600 hover:bg-orange-500 uppercase"
+          >
+            Continue to Floor {floor + 1} →
+          </Button>
+        </div>
+      </div>
+
+      {/* Bottom decorative accent */}
+      <div className="absolute bottom-0 left-0 right-0">
+        <div className="h-1 bg-gradient-to-r from-transparent via-amber-700/40 to-transparent" />
+        <div className="h-px bg-gradient-to-r from-transparent via-amber-500/60 to-transparent" />
+      </div>
+    </div>
+  );
+}
+
+// Pixel art stat bar component
+function PixelStatBar({
+  label,
+  current,
+  max,
+  color,
+  highlighted,
+}: {
+  label: string;
+  current: number;
+  max: number;
+  color: 'red' | 'blue';
+  highlighted?: boolean;
+}) {
+  const percentage = Math.max(0, Math.min(100, (current / max) * 100));
+  const bgGradient = color === 'red'
+    ? 'bg-gradient-to-r from-red-500 to-red-400'
+    : 'bg-gradient-to-r from-blue-500 to-blue-400';
+  const textColor = color === 'red' ? 'text-red-400' : 'text-blue-400';
+
+  return (
+    <div className={cn('rounded transition-all', highlighted && 'ring-2 ring-primary scale-[1.02]')}>
+      <div className="flex justify-between pixel-text text-pixel-xs mb-0.5">
+        <span className={textColor}>{label}</span>
+        <span className="text-slate-400">{current} / {max}</span>
+      </div>
+      <div className="pixel-progress-bar h-1.5 rounded overflow-hidden">
+        <div
+          className={cn('pixel-progress-fill transition-all duration-500', bgGradient)}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Pixel art stat box component
+function PixelStatBox({
+  icon,
+  label,
+  value,
+  className,
+}: {
+  icon: string;
+  label: string;
+  value: string | number;
+  className?: string;
+}) {
+  return (
+    <div className={cn('pixel-panel-dark rounded p-1.5 text-center transition-all', className)}>
+      <div className="text-sm">{icon}</div>
+      <div className="pixel-text text-pixel-xs text-slate-400">{label}</div>
+      <div className="pixel-text text-pixel-sm font-bold text-slate-200">{value}</div>
+    </div>
+  );
+}
