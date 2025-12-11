@@ -5,6 +5,7 @@ import { CombatScreen } from './CombatScreen';
 import { DeathScreen } from './DeathScreen';
 import { FloorCompleteScreen } from './FloorCompleteScreen';
 import { GameErrorBoundary, SimpleErrorBoundary } from '@/components/ErrorBoundary';
+import { CombatErrorBoundary } from './CombatErrorBoundary';
 
 export function Game() {
   const { state, shopItems, availablePowers, droppedItem, lastCombatEvent, heroProgress, enemyProgress, isHeroStunned, actions } = useGameState();
@@ -18,7 +19,10 @@ export function Game() {
 
     case 'combat':
       return (
-        <SimpleErrorBoundary>
+        <CombatErrorBoundary
+          onRetryFloor={actions.retryFloor}
+          onReturnToMenu={actions.restartGame}
+        >
           <CombatScreen
             state={state}
             droppedItem={droppedItem}
@@ -37,7 +41,7 @@ export function Game() {
             onEquipDroppedItem={actions.equipDroppedItem}
             onDismissDroppedItem={actions.dismissDroppedItem}
           />
-        </SimpleErrorBoundary>
+        </CombatErrorBoundary>
       );
       
     case 'floor-complete':
