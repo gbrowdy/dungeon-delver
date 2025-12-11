@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Player, Enemy, Item, StatusEffect, ActiveBuff, EnemyAbility } from '@/types/game';
 import { calculateEnemyIntent } from '@/data/enemies';
+import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 
 /**
  * Combat result from a single combat tick
@@ -46,7 +47,7 @@ export function useCombat() {
     context: { damage?: number; logs: string[] }
   ): { player: Player; bonusDamage: number } => {
     let bonusDamage = 0;
-    const updatedPlayer = { ...player };
+    const updatedPlayer = deepClonePlayer(player);
 
     player.equippedItems.forEach((item: Item) => {
       if (item.effect?.trigger === trigger) {
@@ -100,7 +101,7 @@ export function useCombat() {
     player: Player,
     logs: string[]
   ): { player: Player; isStunned: boolean } => {
-    const updatedPlayer = { ...player };
+    const updatedPlayer = deepClonePlayer(player);
 
     // Process status effects
     updatedPlayer.statusEffects = player.statusEffects.map((effect: StatusEffect) => {
@@ -156,8 +157,8 @@ export function useCombat() {
     floor: number,
     logs: string[]
   ): { enemy: Enemy; player: Player; damage: number } => {
-    const updatedEnemy = { ...enemy };
-    const updatedPlayer = { ...player };
+    const updatedEnemy = deepCloneEnemy(enemy);
+    const updatedPlayer = deepClonePlayer(player);
     let damage = 0;
 
     logs.push(`${ability.icon} ${enemy.name} uses ${ability.name}!`);

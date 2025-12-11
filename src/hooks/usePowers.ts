@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { Player, Enemy, Power, Stats } from '@/types/game';
+import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 
 /**
  * Power use result
@@ -65,8 +66,8 @@ export function usePowers() {
 
     if (!canUsePower(player, powerId)) return null;
 
-    const updatedPlayer = { ...player };
-    const updatedEnemy = { ...enemy };
+    const updatedPlayer = deepClonePlayer(player);
+    const updatedEnemy = deepCloneEnemy(enemy);
     const logs: string[] = [];
     let damage = 0;
 

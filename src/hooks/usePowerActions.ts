@@ -97,24 +97,26 @@ export function usePowerActions(context: PowerActivationContext) {
 
           // Emit power event for animation (with powerId for special effects)
           const powerHitDelay = Math.floor(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY / prev.combatSpeed);
-          setLastCombatEvent({
+          const playerPowerEvent: import('@/hooks/useBattleAnimation').PlayerPowerEvent = {
             type: COMBAT_EVENT_TYPE.PLAYER_POWER,
+            powerId: power.id,
             damage: damage,
             isCrit: comboMultiplier > 1, // Treat combo as crit for visual effect
             timestamp: Date.now(),
             id: generateEventId(),
-            powerId: power.id,
-          });
+          };
+          setLastCombatEvent(playerPowerEvent);
 
           // Schedule enemy hit event with targetDied flag
-          scheduleCombatEvent({
+          const enemyHitEvent: import('@/hooks/useBattleAnimation').EnemyHitEvent = {
             type: COMBAT_EVENT_TYPE.ENEMY_HIT,
             damage: damage,
             isCrit: comboMultiplier > 1,
             timestamp: Date.now(),
             id: generateEventId(),
             targetDied: enemyWillDie,
-          }, powerHitDelay);
+          };
+          scheduleCombatEvent(enemyHitEvent, powerHitDelay);
 
           // Vampiric touch heals
           if (power.id === 'vampiric-touch') {
@@ -209,19 +211,19 @@ export function usePowerActions(context: PowerActivationContext) {
         player.currentStats = calculateStats(player);
 
         // Keep enemy in state with isDying flag - animation system will remove it
+        prev.combatLog.add(logs);
         return {
           ...prev,
           player,
           currentEnemy: enemy,
-          combatLog: [...prev.combatLog, ...logs],
         };
       }
 
+      prev.combatLog.add(logs);
       return {
         ...prev,
         player,
         currentEnemy: enemy,
-        combatLog: [...prev.combatLog, ...logs],
       };
     });
   }, [setState, setLastCombatEvent, scheduleCombatEvent, enemyDeathProcessedRef, combatSpeed]);
