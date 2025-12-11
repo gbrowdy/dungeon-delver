@@ -1,0 +1,231 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <!-- Dungeon gradient background -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <!-- Gold glow -->
+    <filter id="goldGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+
+  <!-- Dungeon floor grid pattern -->
+  <g opacity="0.1">
+    <line x1="0" y1="500" x2="1200" y2="500" stroke="#64748b" stroke-width="2"/>
+    <line x1="0" y1="520" x2="1200" y2="520" stroke="#64748b" stroke-width="2"/>
+    <line x1="0" y1="540" x2="1200" y2="540" stroke="#64748b" stroke-width="2"/>
+    <line x1="0" y1="560" x2="1200" y2="560" stroke="#64748b" stroke-width="2"/>
+    <line x1="0" y1="580" x2="1200" y2="580" stroke="#64748b" stroke-width="2"/>
+    <line x1="0" y1="600" x2="1200" y2="600" stroke="#64748b" stroke-width="2"/>
+  </g>
+
+  <!-- Pixel art warrior (left side) - scaled up from sprite -->
+  <g transform="translate(180, 280) scale(6)">
+    <!-- Helmet -->
+    <rect x="6" y="0" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="7" y="0" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="8" y="0" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="5" y="1" width="1" height="1" fill="#808080"/>
+    <rect x="6" y="1" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="7" y="1" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="8" y="1" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="9" y="1" width="1" height="1" fill="#808080"/>
+    <!-- Face -->
+    <rect x="5" y="2" width="1" height="1" fill="#808080"/>
+    <rect x="6" y="2" width="1" height="1" fill="#1f2937"/>
+    <rect x="7" y="2" width="1" height="1" fill="#e0ac69"/>
+    <rect x="8" y="2" width="1" height="1" fill="#1f2937"/>
+    <rect x="9" y="2" width="1" height="1" fill="#808080"/>
+    <rect x="6" y="3" width="1" height="1" fill="#e0ac69"/>
+    <rect x="7" y="3" width="1" height="1" fill="#e0ac69"/>
+    <rect x="8" y="3" width="1" height="1" fill="#e0ac69"/>
+    <!-- Armor body -->
+    <rect x="5" y="4" width="1" height="1" fill="#808080"/>
+    <rect x="6" y="4" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="7" y="4" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="8" y="4" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="9" y="4" width="1" height="1" fill="#808080"/>
+    <rect x="4" y="5" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="5" y="5" width="1" height="1" fill="#808080"/>
+    <rect x="6" y="5" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="7" y="5" width="1" height="1" fill="#ffd700"/>
+    <rect x="8" y="5" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="9" y="5" width="1" height="1" fill="#808080"/>
+    <rect x="10" y="5" width="1" height="1" fill="#c0c0c0"/>
+    <!-- Arms and sword -->
+    <rect x="4" y="6" width="1" height="1" fill="#e0ac69"/>
+    <rect x="5" y="6" width="1" height="1" fill="#808080"/>
+    <rect x="6" y="6" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="7" y="6" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="8" y="6" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="9" y="6" width="1" height="1" fill="#808080"/>
+    <rect x="10" y="6" width="1" height="1" fill="#808080"/>
+    <rect x="11" y="6" width="1" height="1" fill="#808080"/>
+    <rect x="5" y="7" width="1" height="1" fill="#808080"/>
+    <rect x="6" y="7" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="7" y="7" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="8" y="7" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="9" y="7" width="1" height="1" fill="#808080"/>
+    <!-- Legs -->
+    <rect x="6" y="8" width="1" height="1" fill="#5d3a1a"/>
+    <rect x="7" y="8" width="1" height="1" fill="#8b4513"/>
+    <rect x="8" y="8" width="1" height="1" fill="#5d3a1a"/>
+    <rect x="6" y="9" width="1" height="1" fill="#8b4513"/>
+    <rect x="8" y="9" width="1" height="1" fill="#8b4513"/>
+    <rect x="5" y="10" width="1" height="1" fill="#808080"/>
+    <rect x="6" y="10" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="8" y="10" width="1" height="1" fill="#c0c0c0"/>
+    <rect x="9" y="10" width="1" height="1" fill="#808080"/>
+  </g>
+
+  <!-- Pixel art dragon (right side) - scaled up -->
+  <g transform="translate(820, 240) scale(6)">
+    <!-- Horns -->
+    <rect x="4" y="0" width="1" height="1" fill="#991b1b"/>
+    <rect x="12" y="0" width="1" height="1" fill="#991b1b"/>
+    <rect x="5" y="1" width="1" height="1" fill="#991b1b"/>
+    <rect x="11" y="1" width="1" height="1" fill="#991b1b"/>
+    <!-- Head -->
+    <rect x="6" y="1" width="1" height="1" fill="#ef4444"/>
+    <rect x="7" y="1" width="1" height="1" fill="#ef4444"/>
+    <rect x="8" y="1" width="1" height="1" fill="#ef4444"/>
+    <rect x="9" y="1" width="1" height="1" fill="#ef4444"/>
+    <rect x="10" y="1" width="1" height="1" fill="#ef4444"/>
+    <!-- Eyes -->
+    <rect x="5" y="2" width="1" height="1" fill="#991b1b"/>
+    <rect x="6" y="2" width="1" height="1" fill="#ef4444"/>
+    <rect x="7" y="2" width="1" height="1" fill="#1f2937"/>
+    <rect x="8" y="2" width="1" height="1" fill="#ef4444"/>
+    <rect x="9" y="2" width="1" height="1" fill="#1f2937"/>
+    <rect x="10" y="2" width="1" height="1" fill="#ef4444"/>
+    <rect x="11" y="2" width="1" height="1" fill="#991b1b"/>
+    <!-- Mouth -->
+    <rect x="6" y="3" width="1" height="1" fill="#ef4444"/>
+    <rect x="7" y="3" width="1" height="1" fill="#ef4444"/>
+    <rect x="8" y="3" width="1" height="1" fill="#f97316"/>
+    <rect x="9" y="3" width="1" height="1" fill="#ef4444"/>
+    <rect x="10" y="3" width="1" height="1" fill="#ef4444"/>
+    <!-- Neck and body -->
+    <rect x="5" y="4" width="1" height="1" fill="#991b1b"/>
+    <rect x="6" y="4" width="1" height="1" fill="#ef4444"/>
+    <rect x="7" y="4" width="1" height="1" fill="#ef4444"/>
+    <rect x="8" y="4" width="1" height="1" fill="#ef4444"/>
+    <rect x="9" y="4" width="1" height="1" fill="#ef4444"/>
+    <rect x="10" y="4" width="1" height="1" fill="#ef4444"/>
+    <rect x="11" y="4" width="1" height="1" fill="#991b1b"/>
+    <!-- Wings -->
+    <rect x="1" y="4" width="1" height="1" fill="#991b1b"/>
+    <rect x="2" y="4" width="1" height="1" fill="#ef4444"/>
+    <rect x="14" y="4" width="1" height="1" fill="#ef4444"/>
+    <rect x="15" y="4" width="1" height="1" fill="#991b1b"/>
+    <rect x="1" y="5" width="1" height="1" fill="#ef4444"/>
+    <rect x="2" y="5" width="1" height="1" fill="#ef4444"/>
+    <rect x="14" y="5" width="1" height="1" fill="#ef4444"/>
+    <rect x="15" y="5" width="1" height="1" fill="#ef4444"/>
+    <rect x="2" y="6" width="1" height="1" fill="#991b1b"/>
+    <rect x="14" y="6" width="1" height="1" fill="#991b1b"/>
+    <!-- Body middle -->
+    <rect x="4" y="5" width="1" height="1" fill="#991b1b"/>
+    <rect x="5" y="5" width="1" height="1" fill="#ef4444"/>
+    <rect x="6" y="5" width="1" height="1" fill="#ef4444"/>
+    <rect x="7" y="5" width="1" height="1" fill="#ef4444"/>
+    <rect x="8" y="5" width="1" height="1" fill="#c2410c"/>
+    <rect x="9" y="5" width="1" height="1" fill="#ef4444"/>
+    <rect x="10" y="5" width="1" height="1" fill="#ef4444"/>
+    <rect x="11" y="5" width="1" height="1" fill="#ef4444"/>
+    <rect x="12" y="5" width="1" height="1" fill="#991b1b"/>
+    <rect x="3" y="6" width="1" height="1" fill="#991b1b"/>
+    <rect x="4" y="6" width="1" height="1" fill="#ef4444"/>
+    <rect x="5" y="6" width="1" height="1" fill="#ef4444"/>
+    <rect x="6" y="6" width="1" height="1" fill="#ef4444"/>
+    <rect x="7" y="6" width="1" height="1" fill="#ef4444"/>
+    <rect x="8" y="6" width="1" height="1" fill="#c2410c"/>
+    <rect x="9" y="6" width="1" height="1" fill="#ef4444"/>
+    <rect x="10" y="6" width="1" height="1" fill="#ef4444"/>
+    <rect x="11" y="6" width="1" height="1" fill="#ef4444"/>
+    <rect x="12" y="6" width="1" height="1" fill="#ef4444"/>
+    <rect x="13" y="6" width="1" height="1" fill="#991b1b"/>
+    <rect x="3" y="7" width="1" height="1" fill="#ef4444"/>
+    <rect x="4" y="7" width="1" height="1" fill="#ef4444"/>
+    <rect x="5" y="7" width="1" height="1" fill="#ef4444"/>
+    <rect x="6" y="7" width="1" height="1" fill="#ef4444"/>
+    <rect x="7" y="7" width="1" height="1" fill="#ef4444"/>
+    <rect x="8" y="7" width="1" height="1" fill="#c2410c"/>
+    <rect x="9" y="7" width="1" height="1" fill="#ef4444"/>
+    <rect x="10" y="7" width="1" height="1" fill="#ef4444"/>
+    <rect x="11" y="7" width="1" height="1" fill="#ef4444"/>
+    <rect x="12" y="7" width="1" height="1" fill="#ef4444"/>
+    <rect x="13" y="7" width="1" height="1" fill="#ef4444"/>
+    <!-- Legs -->
+    <rect x="4" y="8" width="1" height="1" fill="#991b1b"/>
+    <rect x="5" y="8" width="1" height="1" fill="#ef4444"/>
+    <rect x="10" y="8" width="1" height="1" fill="#ef4444"/>
+    <rect x="11" y="8" width="1" height="1" fill="#991b1b"/>
+    <rect x="4" y="9" width="1" height="1" fill="#ef4444"/>
+    <rect x="5" y="9" width="1" height="1" fill="#ef4444"/>
+    <rect x="10" y="9" width="1" height="1" fill="#ef4444"/>
+    <rect x="11" y="9" width="1" height="1" fill="#ef4444"/>
+    <rect x="3" y="10" width="1" height="1" fill="#f97316"/>
+    <rect x="4" y="10" width="1" height="1" fill="#ef4444"/>
+    <rect x="11" y="10" width="1" height="1" fill="#ef4444"/>
+    <rect x="12" y="10" width="1" height="1" fill="#f97316"/>
+    <!-- Tail -->
+    <rect x="13" y="7" width="1" height="1" fill="#ef4444"/>
+    <rect x="14" y="7" width="1" height="1" fill="#991b1b"/>
+    <rect x="14" y="8" width="1" height="1" fill="#ef4444"/>
+    <rect x="15" y="8" width="1" height="1" fill="#991b1b"/>
+    <rect x="15" y="9" width="1" height="1" fill="#ef4444"/>
+    <rect x="16" y="9" width="1" height="1" fill="#991b1b"/>
+  </g>
+
+  <!-- VS spark effect -->
+  <g transform="translate(560, 340)">
+    <rect x="-4" y="-40" width="8" height="80" fill="#ffd700" opacity="0.3"/>
+    <rect x="-40" y="-4" width="80" height="8" fill="#ffd700" opacity="0.3"/>
+  </g>
+
+  <!-- Title: DUNGEON DELVER -->
+  <text x="600" y="120" text-anchor="middle" font-family="'Courier New', monospace" font-size="64" font-weight="bold" fill="#ffd700" filter="url(#goldGlow)">
+    DUNGEON DELVER
+  </text>
+
+  <!-- Subtitle -->
+  <text x="600" y="180" text-anchor="middle" font-family="'Courier New', monospace" font-size="24" fill="#94a3b8">
+    An 8-bit Roguelike Adventure
+  </text>
+
+  <!-- Decorative pixel corners -->
+  <g fill="#ffd700" opacity="0.6">
+    <!-- Top left -->
+    <rect x="40" y="40" width="8" height="8"/>
+    <rect x="48" y="40" width="8" height="8"/>
+    <rect x="40" y="48" width="8" height="8"/>
+    <!-- Top right -->
+    <rect x="1144" y="40" width="8" height="8"/>
+    <rect x="1152" y="40" width="8" height="8"/>
+    <rect x="1152" y="48" width="8" height="8"/>
+    <!-- Bottom left -->
+    <rect x="40" y="574" width="8" height="8"/>
+    <rect x="40" y="582" width="8" height="8"/>
+    <rect x="48" y="582" width="8" height="8"/>
+    <!-- Bottom right -->
+    <rect x="1152" y="574" width="8" height="8"/>
+    <rect x="1144" y="582" width="8" height="8"/>
+    <rect x="1152" y="582" width="8" height="8"/>
+  </g>
+
+  <!-- Bottom tagline -->
+  <text x="600" y="580" text-anchor="middle" font-family="'Courier New', monospace" font-size="18" fill="#64748b">
+    Battle monsters. Collect loot. Grow stronger.
+  </text>
+</svg>
