@@ -189,6 +189,7 @@ export interface GameState {
   itemPityCounter: number; // Counts non-rare items since last rare+ drop (for pity system)
   shopItems: Item[]; // Items available in shop/floor complete screen
   availablePowers: (Power | PowerUpgradeOffer)[]; // Power choices available (can be new powers or upgrade offers)
+  isTransitioning: boolean; // True when hero is walking to next room (between enemy death and next spawn)
 }
 
 export interface ClassData {

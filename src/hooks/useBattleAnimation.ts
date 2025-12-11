@@ -48,6 +48,7 @@ interface UseBattleAnimationReturn {
   heroFlash: boolean;
   enemyFlash: boolean;
   hitStop: boolean;
+  playerDeathEffect: boolean;
   removeEffect: (id: string) => void;
 }
 
@@ -79,6 +80,7 @@ export function useBattleAnimation(
   const [heroFlash, setHeroFlash] = useState(false);
   const [enemyFlash, setEnemyFlash] = useState(false);
   const [hitStop, setHitStop] = useState(false);
+  const [playerDeathEffect, setPlayerDeathEffect] = useState(false);
 
   const lastEventIdRef = useRef<string>('');
   const prevEnemyIdRef = useRef<string | null>(null);
@@ -141,6 +143,7 @@ export function useBattleAnimation(
       setHeroFlash(false);
       setEnemyFlash(false);
       setHitStop(false);
+      setPlayerDeathEffect(false);
       lastEventIdRef.current = '';
       prevEnemyIdRef.current = null;
       deathAnimationTriggeredRef.current = null;
@@ -340,13 +343,15 @@ export function useBattleAnimation(
         createTrackedTimeout(() => {
           setIsShaking(false);
           if (lastCombatEvent.targetDied) {
-            // Player died - trigger death animation
+            // Player died - trigger death animation with dramatic effect
             setHeroState({ state: SPRITE_STATE.DIE, frame: 0 });
             setPhase(BATTLE_PHASE.DEFEAT);
-            // After death animation, notify game state to transition to defeat screen
+            setPlayerDeathEffect(true);
+            // Extended pause with death effect before transitioning to defeat screen
             createTrackedTimeout(() => {
+              setPlayerDeathEffect(false);
               onPlayerDeathAnimationComplete?.();
-            }, ANIMATION_TIMING.DEATH_ANIMATION);
+            }, ANIMATION_TIMING.PLAYER_DEATH_PAUSE);
           } else {
             setHeroState(prev => prev.state === SPRITE_STATE.HIT ? { state: SPRITE_STATE.IDLE, frame: 0 } : prev);
           }
@@ -402,6 +407,7 @@ export function useBattleAnimation(
     heroFlash,
     enemyFlash,
     hitStop,
+    playerDeathEffect,
     removeEffect,
   };
 }
