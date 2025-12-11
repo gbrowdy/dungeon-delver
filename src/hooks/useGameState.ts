@@ -17,6 +17,7 @@ import { useProgressionActions } from '@/hooks/useProgressionActions';
 import { useGameFlow } from '@/hooks/useGameFlow';
 import { useCombatActions } from '@/hooks/useCombatActions';
 import { processItemEffects } from '@/hooks/useItemEffects';
+import { usePauseControl } from '@/hooks/usePauseControl';
 import {
   COMBAT_MECHANICS,
   FLOOR_CONFIG,
@@ -32,10 +33,10 @@ import {
   ITEM_EFFECT_TRIGGER,
   BUFF_STAT,
   COMBAT_EVENT_TYPE,
-  PAUSE_REASON,
 } from '@/constants/enums';
-import { logPauseChange, logRecovery } from '@/utils/gameLogger';
+import { logRecovery } from '@/utils/gameLogger';
 import { generateEventId } from '@/utils/eventId';
+import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
 
 // Base combat tick interval (ms) - modified by speed multiplier
 // At 1x: 2500ms per combat round (gives time to see intent + animations)
@@ -49,7 +50,7 @@ const INITIAL_STATE: GameState = {
   currentFloor: 1,
   currentRoom: 0,
   roomsPerFloor: FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR,
-  combatLog: [],
+  combatLog: new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE),
   gamePhase: GAME_PHASE.MENU,
   isPaused: false,
   pauseReason: null,
@@ -82,6 +83,9 @@ export function useGameState() {
   // Use the extracted character setup hook
   const { selectClass } = useCharacterSetup(setState);
 
+  // Use the pause control hook
+  const { togglePause } = usePauseControl({ setState });
+
   // Use the extracted room transitions hook
   const {
     nextRoom,
@@ -111,10 +115,13 @@ export function useGameState() {
       const shouldOfferPowers = prev.currentFloor % 2 === 0;
       const powerChoices = shouldOfferPowers ? getPowerChoices(prev.player.powers, 2) : [];
 
+      // Clear combat log for new floor
+      const newCombatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
+
       return {
         ...prev,
         gamePhase: GAME_PHASE.FLOOR_COMPLETE,
-        combatLog: [],
+        combatLog: newCombatLog,
         shopItems: items,
         availablePowers: powerChoices,
       };
@@ -335,32 +342,33 @@ export function useGameState() {
 
       const playerWillDie = player.currentStats.health <= 0;
 
-      scheduleCombatEvent({
+      const enemyAttackEvent: import('@/hooks/useBattleAnimation').EnemyAttackEvent = {
         type: COMBAT_EVENT_TYPE.ENEMY_ATTACK,
         damage: enemyDamage,
         isCrit: enemyCrit,
         timestamp: Date.now(),
         id: generateEventId(),
-      }, scaledEnemyAttackDelay);
+      };
+      scheduleCombatEvent(enemyAttackEvent, scaledEnemyAttackDelay);
 
       if (enemyDamage > 0) {
-        scheduleCombatEvent({
+        const playerHitEvent: import('@/hooks/useBattleAnimation').PlayerHitEvent = {
           type: COMBAT_EVENT_TYPE.PLAYER_HIT,
           damage: enemyDamage,
           isCrit: enemyCrit,
           timestamp: Date.now(),
           id: generateEventId(),
           targetDied: playerWillDie,
-        }, scaledPlayerHitDelay);
+        };
+        scheduleCombatEvent(playerHitEvent, scaledPlayerHitDelay);
       } else if (enemyIntent?.type !== 'ability') {
-        scheduleCombatEvent({
+        const playerDodgeEvent: import('@/hooks/useBattleAnimation').PlayerDodgeEvent = {
           type: COMBAT_EVENT_TYPE.PLAYER_DODGE,
-          damage: 0,
-          isCrit: false,
           isMiss: true,
           timestamp: Date.now(),
           id: generateEventId(),
-        }, scaledPlayerHitDelay);
+        };
+        scheduleCombatEvent(playerDodgeEvent, scaledPlayerHitDelay);
       }
 
       // Reset blocking after enemy has attacked
@@ -452,24 +460,26 @@ export function useGameState() {
 
           // Emit power event for animation (with powerId for special effects)
           const powerHitDelay = Math.floor(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY / prev.combatSpeed);
-          setLastCombatEvent({
+          const playerPowerEvent: import('@/hooks/useBattleAnimation').PlayerPowerEvent = {
             type: COMBAT_EVENT_TYPE.PLAYER_POWER,
+            powerId: power.id,
             damage: damage,
             isCrit: comboMultiplier > 1, // Treat combo as crit for visual effect
             timestamp: Date.now(),
             id: generateEventId(),
-            powerId: power.id,
-          });
+          };
+          setLastCombatEvent(playerPowerEvent);
 
           // Schedule enemy hit event with targetDied flag
-          scheduleCombatEvent({
+          const enemyHitEvent: import('@/hooks/useBattleAnimation').EnemyHitEvent = {
             type: COMBAT_EVENT_TYPE.ENEMY_HIT,
             damage: damage,
             isCrit: comboMultiplier > 1,
             timestamp: Date.now(),
             id: generateEventId(),
             targetDied: enemyWillDie,
-          }, powerHitDelay);
+          };
+          scheduleCombatEvent(enemyHitEvent, powerHitDelay);
 
           // Vampiric touch heals
           if (power.id === 'vampiric-touch') {
@@ -580,19 +590,6 @@ export function useGameState() {
       };
     });
   }, [scheduleCombatEvent]);
-
-  const togglePause = useCallback(() => {
-    setState((prev: GameState) => {
-      const newIsPaused = !prev.isPaused;
-      const newPauseReason = newIsPaused ? PAUSE_REASON.USER : null;
-      logPauseChange(newIsPaused, newPauseReason, 'user_toggle');
-      return {
-        ...prev,
-        isPaused: newIsPaused,
-        pauseReason: newPauseReason,
-      };
-    });
-  }, []);
 
   // Set combat speed (1x, 2x, 3x)
   const setCombatSpeed = useCallback((speed: CombatSpeed) => {
