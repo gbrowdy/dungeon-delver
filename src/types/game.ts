@@ -1,3 +1,5 @@
+import { CircularBuffer } from '@/utils/circularBuffer';
+
 export type CharacterClass = 'warrior' | 'mage' | 'rogue' | 'paladin';
 
 export interface Stats {
@@ -180,7 +182,7 @@ export interface GameState {
   currentFloor: number;
   currentRoom: number;
   roomsPerFloor: number;
-  combatLog: string[];
+  combatLog: CircularBuffer<string>; // Circular buffer to prevent unbounded growth
   gamePhase: 'menu' | 'class-select' | 'combat' | 'shop' | 'upgrade' | 'victory' | 'defeat' | 'floor-complete';
   isPaused: boolean; // Derived from pauseReason !== null for backwards compatibility
   pauseReason: PauseReason; // Explicit reason why game is paused (null = not paused)

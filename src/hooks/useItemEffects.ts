@@ -7,6 +7,7 @@
 
 import { Item, Player } from '@/types/game';
 import { ITEM_EFFECT_TRIGGER, EFFECT_TYPE } from '@/constants/enums';
+import { deepClonePlayer } from '@/utils/stateUtils';
 
 /**
  * Context for item effect processing
@@ -36,11 +37,8 @@ export interface ItemEffectResult {
 export function processItemEffects(context: ItemEffectContext): ItemEffectResult {
   const { trigger, player, damage = 0 } = context;
 
-  // Create a shallow copy of player with deep copies of mutable fields
-  const updatedPlayer: Player = {
-    ...player,
-    currentStats: { ...player.currentStats },
-  };
+  // Create a deep copy of player
+  const updatedPlayer: Player = deepClonePlayer(player);
 
   const logs: string[] = [];
   let additionalDamage = 0;

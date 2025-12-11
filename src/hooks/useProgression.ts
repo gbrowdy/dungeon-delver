@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { Player, Stats } from '@/types/game';
+import { deepClonePlayer } from '@/utils/stateUtils';
 
 /**
  * Level up result
@@ -21,10 +22,7 @@ export function useProgression() {
     player: Player,
     calculateStats: (p: Player) => Stats
   ): LevelUpResult => {
-    const updatedPlayer = {
-      ...player,
-      baseStats: { ...player.baseStats },  // Deep copy to avoid mutation issues
-    };
+    const updatedPlayer = deepClonePlayer(player);
     let levelsGained = 0;
 
     while (updatedPlayer.experience >= updatedPlayer.experienceToNext) {
@@ -80,10 +78,7 @@ export function useProgression() {
   ): Player | null => {
     if (player.gold < cost) return null;
 
-    const updatedPlayer = {
-      ...player,
-      baseStats: { ...player.baseStats },  // Deep copy to avoid mutation issues
-    };
+    const updatedPlayer = deepClonePlayer(player);
     updatedPlayer.gold -= cost;
     updatedPlayer.baseStats[stat] += value;
     updatedPlayer.currentStats = calculateStats(updatedPlayer);

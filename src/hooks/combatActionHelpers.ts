@@ -11,6 +11,7 @@ import {
   ITEM_EFFECT_TRIGGER,
   EFFECT_TYPE,
 } from '@/constants/enums';
+import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 
 /**
  * Result of processing turn-start effects
@@ -66,7 +67,7 @@ export function processTurnStartEffects(
   player: Player,
   logs: string[]
 ): TurnStartEffectsResult {
-  const updatedPlayer = { ...player };
+  const updatedPlayer = deepClonePlayer(player);
   const updatedLogs = [...logs];
 
   // Check if player is stunned
@@ -177,7 +178,7 @@ export function processHitEffects(
   isCrit: boolean,
   logs: string[]
 ): HitEffectsResult {
-  const updatedPlayer = { ...player };
+  const updatedPlayer = deepClonePlayer(player);
   const updatedLogs = [...logs];
   let finalDamage = baseDamage;
 
@@ -249,8 +250,9 @@ export function processEnemyDeath(
   itemPityCounter: number,
   logs: string[]
 ): EnemyDeathResult {
-  const updatedPlayer = { ...player };
-  const updatedEnemy = { ...enemy, isDying: true };
+  const updatedPlayer = deepClonePlayer(player);
+  const updatedEnemy = deepCloneEnemy(enemy);
+  updatedEnemy.isDying = true;
   const updatedLogs = [...logs];
 
   // Calculate rewards with level-based penalty

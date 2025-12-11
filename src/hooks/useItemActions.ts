@@ -50,11 +50,11 @@ export function useItemActions({
       };
       player.currentStats = calculateStats(player);
 
+      prev.combatLog.add(`Bought ${item.name} for ${price} gold!`);
       return {
         ...prev,
         player,
         shopItems: prev.shopItems.filter((_, i) => i !== itemIndex),
-        combatLog: [...prev.combatLog, `Bought ${item.name} for ${price} gold!`],
       };
     });
   }, [setState]);
@@ -74,6 +74,7 @@ export function useItemActions({
           return p;
         });
 
+        prev.combatLog.add(`Upgraded ${selectedChoice.powerName} to level ${selectedChoice.newLevel}!`);
         return {
           ...prev,
           player: {
@@ -81,11 +82,11 @@ export function useItemActions({
             powers: updatedPowers,
           },
           availablePowers: [], // Clear powers after selection
-          combatLog: [...prev.combatLog, `Upgraded ${selectedChoice.powerName} to level ${selectedChoice.newLevel}!`],
         };
       } else {
         // It's a new power - add it to the list
         const newPower: Power = { ...selectedChoice, upgradeLevel: 1 };
+        prev.combatLog.add(`Learned new power: ${selectedChoice.name}!`);
         return {
           ...prev,
           player: {
@@ -93,7 +94,6 @@ export function useItemActions({
             powers: [...prev.player.powers, newPower],
           },
           availablePowers: [], // Clear powers after selection
-          combatLog: [...prev.combatLog, `Learned new power: ${selectedChoice.name}!`],
         };
       }
     });

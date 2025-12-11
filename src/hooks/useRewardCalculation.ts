@@ -3,6 +3,7 @@ import { generateItem, isRareOrBetter } from '@/data/items';
 import { calculateStats } from '@/hooks/useCharacterSetup';
 import { LEVEL_UP_BONUSES } from '@/constants/game';
 import { REWARD_CONFIG } from '@/constants/balance';
+import { deepClonePlayer } from '@/utils/stateUtils';
 
 /**
  * Result of reward calculation
@@ -95,7 +96,7 @@ export function processLevelUp(player: Player): {
 } {
   const logs: string[] = [];
   let leveledUp = false;
-  let updatedPlayer = { ...player };
+  let updatedPlayer = deepClonePlayer(player);
 
   while (updatedPlayer.experience >= updatedPlayer.experienceToNext) {
     updatedPlayer.experience -= updatedPlayer.experienceToNext;

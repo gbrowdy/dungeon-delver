@@ -80,12 +80,12 @@ export function useRoomTransitions(
         logs.push(`⚠️ ${enemy.name} knows: ${abilityNames}`);
       }
 
+      prev.combatLog.add(logs);
       return {
         ...prev,
         player,
         currentRoom: newRoom,
         currentEnemy: enemy,
-        combatLog: [...prev.combatLog, ...logs],
       };
     });
   }, [setState]);
@@ -135,10 +135,10 @@ export function useRoomTransitions(
       player.currentStats.mana = player.currentStats.maxMana;
       player.powers = player.powers.map((p: Power) => ({ ...p, currentCooldown: 0 }));
 
+      prev.combatLog.clear();
       return {
         ...prev,
         player,
-        combatLog: [],
         gamePhase: GAME_PHASE.DEFEAT,
       };
     });
