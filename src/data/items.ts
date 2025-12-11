@@ -42,7 +42,7 @@ const RARITY_MULTIPLIERS: Record<Rarity, number> = {
   uncommon: 1.5,
   rare: 2,
   epic: 3,
-  legendary: 5,
+  legendary: 2.5,
 };
 
 // Item effects pool - rare+ items can have special effects

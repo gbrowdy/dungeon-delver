@@ -90,12 +90,12 @@ export const ITEM_BALANCE = {
 
   // Rarity value multipliers
   VALUE_MULTIPLIER_EPIC: 1.5,
-  VALUE_MULTIPLIER_LEGENDARY: 2.0,
-  PROC_CHANCE_MULTIPLIER_LEGENDARY: 1.5,
+  VALUE_MULTIPLIER_LEGENDARY: 1.5,
+  PROC_CHANCE_MULTIPLIER_LEGENDARY: 1.25,
 
   // Stat scaling
   BASE_STAT_VALUE: 5,
-  STAT_VALUE_PER_FLOOR: 2,
+  STAT_VALUE_PER_FLOOR: 1,
   BONUS_STAT_RATIO: 0.5, // Secondary stat is 50% of primary
 
   // Price calculation
@@ -119,9 +119,9 @@ export const ITEM_EFFECTS = {
   // Weapon effects
   WEAPON: {
     ON_CRIT_DAMAGE_BONUS: 0.2, // +20% damage on crit
-    ON_HIT_HEAL: 3,
-    ON_HIT_HEAL_CHANCE: 0.15,
-    ON_KILL_MANA: 10,
+    ON_HIT_HEAL: 2,
+    ON_HIT_HEAL_CHANCE: 0.10,
+    ON_KILL_MANA: 5,
     ON_HIT_DAMAGE: 5,
     ON_HIT_DAMAGE_CHANCE: 0.1,
   },
@@ -141,7 +141,7 @@ export const ITEM_EFFECTS = {
     COMBAT_START_MANA: 15,
     ON_CRIT_HEAL: 5,
     TURN_START_MANA: 2,
-    ON_KILL_HEAL: 10,
+    ON_KILL_HEAL: 4,
   },
 } as const;
 

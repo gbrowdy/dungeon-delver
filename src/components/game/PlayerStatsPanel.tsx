@@ -1,6 +1,6 @@
 import { useCombatPlayer } from '@/contexts/CombatContext';
 import { cn } from '@/lib/utils';
-import { Item } from '@/types/game';
+import { Item, ItemType } from '@/types/game';
 import {
   Tooltip,
   TooltipContent,
@@ -9,6 +9,20 @@ import {
 } from '@/components/ui/tooltip';
 import { TouchTooltip } from '@/components/ui/touch-tooltip';
 import { formatItemStatBonus } from '@/utils/itemUtils';
+
+const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
+
+const TYPE_LABELS: Record<ItemType, string> = {
+  weapon: 'Weapon',
+  armor: 'Armor',
+  accessory: 'Accessory',
+};
+
+const TYPE_ICONS: Record<ItemType, string> = {
+  weapon: '⚔️',
+  armor: '🛡️',
+  accessory: '💍',
+};
 
 /**
  * PlayerStatsPanel - Displays player info, equipment, stats grid, and XP bar.
@@ -27,9 +41,7 @@ export function PlayerStatsPanel() {
           playerClass={player.class}
           level={player.level}
         />
-        {player.equippedItems.length > 0 && (
-          <EquipmentDisplay items={player.equippedItems} />
-        )}
+        <EquipmentDisplay items={player.equippedItems} />
       </div>
 
       {/* Stats Grid - only show primary stats on very small screens */}
@@ -96,7 +108,8 @@ function getClassIcon(playerClass: string): string {
 }
 
 /**
- * EquipmentDisplay - Shows equipped items with pixel-styled slots.
+ * EquipmentDisplay - Shows all equipment slots (weapon, armor, accessory).
+ * Empty slots are clearly indicated with dashed borders.
  * On mobile, shows item stats inline since tooltips don't work well with touch.
  */
 interface EquipmentDisplayProps {
@@ -104,11 +117,20 @@ interface EquipmentDisplayProps {
 }
 
 function EquipmentDisplay({ items }: EquipmentDisplayProps) {
+  // Create a map of equipped items by type for O(1) lookup
+  const equippedByType = new Map<ItemType, Item>();
+  items.forEach((item) => equippedByType.set(item.type, item));
+
   return (
     <div className="flex flex-col xs:flex-row gap-1 xs:gap-1.5">
-      {items.map((item) => (
-        <EquipmentSlot key={item.id} item={item} />
-      ))}
+      {ALL_ITEM_TYPES.map((type) => {
+        const item = equippedByType.get(type);
+        return item ? (
+          <EquipmentSlot key={type} item={item} />
+        ) : (
+          <EmptyEquipmentSlot key={type} type={type} />
+        );
+      })}
     </div>
   );
 }
@@ -136,7 +158,45 @@ const RARITY_BG_COLORS: Record<string, string> = {
 };
 
 /**
+ * EmptyEquipmentSlot - Shows an empty equipment slot with clear visual indication.
+ */
+interface EmptyEquipmentSlotProps {
+  type: ItemType;
+}
+
+function EmptyEquipmentSlot({ type }: EmptyEquipmentSlotProps) {
+  const slotButton = (
+    <div
+      className="pixel-panel-dark w-8 h-8 sm:w-10 sm:h-10 rounded border-2 border-dashed border-slate-600/50 flex items-center justify-center opacity-50"
+      aria-label={`Empty ${TYPE_LABELS[type]} slot`}
+    >
+      <span className="text-base text-slate-500" aria-hidden="true">{TYPE_ICONS[type]}</span>
+    </div>
+  );
+
+  // Mobile: just show the slot
+  // Desktop: show with inline label
+  return (
+    <>
+      {/* Mobile: Simple empty slot */}
+      <div className="xs:hidden">
+        {slotButton}
+      </div>
+
+      {/* Desktop: Show slot with type label */}
+      <div className="hidden xs:flex items-center gap-1.5">
+        {slotButton}
+        <span className="pixel-text text-pixel-xs text-slate-500 hidden sm:inline">
+          Empty
+        </span>
+      </div>
+    </>
+  );
+}
+
+/**
  * EquipmentSlot - A single equipped item with tooltip, pixel-styled.
+ * On desktop, shows item stats inline for better visibility.
  */
 interface EquipmentSlotProps {
   item: Item;
@@ -187,7 +247,7 @@ function EquipmentSlot({ item }: EquipmentSlotProps) {
   );
 
   // Mobile: Touch tooltip (tap to reveal)
-  // Desktop: Standard hover tooltip
+  // Desktop: Show item with inline stats
   return (
     <>
       {/* Mobile: TouchTooltip for tap-to-reveal */}
@@ -197,8 +257,8 @@ function EquipmentSlot({ item }: EquipmentSlotProps) {
         </TouchTooltip>
       </div>
 
-      {/* Desktop: Standard hover tooltip */}
-      <div className="hidden xs:block">
+      {/* Desktop: Show item with inline stats */}
+      <div className="hidden xs:flex items-center gap-1.5">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -209,6 +269,15 @@ function EquipmentSlot({ item }: EquipmentSlotProps) {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+        {/* Inline stats display for desktop */}
+        <div className="hidden sm:flex flex-col min-w-0">
+          <span className={cn('pixel-text text-pixel-xs font-medium truncate', rarityTextColor)}>
+            {item.name}
+          </span>
+          <span className="pixel-text text-pixel-xs text-success truncate">
+            {statText}
+          </span>
+        </div>
       </div>
     </>
   );

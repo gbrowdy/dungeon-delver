@@ -63,11 +63,14 @@ export function CombatHeader() {
           <Button
             variant="outline"
             size="icon"
-            onClick={actions.togglePause}
+            onClick={(e) => {
+              actions.togglePause();
+              e.currentTarget.blur();
+            }}
             aria-label={isPaused ? "Resume combat" : "Pause combat"}
             className={cn(
-              "pixel-button h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9",
-              isPaused && "bg-warning/20 border-warning"
+              "pixel-button h-7 w-7 xs:h-8 xs:w-8 sm:h-9 sm:w-9 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
+              isPaused && "bg-warning/20"
             )}
           >
             {isPaused ? <Play className="h-3 w-3 sm:h-4 sm:w-4" /> : <Pause className="h-3 w-3 sm:h-4 sm:w-4" />}
@@ -135,10 +138,13 @@ function SpeedControls({ currentSpeed, onSetSpeed }: SpeedControlsProps) {
           variant={currentSpeed === speed ? "default" : "ghost"}
           size="sm"
           className={cn(
-            "pixel-text text-pixel-2xs xs:text-pixel-xs h-6 xs:h-7 sm:h-8 px-1.5 xs:px-2 sm:px-3",
+            "pixel-text text-pixel-2xs xs:text-pixel-xs h-6 xs:h-7 sm:h-8 px-1.5 xs:px-2 sm:px-3 focus-visible:ring-0 focus-visible:ring-offset-0",
             currentSpeed === speed && "bg-primary text-primary-foreground"
           )}
-          onClick={() => onSetSpeed(speed)}
+          onClick={(e) => {
+            onSetSpeed(speed);
+            e.currentTarget.blur();
+          }}
           aria-label={`Set combat speed to ${speed}x`}
           aria-pressed={currentSpeed === speed}
         >
@@ -154,17 +160,15 @@ function SpeedControls({ currentSpeed, onSetSpeed }: SpeedControlsProps) {
  */
 function KeyboardShortcutsHelp() {
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={0}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="pixel-button h-8 w-8"
+          <div
+            className="flex items-center justify-center h-8 w-8 text-slate-400"
             aria-label="Keyboard shortcuts"
           >
             <Keyboard className="h-3 w-3 sm:h-4 sm:w-4" />
-          </Button>
+          </div>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="pixel-panel max-w-xs">
           <div className="space-y-1.5">
