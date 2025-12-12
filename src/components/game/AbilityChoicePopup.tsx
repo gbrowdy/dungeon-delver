@@ -67,7 +67,7 @@ export function AbilityChoicePopup({
             const isCapstone = ability.isCapstone;
 
             // Get the icon component dynamically
-            const IconComponent = (Icons as any)[ability.icon] || Icons.Sparkles;
+            const IconComponent = (Icons as Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties; 'aria-hidden'?: boolean }>>)[ability.icon] || Icons.Sparkles;
 
             // Determine card color based on capstone status
             const cardColors = isCapstone
