@@ -89,20 +89,7 @@ export function useCharacterSetup(
       isBlocking: false,
       comboCount: 0,
       lastPowerUsed: null,
-      upgradePurchases: {
-        HP: 0,
-        ATTACK: 0,
-        DEFENSE: 0,
-        CRIT: 0,
-        DODGE: 0,
-        MANA: 0,
-        SPEED: 0,
-        HP_REGEN: 0,
-        MP_REGEN: 0,
-        COOLDOWN_SPEED: 0,
-        CRIT_DAMAGE: 0,
-        GOLD_FIND: 0,
-      },
+      // upgradePurchases removed - old upgrade system deprecated
     };
 
     // Recalculate stats with starting equipment

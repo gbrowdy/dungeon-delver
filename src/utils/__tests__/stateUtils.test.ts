@@ -99,20 +99,7 @@ describe('stateUtils', () => {
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
-        upgradePurchases: {
-          HP: 2,
-          ATTACK: 1,
-          DEFENSE: 0,
-          CRIT: 1,
-          DODGE: 0,
-          MANA: 1,
-          SPEED: 0,
-          HP_REGEN: 0,
-          MP_REGEN: 0,
-          COOLDOWN_SPEED: 0,
-          CRIT_DAMAGE: 0,
-          GOLD_FIND: 1,
-        },
+        // upgradePurchases removed - old upgrade system deprecated
         isDying: false,
       };
 
@@ -176,11 +163,7 @@ describe('stateUtils', () => {
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
-        upgradePurchases: {
-          HP: 0, ATTACK: 0, DEFENSE: 0, CRIT: 0, DODGE: 0,
-          MANA: 0, SPEED: 0, HP_REGEN: 0, MP_REGEN: 0,
-          COOLDOWN_SPEED: 0, CRIT_DAMAGE: 0, GOLD_FIND: 0,
-        },
+        // upgradePurchases removed
         isDying: false,
       };
 
@@ -228,11 +211,7 @@ describe('stateUtils', () => {
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
-        upgradePurchases: {
-          HP: 0, ATTACK: 0, DEFENSE: 0, CRIT: 0, DODGE: 0,
-          MANA: 0, SPEED: 0, HP_REGEN: 0, MP_REGEN: 0,
-          COOLDOWN_SPEED: 0, CRIT_DAMAGE: 0, GOLD_FIND: 0,
-        },
+        // upgradePurchases removed
         isDying: false,
       };
 
@@ -297,11 +276,7 @@ describe('stateUtils', () => {
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
-        upgradePurchases: {
-          HP: 0, ATTACK: 0, DEFENSE: 0, CRIT: 0, DODGE: 0,
-          MANA: 0, SPEED: 0, HP_REGEN: 0, MP_REGEN: 0,
-          COOLDOWN_SPEED: 0, CRIT_DAMAGE: 0, GOLD_FIND: 0,
-        },
+        // upgradePurchases removed
         isDying: false,
       };
 
@@ -353,11 +328,7 @@ describe('stateUtils', () => {
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
-        upgradePurchases: {
-          HP: 0, ATTACK: 0, DEFENSE: 0, CRIT: 0, DODGE: 0,
-          MANA: 0, SPEED: 0, HP_REGEN: 0, MP_REGEN: 0,
-          COOLDOWN_SPEED: 0, CRIT_DAMAGE: 0, GOLD_FIND: 0,
-        },
+        // upgradePurchases removed
         isDying: false,
       };
 
@@ -415,11 +386,7 @@ describe('stateUtils', () => {
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
-        upgradePurchases: {
-          HP: 0, ATTACK: 0, DEFENSE: 0, CRIT: 0, DODGE: 0,
-          MANA: 0, SPEED: 0, HP_REGEN: 0, MP_REGEN: 0,
-          COOLDOWN_SPEED: 0, CRIT_DAMAGE: 0, GOLD_FIND: 0,
-        },
+        // upgradePurchases removed
         isDying: false,
       };
 
@@ -438,62 +405,10 @@ describe('stateUtils', () => {
       expect(clonedPlayer.powers[0]).not.toBe(originalPlayer.powers[0]);
     });
 
-    it('should create independent copies of upgradePurchases object', () => {
-      const originalPlayer: Player = {
-        name: 'TestHero',
-        class: 'Warrior',
-        level: 1,
-        experience: 0,
-        experienceToNext: 100,
-        gold: 0,
-        baseStats: {
-          health: 50, maxHealth: 50, attack: 10, defense: 5, speed: 8,
-          critChance: 0.1, dodgeChance: 0.05, mana: 30, maxMana: 30,
-          hpRegen: 1, mpRegen: 0.5, cooldownSpeed: 1, critDamage: 2.5, goldFind: 1,
-        },
-        currentStats: {
-          health: 50, maxHealth: 50, attack: 10, defense: 5, speed: 8,
-          critChance: 0.1, dodgeChance: 0.05, mana: 30, maxMana: 30,
-          hpRegen: 1, mpRegen: 0.5, cooldownSpeed: 1, critDamage: 2.5, goldFind: 1,
-        },
-        powers: [],
-        inventory: [],
-        equippedItems: [],
-        activeBuffs: [],
-        statusEffects: [],
-        isBlocking: false,
-        comboCount: 0,
-        lastPowerUsed: null,
-        upgradePurchases: {
-          HP: 3,
-          ATTACK: 2,
-          DEFENSE: 1,
-          CRIT: 0,
-          DODGE: 0,
-          MANA: 1,
-          SPEED: 0,
-          HP_REGEN: 0,
-          MP_REGEN: 0,
-          COOLDOWN_SPEED: 0,
-          CRIT_DAMAGE: 0,
-          GOLD_FIND: 0,
-        },
-        isDying: false,
-      };
-
-      const clonedPlayer = deepClonePlayer(originalPlayer);
-
-      // Modify clone's upgrade purchases
-      clonedPlayer.upgradePurchases.HP = 999;
-      clonedPlayer.upgradePurchases.ATTACK = 888;
-
-      // Verify original is unchanged
-      expect(originalPlayer.upgradePurchases.HP).toBe(3);
-      expect(originalPlayer.upgradePurchases.ATTACK).toBe(2);
-
-      // Verify objects are not the same reference
-      expect(clonedPlayer.upgradePurchases).not.toBe(originalPlayer.upgradePurchases);
-    });
+    // DEPRECATED: Test removed - upgradePurchases system deprecated
+    // it('should create independent copies of upgradePurchases object', () => {
+    //   ... test code removed ...
+    // });
   });
 
   describe('deepCloneEnemy', () => {

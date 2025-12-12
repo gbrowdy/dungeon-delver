@@ -55,7 +55,6 @@ export function Game() {
             availablePowers={availablePowers}
             onClaimItem={actions.claimItem}
             onLearnPower={actions.learnPower}
-            onUpgrade={actions.applyFloorUpgrade}
             onContinue={actions.continueFromFloorComplete}
           />
         </SimpleErrorBoundary>
@@ -68,7 +67,6 @@ export function Game() {
           player={state.player}
           floor={state.currentFloor}
           room={state.currentRoom}
-          onUpgrade={actions.applyUpgrade}
           onRetry={actions.retryFloor}
           onAbandon={actions.restartGame}
         />

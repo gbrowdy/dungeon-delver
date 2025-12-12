@@ -19,21 +19,10 @@ export interface Stats {
   goldFind: number; // Gold find bonus (default 0, 0.1 = +10% gold)
 }
 
-// Tracks how many times each stat upgrade has been purchased (for scaling costs)
-export interface UpgradePurchases {
-  HP: number;
-  ATTACK: number;
-  DEFENSE: number;
-  CRIT: number;
-  DODGE: number;
-  MANA: number;
-  SPEED: number;
-  HP_REGEN: number;
-  MP_REGEN: number;
-  COOLDOWN_SPEED: number;
-  CRIT_DAMAGE: number;
-  GOLD_FIND: number;
-}
+// DEPRECATED: Old upgrade purchase system removed in favor of shop system
+// Keeping type for backwards compatibility during migration
+// TODO: Remove completely once all references are cleaned up
+export type UpgradePurchases = Record<string, number>;
 
 // Active buffs with duration tracking
 export interface ActiveBuff {
@@ -172,7 +161,7 @@ export interface Player {
   isBlocking: boolean; // Active block/dodge state
   comboCount: number; // Current power combo count
   lastPowerUsed: string | null; // For combo tracking
-  upgradePurchases: UpgradePurchases; // Track purchase count for scaling costs
+  // upgradePurchases: UpgradePurchases; // DEPRECATED: Removed in favor of shop system
   isDying?: boolean; // True when health <= 0, awaiting death animation
 }
 

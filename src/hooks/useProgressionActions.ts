@@ -7,11 +7,7 @@ import { calculateStats } from '@/hooks/useCharacterSetup';
 import { GameFlowEvent } from '@/hooks/useGameFlow';
 import { useTrackedTimeouts } from '@/hooks/useTrackedTimeouts';
 import { usePauseControl } from '@/hooks/usePauseControl';
-import {
-  STAT_UPGRADE_VALUES,
-  calculateUpgradeCost,
-  UPGRADE_CONFIG,
-} from '@/constants/game';
+// STAT_UPGRADE imports removed - old upgrade system deprecated
 import { GAME_PHASE, PAUSE_REASON } from '@/constants/enums';
 import { logStateTransition } from '@/utils/gameLogger';
 import { deepClonePlayer } from '@/utils/stateUtils';
@@ -48,72 +44,12 @@ export function useProgressionActions({
   // Use pause control hook for consistent pause/unpause behavior
   const { pause, unpause } = usePauseControl({ setState });
 
-  // Apply a stat upgrade on floor completion (costs gold)
-  const applyFloorUpgrade = useCallback((upgradeId: string) => {
-    const config = UPGRADE_CONFIG[upgradeId];
-    if (!config) return;
-
-    setState((prev: GameState) => {
-      if (!prev.player) return prev;
-
-      const { stat, upgradeType, label } = config;
-      const purchaseCount = prev.player.upgradePurchases[upgradeType];
-      const cost = calculateUpgradeCost(upgradeType, purchaseCount);
-      const value = STAT_UPGRADE_VALUES[upgradeType];
-
-      if (prev.player.gold < cost) return prev;
-
-      const player = deepClonePlayer(prev.player);
-      player.gold -= cost;
-
-      // Increment purchase count
-      player.upgradePurchases = {
-        ...player.upgradePurchases,
-        [upgradeType]: purchaseCount + 1,
-      };
-
-      // Apply to base stats using typed key - protect against prototype pollution
-      if (Object.prototype.hasOwnProperty.call(player.baseStats, stat)) {
-        player.baseStats[stat] += value;
-      } else {
-        console.error('Invalid stat key for upgrade:', stat);
-        return prev;
-      }
-
-      // Recalculate current stats
-      player.currentStats = calculateStats(player);
-
-      // For HP/MP upgrades, also restore the added amount
-      if (stat === 'maxHealth') {
-        player.currentStats.health = Math.min(
-          player.currentStats.maxHealth,
-          player.currentStats.health + value
-        );
-      }
-      if (stat === 'maxMana') {
-        player.currentStats.mana = Math.min(
-          player.currentStats.maxMana,
-          player.currentStats.mana + value
-        );
-      }
-
-      // Format value for display
-      let displayValue: string;
-      if (upgradeType === 'CRIT' || upgradeType === 'DODGE') {
-        displayValue = `+${value}%`;
-      } else if (upgradeType === 'HP_REGEN' || upgradeType === 'MP_REGEN' || upgradeType === 'COOLDOWN_SPEED' || upgradeType === 'CRIT_DAMAGE' || upgradeType === 'GOLD_FIND') {
-        displayValue = `+${value}`;
-      } else {
-        displayValue = `+${value}`;
-      }
-
-      prev.combatLog.add(`Purchased ${displayValue} ${label}!`);
-      return {
-        ...prev,
-        player,
-      };
-    });
-  }, [setState]);
+  // DEPRECATED: Stat upgrade system removed
+  // This function is kept as a no-op for backwards compatibility
+  const applyFloorUpgrade = useCallback((_upgradeId: string) => {
+    // No-op - upgrade system removed
+    console.warn('applyFloorUpgrade called but upgrade system has been removed');
+  }, []);
 
   const continueFromShop = useCallback(() => {
     setState((prev: GameState) => ({
@@ -216,11 +152,11 @@ export function useProgressionActions({
     });
   }, [setState]);
 
-  // applyUpgrade now delegates to applyFloorUpgrade for consistency
-  const applyUpgrade = useCallback((upgradeId: string) => {
-    // Use the same upgrade logic as floor complete screen
-    applyFloorUpgrade(upgradeId);
-  }, [applyFloorUpgrade]);
+  // DEPRECATED: Legacy upgrade system removed
+  const applyUpgrade = useCallback((_upgradeId: string) => {
+    // No-op - upgrade system removed
+    console.warn('applyUpgrade called but upgrade system has been removed');
+  }, []);
 
   const restartGame = useCallback(() => {
     clearCombatTimeouts(); // Clean up pending timeouts

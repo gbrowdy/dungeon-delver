@@ -94,25 +94,7 @@ function cloneItems(items: Item[]): Item[] {
   }));
 }
 
-/**
- * Deep clone an UpgradePurchases object
- */
-function cloneUpgradePurchases(upgrades: UpgradePurchases): UpgradePurchases {
-  return {
-    HP: upgrades.HP,
-    ATTACK: upgrades.ATTACK,
-    DEFENSE: upgrades.DEFENSE,
-    CRIT: upgrades.CRIT,
-    DODGE: upgrades.DODGE,
-    MANA: upgrades.MANA,
-    SPEED: upgrades.SPEED,
-    HP_REGEN: upgrades.HP_REGEN,
-    MP_REGEN: upgrades.MP_REGEN,
-    COOLDOWN_SPEED: upgrades.COOLDOWN_SPEED,
-    CRIT_DAMAGE: upgrades.CRIT_DAMAGE,
-    GOLD_FIND: upgrades.GOLD_FIND,
-  };
-}
+// DEPRECATED: UpgradePurchases clone function removed - old upgrade system deprecated
 
 /**
  * Deep clone an array of EnemyAbility objects
@@ -182,7 +164,7 @@ export function deepClonePlayer(player: Player): Player {
     isBlocking: player.isBlocking,
     comboCount: player.comboCount,
     lastPowerUsed: player.lastPowerUsed,
-    upgradePurchases: cloneUpgradePurchases(player.upgradePurchases),
+    // upgradePurchases removed - old upgrade system deprecated
     isDying: player.isDying,
   };
 }
