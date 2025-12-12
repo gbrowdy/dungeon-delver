@@ -1,39 +1,4 @@
-// Placeholder types - will be defined in src/types/paths.ts
-type PathAbilityEffect = {
-  type: string;
-  value: number;
-  target?: string;
-  duration?: number;
-  condition?: string;
-};
-
-type PathAbility = {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  levelRequirement: number;
-  subpath: string;
-  isCapstone?: boolean;
-  effects: PathAbilityEffect[];
-};
-
-type SubpathDefinition = {
-  id: string;
-  name: string;
-  description: string;
-  theme: string;
-};
-
-type PathDefinition = {
-  id: string;
-  name: string;
-  description: string;
-  type: 'active' | 'passive';
-  theme: string;
-  subpaths: SubpathDefinition[];
-  abilities: PathAbility[];
-};
+import type { PathDefinition } from '@/types/paths';
 
 /**
  * PALADIN CLASS PATHS
@@ -59,12 +24,14 @@ export const PALADIN_PATHS: PathDefinition[] = [
         id: 'templar',
         name: 'Templar',
         description: 'Unleash devastating holy damage through righteous fury',
+        icon: 'Sword',
         theme: 'Holy burst damage, light damage bonuses, smite power',
       },
       {
         id: 'inquisitor',
         name: 'Inquisitor',
         description: 'Weaken and debuff enemies through divine judgment',
+        icon: 'CrosshairIcon',
         theme: 'Enemy debuffs, armor reduction, marking enemies',
       },
     ],
@@ -79,14 +46,8 @@ export const PALADIN_PATHS: PathDefinition[] = [
         subpath: 'templar',
         effects: [
           {
-            type: 'damage_bonus',
-            value: 0.15,
-            condition: 'scales_with_armor',
-          },
-          {
-            type: 'damage_type',
-            value: 1,
-            target: 'holy',
+            trigger: 'passive',
+            damageModifier: { type: 'bonus_damage', value: 0.15 },
           },
         ],
       },
@@ -99,14 +60,8 @@ export const PALADIN_PATHS: PathDefinition[] = [
         subpath: 'templar',
         effects: [
           {
-            type: 'on_crit',
-            value: 0.5,
-            target: 'bonus_damage',
-          },
-          {
-            type: 'damage_type',
-            value: 1,
-            target: 'holy',
+            trigger: 'on_crit',
+            damageModifier: { type: 'bonus_damage', value: 0.5 },
           },
         ],
       },
@@ -119,9 +74,9 @@ export const PALADIN_PATHS: PathDefinition[] = [
         subpath: 'templar',
         effects: [
           {
-            type: 'conditional_damage',
-            value: 0.3,
-            condition: 'enemy_has_debuff',
+            trigger: 'conditional',
+            condition: { type: 'enemy_has_status', status: 'any' },
+            damageModifier: { type: 'bonus_damage', value: 0.3 },
           },
         ],
       },
@@ -136,13 +91,9 @@ export const PALADIN_PATHS: PathDefinition[] = [
         subpath: 'inquisitor',
         effects: [
           {
-            type: 'on_hit_chance',
-            value: 0.25,
-            target: 'apply_debuff',
-          },
-          {
-            type: 'armor_reduction',
-            value: 0.2,
+            trigger: 'on_hit',
+            chance: 0.25,
+            statModifiers: [{ stat: 'armor', flatBonus: -0.2, target: 'enemy' }],
             duration: 5,
           },
         ],
@@ -156,9 +107,8 @@ export const PALADIN_PATHS: PathDefinition[] = [
         subpath: 'inquisitor',
         effects: [
           {
-            type: 'on_hit',
-            value: 0.15,
-            target: 'damage_reduction_debuff',
+            trigger: 'on_hit',
+            statModifiers: [{ stat: 'power', percentBonus: -0.15, target: 'enemy' }],
             duration: 4,
           },
         ],
@@ -172,9 +122,8 @@ export const PALADIN_PATHS: PathDefinition[] = [
         subpath: 'inquisitor',
         effects: [
           {
-            type: 'amplify_damage',
-            value: 0.25,
-            condition: 'target_is_marked',
+            trigger: 'passive',
+            damageModifier: { type: 'amplify', value: 0.25 },
           },
         ],
       },
@@ -190,17 +139,9 @@ export const PALADIN_PATHS: PathDefinition[] = [
         isCapstone: true,
         effects: [
           {
-            type: 'every_nth_attack',
-            value: 5,
-            target: 'smite',
-          },
-          {
-            type: 'smite_damage',
-            value: 2.0,
-          },
-          {
-            type: 'apply_all_debuffs',
-            value: 1,
+            trigger: 'on_combo',
+            condition: { type: 'combo_count', value: 5 },
+            damageModifier: { type: 'bonus_damage', value: 2.0 },
           },
         ],
       },
@@ -214,12 +155,11 @@ export const PALADIN_PATHS: PathDefinition[] = [
         isCapstone: true,
         effects: [
           {
-            type: 'power_cost_reduction',
-            value: 0.25,
-          },
-          {
-            type: 'power_damage_bonus',
-            value: 0.4,
+            trigger: 'passive',
+            powerModifiers: [
+              { type: 'cost_reduction', value: 0.25 },
+              { type: 'damage_bonus', value: 0.4 },
+            ],
           },
         ],
       },
@@ -236,12 +176,14 @@ export const PALADIN_PATHS: PathDefinition[] = [
         id: 'sentinel',
         name: 'Sentinel',
         description: 'Enhance health regeneration and self-healing capabilities',
+        icon: 'Heart',
         theme: 'HP regen scaling, passive healing, heal on block',
       },
       {
         id: 'martyr',
         name: 'Martyr',
         description: 'Reduce incoming damage and endure through sacrifice',
+        icon: 'Shield',
         theme: 'Damage reduction, survive lethal, defensive scaling',
       },
     ],
@@ -256,8 +198,8 @@ export const PALADIN_PATHS: PathDefinition[] = [
         subpath: 'sentinel',
         effects: [
           {
-            type: 'hp_regen_multiplier',
-            value: 1.0,
+            trigger: 'passive',
+            statModifiers: [{ stat: 'health', percentBonus: 1.0, applyTo: 'regen' }],
           },
         ],
       },
@@ -270,9 +212,9 @@ export const PALADIN_PATHS: PathDefinition[] = [
         subpath: 'sentinel',
         effects: [
           {
-            type: 'periodic_heal',
-            value: 0.02,
-            duration: 3,
+            trigger: 'turn_start',
+            heal: 2,
+            cooldown: 3,
           },
         ],
       },
@@ -285,9 +227,8 @@ export const PALADIN_PATHS: PathDefinition[] = [
         subpath: 'sentinel',
         effects: [
           {
-            type: 'on_block',
-            value: 0.1,
-            target: 'heal_max_hp_percent',
+            trigger: 'on_block',
+            heal: 10,
           },
         ],
       },
@@ -302,8 +243,8 @@ export const PALADIN_PATHS: PathDefinition[] = [
         subpath: 'martyr',
         effects: [
           {
-            type: 'damage_reduction',
-            value: 0.1,
+            trigger: 'passive',
+            statModifiers: [{ stat: 'armor', percentBonus: 0.1 }],
           },
         ],
       },
@@ -316,9 +257,8 @@ export const PALADIN_PATHS: PathDefinition[] = [
         subpath: 'martyr',
         effects: [
           {
-            type: 'damage_reduction_scaling',
-            value: 0.01,
-            condition: 'per_10_armor',
+            trigger: 'passive',
+            statModifiers: [{ stat: 'armor', percentBonus: 0.01, scalingStat: 'armor', scalingRatio: 0.1 }],
           },
         ],
       },
@@ -331,14 +271,11 @@ export const PALADIN_PATHS: PathDefinition[] = [
         subpath: 'martyr',
         effects: [
           {
-            type: 'survive_lethal',
-            value: 1,
-            condition: 'once_per_floor',
-          },
-          {
-            type: 'damage_reduction_on_proc',
-            value: 0.5,
+            trigger: 'on_low_hp',
+            condition: { type: 'hp_threshold', value: 0.01 },
+            statModifiers: [{ stat: 'armor', percentBonus: 0.5 }],
             duration: 5,
+            cooldown: 60,
           },
         ],
       },
@@ -354,13 +291,12 @@ export const PALADIN_PATHS: PathDefinition[] = [
         isCapstone: true,
         effects: [
           {
-            type: 'hp_regen_scaling',
-            value: 0.01,
-            condition: 'per_10_armor',
+            trigger: 'passive',
+            statModifiers: [{ stat: 'health', percentBonus: 0.01, applyTo: 'regen', scalingStat: 'armor', scalingRatio: 0.1 }],
           },
           {
-            type: 'heal_from_prevention',
-            value: 0.15,
+            trigger: 'on_damaged',
+            heal: 15,
           },
         ],
       },
@@ -374,23 +310,12 @@ export const PALADIN_PATHS: PathDefinition[] = [
         isCapstone: true,
         effects: [
           {
-            type: 'low_hp_trigger',
-            value: 0.3,
-            target: 'damage_reduction',
-          },
-          {
-            type: 'damage_reduction',
-            value: 0.3,
+            trigger: 'on_low_hp',
+            condition: { type: 'hp_threshold', value: 0.3 },
+            statModifiers: [{ stat: 'armor', percentBonus: 0.3 }],
+            shield: 1,
             duration: 3,
-          },
-          {
-            type: 'prevent_death',
-            value: 1,
-            duration: 3,
-          },
-          {
-            type: 'cooldown',
-            value: 60,
+            cooldown: 60,
           },
         ],
       },
