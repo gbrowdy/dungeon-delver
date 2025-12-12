@@ -83,6 +83,9 @@ function createTestItem(
       chance,
       description: 'Test effect',
     },
+    enhancementLevel: 0,
+    maxEnhancement: 3,
+    tier: undefined,
   };
 }
 
@@ -460,6 +463,9 @@ describe('processItemEffects', () => {
         statBonus: { power: 5 },
         description: 'No effect item',
         icon: '⚔️',
+        enhancementLevel: 0,
+        maxEnhancement: 3,
+        tier: undefined,
         // No effect property
       };
       player.equippedItems = [item];

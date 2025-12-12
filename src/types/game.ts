@@ -1,6 +1,6 @@
 import { CircularBuffer } from '@/utils/circularBuffer';
 import { PlayerPath } from './paths';
-import { ShopState } from './shop';
+import { ShopState, ShopTier } from './shop';
 
 export type CharacterClass = 'warrior' | 'mage' | 'rogue' | 'paladin';
 
@@ -116,6 +116,10 @@ export interface Item {
   description: string;
   icon: string;
   effect?: ItemEffect; // Optional special effect
+  // Enhancement fields
+  enhancementLevel: number;  // 0-3, starts at 0
+  maxEnhancement: number;    // Based on tier (3 for all tiers)
+  tier?: ShopTier;           // 'starter' | 'class' | 'specialty' | 'legendary'
 }
 
 export interface Enemy {
