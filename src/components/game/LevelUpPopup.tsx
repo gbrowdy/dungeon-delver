@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { LEVEL_UP_BONUSES } from '@/constants/game';
+import { PixelDivider } from '@/components/ui/PixelDivider';
 
 interface LevelUpPopupProps {
   newLevel: number;
@@ -20,13 +21,7 @@ export function LevelUpPopup({ newLevel, onContinue }: LevelUpPopupProps) {
           </h2>
 
           {/* Pixel divider */}
-          <div className="flex justify-center items-center gap-2 pt-3" aria-hidden="true">
-            <div className="pixel-diamond bg-gold" />
-            <div className="w-12 sm:w-16 h-[2px] bg-gradient-to-r from-gold/80 to-transparent" />
-            <div className="pixel-diamond bg-amber-400" />
-            <div className="w-12 sm:w-16 h-[2px] bg-gradient-to-l from-gold/80 to-transparent" />
-            <div className="pixel-diamond bg-gold" />
-          </div>
+          <PixelDivider color="amber" className="pt-3" />
 
           <p className="pixel-text text-lg sm:text-xl font-bold text-white mt-3">
             Level {newLevel}

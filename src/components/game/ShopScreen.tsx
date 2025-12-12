@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import * as Icons from 'lucide-react';
+import { PixelDivider } from '@/components/ui/PixelDivider';
 import {
   canEnhance,
   getEnhancementCost,
@@ -482,13 +483,7 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
           </h1>
 
           {/* Pixel divider */}
-          <div className="flex justify-center items-center gap-2" aria-hidden="true">
-            <div className="pixel-diamond bg-orange-500" />
-            <div className="w-16 sm:w-24 h-[2px] bg-gradient-to-r from-orange-500/80 to-transparent" />
-            <div className="pixel-diamond bg-amber-400" />
-            <div className="w-16 sm:w-24 h-[2px] bg-gradient-to-l from-orange-500/80 to-transparent" />
-            <div className="pixel-diamond bg-orange-500" />
-          </div>
+          <PixelDivider color="orange" />
 
           {/* Gold display */}
           <div className="flex items-center justify-center gap-2">
@@ -678,13 +673,6 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
         /* Pixel-style body text */
         .pixel-text {
           font-family: 'Press Start 2P', 'Courier New', monospace;
-        }
-
-        /* Pixel diamond shape */
-        .pixel-diamond {
-          width: 8px;
-          height: 8px;
-          transform: rotate(45deg);
         }
 
         /* Pixel card styling */

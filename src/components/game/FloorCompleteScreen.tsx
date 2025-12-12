@@ -8,6 +8,7 @@ import { PowerChoice, isPowerUpgrade } from '@/data/powers';
 import { formatItemStatBonus } from '@/utils/itemUtils';
 import { PowerWithSynergies, hasSynergy, getSynergy, getPathName } from '@/utils/powerSynergies';
 import { Star } from 'lucide-react';
+import { PixelDivider } from '@/components/ui/PixelDivider';
 
 const RARITY_COLORS: Record<Item['rarity'], string> = {
   common: 'border-rarity-common bg-rarity-common/10 text-rarity-common',
@@ -158,13 +159,7 @@ export function FloorCompleteScreen({
           </h1>
 
           {/* Pixel divider */}
-          <div className="flex justify-center items-center gap-2 pt-2" aria-hidden="true">
-            <div className="pixel-diamond bg-amber-500" />
-            <div className="w-12 sm:w-20 h-[2px] bg-gradient-to-r from-amber-500/80 to-transparent" />
-            <div className="pixel-diamond bg-amber-400" />
-            <div className="w-12 sm:w-20 h-[2px] bg-gradient-to-l from-amber-500/80 to-transparent" />
-            <div className="pixel-diamond bg-amber-500" />
-          </div>
+          <PixelDivider color="amber" className="pt-2" />
 
           <p className="pixel-text text-pixel-xs text-slate-400 tracking-wider pt-2">
             Choose your rewards and prepare for the next challenge

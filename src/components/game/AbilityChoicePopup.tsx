@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import * as Icons from 'lucide-react';
+import { PixelDivider } from '@/components/ui/PixelDivider';
 
 interface AbilityChoicePopupProps {
   abilities: [PathAbility, PathAbility];  // Exactly 2 choices
@@ -45,13 +46,7 @@ export function AbilityChoicePopup({
             </DialogTitle>
 
             {/* Pixel divider */}
-            <div className="flex justify-center items-center gap-2" aria-hidden="true">
-              <div className="pixel-diamond bg-amber-500" />
-              <div className="w-16 sm:w-24 h-[2px] bg-gradient-to-r from-amber-500/80 to-transparent" />
-              <div className="pixel-diamond bg-orange-400" />
-              <div className="w-16 sm:w-24 h-[2px] bg-gradient-to-l from-amber-500/80 to-transparent" />
-              <div className="pixel-diamond bg-amber-500" />
-            </div>
+            <PixelDivider color="amber" />
 
             <p className="pixel-text text-pixel-xs text-slate-400 tracking-wider">
               Select one ability to enhance your character
@@ -273,13 +268,6 @@ export function AbilityChoicePopup({
           /* Pixel-style body text */
           .pixel-text {
             font-family: 'Press Start 2P', 'Courier New', monospace;
-          }
-
-          /* Pixel diamond shape */
-          .pixel-diamond {
-            width: 8px;
-            height: 8px;
-            transform: rotate(45deg);
           }
 
           /* Pixel panel styling */
