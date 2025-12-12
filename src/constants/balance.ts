@@ -63,12 +63,13 @@ export const REWARD_CONFIG = {
   ENEMY_BASE_SPEED: 5,
   ENEMY_SPEED_RANGE: 10,
 
-  // Enemy item drops - rarer drops
-  ENEMY_DROP_BASE_CHANCE: 0.03, // Reduced from 0.05
-  ENEMY_DROP_GOLD_FIND_SCALING: 0.5,
-  ENEMY_DROP_MAX_CHANCE: 0.10, // Reduced from 0.15
-  BOSS_DROP_CHANCE: 0.35, // Reduced from 0.50
-  BOSS_LEGENDARY_BOOST: 0.10,
+  // Enemy item drops - DISABLED (shop-only progression system)
+  // Set all drop chances to 0 to disable random loot
+  ENEMY_DROP_BASE_CHANCE: 0,
+  ENEMY_DROP_GOLD_FIND_SCALING: 0,
+  ENEMY_DROP_MAX_CHANCE: 0,
+  BOSS_DROP_CHANCE: 0,
+  BOSS_LEGENDARY_BOOST: 0,
 } as const;
 
 // === ITEM BALANCE ===
