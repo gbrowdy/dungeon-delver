@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { ShopState, ShopItem } from '@/types/shop';
+import { ShopState, ShopItem, ShopTier } from '@/types/shop';
 import { CharacterClass, Player, Item } from '@/types/game';
 import { STARTER_GEAR } from '@/data/shop/starterGear';
 import { CLASS_GEAR } from '@/data/shop/classGear';
@@ -55,6 +55,16 @@ class SeededRandom {
 }
 
 /**
+ * Maps shop tier to item rarity
+ */
+const TIER_TO_RARITY_MAP: Record<ShopTier, Item['rarity']> = {
+  starter: 'common',
+  class: 'uncommon',
+  specialty: 'rare',
+  legendary: 'legendary',
+};
+
+/**
  * Convert ShopItem to Item format for player equipment
  */
 function convertShopItemToItem(shopItem: ShopItem): Item {
@@ -62,7 +72,7 @@ function convertShopItemToItem(shopItem: ShopItem): Item {
     id: shopItem.id,
     name: shopItem.name,
     type: shopItem.type,
-    rarity: 'legendary', // Shop items are always legendary tier for now
+    rarity: TIER_TO_RARITY_MAP[shopItem.tier],
     statBonus: shopItem.stats,
     description: shopItem.description,
     icon: shopItem.icon,
