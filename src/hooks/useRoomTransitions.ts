@@ -5,6 +5,7 @@ import { calculateStats } from '@/hooks/useCharacterSetup';
 import { COMBAT_BALANCE } from '@/constants/balance';
 import { GAME_PHASE, ITEM_EFFECT_TRIGGER, EFFECT_TYPE, BUFF_STAT } from '@/constants/enums';
 import { logStateTransition, logCombatEvent, logDeathEvent } from '@/utils/gameLogger';
+import { processItemEffects } from '@/hooks/useItemEffects';
 
 /**
  * Hook for room transitions and enemy spawning.
@@ -35,14 +36,23 @@ export function useRoomTransitions(
         isBoss: enemy.isBoss
       });
 
+      // Trigger out_of_combat item effects (between rooms, before combat_start)
+      const outOfCombatResult = processItemEffects({
+        trigger: ITEM_EFFECT_TRIGGER.OUT_OF_COMBAT,
+        player: prev.player,
+      });
+
       // Reset player state for new combat
       const player: Player = {
-        ...prev.player,
+        ...outOfCombatResult.player,
         statusEffects: [], // Clear status effects between rooms
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
       };
+
+      // Add out_of_combat logs
+      logs.push(...outOfCombatResult.logs);
 
       // Trigger combat_start item effects
       player.equippedItems.forEach((item: Item) => {

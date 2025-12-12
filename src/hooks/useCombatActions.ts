@@ -390,26 +390,20 @@ export function useCombatActions({
             logs.push(`🩸 ${enemy.name} drains ${vampHeal} life!`);
           }
 
-          // Trigger on_damaged item effects
-          player.equippedItems.forEach((item: Item) => {
-            if (item.effect?.trigger === ITEM_EFFECT_TRIGGER.ON_DAMAGED) {
-              const chance = item.effect.chance ?? 1;
-              if (Math.random() < chance) {
-                if (item.effect.type === EFFECT_TYPE.HEAL) {
-                  player.currentStats.health = Math.min(
-                    player.currentStats.maxHealth,
-                    player.currentStats.health + item.effect.value
-                  );
-                  logs.push(`${item.icon} Damage absorbed: +${item.effect.value} HP`);
-                } else if (item.effect.type === EFFECT_TYPE.MANA) {
-                  player.currentStats.mana = Math.min(
-                    player.currentStats.maxMana,
-                    player.currentStats.mana + item.effect.value
-                  );
-                }
-              }
-            }
+          // Trigger on_damaged item effects using centralized processor
+          const onDamagedResult = processItemEffects({
+            trigger: ITEM_EFFECT_TRIGGER.ON_DAMAGED,
+            player,
+            damage: enemyDamage,
+            enemy,
           });
+          player.currentStats = onDamagedResult.player.currentStats;
+          logs.push(...onDamagedResult.logs);
+
+          // Apply reflection damage to enemy if any
+          if (onDamagedResult.additionalDamage > 0) {
+            enemy.health -= onDamagedResult.additionalDamage;
+          }
         }
       }
 

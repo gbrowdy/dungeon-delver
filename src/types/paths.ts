@@ -132,10 +132,10 @@ export interface PathAbility {
   name: string;                     // Display name
   description: string;              // Effect description for UI
   icon: string;                     // Lucide icon name
-  level: number;                    // Minimum level to offer this ability
+  levelRequired: number;            // Minimum level to offer this ability
   isCapstone?: boolean;             // True if this is a level 6 capstone ability
-  effect: PathAbilityEffect;        // Ability effect definition
-  subpathId?: string;               // Optional: which subpath this belongs to
+  effects: PathAbilityEffect[];     // Ability effect definitions (abilities can have multiple effects)
+  subpath: string | null;           // Which subpath this belongs to (null for core path abilities)
 }
 
 /**
@@ -147,7 +147,7 @@ export interface SubpathDefinition {
   name: string;                     // Display name (e.g., 'Berserker')
   description: string;              // Flavor text and playstyle description
   icon: string;                     // Lucide icon name
-  abilityIds: string[];             // IDs of abilities that belong to this subpath
+  theme?: string;                   // Optional: thematic tag (e.g., 'control', 'burst_damage', 'tank')
 }
 
 /**
@@ -158,11 +158,12 @@ export interface PathDefinition {
   id: string;                       // Unique identifier (e.g., 'warrior_rage')
   name: string;                     // Display name (e.g., 'Path of Rage')
   type: PathType;                   // Active or passive playstyle
-  class: CharacterClass;            // Which class this path belongs to
   description: string;              // Flavor text and overview
   icon: string;                     // Lucide icon name
   abilities: PathAbility[];         // All abilities in this path
   subpaths: SubpathDefinition[];    // Subpath branches (available at level 4+)
+  theme?: string;                   // Optional: thematic tag for the overall path
+  className?: string;               // Optional: class name for reference (can be derived from abilities)
 }
 
 /**

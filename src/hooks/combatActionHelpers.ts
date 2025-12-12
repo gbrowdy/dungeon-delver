@@ -260,27 +260,13 @@ export function processEnemyDeath(
   updatedPlayer.comboCount = 0;
   updatedPlayer.lastPowerUsed = null;
 
-  // Trigger on-kill item effects
-  updatedPlayer.equippedItems.forEach((item: Item) => {
-    if (item.effect?.trigger === ITEM_EFFECT_TRIGGER.ON_KILL) {
-      const chance = item.effect.chance ?? 1;
-      if (Math.random() < chance) {
-        if (item.effect.type === EFFECT_TYPE.HEAL) {
-          updatedPlayer.currentStats.health = Math.min(
-            updatedPlayer.currentStats.maxHealth,
-            updatedPlayer.currentStats.health + item.effect.value
-          );
-          updatedLogs.push(`${item.icon} Victory heal: +${item.effect.value} HP`);
-        } else if (item.effect.type === EFFECT_TYPE.MANA) {
-          updatedPlayer.currentStats.mana = Math.min(
-            updatedPlayer.currentStats.maxMana,
-            updatedPlayer.currentStats.mana + item.effect.value
-          );
-          updatedLogs.push(`${item.icon} Mana restored: +${item.effect.value}`);
-        }
-      }
-    }
+  // Trigger on-kill item effects using centralized processor
+  const onKillResult = processItemEffects({
+    trigger: ITEM_EFFECT_TRIGGER.ON_KILL,
+    player: updatedPlayer,
   });
+  updatedPlayer.currentStats = onKillResult.player.currentStats;
+  updatedLogs.push(...onKillResult.logs);
 
   // Process level-ups
   const levelUpResult = processLevelUp(updatedPlayer);

@@ -56,7 +56,7 @@ const ASSASSIN_PATH: PathDefinition = {
   id: 'assassin',
   name: 'Assassin',
   description: 'Strike from the shadows with devastating burst damage and chain your kills into unstoppable momentum.',
-  playStyle: 'active',
+  type: 'active',
   icon: 'Crosshair',
   subpaths: [
     {
@@ -188,7 +188,7 @@ const DUELIST_PATH: PathDefinition = {
   id: 'duelist',
   name: 'Duelist',
   description: 'Dance between attacks with superior evasion, turning defense into devastating counter-strikes.',
-  playStyle: 'passive',
+  type: 'passive',
   icon: 'Shield',
   subpaths: [
     {

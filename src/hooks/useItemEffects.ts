@@ -8,6 +8,7 @@
 import { Item, Player } from '@/types/game';
 import { ITEM_EFFECT_TRIGGER, EFFECT_TYPE } from '@/constants/enums';
 import { deepClonePlayer } from '@/utils/stateUtils';
+import { getProcChanceBonus } from '@/utils/fortuneUtils';
 
 /**
  * Context for item effect processing
@@ -52,13 +53,17 @@ export function processItemEffects(context: ItemEffectContext): ItemEffectResult
   let dodgeIgnored: boolean | undefined = undefined;
   let damageAvoided: boolean | undefined = undefined;
 
+  // Get fortune proc bonus
+  const procBonus = getProcChanceBonus(player.currentStats.fortune);
+
   // Process all equipped items with matching trigger
   updatedPlayer.equippedItems.forEach((item: Item) => {
     if (item.effect?.trigger !== trigger) return;
 
-    // Check effect chance (default to 1 = 100%)
-    const chance = item.effect.chance ?? 1;
-    if (Math.random() >= chance) return;
+    // Check effect chance (default to 1 = 100%) with fortune bonus
+    const baseChance = item.effect.chance ?? 1;
+    const modifiedChance = Math.min(1, baseChance * procBonus); // Cap at 100%
+    if (Math.random() >= modifiedChance) return;
 
     // Process effect based on type
     switch (item.effect.type) {
