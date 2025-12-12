@@ -49,8 +49,13 @@ export interface UseCombatActionsParams {
 }
 
 /**
- * Hook for combat action functions (hero attack, enemy attack, block)
- * Extracted from useGameState.ts to improve maintainability
+ * Hook for combat action functions (hero attack, enemy attack, block).
+ *
+ * Manages all combat mechanics including damage calculation, status effects, item/path ability triggers,
+ * and death processing. Extracted from useGameState.ts to improve maintainability.
+ *
+ * @param params - Combat action parameters including setState, event handlers, and combat speed
+ * @returns Object with performHeroAttack, performEnemyAttack, and activateBlock functions
  */
 export function useCombatActions({
   setState,
