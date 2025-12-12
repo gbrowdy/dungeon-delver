@@ -190,8 +190,8 @@ export function BattleArena({
               </div>
               {/* Enemy abilities */}
               {displayEnemy.abilities.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1 justify-end">
-                  {displayEnemy.abilities.map(ability => (
+                <div className="flex flex-wrap gap-1 mt-1 justify-end max-h-12 overflow-hidden">
+                  {displayEnemy.abilities.slice(0, 3).map(ability => (
                     <div
                       key={ability.id}
                       className="bg-health/20 border border-health/50 rounded px-1 py-0.5 flex items-center gap-0.5"
@@ -201,6 +201,11 @@ export function BattleArena({
                       <span className="pixel-text text-pixel-2xs text-health/90">{ability.name}</span>
                     </div>
                   ))}
+                  {displayEnemy.abilities.length > 3 && (
+                    <span className="pixel-text text-pixel-2xs text-slate-500">
+                      +{displayEnemy.abilities.length - 3}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
