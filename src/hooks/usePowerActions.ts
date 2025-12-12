@@ -6,6 +6,7 @@ import { COMBAT_BALANCE, POWER_BALANCE } from '@/constants/balance';
 import { COMBAT_EVENT_DELAYS } from '@/constants/balance';
 import { COMBAT_EVENT_TYPE, BUFF_STAT } from '@/constants/enums';
 import { generateEventId } from '@/utils/eventId';
+import { getDropQualityBonus } from '@/utils/fortuneUtils';
 
 /**
  * Context for power activation - all state needed to execute a power
@@ -78,7 +79,7 @@ export function usePowerActions(context: PowerActivationContext) {
 
       // Set cooldown - subtract one tick worth immediately so the countdown starts right away
       // This prevents the visual "pause" before the cooldown bar starts moving
-      const cooldownSpeed = player.currentStats.cooldownSpeed || COMBAT_BALANCE.BASE_COOLDOWN_SPEED;
+      const cooldownSpeed = 1.0; // Constant cooldown speed (stat removed)
       const initialTickReduction = (COMBAT_BALANCE.COOLDOWN_TICK_INTERVAL / 1000) * cooldownSpeed * prev.combatSpeed;
       player.powers = player.powers.map((p: Power, i: number) =>
         i === powerIndex ? { ...p, currentCooldown: Math.max(0, p.cooldown - initialTickReduction) } : p
@@ -88,7 +89,7 @@ export function usePowerActions(context: PowerActivationContext) {
 
       switch (power.effect) {
         case 'damage': {
-          const damage = Math.floor(player.currentStats.attack * power.value * comboMultiplier);
+          const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
           enemy.health -= damage;
           logs.push(`Dealt ${damage} magical damage!`);
 
@@ -152,33 +153,33 @@ export function usePowerActions(context: PowerActivationContext) {
           const buffDuration = COMBAT_BALANCE.DEFAULT_BUFF_DURATION;
 
           if (power.id === 'battle-cry') {
-            // Attack buff
+            // Power buff
             player.activeBuffs.push({
-              id: `buff-attack-${Date.now()}`,
+              id: `buff-power-${Date.now()}`,
               name: power.name,
-              stat: BUFF_STAT.ATTACK,
+              stat: BUFF_STAT.POWER,
               multiplier: 1 + power.value,
               remainingTurns: buffDuration,
               icon: power.icon,
             });
             logs.push(`Attack increased by ${Math.floor(power.value * 100)}% for ${buffDuration} turns!`);
           } else if (power.id === 'shield-wall') {
-            // Defense buff
+            // Armor buff
             player.activeBuffs.push({
-              id: `buff-defense-${Date.now()}`,
+              id: `buff-armor-${Date.now()}`,
               name: power.name,
-              stat: BUFF_STAT.DEFENSE,
+              stat: BUFF_STAT.ARMOR,
               multiplier: 1 + power.value,
               remainingTurns: buffDuration,
               icon: power.icon,
             });
             logs.push(`Defense doubled for ${buffDuration} turns!`);
           } else {
-            // Generic attack buff for unknown buff powers
+            // Generic power buff for unknown buff powers
             player.activeBuffs.push({
               id: `buff-generic-${Date.now()}`,
               name: power.name,
-              stat: BUFF_STAT.ATTACK,
+              stat: BUFF_STAT.POWER,
               multiplier: 1 + power.value,
               remainingTurns: buffDuration,
               icon: power.icon,
@@ -198,15 +199,15 @@ export function usePowerActions(context: PowerActivationContext) {
         enemyDeathProcessedRef.current = enemy.id;
         enemy.isDying = true;
 
-        // Apply gold find bonus
-        const goldFindBonus = player.currentStats.goldFind || 0;
-        const bonusGold = Math.floor(enemy.goldReward * (1 + goldFindBonus));
+        // Apply fortune-based gold bonus
+        const dropQualityBonus = getDropQualityBonus(player.currentStats.fortune);
+        const bonusGold = Math.floor(enemy.goldReward * (1 + dropQualityBonus));
 
         player.experience += enemy.experienceReward;
         player.gold += bonusGold;
 
-        const goldFindText = goldFindBonus > 0 ? ` (+${Math.floor(goldFindBonus * 100)}% bonus)` : '';
-        logs.push(`${enemy.name} defeated! +${enemy.experienceReward} XP, +${bonusGold} gold${goldFindText}`);
+        const bonusText = dropQualityBonus > 0 ? ` (+${Math.floor(dropQualityBonus * 100)}% fortune bonus)` : '';
+        logs.push(`${enemy.name} defeated! +${enemy.experienceReward} XP, +${bonusGold} gold${bonusText}`);
 
         player.currentStats = calculateStats(player);
 

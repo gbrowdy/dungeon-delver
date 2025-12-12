@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Player, Enemy, Item, StatusEffect, ActiveBuff, EnemyAbility } from '@/types/game';
 import { calculateEnemyIntent } from '@/data/enemies';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+import { getDodgeChance } from '@/utils/fortuneUtils';
 
 /**
  * Combat result from a single combat tick
@@ -79,8 +80,8 @@ export function useCombat() {
               updatedPlayer.activeBuffs.push({
                 id: `${trigger}-buff-${Date.now()}`,
                 name: 'Combat Ready',
-                stat: 'defense',
-                multiplier: 1 + (item.effect.value / player.baseStats.defense),
+                stat: 'armor',
+                multiplier: 1 + (item.effect.value / player.baseStats.armor),
                 remainingTurns: 3,
                 icon: '🛡️',
               });
@@ -171,10 +172,10 @@ export function useCombat() {
     switch (ability.type) {
       case 'multi_hit': {
         const hits = ability.value;
-        const damagePerHit = Math.max(1, Math.floor((enemy.attack * 0.7 - player.currentStats.defense / 2)));
+        const damagePerHit = Math.max(1, Math.floor((enemy.power * 0.7 - player.currentStats.armor / 2)));
         let totalDamage = 0;
         for (let i = 0; i < hits; i++) {
-          const dodged = Math.random() * 100 < player.currentStats.dodgeChance;
+          const dodged = Math.random() * 100 < getDodgeChance(player.currentStats.fortune);
           if (!dodged) {
             let hitDamage = Math.floor(damagePerHit * (0.8 + Math.random() * 0.4));
             if (player.isBlocking) {
@@ -225,7 +226,7 @@ export function useCombat() {
       }
       case 'enrage': {
         updatedEnemy.isEnraged = true;
-        updatedEnemy.attack = Math.floor(enemy.attack * (1 + ability.value));
+        updatedEnemy.power = Math.floor(enemy.power * (1 + ability.value));
         logs.push(`😤 ${enemy.name} becomes enraged! Attack increased!`);
         break;
       }

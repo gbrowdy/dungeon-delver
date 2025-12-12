@@ -8,18 +8,12 @@ import { Stats, Player, Enemy, Item, Power } from '@/types/game';
 export const VALID_STAT_KEYS: ReadonlyArray<keyof Stats> = [
   'health',
   'maxHealth',
-  'attack',
-  'defense',
+  'power',
+  'armor',
   'speed',
-  'critChance',
-  'dodgeChance',
+  'fortune',
   'mana',
   'maxMana',
-  'hpRegen',
-  'mpRegen',
-  'cooldownSpeed',
-  'critDamage',
-  'goldFind',
 ] as const;
 
 /**
@@ -65,8 +59,8 @@ export function isEnemy(value: unknown): value is Enemy {
     typeof obj['name'] === 'string' &&
     typeof obj['health'] === 'number' &&
     typeof obj['maxHealth'] === 'number' &&
-    typeof obj['attack'] === 'number' &&
-    typeof obj['defense'] === 'number'
+    typeof obj['power'] === 'number' &&
+    typeof obj['armor'] === 'number'
   );
 }
 

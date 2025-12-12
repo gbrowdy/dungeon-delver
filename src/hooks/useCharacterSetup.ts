@@ -41,14 +41,12 @@ export function calculateStats(player: Player): Stats {
 
   // Apply active buffs (multiplicative)
   player.activeBuffs.forEach((buff: ActiveBuff) => {
-    if (buff.stat === BUFF_STAT.ATTACK) {
-      stats.attack = Math.floor(stats.attack * buff.multiplier);
-    } else if (buff.stat === BUFF_STAT.DEFENSE) {
-      stats.defense = Math.floor(stats.defense * buff.multiplier);
-    } else if (buff.stat === BUFF_STAT.CRIT_CHANCE) {
-      stats.critChance = Math.min(COMBAT_BALANCE.MAX_CRIT_CHANCE, Math.floor(stats.critChance * buff.multiplier));
-    } else if (buff.stat === BUFF_STAT.DODGE_CHANCE) {
-      stats.dodgeChance = Math.min(COMBAT_BALANCE.MAX_DODGE_CHANCE, Math.floor(stats.dodgeChance * buff.multiplier));
+    if (buff.stat === BUFF_STAT.POWER) {
+      stats.power = Math.floor(stats.power * buff.multiplier);
+    } else if (buff.stat === BUFF_STAT.ARMOR) {
+      stats.armor = Math.floor(stats.armor * buff.multiplier);
+    } else if (buff.stat === BUFF_STAT.FORTUNE) {
+      stats.fortune = Math.floor(stats.fortune * buff.multiplier);
     }
   });
 

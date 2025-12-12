@@ -184,8 +184,8 @@ export function deepCloneEnemy(enemy: Enemy): Enemy {
     name: enemy.name,
     health: enemy.health,
     maxHealth: enemy.maxHealth,
-    attack: enemy.attack,
-    defense: enemy.defense,
+    power: enemy.power,
+    armor: enemy.armor,
     speed: enemy.speed,
     experienceReward: enemy.experienceReward,
     goldReward: enemy.goldReward,
@@ -197,7 +197,7 @@ export function deepCloneEnemy(enemy: Enemy): Enemy {
     shieldTurnsRemaining: enemy.shieldTurnsRemaining,
     isEnraged: enemy.isEnraged,
     enrageTurnsRemaining: enemy.enrageTurnsRemaining,
-    baseAttack: enemy.baseAttack,
+    basePower: enemy.basePower,
     isDying: enemy.isDying,
   };
 }

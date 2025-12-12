@@ -8,21 +8,21 @@ import {
 
 const ITEM_TEMPLATES: Record<ItemType, { name: string; stat: keyof Stats; icon: string }[]> = {
   weapon: [
-    { name: 'Sword', stat: 'attack', icon: '⚔️' },
-    { name: 'Axe', stat: 'attack', icon: '🪓' },
-    { name: 'Staff', stat: 'attack', icon: '🪄' },
-    { name: 'Dagger', stat: 'critChance', icon: '🗡️' },
+    { name: 'Sword', stat: 'power', icon: '⚔️' },
+    { name: 'Axe', stat: 'power', icon: '🪓' },
+    { name: 'Staff', stat: 'power', icon: '🪄' },
+    { name: 'Dagger', stat: 'fortune', icon: '🗡️' },
   ],
   armor: [
-    { name: 'Plate Armor', stat: 'defense', icon: '🛡️' },
-    { name: 'Chainmail', stat: 'defense', icon: '🦺' },
+    { name: 'Plate Armor', stat: 'armor', icon: '🛡️' },
+    { name: 'Chainmail', stat: 'armor', icon: '🦺' },
     { name: 'Leather Armor', stat: 'speed', icon: '🧥' },
     { name: 'Robe', stat: 'maxMana', icon: '👘' },
   ],
   accessory: [
-    { name: 'Ring', stat: 'critChance', icon: '💍' },
+    { name: 'Ring', stat: 'fortune', icon: '💍' },
     { name: 'Amulet', stat: 'maxHealth', icon: '📿' },
-    { name: 'Belt', stat: 'defense', icon: '🎗️' },
+    { name: 'Belt', stat: 'armor', icon: '🎗️' },
     { name: 'Boots', stat: 'speed', icon: '👢' },
   ],
 };
@@ -160,7 +160,7 @@ export function generateItem(floor: number, forceType?: ItemType, pityCounter: n
 
   // Epic and legendary items get bonus stats
   if (rarity === ITEM_RARITY.EPIC || rarity === ITEM_RARITY.LEGENDARY) {
-    const bonusStats: (keyof Stats)[] = ['attack', 'defense', 'maxHealth', 'speed', 'critChance'];
+    const bonusStats: (keyof Stats)[] = ['power', 'armor', 'maxHealth', 'speed', 'fortune'];
     const bonusStatIndex = Math.floor(Math.random() * bonusStats.length);
     const bonusStat = bonusStats[bonusStatIndex];
     if (bonusStat && bonusStat !== template.stat) {

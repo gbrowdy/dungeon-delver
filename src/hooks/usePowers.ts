@@ -99,7 +99,7 @@ export function usePowers() {
     // Apply power effect
     switch (power.effect) {
       case 'damage': {
-        damage = Math.floor(updatedPlayer.currentStats.attack * power.value * comboMultiplier);
+        damage = Math.floor(updatedPlayer.currentStats.power * power.value * comboMultiplier);
         updatedEnemy.health -= damage;
         logs.push(`Dealt ${damage} magical damage!`);
 
@@ -137,9 +137,9 @@ export function usePowers() {
 
         if (power.id === 'battle-cry') {
           updatedPlayer.activeBuffs.push({
-            id: `buff-attack-${Date.now()}`,
+            id: `buff-power-${Date.now()}`,
             name: power.name,
-            stat: 'attack',
+            stat: 'power',
             multiplier: 1 + power.value,
             remainingTurns: buffDuration,
             icon: power.icon,
@@ -147,9 +147,9 @@ export function usePowers() {
           logs.push(`Attack increased by ${Math.floor(power.value * 100)}% for ${buffDuration} turns!`);
         } else if (power.id === 'shield-wall') {
           updatedPlayer.activeBuffs.push({
-            id: `buff-defense-${Date.now()}`,
+            id: `buff-armor-${Date.now()}`,
             name: power.name,
-            stat: 'defense',
+            stat: 'armor',
             multiplier: 1 + power.value,
             remainingTurns: buffDuration,
             icon: power.icon,
@@ -159,7 +159,7 @@ export function usePowers() {
           updatedPlayer.activeBuffs.push({
             id: `buff-generic-${Date.now()}`,
             name: power.name,
-            stat: 'attack',
+            stat: 'power',
             multiplier: 1 + power.value,
             remainingTurns: buffDuration,
             icon: power.icon,

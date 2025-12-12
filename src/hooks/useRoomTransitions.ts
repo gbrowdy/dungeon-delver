@@ -56,12 +56,12 @@ export function useRoomTransitions(
               );
               logs.push(`${item.icon} ${item.name}: +${item.effect.value} mana!`);
             } else if (item.effect.type === EFFECT_TYPE.BUFF) {
-              // Add temporary defense buff
+              // Add temporary armor buff
               player.activeBuffs.push({
                 id: `combat-start-${Date.now()}`,
                 name: 'Combat Ready',
-                stat: BUFF_STAT.DEFENSE,
-                multiplier: 1 + (item.effect.value / player.baseStats.defense),
+                stat: BUFF_STAT.ARMOR,
+                multiplier: 1 + (item.effect.value / player.baseStats.armor),
                 remainingTurns: COMBAT_BALANCE.DEFAULT_BUFF_DURATION,
                 icon: '🛡️',
               });

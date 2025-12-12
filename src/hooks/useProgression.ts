@@ -32,8 +32,8 @@ export function useProgression() {
 
       // Apply stat gains
       updatedPlayer.baseStats.maxHealth += 10;
-      updatedPlayer.baseStats.attack += 2;
-      updatedPlayer.baseStats.defense += 1;
+      updatedPlayer.baseStats.power += 2;
+      updatedPlayer.baseStats.armor += 1;
       updatedPlayer.baseStats.maxMana += 5;
 
       // Recalculate and restore to full HP/MP

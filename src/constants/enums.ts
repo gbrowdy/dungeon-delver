@@ -103,10 +103,9 @@ export type CharacterClassType = typeof CHARACTER_CLASS[keyof typeof CHARACTER_C
 
 // Buff stat types
 export const BUFF_STAT = {
-  ATTACK: 'attack',
-  DEFENSE: 'defense',
-  CRIT_CHANCE: 'critChance',
-  DODGE_CHANCE: 'dodgeChance',
+  POWER: 'power',
+  ARMOR: 'armor',
+  FORTUNE: 'fortune',
 } as const;
 
 export type BuffStatType = typeof BUFF_STAT[keyof typeof BUFF_STAT];
