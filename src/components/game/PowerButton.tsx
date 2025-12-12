@@ -97,7 +97,7 @@ export function PowerButton({ power, currentMana, onUse, disabled, playerPathId 
           >
             {/* Synergy indicator badge */}
             {synergizes && (
-              <div className="absolute top-0.5 right-0.5 z-20">
+              <div className="absolute top-1 right-1 z-20">
                 <Star className="h-3 w-3 text-amber-400 fill-amber-400" aria-hidden="true" />
               </div>
             )}
