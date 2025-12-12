@@ -25,7 +25,13 @@ export function TouchTooltip({
   side = 'top',
 }: TouchTooltipProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Detect touch device on mount
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
 
   // Close on click outside
   useEffect(() => {
@@ -57,9 +63,9 @@ export function TouchTooltip({
     <div
       ref={containerRef}
       className="relative inline-block"
-      onClick={() => setIsOpen(!isOpen)}
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
+      onClick={() => isTouchDevice && setIsOpen(!isOpen)}
+      onMouseEnter={() => !isTouchDevice && setIsOpen(true)}
+      onMouseLeave={() => !isTouchDevice && setIsOpen(false)}
     >
       {children}
       {isOpen && (

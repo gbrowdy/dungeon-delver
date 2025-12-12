@@ -4,6 +4,7 @@ import { calculateStats } from '@/hooks/useCharacterSetup';
 import { LEVEL_UP_BONUSES } from '@/constants/game';
 import { REWARD_CONFIG } from '@/constants/balance';
 import { deepClonePlayer } from '@/utils/stateUtils';
+import { getDropQualityBonus } from '@/utils/fortuneUtils';
 
 /**
  * Result of reward calculation
@@ -52,9 +53,9 @@ export function calculateRewards(
   const adjustedXP = Math.floor(enemy.experienceReward * levelPenalty);
   const adjustedGold = Math.floor(enemy.goldReward * levelPenalty);
 
-  // Apply gold find bonus on top of adjusted gold
-  const goldFindBonus = player.currentStats.goldFind || 0;
-  const finalGold = Math.floor(adjustedGold * (1 + goldFindBonus));
+  // Apply fortune-based drop quality bonus on top of adjusted gold
+  const dropQualityBonus = getDropQualityBonus(player.currentStats.fortune);
+  const finalGold = Math.floor(adjustedGold * dropQualityBonus);
 
   // Update player experience and gold
   const updatedPlayer = {
@@ -68,8 +69,8 @@ export function calculateRewards(
   if (levelPenalty < 1) {
     rewardText += ` (${Math.floor(levelPenalty * 100)}% - overleveled)`;
   }
-  if (goldFindBonus > 0) {
-    rewardText += ` (+${Math.floor(goldFindBonus * 100)}% gold find)`;
+  if (dropQualityBonus > 0) {
+    rewardText += ` (+${Math.floor(dropQualityBonus * 100)}% fortune bonus)`;
   }
 
   return {
@@ -109,8 +110,7 @@ export function processLevelUp(player: Player): {
     updatedPlayer.baseStats = {
       ...updatedPlayer.baseStats,
       maxHealth: updatedPlayer.baseStats.maxHealth + LEVEL_UP_BONUSES.MAX_HEALTH,
-      attack: updatedPlayer.baseStats.attack + LEVEL_UP_BONUSES.ATTACK,
-      defense: updatedPlayer.baseStats.defense + LEVEL_UP_BONUSES.DEFENSE,
+      power: updatedPlayer.baseStats.power + LEVEL_UP_BONUSES.POWER,
       maxMana: updatedPlayer.baseStats.maxMana + LEVEL_UP_BONUSES.MAX_MANA,
     };
 
@@ -143,9 +143,9 @@ export function calculateItemDrop(
   enemy: Enemy,
   currentFloor: number,
   itemPityCounter: number,
-  goldFind: number
+  fortune: number
 ): ItemDropResult {
-  const goldFindForDrop = goldFind || 0;
+  const dropQualityBonus = getDropQualityBonus(fortune);
   let dropChance: number;
   let legendaryBoost = 0;
 
@@ -154,10 +154,10 @@ export function calculateItemDrop(
     dropChance = REWARD_CONFIG.BOSS_DROP_CHANCE;
     legendaryBoost = REWARD_CONFIG.BOSS_LEGENDARY_BOOST;
   } else {
-    // Regular enemies: base chance + gold find scaling, capped at max
+    // Regular enemies: base chance + fortune scaling, capped at max
     dropChance = Math.min(
       REWARD_CONFIG.ENEMY_DROP_MAX_CHANCE,
-      REWARD_CONFIG.ENEMY_DROP_BASE_CHANCE + (goldFindForDrop * REWARD_CONFIG.ENEMY_DROP_GOLD_FIND_SCALING)
+      REWARD_CONFIG.ENEMY_DROP_BASE_CHANCE + (dropQualityBonus * REWARD_CONFIG.ENEMY_DROP_GOLD_FIND_SCALING)
     );
   }
 

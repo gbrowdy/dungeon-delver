@@ -18,18 +18,12 @@ function cloneStats(stats: Stats): Stats {
   return {
     health: stats.health,
     maxHealth: stats.maxHealth,
-    attack: stats.attack,
-    defense: stats.defense,
+    power: stats.power,
+    armor: stats.armor,
     speed: stats.speed,
-    critChance: stats.critChance,
-    dodgeChance: stats.dodgeChance,
     mana: stats.mana,
     maxMana: stats.maxMana,
-    hpRegen: stats.hpRegen,
-    mpRegen: stats.mpRegen,
-    cooldownSpeed: stats.cooldownSpeed,
-    critDamage: stats.critDamage,
-    goldFind: stats.goldFind,
+    fortune: stats.fortune,
   };
 }
 
@@ -97,28 +91,13 @@ function cloneItems(items: Item[]): Item[] {
       chance: item.effect.chance,
       description: item.effect.description,
     } : undefined,
+    enhancementLevel: item.enhancementLevel,
+    maxEnhancement: item.maxEnhancement,
+    tier: item.tier,
   }));
 }
 
-/**
- * Deep clone an UpgradePurchases object
- */
-function cloneUpgradePurchases(upgrades: UpgradePurchases): UpgradePurchases {
-  return {
-    HP: upgrades.HP,
-    ATTACK: upgrades.ATTACK,
-    DEFENSE: upgrades.DEFENSE,
-    CRIT: upgrades.CRIT,
-    DODGE: upgrades.DODGE,
-    MANA: upgrades.MANA,
-    SPEED: upgrades.SPEED,
-    HP_REGEN: upgrades.HP_REGEN,
-    MP_REGEN: upgrades.MP_REGEN,
-    COOLDOWN_SPEED: upgrades.COOLDOWN_SPEED,
-    CRIT_DAMAGE: upgrades.CRIT_DAMAGE,
-    GOLD_FIND: upgrades.GOLD_FIND,
-  };
-}
+// DEPRECATED: UpgradePurchases clone function removed - old upgrade system deprecated
 
 /**
  * Deep clone an array of EnemyAbility objects
@@ -188,8 +167,10 @@ export function deepClonePlayer(player: Player): Player {
     isBlocking: player.isBlocking,
     comboCount: player.comboCount,
     lastPowerUsed: player.lastPowerUsed,
-    upgradePurchases: cloneUpgradePurchases(player.upgradePurchases),
+    // upgradePurchases removed - old upgrade system deprecated
     isDying: player.isDying,
+    path: player.path,
+    pendingAbilityChoice: player.pendingAbilityChoice,
   };
 }
 
@@ -208,8 +189,8 @@ export function deepCloneEnemy(enemy: Enemy): Enemy {
     name: enemy.name,
     health: enemy.health,
     maxHealth: enemy.maxHealth,
-    attack: enemy.attack,
-    defense: enemy.defense,
+    power: enemy.power,
+    armor: enemy.armor,
     speed: enemy.speed,
     experienceReward: enemy.experienceReward,
     goldReward: enemy.goldReward,
@@ -221,7 +202,7 @@ export function deepCloneEnemy(enemy: Enemy): Enemy {
     shieldTurnsRemaining: enemy.shieldTurnsRemaining,
     isEnraged: enemy.isEnraged,
     enrageTurnsRemaining: enemy.enrageTurnsRemaining,
-    baseAttack: enemy.baseAttack,
+    basePower: enemy.basePower,
     isDying: enemy.isDying,
   };
 }

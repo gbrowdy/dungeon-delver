@@ -12,6 +12,8 @@ import {
   EFFECT_TYPE,
 } from '@/constants/enums';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+import { getCritChance, getCritDamage, getDropQualityBonus } from '@/utils/fortuneUtils';
+import { processItemEffects } from '@/hooks/useItemEffects';
 
 /**
  * Result of processing turn-start effects
@@ -126,32 +128,33 @@ export function processTurnStartEffects(
  * Calculate attack damage with variance and critical hit logic
  *
  * @param playerStats - Player's current stats
- * @param enemyDefense - Enemy's defense value
+ * @param enemyArmor - Enemy's armor value
  * @param isEnemyShielded - Whether enemy has shield active
  * @returns Damage amount, crit status, and logs
  */
 export function calculateAttackDamage(
   playerStats: Player['currentStats'],
-  enemyDefense: number,
+  enemyArmor: number,
   isEnemyShielded: boolean
 ): AttackDamageResult {
   const logs: string[] = [];
 
-  // Check for critical hit
-  const isCrit = Math.random() * 100 < playerStats.critChance;
+  // Check for critical hit using fortune-based calculation
+  const critChance = getCritChance(playerStats.fortune);
+  const isCrit = Math.random() < critChance;
 
   // Calculate base damage
-  const effectiveDefense = isEnemyShielded ? enemyDefense * 1.5 : enemyDefense;
-  const baseDamage = Math.max(1, playerStats.attack - effectiveDefense / 2);
+  const effectiveArmor = isEnemyShielded ? enemyArmor * 1.5 : enemyArmor;
+  const baseDamage = Math.max(1, playerStats.power - effectiveArmor / 2);
 
   // Apply damage variance
   const damageVariance = COMBAT_MECHANICS.DAMAGE_VARIANCE_MIN +
     Math.random() * COMBAT_MECHANICS.DAMAGE_VARIANCE_RANGE;
   let damage = baseDamage * damageVariance;
 
-  // Apply critical hit multiplier
+  // Apply critical hit multiplier using fortune-based calculation
   if (isCrit) {
-    const critMultiplier = playerStats.critDamage || 2.0;
+    const critMultiplier = getCritDamage(playerStats.fortune);
     damage *= critMultiplier;
     logs.push(`💥 Critical hit! (${Math.floor(critMultiplier * 100)}%)`);
   }
@@ -178,48 +181,40 @@ export function processHitEffects(
   isCrit: boolean,
   logs: string[]
 ): HitEffectsResult {
-  const updatedPlayer = deepClonePlayer(player);
+  let updatedPlayer = deepClonePlayer(player);
   const updatedLogs = [...logs];
   let finalDamage = baseDamage;
 
-  // Process on-crit effects
+  // Process on-crit effects using centralized processor
   if (isCrit) {
-    updatedPlayer.equippedItems.forEach((item: Item) => {
-      if (item.effect?.trigger === ITEM_EFFECT_TRIGGER.ON_CRIT) {
-        const chance = item.effect.chance ?? 1;
-        if (Math.random() < chance) {
-          if (item.effect.type === EFFECT_TYPE.HEAL) {
-            updatedPlayer.currentStats.health = Math.min(
-              updatedPlayer.currentStats.maxHealth,
-              updatedPlayer.currentStats.health + item.effect.value
-            );
-            updatedLogs.push(`${item.icon} Healed ${item.effect.value} HP on crit!`);
-          } else if (item.effect.type === EFFECT_TYPE.DAMAGE) {
-            finalDamage += finalDamage * item.effect.value;
-          }
-        }
-      }
+    const critResult = processItemEffects({
+      trigger: ITEM_EFFECT_TRIGGER.ON_CRIT,
+      player: updatedPlayer,
+      damage: finalDamage,
     });
+    updatedPlayer = critResult.player;
+    finalDamage += critResult.additionalDamage;
+    updatedLogs.push(...critResult.logs);
   }
 
-  // Process on-hit effects
-  updatedPlayer.equippedItems.forEach((item: Item) => {
-    if (item.effect?.trigger === ITEM_EFFECT_TRIGGER.ON_HIT) {
-      const chance = item.effect.chance ?? 1;
-      if (Math.random() < chance) {
-        if (item.effect.type === EFFECT_TYPE.HEAL) {
-          updatedPlayer.currentStats.health = Math.min(
-            updatedPlayer.currentStats.maxHealth,
-            updatedPlayer.currentStats.health + item.effect.value
-          );
-          updatedLogs.push(`${item.icon} Life steal: +${item.effect.value} HP`);
-        } else if (item.effect.type === EFFECT_TYPE.DAMAGE) {
-          finalDamage += item.effect.value;
-          updatedLogs.push(`${item.icon} Bonus damage: +${item.effect.value}`);
-        }
-      }
-    }
+  // Process on-hit effects using centralized processor
+  const hitResult = processItemEffects({
+    trigger: ITEM_EFFECT_TRIGGER.ON_HIT,
+    player: updatedPlayer,
+    damage: finalDamage,
   });
+  updatedPlayer = hitResult.player;
+  finalDamage += hitResult.additionalDamage;
+  updatedLogs.push(...hitResult.logs);
+
+  // Process ON_DAMAGE_DEALT effects (lifesteal) - this triggers AFTER damage is calculated
+  const damageDealtResult = processItemEffects({
+    trigger: ITEM_EFFECT_TRIGGER.ON_DAMAGE_DEALT,
+    player: updatedPlayer,
+    damage: finalDamage,
+  });
+  updatedPlayer = damageDealtResult.player;
+  updatedLogs.push(...damageDealtResult.logs);
 
   return {
     player: updatedPlayer,
@@ -265,27 +260,13 @@ export function processEnemyDeath(
   updatedPlayer.comboCount = 0;
   updatedPlayer.lastPowerUsed = null;
 
-  // Trigger on-kill item effects
-  updatedPlayer.equippedItems.forEach((item: Item) => {
-    if (item.effect?.trigger === ITEM_EFFECT_TRIGGER.ON_KILL) {
-      const chance = item.effect.chance ?? 1;
-      if (Math.random() < chance) {
-        if (item.effect.type === EFFECT_TYPE.HEAL) {
-          updatedPlayer.currentStats.health = Math.min(
-            updatedPlayer.currentStats.maxHealth,
-            updatedPlayer.currentStats.health + item.effect.value
-          );
-          updatedLogs.push(`${item.icon} Victory heal: +${item.effect.value} HP`);
-        } else if (item.effect.type === EFFECT_TYPE.MANA) {
-          updatedPlayer.currentStats.mana = Math.min(
-            updatedPlayer.currentStats.maxMana,
-            updatedPlayer.currentStats.mana + item.effect.value
-          );
-          updatedLogs.push(`${item.icon} Mana restored: +${item.effect.value}`);
-        }
-      }
-    }
+  // Trigger on-kill item effects using centralized processor
+  const onKillResult = processItemEffects({
+    trigger: ITEM_EFFECT_TRIGGER.ON_KILL,
+    player: updatedPlayer,
   });
+  updatedPlayer.currentStats = onKillResult.player.currentStats;
+  updatedLogs.push(...onKillResult.logs);
 
   // Process level-ups
   const levelUpResult = processLevelUp(updatedPlayer);
@@ -301,11 +282,12 @@ export function processEnemyDeath(
   updatedPlayer.statusEffects = [];
 
   // Check for item drop with pity system
+  const dropQualityBonus = getDropQualityBonus(updatedPlayer.currentStats.fortune);
   const itemDropResult = calculateItemDrop(
     updatedEnemy,
     currentFloor,
     itemPityCounter,
-    updatedPlayer.currentStats.goldFind || 0
+    dropQualityBonus
   );
 
   if (itemDropResult.droppedItem) {

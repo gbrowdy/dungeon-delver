@@ -7,15 +7,14 @@ import { calculateStats } from '@/hooks/useCharacterSetup';
 import { GameFlowEvent } from '@/hooks/useGameFlow';
 import { useTrackedTimeouts } from '@/hooks/useTrackedTimeouts';
 import { usePauseControl } from '@/hooks/usePauseControl';
-import {
-  STAT_UPGRADE_VALUES,
-  calculateUpgradeCost,
-  UPGRADE_CONFIG,
-} from '@/constants/game';
+import { processLevelUp } from '@/hooks/useRewardCalculation';
+// STAT_UPGRADE imports removed - old upgrade system deprecated
 import { GAME_PHASE, PAUSE_REASON } from '@/constants/enums';
+import { FLOOR_CONFIG } from '@/constants/game';
 import { logStateTransition } from '@/utils/gameLogger';
 import { deepClonePlayer } from '@/utils/stateUtils';
 import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
+import { selectFloorTheme } from '@/data/floorThemes';
 
 interface UseProgressionActionsOptions {
   setState: React.Dispatch<React.SetStateAction<GameState>>;
@@ -48,72 +47,12 @@ export function useProgressionActions({
   // Use pause control hook for consistent pause/unpause behavior
   const { pause, unpause } = usePauseControl({ setState });
 
-  // Apply a stat upgrade on floor completion (costs gold)
-  const applyFloorUpgrade = useCallback((upgradeId: string) => {
-    const config = UPGRADE_CONFIG[upgradeId];
-    if (!config) return;
-
-    setState((prev: GameState) => {
-      if (!prev.player) return prev;
-
-      const { stat, upgradeType, label } = config;
-      const purchaseCount = prev.player.upgradePurchases[upgradeType];
-      const cost = calculateUpgradeCost(upgradeType, purchaseCount);
-      const value = STAT_UPGRADE_VALUES[upgradeType];
-
-      if (prev.player.gold < cost) return prev;
-
-      const player = deepClonePlayer(prev.player);
-      player.gold -= cost;
-
-      // Increment purchase count
-      player.upgradePurchases = {
-        ...player.upgradePurchases,
-        [upgradeType]: purchaseCount + 1,
-      };
-
-      // Apply to base stats using typed key - protect against prototype pollution
-      if (Object.prototype.hasOwnProperty.call(player.baseStats, stat)) {
-        player.baseStats[stat] += value;
-      } else {
-        console.error('Invalid stat key for upgrade:', stat);
-        return prev;
-      }
-
-      // Recalculate current stats
-      player.currentStats = calculateStats(player);
-
-      // For HP/MP upgrades, also restore the added amount
-      if (stat === 'maxHealth') {
-        player.currentStats.health = Math.min(
-          player.currentStats.maxHealth,
-          player.currentStats.health + value
-        );
-      }
-      if (stat === 'maxMana') {
-        player.currentStats.mana = Math.min(
-          player.currentStats.maxMana,
-          player.currentStats.mana + value
-        );
-      }
-
-      // Format value for display
-      let displayValue: string;
-      if (upgradeType === 'CRIT' || upgradeType === 'DODGE') {
-        displayValue = `+${value}%`;
-      } else if (upgradeType === 'HP_REGEN' || upgradeType === 'MP_REGEN' || upgradeType === 'COOLDOWN_SPEED' || upgradeType === 'CRIT_DAMAGE' || upgradeType === 'GOLD_FIND') {
-        displayValue = `+${value}`;
-      } else {
-        displayValue = `+${value}`;
-      }
-
-      prev.combatLog.add(`Purchased ${displayValue} ${label}!`);
-      return {
-        ...prev,
-        player,
-      };
-    });
-  }, [setState]);
+  // DEPRECATED: Stat upgrade system removed
+  // This function is kept as a no-op for backwards compatibility
+  const applyFloorUpgrade = useCallback((_upgradeId: string) => {
+    // No-op - upgrade system removed
+    console.warn('applyFloorUpgrade called but upgrade system has been removed');
+  }, []);
 
   const continueFromShop = useCallback(() => {
     setState((prev: GameState) => ({
@@ -127,6 +66,23 @@ export function useProgressionActions({
   const showFloorComplete = useCallback(() => {
     setState((prev: GameState) => {
       if (!prev.player) return prev;
+
+      // Check if player just completed the final boss floor
+      if (prev.currentFloor === FLOOR_CONFIG.FINAL_BOSS_FLOOR) {
+        logStateTransition(GAME_PHASE.COMBAT, GAME_PHASE.VICTORY, 'final_boss_defeated');
+
+        // Clear combat log for victory screen
+        const newCombatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
+        newCombatLog.add('Victory! The final boss has been defeated!');
+
+        return {
+          ...prev,
+          gamePhase: GAME_PHASE.VICTORY,
+          combatLog: newCombatLog,
+          shopItems: [],
+          availablePowers: [],
+        };
+      }
 
       const nextFloorNum = prev.currentFloor + 1;
 
@@ -157,34 +113,74 @@ export function useProgressionActions({
 
   // Dismiss level up popup and resume game
   // If there's a pending item drop, transition to item_drop pause instead of clearing
+  // If player reached level 2 without a path, transition to path selection screen
+  // If player has a path and leveled up, trigger ability choice
   // Dispatches LEVEL_UP_DISMISSED event to trigger next transition if needed
   const dismissLevelUp = useCallback(() => {
-    // Check if there's a pending item drop that should show next
-    if (droppedItem) {
-      setState((prev: GameState) => ({
+    setState((prev: GameState) => {
+      if (!prev.player) return prev;
+
+      // Check if player reached level 2 and needs to choose a path
+      if (prev.player.level === 2 && prev.player.path === null) {
+        logStateTransition(prev.gamePhase, GAME_PHASE.PATH_SELECT, 'level_2_path_selection');
+        return {
+          ...prev,
+          pendingLevelUp: null,
+          gamePhase: GAME_PHASE.PATH_SELECT,
+          isPaused: false,
+          pauseReason: null,
+        };
+      }
+
+      // Check if player has a path and should choose an ability (level 3+)
+      // Set pendingAbilityChoice flag which will trigger the AbilityChoicePopup
+      if (prev.player.path && prev.player.level >= 3) {
+        const updatedPlayer = deepClonePlayer(prev.player);
+        updatedPlayer.pendingAbilityChoice = true;
+
+        return {
+          ...prev,
+          player: updatedPlayer,
+          pendingLevelUp: null,
+          // Keep paused if there's an item drop, otherwise unpause
+          isPaused: !!droppedItem,
+          pauseReason: droppedItem ? PAUSE_REASON.ITEM_DROP : null,
+        };
+      }
+
+      // No path-related transition needed
+      // Check if there's a pending item drop that should show next
+      if (droppedItem) {
+        return {
+          ...prev,
+          pendingLevelUp: null,
+          isPaused: true,
+          pauseReason: PAUSE_REASON.ITEM_DROP,
+        };
+      }
+
+      // Just unpause and continue
+      return {
         ...prev,
         pendingLevelUp: null,
-      }));
-      pause(PAUSE_REASON.ITEM_DROP, 'level_up_to_item_drop');
-      // Don't dispatch LEVEL_UP_DISMISSED - item popup will handle the transition
-    } else {
-      setState((prev: GameState) => ({
-        ...prev,
-        pendingLevelUp: null,
-      }));
-      unpause('dismiss_level_up');
-      // Dispatch event after state update to trigger next transition
-      // Use tracked timeout to ensure React has processed the state update first
-      // (setState is async, so getState() would return stale state if called synchronously)
-      createTrackedTimeout(() => dispatchFlowEvent?.({ type: 'LEVEL_UP_DISMISSED' }), 0);
-    }
-  }, [setState, dispatchFlowEvent, droppedItem, createTrackedTimeout, pause, unpause]);
+        isPaused: false,
+        pauseReason: null,
+      };
+    });
+
+    // Dispatch flow event if no special transition happened
+    createTrackedTimeout(() => dispatchFlowEvent?.({ type: 'LEVEL_UP_DISMISSED' }), 0);
+  }, [setState, dispatchFlowEvent, droppedItem, createTrackedTimeout]);
 
   const continueFromFloorComplete = useCallback(() => {
     setState((prev: GameState) => {
       if (!prev.player) return prev;
 
-      logStateTransition(GAME_PHASE.FLOOR_COMPLETE, GAME_PHASE.COMBAT, `next_floor:${prev.currentFloor + 1}`);
+      const nextFloor = prev.currentFloor + 1;
+      logStateTransition(GAME_PHASE.FLOOR_COMPLETE, GAME_PHASE.COMBAT, `next_floor:${nextFloor}`);
+
+      // Select a random theme for the new floor
+      const newTheme = selectFloorTheme(nextFloor);
 
       // Reset health and mana to full when moving to next floor
       const player = { ...prev.player };
@@ -200,13 +196,19 @@ export function useProgressionActions({
       player.powers = player.powers.map((p: Power) => ({ ...p, currentCooldown: 0 }));
 
       const combatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
-      combatLog.add(`Entering Floor ${prev.currentFloor + 1}... Health and Mana restored!`);
+      combatLog.add(`Entering Floor ${nextFloor}: ${newTheme.name}... Health and Mana restored!`);
+      combatLog.add(`🎯 ${newTheme.description}`);
+
+      // Get rooms for new floor from config (0-indexed array)
+      const roomsForFloor = FLOOR_CONFIG.ROOMS_PER_FLOOR[nextFloor - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
 
       return {
         ...prev,
         player,
-        currentFloor: prev.currentFloor + 1,
+        currentFloor: nextFloor,
         currentRoom: 0,
+        roomsPerFloor: roomsForFloor,
+        currentFloorTheme: newTheme,
         gamePhase: GAME_PHASE.COMBAT,
         combatLog,
         shopItems: [],
@@ -216,24 +218,25 @@ export function useProgressionActions({
     });
   }, [setState]);
 
-  // applyUpgrade now delegates to applyFloorUpgrade for consistency
-  const applyUpgrade = useCallback((upgradeId: string) => {
-    // Use the same upgrade logic as floor complete screen
-    applyFloorUpgrade(upgradeId);
-  }, [applyFloorUpgrade]);
+  // DEPRECATED: Legacy upgrade system removed
+  const applyUpgrade = useCallback((_upgradeId: string) => {
+    // No-op - upgrade system removed
+    console.warn('applyUpgrade called but upgrade system has been removed');
+  }, []);
 
   const restartGame = useCallback(() => {
     clearCombatTimeouts(); // Clean up pending timeouts
     setLastCombatEvent(null); // Clear any leftover combat events
-    logStateTransition('*', GAME_PHASE.MENU, 'restart_game');
+    logStateTransition('*', GAME_PHASE.CLASS_SELECT, 'abandon_run');
     setState({
       player: null,
       currentEnemy: null,
       currentFloor: 1,
       currentRoom: 0,
-      roomsPerFloor: 5,
+      roomsPerFloor: FLOOR_CONFIG.ROOMS_PER_FLOOR[0] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR,
+      currentFloorTheme: null,
       combatLog: new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE),
-      gamePhase: GAME_PHASE.MENU,
+      gamePhase: GAME_PHASE.CLASS_SELECT,
       isPaused: false,
       pauseReason: null,
       combatSpeed: 1,
@@ -242,6 +245,9 @@ export function useProgressionActions({
       shopItems: [],
       availablePowers: [],
       isTransitioning: false,
+      shopState: null,
+      previousPhase: null,
+      deathFloor: null,
     });
   }, [clearCombatTimeouts, setLastCombatEvent, setState]);
 
@@ -252,8 +258,16 @@ export function useProgressionActions({
     setState((prev: GameState) => {
       if (!prev.player) return prev;
 
-      // Reset HP/MP to max and start floor from room 0
-      const player = { ...prev.player };
+      // PRESERVE on retry: gold, equipment, level, path, baseStats
+      // RESET: HP/MP to max, room to 0, combat state (buffs/effects/cooldowns)
+      let player = deepClonePlayer(prev.player);
+
+      // Process any pending level-ups (edge case: player died with excess XP)
+      const levelUpResult = processLevelUp(player);
+      if (levelUpResult.leveledUp) {
+        player = levelUpResult.updatedPlayer;
+      }
+
       // Recalculate stats to ensure equipment bonuses are applied
       player.currentStats = calculateStats(player);
       // Then restore health/mana to max
@@ -272,16 +286,34 @@ export function useProgressionActions({
       player.lastPowerUsed = null;
       player.isDying = false; // Clear dying state on retry
 
-      prev.combatLog.add(`Retrying Floor ${prev.currentFloor}...`);
+      // Determine which floor to retry
+      const floorToRetry = prev.deathFloor ?? prev.currentFloor;
+
+      // Select a new theme for the retry (gives variety on retries)
+      const newTheme = selectFloorTheme(floorToRetry);
+
+      // Get rooms for floor from config (0-indexed array)
+      const roomsForFloor = FLOOR_CONFIG.ROOMS_PER_FLOOR[floorToRetry - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
+
+      // Clear combat log and add retry message
+      const combatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
+      combatLog.add(`Retrying Floor ${floorToRetry}: ${newTheme.name}... Health and Mana restored!`);
+      combatLog.add(`🎯 ${newTheme.description}`);
+
       return {
         ...prev,
         player,
-        currentRoom: 0,
-        currentEnemy: null,
+        currentFloor: floorToRetry, // Use death floor if available
+        currentRoom: 0, // Reset to room 0 (will generate room 1 enemy on combat start)
+        roomsPerFloor: roomsForFloor,
+        currentEnemy: null, // Will regenerate on combat start
+        currentFloorTheme: newTheme,
+        combatLog,
         gamePhase: GAME_PHASE.COMBAT,
         isPaused: false,
         pauseReason: null,
         isTransitioning: false,
+        deathFloor: null, // Clear death floor after retry starts
       };
     });
   }, [clearCombatTimeouts, setLastCombatEvent, setState]);

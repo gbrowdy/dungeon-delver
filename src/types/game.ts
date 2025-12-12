@@ -1,45 +1,33 @@
 import { CircularBuffer } from '@/utils/circularBuffer';
+import { PlayerPath } from './paths';
+import { ShopState, ShopTier } from './shop';
+import { PowerCategory, PowerSynergy } from './powers';
+import { ModifierEffect } from '@/data/enemyModifiers';
+import { FloorTheme } from '@/data/floorThemes';
 
 export type CharacterClass = 'warrior' | 'mage' | 'rogue' | 'paladin';
 
 export interface Stats {
   health: number;
   maxHealth: number;
-  attack: number;
-  defense: number;
+  power: number;      // Replaces attack - offensive stat
+  armor: number;      // Replaces defense - damage reduction
   speed: number;
-  critChance: number;
-  dodgeChance: number;
   mana: number;
   maxMana: number;
-  hpRegen: number; // HP regenerated per second (default 0)
-  mpRegen: number; // MP regenerated per second (default 2)
-  cooldownSpeed: number; // Multiplier for power cooldown recovery (default 1.0, higher = faster)
-  critDamage: number; // Crit damage multiplier (default 2.0 = 200% damage)
-  goldFind: number; // Gold find bonus (default 0, 0.1 = +10% gold)
+  fortune: number;    // Unified luck stat - affects crit, dodge, drops, proc chances
 }
 
-// Tracks how many times each stat upgrade has been purchased (for scaling costs)
-export interface UpgradePurchases {
-  HP: number;
-  ATTACK: number;
-  DEFENSE: number;
-  CRIT: number;
-  DODGE: number;
-  MANA: number;
-  SPEED: number;
-  HP_REGEN: number;
-  MP_REGEN: number;
-  COOLDOWN_SPEED: number;
-  CRIT_DAMAGE: number;
-  GOLD_FIND: number;
-}
+// DEPRECATED: Old upgrade purchase system removed in favor of shop system
+// Keeping type for backwards compatibility during migration
+// TODO: Remove completely once all references are cleaned up
+export type UpgradePurchases = Record<string, number>;
 
 // Active buffs with duration tracking
 export interface ActiveBuff {
   id: string;
   name: string;
-  stat: 'attack' | 'defense' | 'critChance' | 'dodgeChance';
+  stat: 'power' | 'armor' | 'speed' | 'fortune';
   multiplier: number; // e.g., 1.5 for +50%
   remainingTurns: number;
   icon: string;
@@ -50,6 +38,7 @@ export interface StatusEffect {
   id: string;
   type: 'poison' | 'stun' | 'slow' | 'bleed';
   damage?: number; // For DoT effects
+  value?: number; // For slow (speed reduction %), stun (chance), etc.
   remainingTurns: number;
   icon: string;
 }
@@ -80,11 +69,25 @@ export interface EnemyIntent {
 }
 
 // Item special effects
-export type ItemEffectTrigger = 'on_hit' | 'on_crit' | 'on_kill' | 'on_damaged' | 'combat_start' | 'turn_start';
+export type ItemEffectTrigger =
+  | 'on_hit'
+  | 'on_crit'
+  | 'on_kill'
+  | 'on_damaged'
+  | 'combat_start'
+  | 'turn_start'
+  // New triggers for expanded item system
+  | 'passive' // Always active effects (calculated at stat time)
+  | 'on_damage_dealt' // When dealing damage (for lifesteal scaling)
+  | 'on_lethal_damage' // When receiving lethal damage (survival effects)
+  | 'out_of_combat' // Between combats (regen effects)
+  | 'on_power_cast' // When using a power
+  | 'on_death' // When player would die (phoenix effects)
+  | 'on_damage_taken'; // Alias for ON_DAMAGED
 
 export interface ItemEffect {
   trigger: ItemEffectTrigger;
-  type: 'heal' | 'damage' | 'buff' | 'mana';
+  type: 'heal' | 'damage' | 'buff' | 'mana' | 'debuff' | 'special';
   value: number;
   chance?: number; // Probability (0-1), defaults to 1
   description: string;
@@ -107,6 +110,8 @@ export interface Power {
   value: number;
   icon: string;
   upgradeLevel?: number; // Current upgrade level (1 = base, 2+ = upgraded)
+  category?: PowerCategory; // Optional: Power category for new power system
+  synergies?: PowerSynergy[]; // Optional: Path synergies for new power system
 }
 
 // Represents a power upgrade offer (not the power itself)
@@ -131,6 +136,10 @@ export interface Item {
   description: string;
   icon: string;
   effect?: ItemEffect; // Optional special effect
+  // Enhancement fields
+  enhancementLevel: number;  // 0-3, starts at 0
+  maxEnhancement: number;    // Based on tier (3 for all tiers)
+  tier?: ShopTier;           // 'starter' | 'class' | 'specialty' | 'legendary'
 }
 
 export interface Enemy {
@@ -138,8 +147,8 @@ export interface Enemy {
   name: string;
   health: number;
   maxHealth: number;
-  attack: number;
-  defense: number;
+  power: number;
+  armor: number;
   speed: number;
   experienceReward: number;
   goldReward: number;
@@ -151,8 +160,10 @@ export interface Enemy {
   shieldTurnsRemaining?: number; // Turns until shield expires
   isEnraged?: boolean; // Enrage buff active
   enrageTurnsRemaining?: number; // Turns until enrage expires
-  baseAttack?: number; // Original attack before enrage (to prevent stacking)
+  basePower?: number; // Original power before enrage (to prevent stacking)
   isDying?: boolean; // True when health <= 0, awaiting death animation completion
+  isFinalBoss?: boolean; // True if this is the final boss on Floor 5
+  modifiers?: ModifierEffect[]; // Optional elite/rare enemy modifiers
 }
 
 export interface Player {
@@ -172,8 +183,10 @@ export interface Player {
   isBlocking: boolean; // Active block/dodge state
   comboCount: number; // Current power combo count
   lastPowerUsed: string | null; // For combo tracking
-  upgradePurchases: UpgradePurchases; // Track purchase count for scaling costs
+  // upgradePurchases: UpgradePurchases; // DEPRECATED: Removed in favor of shop system
   isDying?: boolean; // True when health <= 0, awaiting death animation
+  path: PlayerPath | null; // null until level 2
+  pendingAbilityChoice: boolean; // true when level-up needs ability selection
 }
 
 export interface GameState {
@@ -182,8 +195,9 @@ export interface GameState {
   currentFloor: number;
   currentRoom: number;
   roomsPerFloor: number;
+  currentFloorTheme: FloorTheme | null; // Theme variant selected for current floor
   combatLog: CircularBuffer<string>; // Circular buffer to prevent unbounded growth
-  gamePhase: 'menu' | 'class-select' | 'combat' | 'shop' | 'upgrade' | 'victory' | 'defeat' | 'floor-complete';
+  gamePhase: 'menu' | 'class-select' | 'path-select' | 'combat' | 'shop' | 'upgrade' | 'victory' | 'defeat' | 'floor-complete';
   isPaused: boolean; // Derived from pauseReason !== null for backwards compatibility
   pauseReason: PauseReason; // Explicit reason why game is paused (null = not paused)
   combatSpeed: CombatSpeed; // 1x, 2x, 3x speed
@@ -192,6 +206,9 @@ export interface GameState {
   shopItems: Item[]; // Items available in shop/floor complete screen
   availablePowers: (Power | PowerUpgradeOffer)[]; // Power choices available (can be new powers or upgrade offers)
   isTransitioning: boolean; // True when hero is walking to next room (between enemy death and next spawn)
+  shopState: ShopState | null; // null until shop is initialized
+  previousPhase: 'menu' | 'class-select' | 'path-select' | 'combat' | 'shop' | 'upgrade' | 'victory' | 'defeat' | 'floor-complete' | null; // Track previous phase for returning from shop
+  deathFloor: number | null; // Floor where player died (for retry tracking)
 }
 
 export interface ClassData {

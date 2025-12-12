@@ -7,12 +7,12 @@ interface StatDisplayProps {
 
 export function StatDisplay({ stats, compact = false }: StatDisplayProps) {
   const statItems = [
-    { label: 'ATK', value: stats.attack, icon: '⚔️' },
-    { label: 'DEF', value: stats.defense, icon: '🛡️' },
+    { label: 'PWR', value: stats.power, icon: '⚔️' },
+    { label: 'ARM', value: stats.armor, icon: '🛡️' },
     { label: 'SPD', value: stats.speed, icon: '💨' },
-    { label: 'CRIT', value: `${stats.critChance}%`, icon: '💥' },
+    { label: 'FOR', value: stats.fortune, icon: '✨' },
   ];
-  
+
   if (compact) {
     return (
       <div className="flex gap-3 text-pixel-sm">
@@ -24,7 +24,7 @@ export function StatDisplay({ stats, compact = false }: StatDisplayProps) {
       </div>
     );
   }
-  
+
   return (
     <div className="grid grid-cols-2 gap-2">
       {statItems.map(stat => (

@@ -44,6 +44,7 @@ export function PowersPanel() {
             currentMana={player.currentStats.mana}
             onUse={() => actions.usePower(power.id)}
             disabled={!canUsePowers}
+            playerPathId={player.path?.pathId ?? null}
           />
         ))}
       </div>
@@ -151,11 +152,11 @@ function ComboIndicator({ count }: ComboIndicatorProps) {
 
   return (
     <div
-      className="mt-2 pixel-text text-pixel-sm text-warning animate-pulse flex items-center gap-1"
+      className="mt-2 pixel-text text-pixel-sm text-warning combo-pulse flex items-center gap-1"
       role="status"
       aria-live="polite"
     >
-      <span className="text-sm">🔥</span>
+      <span className="text-sm" aria-hidden="true">🔥</span>
       <span>{count}x Combo Active (+{bonusDamage}% damage)</span>
     </div>
   );

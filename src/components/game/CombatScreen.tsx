@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { GameState, CombatSpeed, Item } from '@/types/game';
+import { PathAbility } from '@/types/paths';
 import { BattleArena } from './BattleArena';
 import { CombatLog } from './CombatLog';
 import { CombatHeader } from './CombatHeader';
@@ -7,6 +8,7 @@ import { PlayerStatsPanel } from './PlayerStatsPanel';
 import { PowersPanel } from './PowersPanel';
 import { LevelUpPopup } from './LevelUpPopup';
 import { ItemDropPopup } from './ItemDropPopup';
+import { AbilityChoicePopup } from './AbilityChoicePopup';
 import { CombatEvent } from '@/hooks/useBattleAnimation';
 import { useGameKeyboard } from '@/hooks/useGameKeyboard';
 import { CombatProvider } from '@/contexts/CombatContext';
@@ -32,6 +34,8 @@ type BattlePhase = 'entering' | 'combat' | 'victory' | 'defeat' | 'transitioning
  * @property onDismissLevelUp - Called when level up popup is dismissed
  * @property onEquipDroppedItem - Called when dropped item is equipped
  * @property onDismissDroppedItem - Called when dropped item popup is dismissed
+ * @property abilityChoices - Ability choices for path progression (if any)
+ * @property onSelectAbility - Called when an ability is selected
  */
 interface CombatScreenProps {
   state: GameState;
@@ -50,6 +54,8 @@ interface CombatScreenProps {
   onDismissLevelUp?: () => void;
   onEquipDroppedItem?: () => void;
   onDismissDroppedItem?: () => void;
+  abilityChoices?: [PathAbility, PathAbility] | null;
+  onSelectAbility?: (abilityId: string) => void;
 }
 
 /**
@@ -85,6 +91,8 @@ export function CombatScreen({
   onDismissLevelUp,
   onEquipDroppedItem,
   onDismissDroppedItem,
+  abilityChoices,
+  onSelectAbility,
 }: CombatScreenProps) {
   const { player, currentEnemy, currentRoom, roomsPerFloor, isPaused, combatLog, pendingLevelUp } = state;
   const [battlePhase, setBattlePhase] = useState<BattlePhase>('entering');
@@ -205,6 +213,15 @@ export function CombatScreen({
             player={player}
             onEquip={onEquipDroppedItem}
             onDismiss={onDismissDroppedItem}
+          />
+        )}
+
+        {/* Ability Choice Popup */}
+        {abilityChoices && player && onSelectAbility && (
+          <AbilityChoicePopup
+            abilities={abilityChoices}
+            onSelectAbility={onSelectAbility}
+            playerLevel={player.level}
           />
         )}
       </div>

@@ -5,6 +5,7 @@ import { calculateStats } from '@/hooks/useCharacterSetup';
 import { COMBAT_BALANCE } from '@/constants/balance';
 import { GAME_PHASE, ITEM_EFFECT_TRIGGER, EFFECT_TYPE, BUFF_STAT } from '@/constants/enums';
 import { logStateTransition, logCombatEvent, logDeathEvent } from '@/utils/gameLogger';
+import { processItemEffects } from '@/hooks/useItemEffects';
 
 /**
  * Hook for room transitions and enemy spawning.
@@ -25,7 +26,10 @@ export function useRoomTransitions(
       if (!prev.player) return prev;
 
       const newRoom = prev.currentRoom + 1;
-      const enemy = generateEnemy(prev.currentFloor, newRoom, prev.roomsPerFloor);
+      // Use spread to conditionally pass floorTheme - if undefined, use default parameter
+      const enemy = prev.currentFloorTheme
+        ? generateEnemy(prev.currentFloor, newRoom, prev.roomsPerFloor, prev.currentFloorTheme)
+        : generateEnemy(prev.currentFloor, newRoom, prev.roomsPerFloor);
       const logs: string[] = [`Room ${newRoom}: A ${enemy.name} appears!`];
 
       logCombatEvent('enemy_spawn', {
@@ -35,14 +39,23 @@ export function useRoomTransitions(
         isBoss: enemy.isBoss
       });
 
+      // Trigger out_of_combat item effects (between rooms, before combat_start)
+      const outOfCombatResult = processItemEffects({
+        trigger: ITEM_EFFECT_TRIGGER.OUT_OF_COMBAT,
+        player: prev.player,
+      });
+
       // Reset player state for new combat
       const player: Player = {
-        ...prev.player,
+        ...outOfCombatResult.player,
         statusEffects: [], // Clear status effects between rooms
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
       };
+
+      // Add out_of_combat logs
+      logs.push(...outOfCombatResult.logs);
 
       // Trigger combat_start item effects
       player.equippedItems.forEach((item: Item) => {
@@ -56,12 +69,12 @@ export function useRoomTransitions(
               );
               logs.push(`${item.icon} ${item.name}: +${item.effect.value} mana!`);
             } else if (item.effect.type === EFFECT_TYPE.BUFF) {
-              // Add temporary defense buff
+              // Add temporary armor buff
               player.activeBuffs.push({
                 id: `combat-start-${Date.now()}`,
                 name: 'Combat Ready',
-                stat: BUFF_STAT.DEFENSE,
-                multiplier: 1 + (item.effect.value / player.baseStats.defense),
+                stat: BUFF_STAT.ARMOR,
+                multiplier: 1 + (item.effect.value / player.baseStats.armor),
                 remainingTurns: COMBAT_BALANCE.DEFAULT_BUFF_DURATION,
                 icon: '🛡️',
               });
@@ -118,6 +131,7 @@ export function useRoomTransitions(
 
   // Called when player death animation completes
   // This transitions to the defeat screen with restored stats
+  // Preserves: gold, equipment, level, path (for retry system)
   const handlePlayerDeathAnimationComplete = useCallback(() => {
     setState((prev: GameState) => {
       if (!prev.player?.isDying) return prev;
@@ -129,6 +143,8 @@ export function useRoomTransitions(
       });
       logStateTransition(GAME_PHASE.COMBAT, GAME_PHASE.DEFEAT, 'player_death');
 
+      // Preserve all player state - only restore HP/MP for UI display
+      // Equipment, gold, level, and path all persist through death
       const player = { ...prev.player };
       player.isDying = false;
       player.currentStats.health = player.currentStats.maxHealth;
@@ -140,6 +156,12 @@ export function useRoomTransitions(
         ...prev,
         player,
         gamePhase: GAME_PHASE.DEFEAT,
+        deathFloor: prev.currentFloor, // Track floor for retry
+        // Clear level-up state since level is already applied to player
+        // (popup is informational only, player.level is correct)
+        pendingLevelUp: null,
+        isPaused: false,
+        pauseReason: null,
       };
     });
   }, [setState]);

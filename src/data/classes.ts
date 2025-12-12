@@ -7,20 +7,14 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
     description: 'A mighty fighter with high health and strong attacks. Excels in prolonged combat.',
     icon: '⚔️',
     baseStats: {
-      health: 55,      // Reduced from 120
-      maxHealth: 55,
-      attack: 8,       // Reduced from 15
-      defense: 4,      // Reduced from 10
+      health: 60,
+      maxHealth: 60,
+      power: 8,
+      armor: 4,
       speed: 8,
-      critChance: 5,   // Reduced from 10
-      dodgeChance: 2,  // Reduced from 5
-      mana: 30,        // Reduced from 50
-      maxMana: 30,
-      hpRegen: 0,
-      mpRegen: 1,      // Reduced from 2
-      cooldownSpeed: 1.0,
-      critDamage: 2.0,
-      goldFind: 0,
+      mana: 40,
+      maxMana: 40,
+      fortune: 5,
     },
     startingPower: {
       id: 'berserker-rage',
@@ -39,20 +33,14 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
     description: 'A powerful spellcaster with devastating magical abilities but fragile defenses.',
     icon: '🔮',
     baseStats: {
-      health: 38,      // Reduced from 70
-      maxHealth: 38,
-      attack: 10,      // Reduced from 20
-      defense: 2,      // Reduced from 5
+      health: 40,
+      maxHealth: 40,
+      power: 10,
+      armor: 2,
       speed: 10,
-      critChance: 8,   // Reduced from 15
-      dodgeChance: 4,  // Reduced from 8
-      mana: 50,        // Reduced from 100
-      maxMana: 50,
-      hpRegen: 0,
-      mpRegen: 2,      // Reduced from 3
-      cooldownSpeed: 1.2,
-      critDamage: 2.0,
-      goldFind: 0,
+      mana: 80,
+      maxMana: 80,
+      fortune: 5,
     },
     startingPower: {
       id: 'fireball',
@@ -71,20 +59,14 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
     description: 'A swift assassin with high critical and dodge chance. Strikes fast and deadly.',
     icon: '🗡️',
     baseStats: {
-      health: 42,      // Reduced from 80
-      maxHealth: 42,
-      attack: 9,       // Reduced from 18
-      defense: 3,      // Reduced from 6
-      speed: 12,       // Reduced from 15 to balance with sqrt scaling
-      critChance: 12,  // Reduced from 25
-      dodgeChance: 10, // Reduced from 20
-      mana: 35,        // Reduced from 60
-      maxMana: 35,
-      hpRegen: 0,
-      mpRegen: 1,      // Reduced from 2
-      cooldownSpeed: 1.0,
-      critDamage: 2.2,
-      goldFind: 0.1,
+      health: 45,
+      maxHealth: 45,
+      power: 9,
+      armor: 2,
+      speed: 14,
+      mana: 50,
+      maxMana: 50,
+      fortune: 10,
     },
     startingPower: {
       id: 'shadow-strike',
@@ -103,20 +85,14 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
     description: 'A holy knight balancing offense and defense with healing abilities.',
     icon: '🛡️',
     baseStats: {
-      health: 50,      // Reduced from 100
-      maxHealth: 50,
-      attack: 9,       // Buffed from 7 to improve DPS
-      defense: 5,      // Reduced from 12
-      speed: 9,        // Buffed from 7 to reduce attack interval gap
-      critChance: 4,   // Reduced from 8
-      dodgeChance: 2,  // Reduced from 5
-      mana: 50,        // Buffed from 40 for healing cushion
-      maxMana: 50,
-      hpRegen: 1.0,    // Buffed from 0.5 for better sustain
-      mpRegen: 1,      // Reduced from 2
-      cooldownSpeed: 1.0,
-      critDamage: 2.0,
-      goldFind: 0,
+      health: 55,
+      maxHealth: 55,
+      power: 7,
+      armor: 5,
+      speed: 7,
+      mana: 60,
+      maxMana: 60,
+      fortune: 5,
     },
     startingPower: {
       id: 'divine-heal',

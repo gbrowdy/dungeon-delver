@@ -7,6 +7,7 @@
 export const GAME_PHASE = {
   MENU: 'menu',
   CLASS_SELECT: 'class-select',
+  PATH_SELECT: 'path-select',
   COMBAT: 'combat',
   SHOP: 'shop',
   UPGRADE: 'upgrade',
@@ -35,6 +36,14 @@ export const ITEM_EFFECT_TRIGGER = {
   ON_DAMAGED: 'on_damaged',
   COMBAT_START: 'combat_start',
   TURN_START: 'turn_start',
+  // New triggers for expanded item system
+  PASSIVE: 'passive', // Always active effects (calculated at stat time)
+  ON_DAMAGE_DEALT: 'on_damage_dealt', // When dealing damage (for lifesteal scaling)
+  ON_LETHAL_DAMAGE: 'on_lethal_damage', // When receiving lethal damage (survival effects)
+  OUT_OF_COMBAT: 'out_of_combat', // Between combats (regen effects)
+  ON_POWER_CAST: 'on_power_cast', // When using a power
+  ON_DEATH: 'on_death', // When player would die (phoenix effects)
+  ON_DAMAGE_TAKEN: 'on_damage_taken', // Alias for ON_DAMAGED
 } as const;
 
 export type ItemEffectTriggerType = typeof ITEM_EFFECT_TRIGGER[keyof typeof ITEM_EFFECT_TRIGGER];
@@ -46,6 +55,7 @@ export const EFFECT_TYPE = {
   BUFF: 'buff',
   MANA: 'mana',
   DEBUFF: 'debuff',
+  SPECIAL: 'special', // For unique effects like "survive lethal", "ignore dodge"
 } as const;
 
 export type EffectType = typeof EFFECT_TYPE[keyof typeof EFFECT_TYPE];
@@ -103,10 +113,9 @@ export type CharacterClassType = typeof CHARACTER_CLASS[keyof typeof CHARACTER_C
 
 // Buff stat types
 export const BUFF_STAT = {
-  ATTACK: 'attack',
-  DEFENSE: 'defense',
-  CRIT_CHANCE: 'critChance',
-  DODGE_CHANCE: 'dodgeChance',
+  POWER: 'power',
+  ARMOR: 'armor',
+  FORTUNE: 'fortune',
 } as const;
 
 export type BuffStatType = typeof BUFF_STAT[keyof typeof BUFF_STAT];

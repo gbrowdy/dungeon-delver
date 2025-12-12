@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Player, Stats } from '@/types/game';
 import { deepClonePlayer } from '@/utils/stateUtils';
+import { LEVEL_UP_BONUSES } from '@/constants/game';
 
 /**
  * Level up result
@@ -31,10 +32,9 @@ export function useProgression() {
       updatedPlayer.experienceToNext = Math.floor(updatedPlayer.experienceToNext * 1.5);
 
       // Apply stat gains
-      updatedPlayer.baseStats.maxHealth += 10;
-      updatedPlayer.baseStats.attack += 2;
-      updatedPlayer.baseStats.defense += 1;
-      updatedPlayer.baseStats.maxMana += 5;
+      updatedPlayer.baseStats.maxHealth += LEVEL_UP_BONUSES.MAX_HEALTH;
+      updatedPlayer.baseStats.power += LEVEL_UP_BONUSES.POWER;
+      updatedPlayer.baseStats.maxMana += LEVEL_UP_BONUSES.MAX_MANA;
 
       // Recalculate and restore to full HP/MP
       updatedPlayer.currentStats = calculateStats(updatedPlayer);

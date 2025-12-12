@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   GameState, Item,
-  StatusEffect, CombatSpeed
+  StatusEffect, CombatSpeed, CharacterClass
 } from '@/types/game';
 import { CombatEvent } from '@/hooks/useBattleAnimation';
 import { useEventQueue } from '@/hooks/useEventQueue';
@@ -15,11 +15,20 @@ import { useGameFlow } from '@/hooks/useGameFlow';
 import { useCombatActions } from '@/hooks/useCombatActions';
 import { usePowerActions } from '@/hooks/usePowerActions';
 import { usePauseControl } from '@/hooks/usePauseControl';
+import { usePathActions } from '@/hooks/usePathActions';
+import { useShopState } from '@/hooks/useShopState';
 import { FLOOR_CONFIG } from '@/constants/game';
 import { COMBAT_EVENT_DELAYS } from '@/constants/balance';
 import { GAME_PHASE, STATUS_EFFECT_TYPE } from '@/constants/enums';
 import { logRecovery } from '@/utils/gameLogger';
 import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
+import { deepClonePlayer } from '@/utils/stateUtils';
+import { calculateStats } from '@/hooks/useCharacterSetup';
+import {
+  canEnhance,
+  getEnhancementCost,
+  enhanceItem,
+} from '@/utils/enhancementUtils';
 
 // Base combat tick interval (ms) - modified by speed multiplier
 // At 1x: 2500ms per combat round (gives time to see intent + animations)
@@ -32,7 +41,8 @@ const INITIAL_STATE: GameState = {
   currentEnemy: null,
   currentFloor: 1,
   currentRoom: 0,
-  roomsPerFloor: FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR,
+  roomsPerFloor: FLOOR_CONFIG.ROOMS_PER_FLOOR[0] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR,
+  currentFloorTheme: null,
   combatLog: new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE),
   gamePhase: GAME_PHASE.MENU,
   isPaused: false,
@@ -43,6 +53,9 @@ const INITIAL_STATE: GameState = {
   shopItems: [],
   availablePowers: [],
   isTransitioning: false,
+  shopState: null,
+  previousPhase: null,
+  deathFloor: null,
 };
 
 export function useGameState() {
@@ -63,11 +76,37 @@ export function useGameState() {
     tickInterval: COMBAT_EVENT_DELAYS.EVENT_QUEUE_TICK_INTERVAL,
   });
 
-  // Use the extracted character setup hook
-  const { selectClass } = useCharacterSetup(setState);
+  // Use the shop state hook
+  const shopStateManager = useShopState();
+
+  // Use the extracted character setup hook (needs shopStateManager)
+  const { selectClass: selectClassBase } = useCharacterSetup(setState);
+
+  // Wrap selectClass to also initialize shop
+  const selectClass = useCallback((characterClass: CharacterClass) => {
+    selectClassBase(characterClass);
+    // Shop will be initialized when openShop is called
+  }, [selectClassBase]);
 
   // Use the pause control hook
   const { togglePause } = usePauseControl({ setState });
+
+  // Use the path actions hook
+  const {
+    selectPath: selectPathBase,
+    selectAbility,
+    selectSubpath,
+    getAbilityChoices,
+    getPathById,
+  } = usePathActions({ setState });
+
+  // Wrap selectPath to also update shop
+  const selectPath = useCallback((pathId: string) => {
+    selectPathBase(pathId);
+    // Update shop with new path-specific gear
+    // Note: We don't initialize the shop here - it will be initialized with the correct
+    // path when the player first visits the shop via openShop()
+  }, [selectPathBase]);
 
   // Use the extracted room transitions hook
   const {
@@ -147,6 +186,118 @@ export function useGameState() {
     setState((prev: GameState) => ({ ...prev, combatSpeed: speed }));
   }, []);
 
+  // Shop actions
+  const openShop = useCallback(() => {
+    setState((prev: GameState) => {
+      if (!prev.player) return prev;
+
+      // Initialize shop if not already initialized
+      let newShopState = prev.shopState;
+      if (!newShopState) {
+        // initializeShop returns the new state immediately
+        newShopState = shopStateManager.initializeShop(
+          prev.player.class,
+          prev.player.path?.pathId || null,
+          prev.currentFloor
+        );
+      }
+
+      return {
+        ...prev,
+        previousPhase: prev.gamePhase,
+        gamePhase: GAME_PHASE.SHOP,
+        shopState: newShopState,
+      };
+    });
+  }, [shopStateManager]);
+
+  const closeShop = useCallback(() => {
+    setState((prev: GameState) => ({
+      ...prev,
+      gamePhase: prev.previousPhase || GAME_PHASE.FLOOR_COMPLETE,
+      previousPhase: null,
+    }));
+  }, []);
+
+  const purchaseShopItem = useCallback((itemId: string) => {
+    setState((prev: GameState) => {
+      if (!prev.player || !prev.shopState) return prev;
+
+      const result = shopStateManager.purchaseItem(itemId, prev.player);
+
+      if (!result.success || !result.item || !result.updatedShopState) {
+        console.warn('Purchase failed:', result.message);
+        return prev;
+      }
+
+      // Clone player and update gold
+      const updatedPlayer = deepClonePlayer(prev.player);
+      updatedPlayer.gold -= shopStateManager.getItemById(itemId)?.price || 0;
+
+      // Add item to equipped items (replacing existing item of same type)
+      const itemType = result.item.type;
+      updatedPlayer.equippedItems = [
+        ...updatedPlayer.equippedItems.filter(i => i.type !== itemType),
+        result.item,
+      ];
+
+      // Recalculate stats using the centralized function
+      updatedPlayer.currentStats = calculateStats(updatedPlayer);
+
+      return {
+        ...prev,
+        player: updatedPlayer,
+        shopState: result.updatedShopState,
+      };
+    });
+  }, [shopStateManager]);
+
+  const enhanceEquippedItem = useCallback((itemId: string) => {
+    setState((prev: GameState) => {
+      if (!prev.player) return prev;
+
+      // Find the item in equipped items
+      const item = prev.player.equippedItems.find(item => item.id === itemId);
+      if (!item) {
+        console.warn('Item not found in equipped items:', itemId);
+        return prev;
+      }
+
+      // Check if enhancement is possible
+      if (!canEnhance(item)) {
+        console.warn('Item is already at max enhancement:', item.name);
+        return prev;
+      }
+
+      const cost = getEnhancementCost(item);
+      if (prev.player.gold < cost) {
+        console.warn('Not enough gold for enhancement. Need:', cost, 'Have:', prev.player.gold);
+        return prev;
+      }
+
+      // Clone player
+      const updatedPlayer = deepClonePlayer(prev.player);
+
+      // Deduct gold
+      updatedPlayer.gold -= cost;
+
+      // Enhance the item (creates new item with increased level)
+      const enhancedItem = enhanceItem(item);
+
+      // Replace item in equipped items (replace the matching item)
+      updatedPlayer.equippedItems = updatedPlayer.equippedItems.map(i =>
+        i.id === itemId ? enhancedItem : i
+      );
+
+      // Recalculate stats using the centralized function
+      updatedPlayer.currentStats = calculateStats(updatedPlayer);
+
+      return {
+        ...prev,
+        player: updatedPlayer,
+      };
+    });
+  }, []);
 
   // Use frame-rate independent combat loop with separate hero/enemy timers
   // Also stop combat if player is dying (reached 0 HP)
@@ -313,9 +464,14 @@ export function useGameState() {
     heroProgress: shouldRunCombatLoop ? heroProgress : 0,
     enemyProgress: shouldRunCombatLoop ? enemyProgress : 0,
     isHeroStunned,
+    getAbilityChoices,
+    getPathById,
     actions: {
       startGame,
       selectClass,
+      selectPath,
+      selectAbility,
+      selectSubpath,
       usePower,
       buyItem,
       learnPower,
@@ -335,6 +491,10 @@ export function useGameState() {
       handleTransitionComplete,
       handleEnemyDeathAnimationComplete,
       handlePlayerDeathAnimationComplete,
+      openShop,
+      closeShop,
+      purchaseShopItem,
+      enhanceEquippedItem,
     },
   };
 }

@@ -308,58 +308,156 @@ test(hooks): add useItemEffects unit tests
 - `utils` - Utility functions
 - `types` - TypeScript types
 
-## Task Execution Workflow
+## Conductor-Swarm Workflow
 
-For complex multi-file tasks, use the **Task Document + Parallel Agents** pattern:
+For complex multi-file tasks, use the **Conductor-Swarm** pattern. The **Conductor** (root/main agent) orchestrates **Swarm Agents** (subagents) to execute tasks in parallel or sequentially.
+
+**Trigger phrases**: "conductor-swarm", "work through tasks", "execute task document", "fan out agents", "parallel task execution"
+
+### Roles
+
+| Role | Responsibilities |
+|------|------------------|
+| **Conductor** (root agent) | Creates ALL branches, assigns tasks, reviews/merges work, updates task document in real-time |
+| **Swarm Agent** (subagent) | Verifies branch checkout FIRST, executes ONE assigned task, commits to assigned branch, reports completion. **NEVER creates or merges branches.** |
 
 ### 1. Create Task Document
-Create `tasks/<TASK_NAME>_TASKS.md` with:
-- Numbered tasks in strict priority order (1.1, 1.2, 2.1, etc.)
-- Clear scope and acceptance criteria per task
-- Priority levels: High (1.x) → Medium (2.x-5.x) → Low (6.x+)
 
-Example structure:
+Create `tasks/<TASK_NAME>_TASKS.md` with the following structure:
+
 ```markdown
 # Task Name
 
-## Priority 1 (High) - Critical Issues
-### Task 1.1: [Title]
-**File(s)**: `path/to/file.ts`
-**Issue**: Description of the problem
-**Solution**: What needs to be done
-**Acceptance**: How to verify it's complete
+## Execution Mode
+<!-- IMPORTANT: Specify how tasks should be executed -->
 
-### Task 1.2: [Title]
-...
+## Wave 1: [Wave Name] (PARALLEL|SEQUENTIAL)
+| Task ID | File | Description | Status | Est. Time | Depends On |
+|---------|------|-------------|--------|-----------|------------|
+| **1.1** | `path/to/file.ts` | What needs to be done | [ ] | 30m | - |
+| **1.2** | `path/to/other.ts` | What needs to be done | [ ] | 45m | 1.1 (if sequential) |
 
-## Priority 2 (Medium) - Important Improvements
-### Task 2.1: [Title]
+**Acceptance Criteria:**
+- [ ] Criterion 1
+- [ ] Criterion 2
+
+## Wave 2: [Wave Name] (PARALLEL|SEQUENTIAL)
 ...
 ```
 
-### 2. Execute with Parallel Agents
-- Create feature branch: `<type>/<feature-name>` (e.g., `fix/code-robustness`)
-- Launch 3-5 parallel subagents using the Task tool
-- Each agent works on ONE task from the document in priority order
-- Each agent creates a sub-branch: `<feature>/<task-id>` off the feature branch
-- Agents use conventional commits
+#### Task Document Checklist
 
-### 3. Coordinate and Merge
-- Review agent work as it completes
-- Merge task branches into feature branch
-- Mark completed tasks in document
-- Launch next batch of agents for remaining tasks
-- Repeat until all tasks done
+When creating a task document, always include:
 
-### 4. Finalize
-- Run tests and lint: `npm run lint && npx vitest run`
-- Open PR from feature branch to main
-- Address review comments
+- [ ] **Execution mode per wave** - Explicitly state PARALLEL or SEQUENTIAL for each wave
+- [ ] **Dependencies** - List which tasks depend on others (use "Depends On" column)
+- [ ] **Task IDs** - Unique identifiers for each task (e.g., C1-W, H1, M2)
+- [ ] **File paths** - Exact files to modify
+- [ ] **Clear descriptions** - What needs to be done (not just the problem)
+- [ ] **Status column** - `[ ]` not started, `[~]` in progress, `[x]` completed
+- [ ] **Time estimates** - Realistic estimates per task
+- [ ] **Acceptance criteria per wave** - How to verify the wave is complete
+- [ ] **Wave groupings** - Group related tasks that can/must run together
 
-**Trigger phrases**: "work through tasks", "execute task document", "fan out agents", "parallel task execution"
+### 2. Branch Management (CONDUCTOR ONLY)
 
-### Guidelines:
-1. **Strict priority order** - Always start with Task 1.1, then 1.2, etc.
-2. **Fan out, don't do directly** - Coordinator reviews, agents implement
-3. **One task per agent** - Clear ownership and focused commits
-4. **Update as you go** - Mark tasks complete in the document after merging
+**CRITICAL: The Conductor creates ALL branches. Swarm agents NEVER create branches.**
+
+```bash
+# Step 1: Conductor creates feature branch
+git checkout -b <type>/<feature-name>
+
+# Step 2: Conductor creates sub-branches for EACH task BEFORE launching agents
+git checkout <type>/<feature-name>  # Ensure on feature branch
+git checkout -b <feature>/<task-id>  # Create task branch
+# Example:
+git checkout fix/typescript-path-schema
+git checkout -b fix/ts-warrior-paths
+git checkout fix/typescript-path-schema  # Return to feature branch
+git checkout -b fix/ts-mage-paths
+# etc.
+
+# Step 3: Return to feature branch before launching agents
+git checkout <type>/<feature-name>
+```
+
+**Why Conductor creates branches:**
+- Ensures clean branching from the correct base (feature branch HEAD)
+- Prevents merge conflicts from agents branching off wrong commits
+- Maintains clear ownership and traceability
+- Agents can immediately start working without git setup
+
+### 3. Execute Tasks
+
+#### For PARALLEL Waves:
+1. Conductor creates all sub-branches for the wave FIRST
+2. Conductor launches multiple swarm agents simultaneously (one per task)
+3. Each agent prompt MUST include branch verification instructions:
+   ```
+   FIRST: Run `git checkout <branch> && git branch --show-current` and CONFIRM you are on branch `<branch>` before making ANY file changes. If checkout fails, STOP and report the error.
+   ```
+4. Agents verify branch, work independently, commit to their assigned branch
+5. Conductor monitors progress and updates task document status to `[~]`
+
+#### For SEQUENTIAL Waves:
+1. Conductor creates sub-branch for first task only
+2. Conductor launches ONE agent for first task
+3. Wait for completion, review, and merge into feature branch
+4. Conductor updates task document status to `[x]`
+5. Conductor creates next sub-branch (now includes previous merged work)
+6. Repeat until wave complete
+
+**Default behavior:** If execution mode is NOT specified in task document, **assume SEQUENTIAL** to prevent conflicts.
+
+### 4. Review and Merge (CONDUCTOR ONLY)
+
+As each agent completes:
+
+1. **Review the work** - Check code quality and acceptance criteria
+2. **Merge into feature branch:**
+   ```bash
+   git checkout <type>/<feature-name>
+   git merge <feature>/<task-id>
+   ```
+3. **Update task document immediately:**
+   - Change status from `[~]` to `[x]`
+   - Check off acceptance criteria
+   - Note any issues or follow-ups
+4. **Delete merged branch** (optional):
+   ```bash
+   git branch -d <feature>/<task-id>
+   ```
+
+### 5. Real-Time Document Updates
+
+**The Conductor MUST update the task document as work progresses:**
+
+| Event | Document Update |
+|-------|-----------------|
+| Branch created for task | Note branch name in task row |
+| Agent launched | Status: `[ ]` → `[~]` |
+| Agent completes | Review work before updating |
+| Work merged | Status: `[~]` → `[x]` |
+| Issue found during review | Add note under task or create new task |
+| Wave complete | Check acceptance criteria, add completion timestamp |
+| Blocker encountered | Add BLOCKER note, may need to pause other tasks |
+
+### 6. Finalize
+
+After all waves complete:
+1. Run full validation: `npm run build && npm run lint && npx vitest run`
+2. Update task document with final status and completion timestamp
+3. Open PR from feature branch to main
+4. Reference task document in PR description
+
+### Guidelines Summary
+
+1. **Conductor owns ALL branches** - Swarm agents NEVER create branches
+2. **Clean base required** - Each sub-branch must branch from current feature branch HEAD
+3. **Respect execution mode** - Only parallelize when explicitly marked PARALLEL
+4. **Sequential by default** - When execution mode is not specified, run tasks one at a time
+5. **One task per agent** - Clear ownership and focused commits
+6. **Real-time updates** - Conductor updates task document immediately after each merge
+7. **Review before merge** - Conductor validates work meets acceptance criteria before merging
+8. **Strict priority order** - Always start with highest priority tasks first
+9. **Branch verification required** - Agents MUST verify branch checkout before any file changes

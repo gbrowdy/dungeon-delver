@@ -1,9 +1,11 @@
 import { useEffect } from 'react';
 import { GameState, Power } from '@/types/game';
 import { COMBAT_BALANCE } from '@/constants/balance';
+import { COMBAT_MECHANICS } from '@/constants/game';
+import { deepCloneEnemy, deepClonePlayer } from '@/utils/stateUtils';
 
 /**
- * Hook for managing time-based combat effects: HP/MP regeneration and power cooldowns.
+ * Hook for managing time-based combat effects: power cooldowns, enemy regen, and MP regen.
  *
  * These effects tick independently of attack timing and scale with combat speed.
  * This is separated from the main game state hook for better organization and testability.
@@ -12,61 +14,85 @@ export function useCombatTimers(
   setState: React.Dispatch<React.SetStateAction<GameState>>,
   enabled: boolean
 ) {
-  // Smooth HP and MP regeneration - independent of attack timing
-  // Uses player's hpRegen and mpRegen stats (per second), scales with combat speed
+  // MP regeneration - base regen that makes powers usable
+  // Ticks every second, scaled by combat speed
   useEffect(() => {
     if (!enabled) return;
 
-    const REGEN_INTERVAL = 500; // Check every 500ms (half second)
+    const MP_REGEN_INTERVAL = 1000; // 1 second per tick
 
     const interval = setInterval(() => {
       setState((prev: GameState) => {
         if (!prev.player || prev.isPaused) return prev;
 
-        const { currentStats } = prev.player;
-        const { health, maxHealth, mana, maxMana, hpRegen, mpRegen } = currentStats;
+        const { player } = prev;
+        const { mana, maxMana } = player.currentStats;
 
-        // Check if any regen is needed
-        const needsHpRegen = hpRegen > 0 && health < maxHealth;
-        const needsMpRegen = mpRegen > 0 && mana < maxMana;
+        // Don't regen if already at max
+        if (mana >= maxMana) return prev;
 
-        if (!needsHpRegen && !needsMpRegen) return prev;
+        // Base mana regen scaled by combat speed
+        const regenAmount = COMBAT_MECHANICS.MANA_REGEN_PER_TICK * prev.combatSpeed;
+        const newMana = Math.min(maxMana, mana + regenAmount);
 
-        // Calculate regen amounts (half the per-second rate since we tick every 500ms)
-        // Scale by combat speed so regen feels consistent with game pace
-        const hpRegenAmount = needsHpRegen ? (hpRegen / 2) * prev.combatSpeed : 0;
-        const mpRegenAmount = needsMpRegen ? (mpRegen / 2) * prev.combatSpeed : 0;
+        // Skip if no change
+        if (newMana === mana) return prev;
 
-        // Skip setState if the amounts are negligible (optimization)
-        if (hpRegenAmount === 0 && mpRegenAmount === 0) return prev;
-
-        const newHealth = Math.min(maxHealth, health + hpRegenAmount);
-        const newMana = Math.min(maxMana, mana + mpRegenAmount);
-
-        // Skip setState if values haven't meaningfully changed (within 0.01)
-        if (Math.abs(newHealth - health) < 0.01 && Math.abs(newMana - mana) < 0.01) {
-          return prev;
-        }
+        const updatedPlayer = deepClonePlayer(player);
+        updatedPlayer.currentStats.mana = newMana;
 
         return {
           ...prev,
-          player: {
-            ...prev.player,
-            currentStats: {
-              ...currentStats,
-              health: newHealth,
-              mana: newMana,
-            },
-          },
+          player: updatedPlayer,
         };
       });
-    }, REGEN_INTERVAL);
+    }, MP_REGEN_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [enabled, setState]);
+
+  // Enemy regenerating modifier - heals 2% HP per tick (every 500ms)
+  useEffect(() => {
+    if (!enabled) return;
+
+    const REGEN_TICK_INTERVAL = 500; // 500ms per tick
+
+    const interval = setInterval(() => {
+      setState((prev: GameState) => {
+        if (!prev.currentEnemy || prev.isPaused) return prev;
+
+        const enemy = prev.currentEnemy;
+
+        // Check if enemy has regenerating modifier
+        const hasRegenerating = enemy.modifiers?.some(m => m.id === 'regenerating');
+        if (!hasRegenerating) return prev;
+
+        // Don't regen if dying
+        if (enemy.isDying || enemy.health <= 0) return prev;
+
+        const regenAmount = Math.floor(enemy.maxHealth * 0.02);
+        const newHealth = Math.min(enemy.maxHealth, enemy.health + regenAmount);
+
+        // Only update if health actually changed
+        if (newHealth === enemy.health) return prev;
+
+        const updatedEnemy = deepCloneEnemy(enemy);
+        updatedEnemy.health = newHealth;
+
+        prev.combatLog.add(`💚 ${enemy.name} regenerates ${regenAmount} HP!`);
+
+        return {
+          ...prev,
+          currentEnemy: updatedEnemy,
+        };
+      });
+    }, REGEN_TICK_INTERVAL);
 
     return () => clearInterval(interval);
   }, [enabled, setState]);
 
   // Time-based power cooldown ticker - independent of turns
-  // Cooldowns tick down in real-time, affected by player's cooldownSpeed stat
+  // Cooldowns tick down in real-time at constant speed (cooldownSpeed stat removed)
   useEffect(() => {
     if (!enabled) return;
 
@@ -76,17 +102,16 @@ export function useCombatTimers(
       setState((prev: GameState) => {
         if (!prev.player || prev.isPaused) return prev;
 
-        const { powers, currentStats } = prev.player;
-        const cooldownSpeed = currentStats.cooldownSpeed || COMBAT_BALANCE.BASE_COOLDOWN_SPEED;
+        const { powers } = prev.player;
 
         // Check if any powers are on cooldown
         const hasCooldowns = powers.some((p: Power) => p.currentCooldown > 0);
         if (!hasCooldowns) return prev;
 
         // Calculate cooldown reduction per tick
-        // COOLDOWN_TICK_INTERVAL is in ms, we want to reduce by (tickInterval/1000) * cooldownSpeed seconds
+        // COOLDOWN_TICK_INTERVAL is in ms, we want to reduce by (tickInterval/1000) seconds
         // Also scale with combat speed so cooldowns recover faster at higher speeds
-        const tickSeconds = (COOLDOWN_TICK_INTERVAL / 1000) * cooldownSpeed * prev.combatSpeed;
+        const tickSeconds = (COOLDOWN_TICK_INTERVAL / 1000) * 1.0 * prev.combatSpeed;
 
         // Update powers with reduced cooldowns
         let anyChanged = false;

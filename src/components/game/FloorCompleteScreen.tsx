@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Player, Item, ItemType, UpgradePurchases } from '@/types/game';
+import { Player, Item, ItemType } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
-import { calculateUpgradeCost, STAT_UPGRADE_VALUES, StatUpgradeType } from '@/constants/game';
 import { PowerChoice, isPowerUpgrade } from '@/data/powers';
 import { formatItemStatBonus } from '@/utils/itemUtils';
+import { PowerWithSynergies, hasSynergy, getSynergy, getPathName, getPlayerDisplayName } from '@/utils/powerSynergies';
+import { Star } from 'lucide-react';
+import { PixelDivider } from '@/components/ui/PixelDivider';
 
 const RARITY_COLORS: Record<Item['rarity'], string> = {
   common: 'border-rarity-common bg-rarity-common/10 text-rarity-common',
@@ -38,35 +40,6 @@ const TYPE_ICONS: Record<ItemType, string> = {
 
 const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
 
-// Stat upgrade configuration
-interface StatUpgradeConfig {
-  id: string;
-  upgradeType: StatUpgradeType;
-  icon: string;
-  stat: string;
-  formatValue: (value: number) => string;
-}
-
-const STAT_UPGRADE_CONFIGS: StatUpgradeConfig[] = [
-  { id: 'hp-up', upgradeType: 'HP', icon: '❤️', stat: 'health', formatValue: (v) => `+${v} HP` },
-  { id: 'atk-up', upgradeType: 'ATTACK', icon: '⚔️', stat: 'attack', formatValue: (v) => `+${v} ATK` },
-  { id: 'def-up', upgradeType: 'DEFENSE', icon: '🛡️', stat: 'defense', formatValue: (v) => `+${v} DEF` },
-  { id: 'crit-up', upgradeType: 'CRIT', icon: '💥', stat: 'critChance', formatValue: (v) => `+${v}% CRIT` },
-  { id: 'dodge-up', upgradeType: 'DODGE', icon: '🌀', stat: 'dodgeChance', formatValue: (v) => `+${v}% DODGE` },
-  { id: 'mana-up', upgradeType: 'MANA', icon: '💠', stat: 'mana', formatValue: (v) => `+${v} MP` },
-  { id: 'speed-up', upgradeType: 'SPEED', icon: '💨', stat: 'speed', formatValue: (v) => `+${v} SPD` },
-  { id: 'hpregen-up', upgradeType: 'HP_REGEN', icon: '💗', stat: 'hpRegen', formatValue: (v) => `+${v} HP/s` },
-  { id: 'mpregen-up', upgradeType: 'MP_REGEN', icon: '💎', stat: 'mpRegen', formatValue: (v) => `+${v} MP/s` },
-  { id: 'cooldown-up', upgradeType: 'COOLDOWN_SPEED', icon: '⚡', stat: 'cooldownSpeed', formatValue: (v) => `+${Math.floor(v * 100)}% CD` },
-  { id: 'critdmg-up', upgradeType: 'CRIT_DAMAGE', icon: '🎯', stat: 'critDamage', formatValue: (v) => `+${Math.floor(v * 100)}% Crit` },
-  { id: 'goldfind-up', upgradeType: 'GOLD_FIND', icon: '🪙', stat: 'goldFind', formatValue: (v) => `+${Math.floor(v * 100)}% Gold` },
-];
-
-// Get the current cost for an upgrade based on purchase count
-function getUpgradeCost(upgradeType: StatUpgradeType, purchases: UpgradePurchases): number {
-  return calculateUpgradeCost(upgradeType, purchases[upgradeType]);
-}
-
 interface FloorCompleteScreenProps {
   player: Player;
   floor: number;
@@ -74,8 +47,8 @@ interface FloorCompleteScreenProps {
   availablePowers: PowerChoice[];
   onClaimItem: (index: number) => void;
   onLearnPower: (index: number) => void;
-  onUpgrade: (upgradeId: string) => void;
   onContinue: () => void;
+  onVisitShop: () => void;
 }
 
 export function FloorCompleteScreen({
@@ -85,13 +58,12 @@ export function FloorCompleteScreen({
   availablePowers,
   onClaimItem,
   onLearnPower,
-  onUpgrade,
   onContinue,
+  onVisitShop,
 }: FloorCompleteScreenProps) {
   const [spriteState, setSpriteState] = useState<'idle' | 'walk'>('walk');
   const [highlightedSlot, setHighlightedSlot] = useState<ItemType | null>(null);
   const [itemClaimed, setItemClaimed] = useState(false);
-  const [highlightedStat, setHighlightedStat] = useState<string | null>(null);
   const [isLoadingRewards, setIsLoadingRewards] = useState(true);
 
   // Victory walk animation
@@ -158,20 +130,6 @@ export function FloorCompleteScreen({
     }
   };
 
-  const handleUpgrade = (config: StatUpgradeConfig) => {
-    const cost = getUpgradeCost(config.upgradeType, player.upgradePurchases);
-    if (player.gold < cost) return;
-    onUpgrade(config.id);
-    setHighlightedStat(config.stat);
-    setTimeout(() => setHighlightedStat(null), 800);
-  };
-
-  const getStatClass = (stat: string) => {
-    if (highlightedStat === stat) {
-      return 'ring-2 ring-primary bg-primary/20 scale-105';
-    }
-    return '';
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-2 sm:p-4 relative overflow-hidden">
@@ -194,20 +152,14 @@ export function FloorCompleteScreen({
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="text-5xl sm:text-6xl mb-2">🏆</div>
-          <h1 className="pixel-title text-lg sm:text-xl md:text-2xl font-bold tracking-wider uppercase">
+          <h1 className="pixel-title text-base sm:text-lg md:text-xl lg:text-2xl font-bold tracking-wider uppercase">
             <span className="pixel-glow-gold bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 bg-clip-text text-transparent">
               Floor {floor} Complete!
             </span>
           </h1>
 
           {/* Pixel divider */}
-          <div className="flex justify-center items-center gap-2 pt-2" aria-hidden="true">
-            <div className="pixel-diamond bg-amber-500" />
-            <div className="w-12 sm:w-20 h-[2px] bg-gradient-to-r from-amber-500/80 to-transparent" />
-            <div className="pixel-diamond bg-amber-400" />
-            <div className="w-12 sm:w-20 h-[2px] bg-gradient-to-l from-amber-500/80 to-transparent" />
-            <div className="pixel-diamond bg-amber-500" />
-          </div>
+          <PixelDivider color="amber" className="pt-2" />
 
           <p className="pixel-text text-pixel-xs text-slate-400 tracking-wider pt-2">
             Choose your rewards and prepare for the next challenge
@@ -231,7 +183,7 @@ export function FloorCompleteScreen({
                 <div className="absolute inset-0 bg-primary/10 rounded-lg animate-pulse" />
               </div>
               <div className="text-center">
-                <div className="pixel-text text-pixel-sm text-amber-200">{player.name}</div>
+                <div className="pixel-text text-pixel-sm text-amber-200">{getPlayerDisplayName(player)}</div>
                 <div className="pixel-text text-pixel-xs text-slate-400">Level {player.level}</div>
               </div>
 
@@ -242,38 +194,26 @@ export function FloorCompleteScreen({
                   current={player.currentStats.maxHealth}
                   max={player.currentStats.maxHealth}
                   color="red"
-                  highlighted={highlightedStat === 'health'}
                 />
                 <PixelStatBar
                   label="MP"
                   current={player.currentStats.maxMana}
                   max={player.currentStats.maxMana}
                   color="blue"
-                  highlighted={highlightedStat === 'mana'}
                 />
               </div>
 
-              {/* Stat Boxes - Combat Stats */}
-              <div className="grid grid-cols-3 gap-1 w-full">
-                <PixelStatBox icon="⚔️" label="ATK" value={player.currentStats.attack} className={getStatClass('attack')} />
-                <PixelStatBox icon="🛡️" label="DEF" value={player.currentStats.defense} className={getStatClass('defense')} />
-                <PixelStatBox icon="💨" label="SPD" value={player.currentStats.speed} className={getStatClass('speed')} />
-                <PixelStatBox icon="💥" label="CRIT" value={`${player.currentStats.critChance}%`} className={getStatClass('critChance')} />
-                <PixelStatBox icon="🎯" label="CDMG" value={`${Math.floor(player.currentStats.critDamage * 100)}%`} className={getStatClass('critDamage')} />
-                <PixelStatBox icon="🌀" label="DODGE" value={`${player.currentStats.dodgeChance}%`} className={getStatClass('dodgeChance')} />
-              </div>
-
-              {/* Stat Boxes - Regen & Utility */}
+              {/* Stat Boxes - Core Stats */}
               <div className="grid grid-cols-4 gap-1 w-full">
-                <PixelStatBox icon="💗" label="HP/s" value={player.currentStats.hpRegen.toFixed(1)} className={getStatClass('hpRegen')} />
-                <PixelStatBox icon="💎" label="MP/s" value={player.currentStats.mpRegen.toFixed(1)} className={getStatClass('mpRegen')} />
-                <PixelStatBox icon="⚡" label="CD" value={`${Math.floor(player.currentStats.cooldownSpeed * 100)}%`} className={getStatClass('cooldownSpeed')} />
-                <PixelStatBox icon="🪙" label="GOLD+" value={`${Math.floor(player.currentStats.goldFind * 100)}%`} className={getStatClass('goldFind')} />
+                <PixelStatBox icon="⚔️" label="PWR" value={player.currentStats.power} />
+                <PixelStatBox icon="🛡️" label="ARM" value={player.currentStats.armor} />
+                <PixelStatBox icon="💨" label="SPD" value={player.currentStats.speed} />
+                <PixelStatBox icon="✨" label="FOR" value={player.currentStats.fortune} />
               </div>
 
               {/* Gold Display */}
               <div className="w-full">
-                <PixelStatBox icon="💰" label="GOLD" value={player.gold} className="bg-gold/10" />
+                <PixelStatBox icon="💰" label="GOLD" value={player.gold} />
               </div>
 
               {/* Equipment Slots */}
@@ -339,7 +279,8 @@ export function FloorCompleteScreen({
               {/* Loading skeleton */}
               {isLoadingRewards ? (
                 <div className="space-y-2">
-                  {[1, 2, 3].map((i) => (
+                  {/* Show 3 skeleton placeholders to match typical shop item count */}
+                  {Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="pixel-panel-dark p-3 rounded border border-slate-700/30">
                       <div className="flex items-center gap-3">
                         <Skeleton className="h-8 w-8 rounded" />
@@ -444,6 +385,12 @@ export function FloorCompleteScreen({
                   {availablePowers.map((choice, index) => {
                     const isUpgrade = isPowerUpgrade(choice);
 
+                    // Check for synergy with player's path (only for new powers, not upgrades)
+                    const powerWithSynergies = !isUpgrade ? (choice as PowerWithSynergies) : null;
+                    const playerPathId = player.path?.pathId ?? null;
+                    const synergizes = powerWithSynergies && playerPathId ? hasSynergy(powerWithSynergies, playerPathId) : false;
+                    const synergy = powerWithSynergies && playerPathId ? getSynergy(powerWithSynergies, playerPathId) : null;
+
                     if (isUpgrade) {
                       return (
                         <div
@@ -477,9 +424,26 @@ export function FloorCompleteScreen({
                       return (
                         <div
                           key={choice.id}
-                          className="pixel-panel-dark p-3 rounded border border-info/30 hover:border-info/60 transition-all cursor-pointer"
+                          className={cn(
+                            "pixel-panel-dark p-3 rounded border transition-all cursor-pointer relative",
+                            synergizes
+                              ? "border-amber-500/50 hover:border-amber-400/70 bg-amber-500/5 shadow-sm shadow-amber-500/10"
+                              : "border-info/30 hover:border-info/60"
+                          )}
                           onClick={() => onLearnPower(index)}
                         >
+                          {/* Synergy indicator badge */}
+                          {synergizes && synergy && (
+                            <div className="absolute top-2 right-2">
+                              <div className="flex items-center gap-0.5 bg-amber-500/20 border border-amber-500/40 rounded px-1.5 py-0.5">
+                                <Star className="h-2.5 w-2.5 text-amber-400 fill-amber-400" aria-hidden="true" />
+                                <span className="pixel-text text-pixel-2xs text-amber-400 font-bold">
+                                  {getPathName(synergy.pathId)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
                           <div className="flex items-center gap-3">
                             <span className="text-2xl">{choice.icon}</span>
                             <div className="flex-1 min-w-0">
@@ -494,8 +458,22 @@ export function FloorCompleteScreen({
                                 <span>💧 {choice.manaCost} MP</span>
                                 <span>⏱️ {choice.cooldown}s CD</span>
                               </div>
+                              {/* Synergy description */}
+                              {synergy && (
+                                <div className="mt-2 pt-2 border-t border-amber-500/20">
+                                  <p className="pixel-text text-pixel-2xs text-amber-300 italic">
+                                    ★ {synergy.description}
+                                  </p>
+                                </div>
+                              )}
                             </div>
-                            <Button size="sm" className="pixel-button text-pixel-xs h-6 px-2">
+                            <Button
+                              size="sm"
+                              className={cn(
+                                "pixel-button text-pixel-xs h-6 px-2",
+                                synergizes && "bg-amber-600 hover:bg-amber-500 text-black font-bold"
+                              )}
+                            >
                               Learn
                             </Button>
                           </div>
@@ -508,41 +486,11 @@ export function FloorCompleteScreen({
             )}
           </div>
 
-          {/* Right: Stat Upgrades */}
+          {/* Right: Powers & Gold Display */}
           <div className="pixel-panel rounded-lg p-4">
             <h3 className="pixel-text text-pixel-sm text-gold mb-3 flex items-center gap-2">
-              💰 Spend Gold on Upgrades
+              💰 Gold: {player.gold}
             </h3>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-              {STAT_UPGRADE_CONFIGS.map((config) => {
-                const cost = getUpgradeCost(config.upgradeType, player.upgradePurchases);
-                const value = STAT_UPGRADE_VALUES[config.upgradeType];
-                const purchaseCount = player.upgradePurchases[config.upgradeType];
-                const canAfford = player.gold >= cost;
-                return (
-                  <button
-                    key={config.id}
-                    onClick={() => handleUpgrade(config)}
-                    disabled={!canAfford}
-                    className={cn(
-                      'pixel-panel-dark flex flex-col items-center p-2 rounded border transition-all text-center relative min-h-[55px]',
-                      canAfford
-                        ? 'border-gold/30 hover:border-gold/60 hover:scale-105 cursor-pointer'
-                        : 'border-slate-700/30 opacity-50 cursor-not-allowed'
-                    )}
-                  >
-                    {purchaseCount > 0 && (
-                      <span className="absolute top-0.5 right-0.5 pixel-text text-pixel-xs bg-primary/30 text-primary px-0.5 rounded">
-                        x{purchaseCount}
-                      </span>
-                    )}
-                    <span className="text-base">{config.icon}</span>
-                    <span className="pixel-text text-pixel-xs font-medium">{config.formatValue(value)}</span>
-                    <span className="pixel-text text-pixel-xs text-gold">{cost} 💰</span>
-                  </button>
-                );
-              })}
-            </div>
 
             {/* Powers Display */}
             {player.powers.length > 0 && (
@@ -565,8 +513,15 @@ export function FloorCompleteScreen({
           </div>
         </div>
 
-        {/* Continue Button */}
-        <div className="flex justify-center pt-2">
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-2 justify-center pt-2">
+          <Button
+            onClick={onVisitShop}
+            variant="outline"
+            className="pixel-button text-pixel-sm px-6 sm:px-8 py-3 sm:py-4 border-amber-600 hover:bg-amber-900/20 text-amber-400 uppercase"
+          >
+            ⚒️ Visit Shop
+          </Button>
           <Button
             onClick={onContinue}
             className="pixel-button text-pixel-sm px-8 sm:px-12 py-3 sm:py-4 bg-orange-600 hover:bg-orange-500 uppercase"
@@ -591,13 +546,11 @@ function PixelStatBar({
   current,
   max,
   color,
-  highlighted,
 }: {
   label: string;
   current: number;
   max: number;
   color: 'red' | 'blue';
-  highlighted?: boolean;
 }) {
   const percentage = Math.max(0, Math.min(100, (current / max) * 100));
   const bgGradient = color === 'red'
@@ -606,7 +559,7 @@ function PixelStatBar({
   const textColor = color === 'red' ? 'text-red-400' : 'text-blue-400';
 
   return (
-    <div className={cn('rounded transition-all', highlighted && 'ring-2 ring-primary scale-[1.02]')}>
+    <div className="rounded">
       <div className="flex justify-between pixel-text text-pixel-xs mb-0.5">
         <span className={textColor}>{label}</span>
         <span className="text-slate-400">{current} / {max}</span>
@@ -626,15 +579,13 @@ function PixelStatBox({
   icon,
   label,
   value,
-  className,
 }: {
   icon: string;
   label: string;
   value: string | number;
-  className?: string;
 }) {
   return (
-    <div className={cn('pixel-panel-dark rounded p-1.5 text-center transition-all', className)}>
+    <div className="pixel-panel-dark rounded p-1.5 text-center">
       <div className="text-sm">{icon}</div>
       <div className="pixel-text text-pixel-xs text-slate-400">{label}</div>
       <div className="pixel-text text-pixel-sm font-bold text-slate-200">{value}</div>

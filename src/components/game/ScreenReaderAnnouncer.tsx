@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { CombatEvent } from '@/hooks/useBattleAnimation';
 import { Player, Enemy } from '@/types/game';
 import { COMBAT_EVENT_TYPE } from '@/constants/enums';
+import { getPlayerDisplayName } from '@/utils/powerSynergies';
 
 /**
  * Formats a combat event into a screen reader announcement.
@@ -57,12 +58,13 @@ export function ScreenReaderAnnouncer({
   // Announce combat events for screen readers
   useEffect(() => {
     if (lastCombatEvent) {
-      const message = formatCombatAnnouncement(lastCombatEvent, player.name, enemy?.name);
+      const displayName = getPlayerDisplayName(player);
+      const message = formatCombatAnnouncement(lastCombatEvent, displayName, enemy?.name);
       if (message) {
         setAnnouncement(message);
       }
     }
-  }, [lastCombatEvent, player.name, enemy?.name]);
+  }, [lastCombatEvent, player, enemy?.name]);
 
   // Low health warning for screen readers
   useEffect(() => {

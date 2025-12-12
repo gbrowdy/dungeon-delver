@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { PixelDivider } from '@/components/ui/PixelDivider';
 
 interface MainMenuProps {
   onStart: () => void;
@@ -49,13 +50,7 @@ export function MainMenu({ onStart }: MainMenuProps) {
             </h1>
 
             {/* Pixel divider */}
-            <div className="flex justify-center items-center gap-2" aria-hidden="true">
-              <div className="pixel-diamond bg-orange-500" />
-              <div className="w-16 sm:w-24 h-[2px] bg-gradient-to-r from-orange-500/80 to-transparent" />
-              <div className="pixel-diamond bg-amber-400" />
-              <div className="w-16 sm:w-24 h-[2px] bg-gradient-to-l from-orange-500/80 to-transparent" />
-              <div className="pixel-diamond bg-orange-500" />
-            </div>
+            <PixelDivider color="orange" />
 
             {/* Marketing taglines */}
             <div className="space-y-3 pt-2">
@@ -281,13 +276,6 @@ export function MainMenu({ onStart }: MainMenuProps) {
         /* Pixel-style body text */
         .pixel-text {
           font-family: 'Press Start 2P', 'Courier New', monospace;
-        }
-
-        /* Simple pixel diamond shape */
-        .pixel-diamond {
-          width: 8px;
-          height: 8px;
-          transform: rotate(45deg);
         }
 
         /* Simple class color dots */

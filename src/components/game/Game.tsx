@@ -1,14 +1,25 @@
 import { useGameState } from '@/hooks/useGameState';
 import { MainMenu } from './MainMenu';
 import { ClassSelect } from './ClassSelect';
+import { PathSelectionScreen } from './PathSelectionScreen';
 import { CombatScreen } from './CombatScreen';
 import { DeathScreen } from './DeathScreen';
 import { FloorCompleteScreen } from './FloorCompleteScreen';
+import { ShopScreen } from './ShopScreen';
+import { VictoryScreen } from './VictoryScreen';
 import { GameErrorBoundary, SimpleErrorBoundary } from '@/components/ErrorBoundary';
 import { CombatErrorBoundary } from './CombatErrorBoundary';
 
 export function Game() {
-  const { state, shopItems, availablePowers, droppedItem, lastCombatEvent, heroProgress, enemyProgress, isHeroStunned, actions } = useGameState();
+  const { state, shopItems, availablePowers, droppedItem, lastCombatEvent, heroProgress, enemyProgress, isHeroStunned, getAbilityChoices, getPathById, actions } = useGameState();
+
+  // Get ability choices for player if they have pending ability choice
+  const abilityChoices = state.player?.pendingAbilityChoice && state.player?.path
+    ? (() => {
+        const pathDef = getPathById(state.player.path.pathId);
+        return pathDef ? getAbilityChoices(state.player, pathDef) : null;
+      })()
+    : null;
 
   switch (state.gamePhase) {
     case 'menu':
@@ -16,6 +27,10 @@ export function Game() {
 
     case 'class-select':
       return <ClassSelect onSelect={actions.selectClass} />;
+
+    case 'path-select':
+      if (!state.player) return null;
+      return <PathSelectionScreen characterClass={state.player.class} onSelectPath={actions.selectPath} />;
 
     case 'combat':
       return (
@@ -40,6 +55,8 @@ export function Game() {
             onDismissLevelUp={actions.dismissLevelUp}
             onEquipDroppedItem={actions.equipDroppedItem}
             onDismissDroppedItem={actions.dismissDroppedItem}
+            abilityChoices={abilityChoices}
+            onSelectAbility={actions.selectAbility}
           />
         </CombatErrorBoundary>
       );
@@ -55,8 +72,23 @@ export function Game() {
             availablePowers={availablePowers}
             onClaimItem={actions.claimItem}
             onLearnPower={actions.learnPower}
-            onUpgrade={actions.applyFloorUpgrade}
             onContinue={actions.continueFromFloorComplete}
+            onVisitShop={actions.openShop}
+          />
+        </SimpleErrorBoundary>
+      );
+
+    case 'shop':
+      if (!state.player || !state.shopState) return null;
+      return (
+        <SimpleErrorBoundary>
+          <ShopScreen
+            player={state.player}
+            shopState={state.shopState}
+            currentFloor={state.currentFloor}
+            onPurchase={actions.purchaseShopItem}
+            onEnhance={actions.enhanceEquippedItem}
+            onClose={actions.closeShop}
           />
         </SimpleErrorBoundary>
       );
@@ -66,14 +98,25 @@ export function Game() {
       return (
         <DeathScreen
           player={state.player}
-          floor={state.currentFloor}
-          room={state.currentRoom}
-          onUpgrade={actions.applyUpgrade}
+          currentFloor={state.currentFloor}
           onRetry={actions.retryFloor}
           onAbandon={actions.restartGame}
+          onVisitShop={actions.openShop}
         />
       );
-      
+
+    case 'victory':
+      if (!state.player) return null;
+      return (
+        <SimpleErrorBoundary>
+          <VictoryScreen
+            player={state.player}
+            onNewRun={actions.restartGame}
+            onReturnToMenu={actions.restartGame}
+          />
+        </SimpleErrorBoundary>
+      );
+
     default:
       return <MainMenu onStart={actions.startGame} />;
   }

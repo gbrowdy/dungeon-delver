@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Player, Stats, Item, ActiveBuff } from '@/types/game';
 import { isValidStatKey, isValidStatValue } from '@/utils/typeGuards';
+import { getEnhancedStats } from '@/utils/enhancementUtils';
 
 /**
  * Hook for calculating player stats from base stats, equipment, and buffs.
@@ -9,9 +10,11 @@ export function useStats() {
   const calculateStats = useCallback((player: Player): Stats => {
     const stats = { ...player.baseStats };
 
-    // Apply equipment bonuses
+    // Apply equipment bonuses (with enhancement bonuses)
     player.equippedItems.forEach((item: Item) => {
-      Object.entries(item.statBonus).forEach(([key, value]) => {
+      // Use getEnhancedStats to include enhancement bonuses
+      const enhancedStats = getEnhancedStats(item);
+      Object.entries(enhancedStats).forEach(([key, value]) => {
         if (isValidStatKey(key) && isValidStatValue(value)) {
           stats[key] += value;
         }
@@ -20,14 +23,12 @@ export function useStats() {
 
     // Apply active buffs (multiplicative)
     player.activeBuffs.forEach((buff: ActiveBuff) => {
-      if (buff.stat === 'attack') {
-        stats.attack = Math.floor(stats.attack * buff.multiplier);
-      } else if (buff.stat === 'defense') {
-        stats.defense = Math.floor(stats.defense * buff.multiplier);
-      } else if (buff.stat === 'critChance') {
-        stats.critChance = Math.min(100, Math.floor(stats.critChance * buff.multiplier));
-      } else if (buff.stat === 'dodgeChance') {
-        stats.dodgeChance = Math.min(100, Math.floor(stats.dodgeChance * buff.multiplier));
+      if (buff.stat === 'power') {
+        stats.power = Math.floor(stats.power * buff.multiplier);
+      } else if (buff.stat === 'armor') {
+        stats.armor = Math.floor(stats.armor * buff.multiplier);
+      } else if (buff.stat === 'fortune') {
+        stats.fortune = Math.floor(stats.fortune * buff.multiplier);
       }
     });
 

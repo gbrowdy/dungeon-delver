@@ -6,6 +6,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { PowerWithSynergies, hasSynergy, getSynergy, getPathName } from '@/utils/powerSynergies';
+import { Star } from 'lucide-react';
 
 /**
  * Props for the PowerButton component.
@@ -14,6 +16,7 @@ import {
  * @property currentMana - Player's current mana for affordability check
  * @property onUse - Callback fired when the power button is clicked
  * @property disabled - Whether the button is disabled (e.g., combat paused, not in combat phase)
+ * @property playerPathId - Player's current path ID for synergy checking
  */
 interface PowerButtonProps {
   /** The power configuration (icon, name, cooldown, mana cost, effect) */
@@ -24,6 +27,8 @@ interface PowerButtonProps {
   onUse: () => void;
   /** Whether the button is disabled (combat paused, etc.) */
   disabled?: boolean;
+  /** Player's current path ID for synergy detection */
+  playerPathId?: string | null;
 }
 
 function getPowerDescription(power: Power): string {
@@ -51,16 +56,22 @@ function getPowerDescription(power: Power): string {
  * - Mana cost or cooldown remaining
  * - Visual cooldown overlay that fills from bottom up
  * - Accessible tooltip with power description
+ * - Synergy indicator if power matches player's path
  *
  * The button is disabled when:
  * - On cooldown (currentCooldown > 0)
  * - Insufficient mana
  * - Explicitly disabled via prop (combat paused, etc.)
  */
-export function PowerButton({ power, currentMana, onUse, disabled }: PowerButtonProps) {
+export function PowerButton({ power, currentMana, onUse, disabled, playerPathId }: PowerButtonProps) {
   const canUse = power.currentCooldown <= 0 && currentMana >= power.manaCost && !disabled;
   const isOnCooldown = power.currentCooldown > 0;
   const cooldownProgress = isOnCooldown ? (power.currentCooldown / power.cooldown) * 100 : 0;
+
+  // Check for synergy with player's path
+  const powerWithSynergies = power as PowerWithSynergies;
+  const synergizes = playerPathId ? hasSynergy(powerWithSynergies, playerPathId) : false;
+  const synergy = playerPathId ? getSynergy(powerWithSynergies, playerPathId) : null;
 
   // Build accessible status description
   const statusDescription = isOnCooldown
@@ -78,11 +89,19 @@ export function PowerButton({ power, currentMana, onUse, disabled }: PowerButton
             disabled={!canUse}
             className={cn(
               'pixel-panel-dark relative flex flex-col items-center gap-0.5 p-1.5 xs:p-2 min-w-[60px] xs:min-w-[70px] sm:min-w-[80px] min-h-[50px] xs:min-h-[56px] rounded border transition-all overflow-hidden',
-              canUse && 'border-primary/40 hover:border-primary/70 hover:bg-primary/10 cursor-pointer',
+              canUse && !synergizes && 'border-primary/40 hover:border-primary/70 hover:bg-primary/10 cursor-pointer',
+              canUse && synergizes && 'border-amber-500/60 hover:border-amber-400/80 hover:bg-amber-500/10 cursor-pointer shadow-sm shadow-amber-500/20',
               !canUse && 'opacity-50 cursor-not-allowed border-slate-700/30'
             )}
-            aria-label={`${power.name}: ${getPowerDescription(power)}. ${statusDescription}`}
+            aria-label={`${power.name}: ${getPowerDescription(power)}. ${statusDescription}${synergizes && synergy ? ` Synergizes with ${getPathName(synergy.pathId)} path.` : ''}`}
           >
+            {/* Synergy indicator badge */}
+            {synergizes && (
+              <div className="absolute top-1 right-1 z-20">
+                <Star className="h-3 w-3 text-amber-400 fill-amber-400" aria-hidden="true" />
+              </div>
+            )}
+
             {/* Cooldown fill overlay - fills from bottom up as cooldown progresses */}
             {isOnCooldown && (
               <div
@@ -103,6 +122,19 @@ export function PowerButton({ power, currentMana, onUse, disabled }: PowerButton
           <p className="pixel-text text-pixel-2xs text-mana mt-1">
             {power.manaCost} MP · {power.cooldown}s cooldown
           </p>
+          {synergy && (
+            <div className="mt-2 pt-2 border-t border-amber-500/30">
+              <div className="flex items-center gap-1 mb-1">
+                <Star className="h-3 w-3 text-amber-400 fill-amber-400" />
+                <span className="pixel-text text-pixel-2xs text-amber-400 font-bold uppercase">
+                  {getPathName(synergy.pathId)} Synergy
+                </span>
+              </div>
+              <p className="pixel-text text-pixel-2xs text-slate-300 italic">
+                {synergy.description}
+              </p>
+            </div>
+          )}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

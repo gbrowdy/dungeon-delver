@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { LEVEL_UP_BONUSES } from '@/constants/game';
+import { PixelDivider } from '@/components/ui/PixelDivider';
 
 interface LevelUpPopupProps {
   newLevel: number;
@@ -20,13 +21,7 @@ export function LevelUpPopup({ newLevel, onContinue }: LevelUpPopupProps) {
           </h2>
 
           {/* Pixel divider */}
-          <div className="flex justify-center items-center gap-2 pt-3" aria-hidden="true">
-            <div className="pixel-diamond bg-gold" />
-            <div className="w-12 sm:w-16 h-[2px] bg-gradient-to-r from-gold/80 to-transparent" />
-            <div className="pixel-diamond bg-amber-400" />
-            <div className="w-12 sm:w-16 h-[2px] bg-gradient-to-l from-gold/80 to-transparent" />
-            <div className="pixel-diamond bg-gold" />
-          </div>
+          <PixelDivider color="amber" className="pt-3" />
 
           <p className="pixel-text text-lg sm:text-xl font-bold text-white mt-3">
             Level {newLevel}
@@ -38,10 +33,9 @@ export function LevelUpPopup({ newLevel, onContinue }: LevelUpPopupProps) {
           <h3 className="pixel-text text-pixel-sm font-medium text-gold mb-3 text-center">
             Stats Increased
           </h3>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2">
             <StatGain icon="❤️" label="Max HP" value={`+${LEVEL_UP_BONUSES.MAX_HEALTH}`} />
-            <StatGain icon="⚔️" label="Attack" value={`+${LEVEL_UP_BONUSES.ATTACK}`} />
-            <StatGain icon="🛡️" label="Defense" value={`+${LEVEL_UP_BONUSES.DEFENSE}`} />
+            <StatGain icon="⚔️" label="Power" value={`+${LEVEL_UP_BONUSES.POWER}`} />
             <StatGain icon="💧" label="Max Mana" value={`+${LEVEL_UP_BONUSES.MAX_MANA}`} />
           </div>
         </div>

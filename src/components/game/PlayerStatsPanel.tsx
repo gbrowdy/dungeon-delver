@@ -9,6 +9,22 @@ import {
 } from '@/components/ui/tooltip';
 import { TouchTooltip } from '@/components/ui/touch-tooltip';
 import { formatItemStatBonus } from '@/utils/itemUtils';
+import { getCritChance, getCritDamage, getDodgeChance } from '@/utils/fortuneUtils';
+import { ReactNode } from 'react';
+import { getPlayerDisplayName } from '@/utils/powerSynergies';
+import * as Icons from 'lucide-react';
+
+/**
+ * Get the Lucide icon component for an item.
+ * Item data stores icon names directly as valid Lucide icon names (e.g., 'Sword', 'Axe', 'Wand2').
+ * Falls back to 'Package' if the icon doesn't exist.
+ */
+function getItemIcon(iconName: string | undefined): keyof typeof Icons {
+  if (iconName && iconName in Icons) {
+    return iconName as keyof typeof Icons;
+  }
+  return 'Package';
+}
 
 const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
 
@@ -37,7 +53,7 @@ export function PlayerStatsPanel() {
       {/* Header: Player info and equipment - more compact on mobile */}
       <div className="flex items-center justify-between flex-wrap gap-1 xs:gap-2">
         <PlayerInfo
-          name={player.name}
+          name={getPlayerDisplayName(player)}
           playerClass={player.class}
           level={player.level}
         />
@@ -46,16 +62,10 @@ export function PlayerStatsPanel() {
 
       {/* Stats Grid - only show primary stats on very small screens */}
       <StatsGrid
-        attack={player.currentStats.attack}
-        defense={player.currentStats.defense}
+        power={player.currentStats.power}
+        armor={player.currentStats.armor}
         speed={player.currentStats.speed}
-        critChance={player.currentStats.critChance}
-        dodgeChance={player.currentStats.dodgeChance}
-        critDamage={player.currentStats.critDamage || 2}
-        hpRegen={player.currentStats.hpRegen || 0}
-        mpRegen={player.currentStats.mpRegen || 0}
-        cooldownSpeed={player.currentStats.cooldownSpeed || 1}
-        goldFind={player.currentStats.goldFind || 0}
+        fortune={player.currentStats.fortune}
       />
 
       {/* Gold and XP Progress */}
@@ -237,7 +247,11 @@ function EquipmentSlot({ item }: EquipmentSlotProps) {
       )}
       aria-label={`${item.name}: ${item.rarity} ${item.type}. ${statText}${item.effect ? `. ${item.effect.description}` : ''}`}
     >
-      <span className="text-base" aria-hidden="true">{item.icon}</span>
+      {(() => {
+        const iconName = getItemIcon(item.icon);
+        const IconComponent = Icons[iconName] as React.ComponentType<{ className?: string }>;
+        return <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />;
+      })()}
       {itemHasEffect && (
         <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-accent rounded-full border border-background flex items-center justify-center text-[6px]" aria-hidden="true">
           ✨
@@ -287,62 +301,110 @@ function EquipmentSlot({ item }: EquipmentSlotProps) {
  * StatsGrid - Displays all player stats in a pixel-styled grid layout.
  */
 interface StatsGridProps {
-  attack: number;
-  defense: number;
+  power: number;
+  armor: number;
   speed: number;
-  critChance: number;
-  dodgeChance: number;
-  critDamage: number;
-  hpRegen: number;
-  mpRegen: number;
-  cooldownSpeed: number;
-  goldFind: number;
+  fortune: number;
 }
 
 function StatsGrid({
-  attack,
-  defense,
+  power,
+  armor,
   speed,
-  critChance,
-  dodgeChance,
-  critDamage,
-  hpRegen,
-  mpRegen,
-  cooldownSpeed,
-  goldFind,
+  fortune,
 }: StatsGridProps) {
+  // Calculate derived stats from fortune
+  const critChance = Math.floor(getCritChance(fortune) * 100);
+  const critDamage = Math.floor(getCritDamage(fortune) * 100);
+  const dodgeChance = Math.floor(getDodgeChance(fortune) * 100);
+
   return (
-    <div className="mt-1.5 grid grid-cols-4 xs:grid-cols-5 sm:grid-cols-10 gap-1">
-      <StatItem icon="⚔️" label="ATK" value={attack} />
-      <StatItem icon="🛡️" label="DEF" value={defense} />
-      <StatItem icon="💨" label="SPD" value={speed} />
-      <StatItem icon="💥" label="CRIT" value={`${critChance}%`} />
-      <StatItem icon="🎯" label="DODGE" value={`${dodgeChance}%`} />
-      <StatItem icon="💀" label="CDMG" value={`${Math.floor(critDamage * 100)}%`} />
-      <StatItem icon="❤️" label="HP/s" value={hpRegen.toFixed(1)} />
-      <StatItem icon="💧" label="MP/s" value={mpRegen.toFixed(1)} />
-      <StatItem icon="⏱️" label="CD" value={`${(cooldownSpeed * 100).toFixed(0)}%`} />
-      <StatItem icon="💰" label="GOLD+" value={`${Math.floor(goldFind * 100)}%`} />
+    <div className="mt-1.5 grid grid-cols-4 gap-1">
+      <StatItemWithTooltip
+        icon="⚔️"
+        label="PWR"
+        value={power}
+        tooltip="Power - determines attack damage"
+      />
+      <StatItemWithTooltip
+        icon="🛡️"
+        label="ARM"
+        value={armor}
+        tooltip="Armor - reduces incoming damage"
+      />
+      <StatItemWithTooltip
+        icon="💨"
+        label="SPD"
+        value={speed}
+        tooltip="Speed - affects attack rate"
+      />
+      <StatItemWithTooltip
+        icon="✨"
+        label="FOR"
+        value={fortune}
+        tooltip={
+          <>
+            <div>Fortune - affects luck</div>
+            <div>Crit: {critChance}% | Dodge: {dodgeChance}%</div>
+            <div>Crit Dmg: {critDamage}%</div>
+          </>
+        }
+      />
     </div>
   );
 }
 
 /**
- * StatItem - A single stat display with icon, label, and value in pixel style.
+ * StatItemWithTooltip - A single stat display with icon, label, value, and tooltip in pixel style.
  */
-interface StatItemProps {
+interface StatItemWithTooltipProps {
   icon: string;
   label: string;
   value: string | number;
+  tooltip: ReactNode;
 }
 
-function StatItem({ icon, label, value }: StatItemProps) {
-  return (
+function StatItemWithTooltip({ icon, label, value, tooltip }: StatItemWithTooltipProps) {
+  const content = (
     <div className="pixel-panel-dark flex flex-col items-center text-center rounded p-1 xs:p-1.5 sm:p-2">
       <span className="text-pixel-xs xs:text-pixel-sm" aria-hidden="true">{icon}</span>
       <span className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">{label}</span>
       <span className="pixel-text text-pixel-2xs xs:text-pixel-xs sm:text-pixel-sm font-medium text-slate-200">{value}</span>
     </div>
+  );
+
+  return (
+    <>
+      {/* Mobile: TouchTooltip */}
+      <div className="xs:hidden">
+        <TouchTooltip
+          content={
+            <div className="pixel-text text-pixel-xs text-slate-200">
+              {tooltip}
+            </div>
+          }
+          side="bottom"
+        >
+          {content}
+        </TouchTooltip>
+      </div>
+
+      {/* Desktop: Standard Tooltip */}
+      <div className="hidden xs:block">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {content}
+            </TooltipTrigger>
+            <TooltipContent side="top" className="pixel-panel max-w-xs">
+              <div className="pixel-text text-pixel-xs text-slate-200">
+                {tooltip}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    </>
   );
 }
 

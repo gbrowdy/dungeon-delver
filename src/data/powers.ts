@@ -19,97 +19,347 @@ export function isPowerUpgrade(choice: PowerChoice): choice is PowerUpgradeOffer
   return 'isUpgrade' in choice && choice.isUpgrade === true;
 }
 
-// Powers with increased mana costs and cooldowns for tighter resource management
-export const UNLOCKABLE_POWERS: Power[] = [
+/**
+ * POWER CATEGORIES:
+ *
+ * Powers are VERBS, not numbers. Each power does something mechanically distinct.
+ *
+ * - STRIKE: Single reliable hit (Crushing Blow, Power Strike)
+ * - BURST: Multiple small hits that proc on-hit effects (Fan of Knives, Flurry)
+ * - EXECUTE: Bonus damage vs low HP enemies (Ambush, Coup de Grace)
+ * - CONTROL: Change combat flow (Frost Nova, Stunning Blow)
+ * - BUFF: Temporary stat boost (Battle Cry, Inner Focus)
+ * - SACRIFICE: Spend HP for effect (Reckless Swing, Blood Pact)
+ * - HEAL: Restore HP (Divine Heal, Regeneration)
+ */
+
+// Path synergy interface for power definitions
+interface PowerSynergy {
+  pathId: string;
+  description: string;
+}
+
+interface PowerDefinition {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  manaCost: number;
+  cooldown: number;
+  category: 'strike' | 'burst' | 'execute' | 'control' | 'buff' | 'sacrifice' | 'heal';
+  effect: 'damage' | 'heal' | 'buff' | 'debuff';
+  value: number;
+  synergies: PowerSynergy[];
+  maxLevel?: number;
+  additionalEffects?: string;
+}
+
+/**
+ * UNLOCKABLE POWERS
+ *
+ * Redesigned with verb-focused mechanics and path synergies.
+ * Each power has a unique mechanical identity.
+ */
+const POWER_DEFINITIONS: PowerDefinition[] = [
+  // ============================================================================
+  // STRIKE POWERS - Single reliable hits
+  // ============================================================================
   {
-    id: 'lightning-bolt',
-    name: 'Lightning Bolt',
-    description: 'Strike with lightning for 170% damage',
-    manaCost: 35, // Increased from 25
-    cooldown: 3,  // Increased from 2
-    currentCooldown: 0,
+    id: 'crushing-blow',
+    name: 'Crushing Blow',
+    description: 'A devastating single strike dealing 150% damage',
+    icon: '🔨',
+    manaCost: 30,
+    cooldown: 5,
+    category: 'strike',
     effect: 'damage',
-    value: 1.7,   // Reduced from 1.8
+    value: 1.5,
+    synergies: [
+      { pathId: 'berserker', description: 'Low HP bonuses increase damage' },
+      { pathId: 'guardian', description: 'Triggers counter-attack effects' },
+      { pathId: 'paladin_crusader', description: 'Deals bonus holy damage' },
+    ],
+  },
+  {
+    id: 'power-strike',
+    name: 'Power Strike',
+    description: 'Basic but effective strike dealing 120% damage',
     icon: '⚡',
+    manaCost: 20,
+    cooldown: 3,
+    category: 'strike',
+    effect: 'damage',
+    value: 1.2,
+    synergies: [
+      { pathId: 'guardian', description: 'Benefits from armor scaling' },
+      { pathId: 'paladin_protector', description: 'Grants HP regen on hit' },
+    ],
+  },
+
+  // ============================================================================
+  // BURST POWERS - Multiple hits (great for on-hit procs)
+  // ============================================================================
+  {
+    id: 'fan-of-knives',
+    name: 'Fan of Knives',
+    description: '5 quick hits of 30% damage each (150% total, procs on-hit effects)',
+    icon: '🗡️',
+    manaCost: 35,
+    cooldown: 6,
+    category: 'burst',
+    effect: 'damage',
+    value: 1.5, // Total damage, delivered as 5x 0.3
+    synergies: [
+      { pathId: 'assassin', description: 'Each hit can crit independently' },
+      { pathId: 'duelist', description: 'Triggers riposte effects multiple times' },
+    ],
+    additionalEffects: 'Hits 5 times for 30% damage each',
   },
   {
-    id: 'ice-shard',
-    name: 'Ice Shard',
-    description: 'Freeze enemy, dealing 140% damage and slowing',
-    manaCost: 30, // Increased from 20
-    cooldown: 3,  // Increased from 2
-    currentCooldown: 0,
+    id: 'flurry',
+    name: 'Flurry',
+    description: '3 rapid strikes of 50% damage each (150% total)',
+    icon: '💨',
+    manaCost: 25,
+    cooldown: 4,
+    category: 'burst',
     effect: 'damage',
-    value: 1.4,   // Reduced from 1.5
+    value: 1.5,
+    synergies: [
+      { pathId: 'berserker', description: 'Speed bonuses reduce cooldown' },
+      { pathId: 'assassin', description: 'Builds kill chain momentum' },
+    ],
+    additionalEffects: 'Hits 3 times for 50% damage each',
+  },
+
+  // ============================================================================
+  // EXECUTE POWERS - Bonus vs low HP enemies
+  // ============================================================================
+  {
+    id: 'ambush',
+    name: 'Ambush',
+    description: 'Deal 100% damage, doubled against enemies below 25% HP',
+    icon: '🎯',
+    manaCost: 30,
+    cooldown: 5,
+    category: 'execute',
+    effect: 'damage',
+    value: 1.0,
+    synergies: [
+      { pathId: 'assassin', description: 'Guaranteed crit on execute' },
+      { pathId: 'berserker', description: 'Resets cooldown on kill' },
+    ],
+    additionalEffects: 'Deals 200% damage to enemies below 25% HP',
+  },
+  {
+    id: 'coup-de-grace',
+    name: 'Coup de Grace',
+    description: 'Massive 250% damage strike to enemies below 30% HP, else 80%',
+    icon: '💀',
+    manaCost: 40,
+    cooldown: 8,
+    category: 'execute',
+    effect: 'damage',
+    value: 0.8,
+    synergies: [
+      { pathId: 'berserker', description: 'Executioner synergy amplifies damage' },
+      { pathId: 'assassin', description: 'Instantly resets on kill' },
+    ],
+    additionalEffects: 'Deals 250% damage to enemies below 30% HP',
+  },
+
+  // ============================================================================
+  // CONTROL POWERS - Change combat flow
+  // ============================================================================
+  {
+    id: 'frost-nova',
+    name: 'Frost Nova',
+    description: 'Deal 110% damage and slow enemy attack speed by 30% for 4s',
     icon: '❄️',
+    manaCost: 35,
+    cooldown: 6,
+    category: 'control',
+    effect: 'debuff',
+    value: 1.1,
+    synergies: [
+      { pathId: 'archmage', description: 'Elementalist combos with ice affinity' },
+      { pathId: 'enchanter', description: 'DoT effects extended' },
+    ],
+    additionalEffects: 'Slows enemy by 30% for 4 seconds',
   },
   {
-    id: 'poison-cloud',
-    name: 'Poison Cloud',
-    description: 'Toxic cloud deals 110% damage over time',
-    manaCost: 25, // Increased from 15
-    cooldown: 4,  // Increased from 3
-    currentCooldown: 0,
-    effect: 'damage',
-    value: 1.1,   // Reduced from 1.2
-    icon: '☠️',
+    id: 'stunning-blow',
+    name: 'Stunning Blow',
+    description: 'Deal 100% damage with 40% chance to stun for 2s',
+    icon: '⚡',
+    manaCost: 30,
+    cooldown: 5,
+    category: 'control',
+    effect: 'debuff',
+    value: 1.0,
+    synergies: [
+      { pathId: 'berserker', description: 'Warlord increases stun chance' },
+      { pathId: 'guardian', description: 'Extends stun duration' },
+    ],
+    additionalEffects: '40% chance to stun for 2 seconds',
   },
+
+  // ============================================================================
+  // BUFF POWERS - Temporary stat boosts
+  // ============================================================================
   {
     id: 'battle-cry',
     name: 'Battle Cry',
-    description: 'Boost attack by 50% for next 3 hits',
-    manaCost: 40, // Increased from 30
-    cooldown: 6,  // Increased from 5
-    currentCooldown: 0,
+    description: 'Gain +50% Power and +30% Speed for 6 seconds',
+    icon: '📯',
+    manaCost: 40,
+    cooldown: 10,
+    category: 'buff',
     effect: 'buff',
     value: 0.5,
-    icon: '📯',
+    synergies: [
+      { pathId: 'berserker', description: 'Battle Trance reduces cooldown' },
+      { pathId: 'paladin_crusader', description: 'Amplifies smite damage' },
+    ],
+    additionalEffects: 'Also grants +30% Speed',
   },
   {
-    id: 'vampiric-touch',
-    name: 'Vampiric Touch',
-    description: 'Deal 90% damage and heal for amount dealt',
-    manaCost: 45, // Increased from 35
-    cooldown: 5,  // Increased from 4
-    currentCooldown: 0,
-    effect: 'damage',
-    value: 0.9,   // Reduced from 1.0
-    icon: '🩸',
+    id: 'inner-focus',
+    name: 'Inner Focus',
+    description: 'Gain +40% Fortune (crit/dodge/proc chance) for 5 seconds',
+    icon: '✨',
+    manaCost: 30,
+    cooldown: 8,
+    category: 'buff',
+    effect: 'buff',
+    value: 0.4,
+    synergies: [
+      { pathId: 'assassin', description: 'Shadowblade crit synergies activate' },
+      { pathId: 'duelist', description: 'Boosts dodge-based procs' },
+    ],
   },
+
+  // ============================================================================
+  // SACRIFICE POWERS - Spend HP for effect
+  // ============================================================================
+  {
+    id: 'reckless-swing',
+    name: 'Reckless Swing',
+    description: 'Spend 15% max HP to deal 200% damage',
+    icon: '🩸',
+    manaCost: 25,
+    cooldown: 4,
+    category: 'sacrifice',
+    effect: 'damage',
+    value: 2.0,
+    synergies: [
+      { pathId: 'berserker', description: 'Lowers HP to trigger damage bonuses' },
+      { pathId: 'paladin_protector', description: 'Martyr benefits from sacrifice' },
+    ],
+    additionalEffects: 'Costs 15% max HP',
+  },
+  {
+    id: 'blood-pact',
+    name: 'Blood Pact',
+    description: 'Spend 20% max HP to restore 50 mana',
+    icon: '💉',
+    manaCost: 0,
+    cooldown: 12,
+    category: 'sacrifice',
+    effect: 'heal',
+    value: 50,
+    synergies: [
+      { pathId: 'berserker', description: 'Reckless Fury converts HP to mana' },
+      { pathId: 'archmage', description: 'Enables more spell casts' },
+    ],
+    additionalEffects: 'Costs 20% max HP, restores mana instead of HP',
+  },
+
+  // ============================================================================
+  // HEAL POWERS - Restore HP
+  // ============================================================================
+  {
+    id: 'divine-heal',
+    name: 'Divine Heal',
+    description: 'Restore 60% of max HP',
+    icon: '✝️',
+    manaCost: 40,
+    cooldown: 10,
+    category: 'heal',
+    effect: 'heal',
+    value: 0.6,
+    synergies: [
+      { pathId: 'paladin_protector', description: 'Sentinel boosts healing received' },
+      { pathId: 'guardian', description: 'Synergizes with regen effects' },
+    ],
+  },
+  {
+    id: 'regeneration',
+    name: 'Regeneration',
+    description: 'Restore 10% max HP immediately, then 3% per second for 5s',
+    icon: '💚',
+    manaCost: 30,
+    cooldown: 8,
+    category: 'heal',
+    effect: 'heal',
+    value: 0.1,
+    synergies: [
+      { pathId: 'paladin_protector', description: 'Regen scaling amplifies HoT' },
+      { pathId: 'enchanter', description: 'DoT amplification extends duration' },
+    ],
+    additionalEffects: 'Heals 3% max HP per second for 5 seconds (25% total)',
+  },
+
+  // ============================================================================
+  // ADDITIONAL UNIQUE POWERS
+  // ============================================================================
   {
     id: 'earthquake',
     name: 'Earthquake',
     description: 'Massive tremor deals 250% damage',
-    manaCost: 60, // Increased from 50
-    cooldown: 8,  // Increased from 6
-    currentCooldown: 0,
-    effect: 'damage',
-    value: 2.5,   // Reduced from 3.0
     icon: '🌋',
+    manaCost: 60,
+    cooldown: 12,
+    category: 'strike',
+    effect: 'damage',
+    value: 2.5,
+    synergies: [
+      { pathId: 'berserker', description: 'Devastating at low HP' },
+      { pathId: 'archmage', description: 'Destroyer amplifies spell power' },
+    ],
   },
   {
-    id: 'shield-wall',
-    name: 'Shield Wall',
-    description: 'Double defense for 3 turns',
-    manaCost: 35, // Increased from 25
-    cooldown: 6,  // Increased from 5
-    currentCooldown: 0,
-    effect: 'buff',
-    value: 1.0,
-    icon: '🛡️',
-  },
-  {
-    id: 'mana-surge',
-    name: 'Mana Surge',
-    description: 'Restore 40% of max mana',
-    manaCost: 0,
-    cooldown: 12, // Increased from 8
-    currentCooldown: 0,
-    effect: 'heal',
-    value: 0.4,   // Reduced from 0.5
-    icon: '💠',
+    id: 'vampiric-touch',
+    name: 'Vampiric Touch',
+    description: 'Deal 120% damage and heal for 100% of damage dealt',
+    icon: '🦇',
+    manaCost: 45,
+    cooldown: 7,
+    category: 'heal',
+    effect: 'damage',
+    value: 1.2,
+    synergies: [
+      { pathId: 'berserker', description: 'Bloodbath synergy sustains berserker' },
+      { pathId: 'paladin_protector', description: 'Healing amplification applies' },
+    ],
+    additionalEffects: 'Heals for 100% of damage dealt',
   },
 ];
+
+// Convert PowerDefinition to Power for compatibility
+export const UNLOCKABLE_POWERS: Power[] = POWER_DEFINITIONS.map(def => ({
+  id: def.id,
+  name: def.name,
+  description: def.description,
+  manaCost: def.manaCost,
+  cooldown: def.cooldown,
+  currentCooldown: 0,
+  effect: def.effect,
+  value: def.value,
+  icon: def.icon,
+  category: def.category,
+  synergies: def.synergies,
+}));
 
 export function getRandomPower(existingPowerIds: string[]): Power | null {
   const available = UNLOCKABLE_POWERS.filter(p => !existingPowerIds.includes(p.id));

@@ -7,7 +7,7 @@ describe('stateUtils', () => {
     it('should create a deep clone without mutating the original player', () => {
       const originalPlayer: Player = {
         name: 'TestHero',
-        class: 'Warrior',
+        class: 'warrior',
         level: 5,
         experience: 500,
         experienceToNext: 750,
@@ -15,34 +15,22 @@ describe('stateUtils', () => {
         baseStats: {
           health: 50,
           maxHealth: 50,
-          attack: 10,
-          defense: 5,
+          power: 10,
+          armor: 5,
           speed: 8,
-          critChance: 0.1,
-          dodgeChance: 0.05,
           mana: 30,
           maxMana: 30,
-          hpRegen: 1,
-          mpRegen: 0.5,
-          cooldownSpeed: 1,
-          critDamage: 2.5,
-          goldFind: 1,
+          fortune: 5,
         },
         currentStats: {
           health: 45,
           maxHealth: 50,
-          attack: 10,
-          defense: 5,
+          power: 10,
+          armor: 5,
           speed: 8,
-          critChance: 0.1,
-          dodgeChance: 0.05,
           mana: 25,
           maxMana: 30,
-          hpRegen: 1,
-          mpRegen: 0.5,
-          cooldownSpeed: 1,
-          critDamage: 2.5,
-          goldFind: 1,
+          fortune: 5,
         },
         powers: [
           {
@@ -65,7 +53,7 @@ describe('stateUtils', () => {
             name: 'Iron Sword',
             type: 'weapon',
             rarity: 'common',
-            statBonus: { attack: 5 },
+            statBonus: { power: 5 },
             description: 'A basic sword',
             icon: '⚔️',
             effect: {
@@ -81,7 +69,7 @@ describe('stateUtils', () => {
           {
             id: 'buff-1',
             name: 'Power Up',
-            stat: 'attack',
+            stat: 'power',
             multiplier: 1.5,
             remainingTurns: 3,
             icon: '💪',
@@ -99,20 +87,7 @@ describe('stateUtils', () => {
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
-        upgradePurchases: {
-          HP: 2,
-          ATTACK: 1,
-          DEFENSE: 0,
-          CRIT: 1,
-          DODGE: 0,
-          MANA: 1,
-          SPEED: 0,
-          HP_REGEN: 0,
-          MP_REGEN: 0,
-          COOLDOWN_SPEED: 0,
-          CRIT_DAMAGE: 0,
-          GOLD_FIND: 1,
-        },
+        // upgradePurchases removed - old upgrade system deprecated
         isDying: false,
       };
 
@@ -131,7 +106,7 @@ describe('stateUtils', () => {
     it('should create independent copies of nested Stats objects', () => {
       const originalPlayer: Player = {
         name: 'TestHero',
-        class: 'Warrior',
+        class: 'warrior',
         level: 1,
         experience: 0,
         experienceToNext: 100,
@@ -139,34 +114,27 @@ describe('stateUtils', () => {
         baseStats: {
           health: 50,
           maxHealth: 50,
-          attack: 10,
-          defense: 5,
+          power: 10,
+          armor: 5,
           speed: 8,
-          critChance: 0.1,
-          dodgeChance: 0.05,
           mana: 30,
           maxMana: 30,
-          hpRegen: 1,
-          mpRegen: 0.5,
-          cooldownSpeed: 1,
-          critDamage: 2.5,
-          goldFind: 1,
+          fortune: 5,
         },
         currentStats: {
           health: 50,
           maxHealth: 50,
-          attack: 10,
-          defense: 5,
+          power: 10,
+          armor: 5,
           speed: 8,
-          critChance: 0.1,
-          dodgeChance: 0.05,
           mana: 30,
           maxMana: 30,
-          hpRegen: 1,
-          mpRegen: 0.5,
-          cooldownSpeed: 1,
-          critDamage: 2.5,
-          goldFind: 1,
+          fortune: 5,
+          
+          
+          
+          
+          
         },
         powers: [],
         inventory: [],
@@ -176,22 +144,18 @@ describe('stateUtils', () => {
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
-        upgradePurchases: {
-          HP: 0, ATTACK: 0, DEFENSE: 0, CRIT: 0, DODGE: 0,
-          MANA: 0, SPEED: 0, HP_REGEN: 0, MP_REGEN: 0,
-          COOLDOWN_SPEED: 0, CRIT_DAMAGE: 0, GOLD_FIND: 0,
-        },
+        // upgradePurchases removed
         isDying: false,
       };
 
       const clonedPlayer = deepClonePlayer(originalPlayer);
 
       // Modify clone's stats
-      clonedPlayer.baseStats.attack = 999;
+      clonedPlayer.baseStats.power = 999;
       clonedPlayer.currentStats.health = 1;
 
       // Verify original is unchanged
-      expect(originalPlayer.baseStats.attack).toBe(10);
+      expect(originalPlayer.baseStats.power).toBe(10);
       expect(originalPlayer.currentStats.health).toBe(50);
 
       // Verify the objects are not the same reference
@@ -202,20 +166,20 @@ describe('stateUtils', () => {
     it('should create independent copies of statusEffects array', () => {
       const originalPlayer: Player = {
         name: 'TestHero',
-        class: 'Warrior',
+        class: 'warrior',
         level: 1,
         experience: 0,
         experienceToNext: 100,
         gold: 0,
         baseStats: {
-          health: 50, maxHealth: 50, attack: 10, defense: 5, speed: 8,
-          critChance: 0.1, dodgeChance: 0.05, mana: 30, maxMana: 30,
-          hpRegen: 1, mpRegen: 0.5, cooldownSpeed: 1, critDamage: 2.5, goldFind: 1,
+          health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
+          mana: 30, maxMana: 30, fortune: 5,
+              
         },
         currentStats: {
-          health: 50, maxHealth: 50, attack: 10, defense: 5, speed: 8,
-          critChance: 0.1, dodgeChance: 0.05, mana: 30, maxMana: 30,
-          hpRegen: 1, mpRegen: 0.5, cooldownSpeed: 1, critDamage: 2.5, goldFind: 1,
+          health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
+          mana: 30, maxMana: 30, fortune: 5,
+              
         },
         powers: [],
         inventory: [],
@@ -228,11 +192,7 @@ describe('stateUtils', () => {
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
-        upgradePurchases: {
-          HP: 0, ATTACK: 0, DEFENSE: 0, CRIT: 0, DODGE: 0,
-          MANA: 0, SPEED: 0, HP_REGEN: 0, MP_REGEN: 0,
-          COOLDOWN_SPEED: 0, CRIT_DAMAGE: 0, GOLD_FIND: 0,
-        },
+        // upgradePurchases removed
         isDying: false,
       };
 
@@ -257,20 +217,20 @@ describe('stateUtils', () => {
     it('should create independent copies of equipped items with nested effects', () => {
       const originalPlayer: Player = {
         name: 'TestHero',
-        class: 'Warrior',
+        class: 'warrior',
         level: 1,
         experience: 0,
         experienceToNext: 100,
         gold: 0,
         baseStats: {
-          health: 50, maxHealth: 50, attack: 10, defense: 5, speed: 8,
-          critChance: 0.1, dodgeChance: 0.05, mana: 30, maxMana: 30,
-          hpRegen: 1, mpRegen: 0.5, cooldownSpeed: 1, critDamage: 2.5, goldFind: 1,
+          health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
+          mana: 30, maxMana: 30, fortune: 5,
+              
         },
         currentStats: {
-          health: 50, maxHealth: 50, attack: 10, defense: 5, speed: 8,
-          critChance: 0.1, dodgeChance: 0.05, mana: 30, maxMana: 30,
-          hpRegen: 1, mpRegen: 0.5, cooldownSpeed: 1, critDamage: 2.5, goldFind: 1,
+          health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
+          mana: 30, maxMana: 30, fortune: 5,
+              
         },
         powers: [],
         inventory: [],
@@ -280,7 +240,7 @@ describe('stateUtils', () => {
             name: 'Magic Sword',
             type: 'weapon',
             rarity: 'rare',
-            statBonus: { attack: 10, critChance: 0.05 },
+            statBonus: { power: 10, fortune: 0.05 },
             description: 'A magical weapon',
             icon: '⚔️',
             effect: {
@@ -297,24 +257,20 @@ describe('stateUtils', () => {
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
-        upgradePurchases: {
-          HP: 0, ATTACK: 0, DEFENSE: 0, CRIT: 0, DODGE: 0,
-          MANA: 0, SPEED: 0, HP_REGEN: 0, MP_REGEN: 0,
-          COOLDOWN_SPEED: 0, CRIT_DAMAGE: 0, GOLD_FIND: 0,
-        },
+        // upgradePurchases removed
         isDying: false,
       };
 
       const clonedPlayer = deepClonePlayer(originalPlayer);
 
       // Modify clone's item and nested effect
-      clonedPlayer.equippedItems[0].statBonus.attack = 999;
+      clonedPlayer.equippedItems[0].statBonus.power = 999;
       if (clonedPlayer.equippedItems[0].effect) {
         clonedPlayer.equippedItems[0].effect.value = 888;
       }
 
       // Verify original is unchanged
-      expect(originalPlayer.equippedItems[0].statBonus.attack).toBe(10);
+      expect(originalPlayer.equippedItems[0].statBonus.power).toBe(10);
       expect(originalPlayer.equippedItems[0].effect?.value).toBe(15);
 
       // Verify objects are not the same reference
@@ -327,37 +283,33 @@ describe('stateUtils', () => {
     it('should create independent copies of activeBuffs array', () => {
       const originalPlayer: Player = {
         name: 'TestHero',
-        class: 'Warrior',
+        class: 'warrior',
         level: 1,
         experience: 0,
         experienceToNext: 100,
         gold: 0,
         baseStats: {
-          health: 50, maxHealth: 50, attack: 10, defense: 5, speed: 8,
-          critChance: 0.1, dodgeChance: 0.05, mana: 30, maxMana: 30,
-          hpRegen: 1, mpRegen: 0.5, cooldownSpeed: 1, critDamage: 2.5, goldFind: 1,
+          health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
+          mana: 30, maxMana: 30, fortune: 5,
+              
         },
         currentStats: {
-          health: 50, maxHealth: 50, attack: 10, defense: 5, speed: 8,
-          critChance: 0.1, dodgeChance: 0.05, mana: 30, maxMana: 30,
-          hpRegen: 1, mpRegen: 0.5, cooldownSpeed: 1, critDamage: 2.5, goldFind: 1,
+          health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
+          mana: 30, maxMana: 30, fortune: 5,
+              
         },
         powers: [],
         inventory: [],
         equippedItems: [],
         activeBuffs: [
-          { id: 'buff-1', name: 'Strength', stat: 'attack', multiplier: 1.5, remainingTurns: 3, icon: '💪' },
+          { id: 'buff-1', name: 'Strength', stat: 'power', multiplier: 1.5, remainingTurns: 3, icon: '💪' },
           { id: 'buff-2', name: 'Speed', stat: 'speed', multiplier: 1.2, remainingTurns: 2, icon: '⚡' },
         ],
         statusEffects: [],
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
-        upgradePurchases: {
-          HP: 0, ATTACK: 0, DEFENSE: 0, CRIT: 0, DODGE: 0,
-          MANA: 0, SPEED: 0, HP_REGEN: 0, MP_REGEN: 0,
-          COOLDOWN_SPEED: 0, CRIT_DAMAGE: 0, GOLD_FIND: 0,
-        },
+        // upgradePurchases removed
         isDying: false,
       };
 
@@ -385,14 +337,14 @@ describe('stateUtils', () => {
         experienceToNext: 100,
         gold: 0,
         baseStats: {
-          health: 50, maxHealth: 50, attack: 10, defense: 5, speed: 8,
-          critChance: 0.1, dodgeChance: 0.05, mana: 30, maxMana: 30,
-          hpRegen: 1, mpRegen: 0.5, cooldownSpeed: 1, critDamage: 2.5, goldFind: 1,
+          health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
+          mana: 30, maxMana: 30, fortune: 5,
+              
         },
         currentStats: {
-          health: 50, maxHealth: 50, attack: 10, defense: 5, speed: 8,
-          critChance: 0.1, dodgeChance: 0.05, mana: 30, maxMana: 30,
-          hpRegen: 1, mpRegen: 0.5, cooldownSpeed: 1, critDamage: 2.5, goldFind: 1,
+          health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
+          mana: 30, maxMana: 30, fortune: 5,
+              
         },
         powers: [
           {
@@ -415,11 +367,7 @@ describe('stateUtils', () => {
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
-        upgradePurchases: {
-          HP: 0, ATTACK: 0, DEFENSE: 0, CRIT: 0, DODGE: 0,
-          MANA: 0, SPEED: 0, HP_REGEN: 0, MP_REGEN: 0,
-          COOLDOWN_SPEED: 0, CRIT_DAMAGE: 0, GOLD_FIND: 0,
-        },
+        // upgradePurchases removed
         isDying: false,
       };
 
@@ -438,62 +386,10 @@ describe('stateUtils', () => {
       expect(clonedPlayer.powers[0]).not.toBe(originalPlayer.powers[0]);
     });
 
-    it('should create independent copies of upgradePurchases object', () => {
-      const originalPlayer: Player = {
-        name: 'TestHero',
-        class: 'Warrior',
-        level: 1,
-        experience: 0,
-        experienceToNext: 100,
-        gold: 0,
-        baseStats: {
-          health: 50, maxHealth: 50, attack: 10, defense: 5, speed: 8,
-          critChance: 0.1, dodgeChance: 0.05, mana: 30, maxMana: 30,
-          hpRegen: 1, mpRegen: 0.5, cooldownSpeed: 1, critDamage: 2.5, goldFind: 1,
-        },
-        currentStats: {
-          health: 50, maxHealth: 50, attack: 10, defense: 5, speed: 8,
-          critChance: 0.1, dodgeChance: 0.05, mana: 30, maxMana: 30,
-          hpRegen: 1, mpRegen: 0.5, cooldownSpeed: 1, critDamage: 2.5, goldFind: 1,
-        },
-        powers: [],
-        inventory: [],
-        equippedItems: [],
-        activeBuffs: [],
-        statusEffects: [],
-        isBlocking: false,
-        comboCount: 0,
-        lastPowerUsed: null,
-        upgradePurchases: {
-          HP: 3,
-          ATTACK: 2,
-          DEFENSE: 1,
-          CRIT: 0,
-          DODGE: 0,
-          MANA: 1,
-          SPEED: 0,
-          HP_REGEN: 0,
-          MP_REGEN: 0,
-          COOLDOWN_SPEED: 0,
-          CRIT_DAMAGE: 0,
-          GOLD_FIND: 0,
-        },
-        isDying: false,
-      };
-
-      const clonedPlayer = deepClonePlayer(originalPlayer);
-
-      // Modify clone's upgrade purchases
-      clonedPlayer.upgradePurchases.HP = 999;
-      clonedPlayer.upgradePurchases.ATTACK = 888;
-
-      // Verify original is unchanged
-      expect(originalPlayer.upgradePurchases.HP).toBe(3);
-      expect(originalPlayer.upgradePurchases.ATTACK).toBe(2);
-
-      // Verify objects are not the same reference
-      expect(clonedPlayer.upgradePurchases).not.toBe(originalPlayer.upgradePurchases);
-    });
+    // DEPRECATED: Test removed - upgradePurchases system deprecated
+    // it('should create independent copies of upgradePurchases object', () => {
+    //   ... test code removed ...
+    // });
   });
 
   describe('deepCloneEnemy', () => {
@@ -503,8 +399,8 @@ describe('stateUtils', () => {
         name: 'Goblin',
         health: 30,
         maxHealth: 30,
-        attack: 8,
-        defense: 3,
+        power: 8,
+        armor: 3,
         speed: 10,
         experienceReward: 50,
         goldReward: 25,
@@ -540,7 +436,7 @@ describe('stateUtils', () => {
         shieldTurnsRemaining: 0,
         isEnraged: false,
         enrageTurnsRemaining: 0,
-        baseAttack: 8,
+        basePower: 8,
         isDying: false,
       };
 
@@ -549,7 +445,7 @@ describe('stateUtils', () => {
       // Verify original is unchanged at top level
       expect(originalEnemy.name).toBe('Goblin');
       expect(originalEnemy.health).toBe(30);
-      expect(originalEnemy.attack).toBe(8);
+      expect(originalEnemy.power).toBe(8);
 
       // Verify clone is equal but not the same reference
       expect(clonedEnemy).toEqual(originalEnemy);
@@ -562,8 +458,8 @@ describe('stateUtils', () => {
         name: 'Boss',
         health: 100,
         maxHealth: 100,
-        attack: 15,
-        defense: 8,
+        power: 15,
+        armor: 8,
         speed: 12,
         experienceReward: 200,
         goldReward: 100,
@@ -598,7 +494,7 @@ describe('stateUtils', () => {
         shieldTurnsRemaining: 0,
         isEnraged: false,
         enrageTurnsRemaining: 0,
-        baseAttack: 15,
+        basePower: 15,
         isDying: false,
       };
 
@@ -635,8 +531,8 @@ describe('stateUtils', () => {
         name: 'Enemy',
         health: 50,
         maxHealth: 50,
-        attack: 10,
-        defense: 5,
+        power: 10,
+        armor: 5,
         speed: 8,
         experienceReward: 100,
         goldReward: 50,
@@ -663,7 +559,7 @@ describe('stateUtils', () => {
         shieldTurnsRemaining: 0,
         isEnraged: false,
         enrageTurnsRemaining: 0,
-        baseAttack: 10,
+        basePower: 10,
         isDying: false,
       };
 
@@ -692,8 +588,8 @@ describe('stateUtils', () => {
         name: 'Enemy',
         health: 50,
         maxHealth: 50,
-        attack: 10,
-        defense: 5,
+        power: 10,
+        armor: 5,
         speed: 8,
         experienceReward: 100,
         goldReward: 50,
@@ -705,7 +601,7 @@ describe('stateUtils', () => {
         shieldTurnsRemaining: 0,
         isEnraged: false,
         enrageTurnsRemaining: 0,
-        baseAttack: 10,
+        basePower: 10,
         isDying: false,
       };
 
@@ -732,8 +628,8 @@ describe('stateUtils', () => {
         name: 'Enemy',
         health: 50,
         maxHealth: 50,
-        attack: 10,
-        defense: 5,
+        power: 10,
+        armor: 5,
         speed: 8,
         experienceReward: 100,
         goldReward: 50,
@@ -748,7 +644,7 @@ describe('stateUtils', () => {
         shieldTurnsRemaining: 0,
         isEnraged: false,
         enrageTurnsRemaining: 0,
-        baseAttack: 10,
+        basePower: 10,
         isDying: false,
       };
 
@@ -776,8 +672,8 @@ describe('stateUtils', () => {
         name: 'Shielded Enemy',
         health: 60,
         maxHealth: 60,
-        attack: 12,
-        defense: 8,
+        power: 12,
+        armor: 8,
         speed: 9,
         experienceReward: 150,
         goldReward: 75,
@@ -789,7 +685,7 @@ describe('stateUtils', () => {
         shieldTurnsRemaining: 3,
         isEnraged: true,
         enrageTurnsRemaining: 2,
-        baseAttack: 10,
+        basePower: 10,
         isDying: false,
       };
 
@@ -814,8 +710,8 @@ describe('stateUtils', () => {
         name: 'Test Enemy',
         health: 40,
         maxHealth: 40,
-        attack: 8,
-        defense: 4,
+        power: 8,
+        armor: 4,
         speed: 10,
         experienceReward: 75,
         goldReward: 40,
@@ -827,7 +723,7 @@ describe('stateUtils', () => {
         shieldTurnsRemaining: 0,
         isEnraged: false,
         enrageTurnsRemaining: 0,
-        baseAttack: 8,
+        basePower: 8,
         isDying: false,
       };
 
@@ -835,13 +731,13 @@ describe('stateUtils', () => {
 
       // Heavily modify the clone
       clonedEnemy.health = 1;
-      clonedEnemy.attack = 999;
+      clonedEnemy.power = 999;
       clonedEnemy.isBoss = true;
       clonedEnemy.isDying = true;
 
       // Verify original is completely unchanged
       expect(originalEnemy.health).toBe(40);
-      expect(originalEnemy.attack).toBe(8);
+      expect(originalEnemy.power).toBe(8);
       expect(originalEnemy.isBoss).toBe(false);
       expect(originalEnemy.isDying).toBe(false);
     });
