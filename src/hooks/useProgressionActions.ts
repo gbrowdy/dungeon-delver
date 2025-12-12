@@ -7,6 +7,7 @@ import { calculateStats } from '@/hooks/useCharacterSetup';
 import { GameFlowEvent } from '@/hooks/useGameFlow';
 import { useTrackedTimeouts } from '@/hooks/useTrackedTimeouts';
 import { usePauseControl } from '@/hooks/usePauseControl';
+import { processLevelUp } from '@/hooks/useRewardCalculation';
 // STAT_UPGRADE imports removed - old upgrade system deprecated
 import { GAME_PHASE, PAUSE_REASON } from '@/constants/enums';
 import { FLOOR_CONFIG } from '@/constants/game';
@@ -198,11 +199,15 @@ export function useProgressionActions({
       combatLog.add(`Entering Floor ${nextFloor}: ${newTheme.name}... Health and Mana restored!`);
       combatLog.add(`🎯 ${newTheme.description}`);
 
+      // Get rooms for new floor from config (0-indexed array)
+      const roomsForFloor = FLOOR_CONFIG.ROOMS_PER_FLOOR[nextFloor - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
+
       return {
         ...prev,
         player,
         currentFloor: nextFloor,
         currentRoom: 0,
+        roomsPerFloor: roomsForFloor,
         currentFloorTheme: newTheme,
         gamePhase: GAME_PHASE.COMBAT,
         combatLog,
@@ -228,7 +233,7 @@ export function useProgressionActions({
       currentEnemy: null,
       currentFloor: 1,
       currentRoom: 0,
-      roomsPerFloor: 5,
+      roomsPerFloor: FLOOR_CONFIG.ROOMS_PER_FLOOR[0] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR,
       currentFloorTheme: null,
       combatLog: new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE),
       gamePhase: GAME_PHASE.CLASS_SELECT,
@@ -255,7 +260,14 @@ export function useProgressionActions({
 
       // PRESERVE on retry: gold, equipment, level, path, baseStats
       // RESET: HP/MP to max, room to 0, combat state (buffs/effects/cooldowns)
-      const player = deepClonePlayer(prev.player);
+      let player = deepClonePlayer(prev.player);
+
+      // Process any pending level-ups (edge case: player died with excess XP)
+      const levelUpResult = processLevelUp(player);
+      if (levelUpResult.leveledUp) {
+        player = levelUpResult.updatedPlayer;
+      }
+
       // Recalculate stats to ensure equipment bonuses are applied
       player.currentStats = calculateStats(player);
       // Then restore health/mana to max
@@ -280,6 +292,9 @@ export function useProgressionActions({
       // Select a new theme for the retry (gives variety on retries)
       const newTheme = selectFloorTheme(floorToRetry);
 
+      // Get rooms for floor from config (0-indexed array)
+      const roomsForFloor = FLOOR_CONFIG.ROOMS_PER_FLOOR[floorToRetry - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
+
       // Clear combat log and add retry message
       const combatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
       combatLog.add(`Retrying Floor ${floorToRetry}: ${newTheme.name}... Health and Mana restored!`);
@@ -290,6 +305,7 @@ export function useProgressionActions({
         player,
         currentFloor: floorToRetry, // Use death floor if available
         currentRoom: 0, // Reset to room 0 (will generate room 1 enemy on combat start)
+        roomsPerFloor: roomsForFloor,
         currentEnemy: null, // Will regenerate on combat start
         currentFloorTheme: newTheme,
         combatLog,

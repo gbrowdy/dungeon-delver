@@ -26,7 +26,10 @@ export function useRoomTransitions(
       if (!prev.player) return prev;
 
       const newRoom = prev.currentRoom + 1;
-      const enemy = generateEnemy(prev.currentFloor, newRoom, prev.roomsPerFloor, prev.currentFloorTheme || undefined);
+      // Use spread to conditionally pass floorTheme - if undefined, use default parameter
+      const enemy = prev.currentFloorTheme
+        ? generateEnemy(prev.currentFloor, newRoom, prev.roomsPerFloor, prev.currentFloorTheme)
+        : generateEnemy(prev.currentFloor, newRoom, prev.roomsPerFloor);
       const logs: string[] = [`Room ${newRoom}: A ${enemy.name} appears!`];
 
       logCombatEvent('enemy_spawn', {
@@ -154,6 +157,11 @@ export function useRoomTransitions(
         player,
         gamePhase: GAME_PHASE.DEFEAT,
         deathFloor: prev.currentFloor, // Track floor for retry
+        // Clear level-up state since level is already applied to player
+        // (popup is informational only, player.level is correct)
+        pendingLevelUp: null,
+        isPaused: false,
+        pauseReason: null,
       };
     });
   }, [setState]);
