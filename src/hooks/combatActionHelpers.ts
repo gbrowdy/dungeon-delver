@@ -13,6 +13,7 @@ import {
 } from '@/constants/enums';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getCritChance, getCritDamage, getDropQualityBonus } from '@/utils/fortuneUtils';
+import { processItemEffects } from '@/hooks/useItemEffects';
 
 /**
  * Result of processing turn-start effects
@@ -180,48 +181,40 @@ export function processHitEffects(
   isCrit: boolean,
   logs: string[]
 ): HitEffectsResult {
-  const updatedPlayer = deepClonePlayer(player);
-  const updatedLogs = [...logs];
+  let updatedPlayer = deepClonePlayer(player);
+  let updatedLogs = [...logs];
   let finalDamage = baseDamage;
 
-  // Process on-crit effects
+  // Process on-crit effects using centralized processor
   if (isCrit) {
-    updatedPlayer.equippedItems.forEach((item: Item) => {
-      if (item.effect?.trigger === ITEM_EFFECT_TRIGGER.ON_CRIT) {
-        const chance = item.effect.chance ?? 1;
-        if (Math.random() < chance) {
-          if (item.effect.type === EFFECT_TYPE.HEAL) {
-            updatedPlayer.currentStats.health = Math.min(
-              updatedPlayer.currentStats.maxHealth,
-              updatedPlayer.currentStats.health + item.effect.value
-            );
-            updatedLogs.push(`${item.icon} Healed ${item.effect.value} HP on crit!`);
-          } else if (item.effect.type === EFFECT_TYPE.DAMAGE) {
-            finalDamage += finalDamage * item.effect.value;
-          }
-        }
-      }
+    const critResult = processItemEffects({
+      trigger: ITEM_EFFECT_TRIGGER.ON_CRIT,
+      player: updatedPlayer,
+      damage: finalDamage,
     });
+    updatedPlayer = critResult.player;
+    finalDamage += critResult.additionalDamage;
+    updatedLogs.push(...critResult.logs);
   }
 
-  // Process on-hit effects
-  updatedPlayer.equippedItems.forEach((item: Item) => {
-    if (item.effect?.trigger === ITEM_EFFECT_TRIGGER.ON_HIT) {
-      const chance = item.effect.chance ?? 1;
-      if (Math.random() < chance) {
-        if (item.effect.type === EFFECT_TYPE.HEAL) {
-          updatedPlayer.currentStats.health = Math.min(
-            updatedPlayer.currentStats.maxHealth,
-            updatedPlayer.currentStats.health + item.effect.value
-          );
-          updatedLogs.push(`${item.icon} Life steal: +${item.effect.value} HP`);
-        } else if (item.effect.type === EFFECT_TYPE.DAMAGE) {
-          finalDamage += item.effect.value;
-          updatedLogs.push(`${item.icon} Bonus damage: +${item.effect.value}`);
-        }
-      }
-    }
+  // Process on-hit effects using centralized processor
+  const hitResult = processItemEffects({
+    trigger: ITEM_EFFECT_TRIGGER.ON_HIT,
+    player: updatedPlayer,
+    damage: finalDamage,
   });
+  updatedPlayer = hitResult.player;
+  finalDamage += hitResult.additionalDamage;
+  updatedLogs.push(...hitResult.logs);
+
+  // Process ON_DAMAGE_DEALT effects (lifesteal) - this triggers AFTER damage is calculated
+  const damageDealtResult = processItemEffects({
+    trigger: ITEM_EFFECT_TRIGGER.ON_DAMAGE_DEALT,
+    player: updatedPlayer,
+    damage: finalDamage,
+  });
+  updatedPlayer = damageDealtResult.player;
+  updatedLogs.push(...damageDealtResult.logs);
 
   return {
     player: updatedPlayer,
