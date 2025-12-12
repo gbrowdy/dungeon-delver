@@ -224,6 +224,91 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
           </Button>
         </div>
       </div>
+
+      {/* Pixel-art styling */}
+      <style>{`
+        .pixel-title {
+          font-family: 'Press Start 2P', 'Courier New', monospace;
+          text-shadow:
+            3px 3px 0 #1a1a2e,
+            -1px -1px 0 #1a1a2e,
+            1px -1px 0 #1a1a2e,
+            -1px 1px 0 #1a1a2e;
+          letter-spacing: 0.05em;
+        }
+
+        .pixel-glow-gold {
+          filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6))
+                  drop-shadow(0 0 20px rgba(251, 191, 36, 0.3));
+        }
+
+        .pixel-text {
+          font-family: 'Press Start 2P', 'Courier New', monospace;
+        }
+
+        .pixel-panel {
+          background: linear-gradient(135deg, rgba(30, 27, 75, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+          image-rendering: pixelated;
+          box-shadow:
+            inset -2px -2px 0 rgba(0, 0, 0, 0.4),
+            inset 2px 2px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .pixel-panel-dark {
+          background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
+          image-rendering: pixelated;
+          box-shadow:
+            inset -2px -2px 0 rgba(0, 0, 0, 0.4),
+            inset 2px 2px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .pixel-star-gold {
+          position: absolute;
+          width: 4px;
+          height: 4px;
+          background: #fbbf24;
+          box-shadow: 0 0 6px rgba(251, 191, 36, 0.8);
+          animation: twinkle 2s infinite;
+        }
+
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; }
+        }
+
+        @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        @keyframes bounce-slow {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+
+        .animate-spin-slow {
+          animation: spin-slow 3s linear infinite;
+        }
+
+        .animate-bounce-slow {
+          animation: bounce-slow 2s ease-in-out infinite;
+        }
+
+        .text-pixel-2xs { font-size: 0.5rem; line-height: 1.2; }
+        .text-pixel-xs { font-size: 0.625rem; line-height: 1.3; }
+        .text-pixel-sm { font-size: 0.75rem; line-height: 1.4; }
+        .text-pixel-base { font-size: 0.875rem; line-height: 1.5; }
+        .text-pixel-lg { font-size: 1rem; line-height: 1.5; }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+          .pixel-star-gold,
+          .animate-spin-slow,
+          .animate-bounce-slow {
+            animation: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }
