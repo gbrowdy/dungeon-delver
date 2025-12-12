@@ -23,6 +23,7 @@ interface DeathScreenProps {
 }
 
 export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitShop }: DeathScreenProps) {
+  // Start with 'hit' state to show defeated animation, then transition to 'idle'
   const [spriteState, setSpriteState] = useState<'idle' | 'hit'>('hit');
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
 
