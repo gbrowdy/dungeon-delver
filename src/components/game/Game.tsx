@@ -6,6 +6,7 @@ import { CombatScreen } from './CombatScreen';
 import { DeathScreen } from './DeathScreen';
 import { FloorCompleteScreen } from './FloorCompleteScreen';
 import { ShopScreen } from './ShopScreen';
+import { VictoryScreen } from './VictoryScreen';
 import { GameErrorBoundary, SimpleErrorBoundary } from '@/components/ErrorBoundary';
 import { CombatErrorBoundary } from './CombatErrorBoundary';
 
@@ -103,7 +104,19 @@ export function Game() {
           onVisitShop={actions.openShop}
         />
       );
-      
+
+    case 'victory':
+      if (!state.player) return null;
+      return (
+        <SimpleErrorBoundary>
+          <VictoryScreen
+            player={state.player}
+            onNewRun={actions.restartGame}
+            onReturnToMenu={actions.restartGame}
+          />
+        </SimpleErrorBoundary>
+      );
+
     default:
       return <MainMenu onStart={actions.startGame} />;
   }

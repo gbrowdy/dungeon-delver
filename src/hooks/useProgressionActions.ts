@@ -9,6 +9,7 @@ import { useTrackedTimeouts } from '@/hooks/useTrackedTimeouts';
 import { usePauseControl } from '@/hooks/usePauseControl';
 // STAT_UPGRADE imports removed - old upgrade system deprecated
 import { GAME_PHASE, PAUSE_REASON } from '@/constants/enums';
+import { FLOOR_CONFIG } from '@/constants/game';
 import { logStateTransition } from '@/utils/gameLogger';
 import { deepClonePlayer } from '@/utils/stateUtils';
 import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
@@ -63,6 +64,23 @@ export function useProgressionActions({
   const showFloorComplete = useCallback(() => {
     setState((prev: GameState) => {
       if (!prev.player) return prev;
+
+      // Check if player just completed the final boss floor
+      if (prev.currentFloor === FLOOR_CONFIG.FINAL_BOSS_FLOOR) {
+        logStateTransition(GAME_PHASE.COMBAT, GAME_PHASE.VICTORY, 'final_boss_defeated');
+
+        // Clear combat log for victory screen
+        const newCombatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
+        newCombatLog.add('Victory! The final boss has been defeated!');
+
+        return {
+          ...prev,
+          gamePhase: GAME_PHASE.VICTORY,
+          combatLog: newCombatLog,
+          shopItems: [],
+          availablePowers: [],
+        };
+      }
 
       const nextFloorNum = prev.currentFloor + 1;
 

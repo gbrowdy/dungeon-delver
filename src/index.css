@@ -972,11 +972,48 @@ All colors MUST be HSL.
   pointer-events: none;
 }
 
+/* Victory screen gold star animation */
+.pixel-star-gold {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #fbbf24;
+  box-shadow:
+    4px 0 0 0 #fbbf24,
+    -4px 0 0 0 #fbbf24,
+    0 4px 0 0 #fbbf24,
+    0 -4px 0 0 #fbbf24;
+  animation: pixel-twinkle 3s infinite;
+}
+
+/* Slow bounce animation for victory elements */
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 2s ease-in-out infinite;
+}
+
+/* Slow spin animation for victory stars */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 4s linear infinite;
+}
+
 /* Reduced motion support for pixel art animations */
 @media (prefers-reduced-motion: reduce) {
   .pixel-torch-flame,
   .pixel-star,
-  .pixel-border-pulse {
+  .pixel-star-gold,
+  .pixel-border-pulse,
+  .animate-bounce-slow,
+  .animate-spin-slow {
     animation: none;
   }
 }
