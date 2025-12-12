@@ -238,6 +238,19 @@ export function AbilityChoicePopup({
           </Button>
         </div>
 
+        {/* Skip button for accessibility - allows deferring choice */}
+        {onClose && (
+          <div className="px-6 pb-6 text-center">
+            <button
+              onClick={onClose}
+              className="pixel-text text-pixel-2xs text-slate-500 hover:text-slate-400 underline transition-colors"
+              aria-label="Skip ability selection for now"
+            >
+              Skip for Now
+            </button>
+          </div>
+        )}
+
         {/* Styles */}
         <style>{`
           /* Pixel glow effect for ability title */
