@@ -23,6 +23,7 @@ import { GAME_PHASE, STATUS_EFFECT_TYPE } from '@/constants/enums';
 import { logRecovery } from '@/utils/gameLogger';
 import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
 import { deepClonePlayer } from '@/utils/stateUtils';
+import { calculateStats } from '@/hooks/useCharacterSetup';
 
 // Base combat tick interval (ms) - modified by speed multiplier
 // At 1x: 2500ms per combat round (gives time to see intent + animations)
@@ -238,16 +239,8 @@ export function useGameState() {
         result.item,
       ];
 
-      // Recalculate stats (simple version - just add stat bonuses)
-      updatedPlayer.currentStats = { ...updatedPlayer.baseStats };
-      updatedPlayer.equippedItems.forEach(item => {
-        Object.entries(item.statBonus).forEach(([stat, bonus]) => {
-          if (bonus) {
-            (updatedPlayer.currentStats as any)[stat] =
-              ((updatedPlayer.currentStats as any)[stat] || 0) + bonus;
-          }
-        });
-      });
+      // Recalculate stats using the centralized function
+      updatedPlayer.currentStats = calculateStats(updatedPlayer);
 
       // Update shop state to mark item as purchased
       const updatedShopState = { ...shopStateManager.shopState };
