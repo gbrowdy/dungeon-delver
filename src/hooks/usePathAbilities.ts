@@ -146,37 +146,38 @@ export function usePathAbilities() {
     const bonuses: Partial<Stats> = {};
 
     abilities.forEach(ability => {
-      const effect = ability.effect;
+      // Iterate over all effects for this ability
+      ability.effects.forEach(effect => {
+        // Only process passive or conditional triggers for stat bonuses
+        if (effect.trigger !== 'passive' && effect.trigger !== 'conditional') {
+          return;
+        }
 
-      // Only process passive or conditional triggers for stat bonuses
-      if (effect.trigger !== 'passive' && effect.trigger !== 'conditional') {
-        return;
-      }
+        // Check condition if it's conditional
+        if (effect.trigger === 'conditional' && effect.condition) {
+          const conditionMet = checkCondition(effect.condition, { player });
+          if (!conditionMet) return;
+        }
 
-      // Check condition if it's conditional
-      if (effect.trigger === 'conditional' && effect.condition) {
-        const conditionMet = checkCondition(effect.condition, { player });
-        if (!conditionMet) return;
-      }
+        // Process stat modifiers
+        if (effect.statModifiers) {
+          effect.statModifiers.forEach((mod: StatModifier) => {
+            const stat = mod.stat;
 
-      // Process stat modifiers
-      if (effect.statModifiers) {
-        effect.statModifiers.forEach((mod: StatModifier) => {
-          const stat = mod.stat;
+            // Apply flat bonus
+            if (mod.flatBonus) {
+              bonuses[stat] = (bonuses[stat] || 0) + mod.flatBonus;
+            }
 
-          // Apply flat bonus
-          if (mod.flatBonus) {
-            bonuses[stat] = (bonuses[stat] || 0) + mod.flatBonus;
-          }
-
-          // Apply percentage bonus (as a multiplier on base stat)
-          if (mod.percentBonus && player.baseStats[stat] !== undefined) {
-            const baseValue = player.baseStats[stat] as number;
-            const percentValue = baseValue * mod.percentBonus;
-            bonuses[stat] = (bonuses[stat] || 0) + percentValue;
-          }
-        });
-      }
+            // Apply percentage bonus (as a multiplier on base stat)
+            if (mod.percentBonus && player.baseStats[stat] !== undefined) {
+              const baseValue = player.baseStats[stat] as number;
+              const percentValue = baseValue * mod.percentBonus;
+              bonuses[stat] = (bonuses[stat] || 0) + percentValue;
+            }
+          });
+        }
+      });
     });
 
     return bonuses;
@@ -202,113 +203,114 @@ export function usePathAbilities() {
     let statusToApply: StatusEffect | undefined;
 
     abilities.forEach(ability => {
-      const effect = ability.effect;
+      // Iterate over all effects for this ability
+      ability.effects.forEach(effect => {
+        // Check if this effect matches the trigger
+        if (effect.trigger !== trigger) return;
 
-      // Check if this effect matches the trigger
-      if (effect.trigger !== trigger) return;
-
-      // Check condition if present
-      if (effect.condition) {
-        const conditionMet = checkCondition(effect.condition, context);
-        if (!conditionMet) return;
-      }
-
-      // Check proc chance
-      if (effect.chance !== undefined && Math.random() > effect.chance) {
-        return;
-      }
-
-      // Process heal effect
-      if (effect.heal !== undefined) {
-        const healValue = effect.heal;
-        healAmount += healValue;
-        logs.push(`✨ ${ability.name}: Healed ${healValue} HP`);
-      }
-
-      // Process damage effect
-      if (effect.damage !== undefined) {
-        damageAmount += effect.damage;
-        logs.push(`⚔️ ${ability.name}: +${effect.damage} damage`);
-      }
-
-      // Process mana restore
-      if (effect.manaRestore !== undefined) {
-        manaRestored += effect.manaRestore;
-        logs.push(`💙 ${ability.name}: Restored ${effect.manaRestore} mana`);
-      }
-
-      // Process damage modifier
-      if (effect.damageModifier) {
-        const mod = effect.damageModifier;
-
-        // Check modifier condition if present
-        if (mod.condition) {
-          const modConditionMet = checkCondition(mod.condition, context);
-          if (!modConditionMet) return;
+        // Check condition if present
+        if (effect.condition) {
+          const conditionMet = checkCondition(effect.condition, context);
+          if (!conditionMet) return;
         }
 
-        switch (mod.type) {
-          case 'reflect': {
-            if (context.damage) {
-              const reflected = Math.floor(context.damage * (mod.value / 100));
-              reflectedDamage += reflected;
-              logs.push(`🛡️ ${ability.name}: Reflected ${reflected} damage`);
-            }
-            break;
+        // Check proc chance
+        if (effect.chance !== undefined && Math.random() > effect.chance) {
+          return;
+        }
+
+        // Process heal effect
+        if (effect.heal !== undefined) {
+          const healValue = effect.heal;
+          healAmount += healValue;
+          logs.push(`✨ ${ability.name}: Healed ${healValue} HP`);
+        }
+
+        // Process damage effect
+        if (effect.damage !== undefined) {
+          damageAmount += effect.damage;
+          logs.push(`⚔️ ${ability.name}: +${effect.damage} damage`);
+        }
+
+        // Process mana restore
+        if (effect.manaRestore !== undefined) {
+          manaRestored += effect.manaRestore;
+          logs.push(`💙 ${ability.name}: Restored ${effect.manaRestore} mana`);
+        }
+
+        // Process damage modifier
+        if (effect.damageModifier) {
+          const mod = effect.damageModifier;
+
+          // Check modifier condition if present
+          if (mod.condition) {
+            const modConditionMet = checkCondition(mod.condition, context);
+            if (!modConditionMet) return;
           }
-          case 'lifesteal': {
-            if (context.damage) {
-              const lifestealAmount = Math.floor(context.damage * (mod.value / 100));
-              healAmount += lifestealAmount;
-              logs.push(`🩸 ${ability.name}: Life steal +${lifestealAmount} HP`);
+
+          switch (mod.type) {
+            case 'reflect': {
+              if (context.damage) {
+                const reflected = Math.floor(context.damage * (mod.value / 100));
+                reflectedDamage += reflected;
+                logs.push(`🛡️ ${ability.name}: Reflected ${reflected} damage`);
+              }
+              break;
             }
-            break;
-          }
-          case 'bonus_damage': {
-            const bonusDmg = Math.floor((context.damage || 0) * (mod.value / 100));
-            damageAmount += bonusDmg;
-            logs.push(`💥 ${ability.name}: +${bonusDmg} bonus damage`);
-            break;
-          }
-          case 'convert_heal': {
-            if (context.damage) {
-              const converted = Math.floor(context.damage * (mod.value / 100));
-              healAmount += converted;
-              logs.push(`✨ ${ability.name}: Converted ${converted} damage to healing`);
+            case 'lifesteal': {
+              if (context.damage) {
+                const lifestealAmount = Math.floor(context.damage * (mod.value / 100));
+                healAmount += lifestealAmount;
+                logs.push(`🩸 ${ability.name}: Life steal +${lifestealAmount} HP`);
+              }
+              break;
             }
-            break;
+            case 'bonus_damage': {
+              const bonusDmg = Math.floor((context.damage || 0) * (mod.value / 100));
+              damageAmount += bonusDmg;
+              logs.push(`💥 ${ability.name}: +${bonusDmg} bonus damage`);
+              break;
+            }
+            case 'convert_heal': {
+              if (context.damage) {
+                const converted = Math.floor(context.damage * (mod.value / 100));
+                healAmount += converted;
+                logs.push(`✨ ${ability.name}: Converted ${converted} damage to healing`);
+              }
+              break;
+            }
           }
         }
-      }
 
-      // Process status application
-      if (effect.statusApplication) {
-        const status = effect.statusApplication;
+        // Process status application
+        if (effect.statusApplication) {
+          const status = effect.statusApplication;
 
-        // Check chance
-        if (Math.random() <= status.chance) {
-          statusToApply = {
-            id: `${status.statusType}_${Date.now()}`,
-            type: status.statusType,
-            damage: status.damage,
-            remainingTurns: status.duration,
-            icon: getStatusIcon(status.statusType),
-          };
-          logs.push(`🎯 ${ability.name}: Applied ${status.statusType}!`);
+          // Check chance
+          if (Math.random() <= status.chance) {
+            statusToApply = {
+              id: `${status.statusType}_${Date.now()}`,
+              type: status.statusType,
+              damage: status.damage,
+              remainingTurns: status.duration,
+              icon: getStatusIcon(status.statusType),
+            };
+            logs.push(`🎯 ${ability.name}: Applied ${status.statusType}!`);
+          }
         }
-      }
 
-      // Process cleanse
-      if (effect.cleanse) {
-        updatedPlayer.statusEffects = [];
-        logs.push(`✨ ${ability.name}: Cleansed all status effects`);
-      }
+        // Process cleanse
+        if (effect.cleanse) {
+          updatedPlayer.statusEffects = [];
+          logs.push(`✨ ${ability.name}: Cleansed all status effects`);
+        }
 
-      // Process shield
-      if (effect.shield) {
-        // Shield would need to be implemented in the combat system
-        logs.push(`🛡️ ${ability.name}: Gained ${effect.shield} shield`);
-      }
+        // Process shield
+        if (effect.shield) {
+          // Shield would need to be implemented in the combat system
+          logs.push(`🛡️ ${ability.name}: Gained ${effect.shield} shield`);
+        }
+      });
     });
 
     // Apply heal
@@ -354,26 +356,27 @@ export function usePathAbilities() {
     let powerBonus = 0;
 
     abilities.forEach(ability => {
-      const effect = ability.effect;
+      // Iterate over all effects for this ability
+      ability.effects.forEach(effect => {
+        // Only process passive modifiers
+        if (effect.trigger !== 'passive') return;
 
-      // Only process passive modifiers
-      if (effect.trigger !== 'passive') return;
-
-      if (effect.powerModifiers) {
-        effect.powerModifiers.forEach((mod: PowerModifier) => {
-          switch (mod.type) {
-            case 'cooldown_reduction':
-              cooldownReduction += mod.value;
-              break;
-            case 'cost_reduction':
-              costReduction += mod.value;
-              break;
-            case 'power_bonus':
-              powerBonus += mod.value;
-              break;
-          }
-        });
-      }
+        if (effect.powerModifiers) {
+          effect.powerModifiers.forEach((mod: PowerModifier) => {
+            switch (mod.type) {
+              case 'cooldown_reduction':
+                cooldownReduction += mod.value;
+                break;
+              case 'cost_reduction':
+                costReduction += mod.value;
+                break;
+              case 'power_bonus':
+                powerBonus += mod.value;
+                break;
+            }
+          });
+        }
+      });
     });
 
     return {
