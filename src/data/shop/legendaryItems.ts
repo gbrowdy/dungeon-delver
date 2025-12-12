@@ -7,7 +7,7 @@
  * Design Philosophy:
  * - Each legendary dramatically changes how you play
  * - Powerful stats + game-changing effects
- * - Price range: 400-450g
+ * - Price range: 320-360g
  * - ALL legendaries must have special effects
  */
 
@@ -18,7 +18,7 @@ export const LEGENDARY_ITEMS: ShopItem[] = [
     id: 'bloodthirster',
     name: 'Bloodthirster',
     type: 'weapon',
-    price: 400,
+    price: 320,
     stats: { power: 7 },
     effect: {
       trigger: 'on_damage_dealt',
@@ -35,7 +35,7 @@ export const LEGENDARY_ITEMS: ShopItem[] = [
     id: 'immortal_plate',
     name: 'Immortal Plate',
     type: 'armor',
-    price: 400,
+    price: 320,
     stats: { armor: 8 },
     effect: {
       trigger: 'on_lethal_damage',
@@ -52,7 +52,7 @@ export const LEGENDARY_ITEMS: ShopItem[] = [
     id: 'infinity_edge',
     name: 'Infinity Edge',
     type: 'weapon',
-    price: 450,
+    price: 360,
     stats: { power: 6 },
     effect: {
       trigger: 'on_crit',
@@ -69,7 +69,7 @@ export const LEGENDARY_ITEMS: ShopItem[] = [
     id: 'warmogs_heart',
     name: "Warmog's Heart",
     type: 'armor',
-    price: 400,
+    price: 320,
     stats: { health: 50 },
     effect: {
       trigger: 'out_of_combat',
@@ -86,7 +86,7 @@ export const LEGENDARY_ITEMS: ShopItem[] = [
     id: 'archmages_staff',
     name: "Archmage's Staff",
     type: 'weapon',
-    price: 450,
+    price: 360,
     stats: { power: 8 },
     effect: {
       trigger: 'on_power_cast',
@@ -103,7 +103,7 @@ export const LEGENDARY_ITEMS: ShopItem[] = [
     id: 'phantom_cloak',
     name: 'Phantom Cloak',
     type: 'armor',
-    price: 425,
+    price: 340,
     stats: { armor: 5 },
     effect: {
       trigger: 'on_damage_taken',
@@ -121,7 +121,7 @@ export const LEGENDARY_ITEMS: ShopItem[] = [
     id: 'crown_of_fortune',
     name: 'Crown of Fortune',
     type: 'accessory',
-    price: 425,
+    price: 340,
     stats: { fortune: 15 },
     effect: {
       trigger: 'on_crit',
@@ -138,7 +138,7 @@ export const LEGENDARY_ITEMS: ShopItem[] = [
     id: 'titans_gauntlet',
     name: "Titan's Gauntlet",
     type: 'accessory',
-    price: 450,
+    price: 360,
     stats: { power: 5, armor: 5 },
     effect: {
       trigger: 'passive',
@@ -157,7 +157,7 @@ export const LEGENDARY_ITEMS: ShopItem[] = [
     id: 'timekeeper_blade',
     name: "Timekeeper's Blade",
     type: 'weapon',
-    price: 425,
+    price: 340,
     stats: { power: 6, speed: 3 },
     effect: {
       trigger: 'on_hit',
@@ -176,7 +176,7 @@ export const LEGENDARY_ITEMS: ShopItem[] = [
     id: 'arcane_reservoir',
     name: 'Arcane Reservoir',
     type: 'accessory',
-    price: 425,
+    price: 340,
     stats: { mana: 50, maxMana: 50 },
     effect: {
       trigger: 'on_power_cast',
@@ -195,7 +195,7 @@ export const LEGENDARY_ITEMS: ShopItem[] = [
     id: 'bulwark_of_heroes',
     name: 'Bulwark of Heroes',
     type: 'armor',
-    price: 450,
+    price: 360,
     stats: { armor: 6, health: 30, maxHealth: 30 },
     effect: {
       trigger: 'on_damage_taken',
