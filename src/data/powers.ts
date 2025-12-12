@@ -357,6 +357,8 @@ export const UNLOCKABLE_POWERS: Power[] = POWER_DEFINITIONS.map(def => ({
   effect: def.effect,
   value: def.value,
   icon: def.icon,
+  category: def.category,
+  synergies: def.synergies,
 }));
 
 export function getRandomPower(existingPowerIds: string[]): Power | null {
