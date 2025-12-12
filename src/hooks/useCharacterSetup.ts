@@ -9,6 +9,7 @@ import { GAME_PHASE, BUFF_STAT } from '@/constants/enums';
 import { logStateTransition } from '@/utils/gameLogger';
 import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
 import { selectFloorTheme } from '@/data/floorThemes';
+import { getEnhancedStats } from '@/utils/enhancementUtils';
 
 /**
  * Pure function to calculate a player's current stats based on base stats,
@@ -26,14 +27,16 @@ export function calculateStats(player: Player): Stats {
     return stats;
   }
 
-  // Apply equipment bonuses
+  // Apply equipment bonuses (with enhancement bonuses)
   player.equippedItems.forEach((item: Item) => {
     // Validate statBonus exists and is an object before iterating
     if (!item.statBonus || typeof item.statBonus !== 'object') {
       console.warn('Invalid item statBonus:', item);
       return;
     }
-    Object.entries(item.statBonus).forEach(([key, value]) => {
+    // Use getEnhancedStats to include enhancement bonuses
+    const enhancedStats = getEnhancedStats(item);
+    Object.entries(enhancedStats).forEach(([key, value]) => {
       if (isValidStatKey(key) && isValidStatValue(value)) {
         stats[key] += value;
       }
