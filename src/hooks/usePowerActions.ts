@@ -253,6 +253,17 @@ export function usePowerActions(context: PowerActivationContext) {
               icon: power.icon,
             });
             logs.push(`Defense doubled for ${buffDuration} turns!`);
+          } else if (power.id === 'inner-focus') {
+            // Fortune buff
+            player.activeBuffs.push({
+              id: `buff-fortune-${Date.now()}`,
+              name: power.name,
+              stat: BUFF_STAT.FORTUNE,
+              multiplier: 1 + power.value,
+              remainingTurns: buffDuration,
+              icon: power.icon,
+            });
+            logs.push(`Fortune increased by ${Math.floor(power.value * 100)}% for ${buffDuration} turns!`);
           } else {
             // Generic power buff for unknown buff powers
             player.activeBuffs.push({
