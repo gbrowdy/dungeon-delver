@@ -186,6 +186,9 @@ export function generateItem(floor: number, forceType?: ItemType, pityCounter: n
     description,
     icon: template.icon,
     effect,
+    enhancementLevel: 0,
+    maxEnhancement: 3,
+    tier: undefined, // Drop items don't have a shop tier
   };
 }
 
@@ -238,5 +241,8 @@ export function generateStartingItem(itemType: ItemType): Item {
     statBonus,
     description,
     icon: template.icon,
+    enhancementLevel: 0,
+    maxEnhancement: 3,
+    tier: undefined, // Starting items don't have a shop tier
   };
 }

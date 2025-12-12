@@ -67,6 +67,9 @@ function convertShopItemToItem(shopItem: ShopItem): Item {
     description: shopItem.description,
     icon: shopItem.icon,
     effect: shopItem.effect,
+    enhancementLevel: 0,
+    maxEnhancement: 3,
+    tier: shopItem.tier,
   };
 }
 
