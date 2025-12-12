@@ -30,6 +30,7 @@ import { logPauseChange } from '@/utils/gameLogger';
 import { generateEventId } from '@/utils/eventId';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
+import { processItemEffects } from '@/hooks/useItemEffects';
 import type { PauseReasonType } from '@/constants/enums';
 import type { CombatEvent } from '@/hooks/useBattleAnimation';
 
@@ -442,6 +443,28 @@ export function useCombatActions({
       // Check player death - set isDying flag and let animation complete before transition
       // Use ref for atomic check to prevent race conditions from async setState
       if (playerWillDie && !playerDeathProcessedRef.current) {
+        // Check for ON_LETHAL_DAMAGE item effects (survival effects like Immortal Plate)
+        const lethalResult = processItemEffects({
+          trigger: ITEM_EFFECT_TRIGGER.ON_LETHAL_DAMAGE,
+          player,
+          enemy,
+        });
+
+        if (lethalResult.survivedLethal) {
+          // Player survived! Update health and logs
+          player.currentStats.health = lethalResult.player.currentStats.health;
+          logs.push(...lethalResult.logs);
+
+          // Don't mark as dying, player survived
+          prev.combatLog.add(logs);
+          return {
+            ...prev,
+            player: lethalResult.player,
+            currentEnemy: enemy,
+          };
+        }
+
+        // No survival effect - player dies
         playerDeathProcessedRef.current = true;
         player.isDying = true;
         logs.push(`💀 You have been defeated...`);

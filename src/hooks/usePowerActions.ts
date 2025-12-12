@@ -4,9 +4,10 @@ import { calculateStats } from '@/hooks/useCharacterSetup';
 import { CombatEvent } from '@/hooks/useBattleAnimation';
 import { COMBAT_BALANCE, POWER_BALANCE } from '@/constants/balance';
 import { COMBAT_EVENT_DELAYS } from '@/constants/balance';
-import { COMBAT_EVENT_TYPE, BUFF_STAT } from '@/constants/enums';
+import { COMBAT_EVENT_TYPE, BUFF_STAT, ITEM_EFFECT_TRIGGER } from '@/constants/enums';
 import { generateEventId } from '@/utils/eventId';
 import { getDropQualityBonus } from '@/utils/fortuneUtils';
+import { processItemEffects } from '@/hooks/useItemEffects';
 
 /**
  * Context for power activation - all state needed to execute a power
@@ -87,9 +88,23 @@ export function usePowerActions(context: PowerActivationContext) {
 
       logs.push(`${power.icon} Used ${power.name}!`);
 
+      // Process ON_POWER_CAST item effects (pass mana cost as damage parameter for refund effects)
+      const powerCastResult = processItemEffects({
+        trigger: ITEM_EFFECT_TRIGGER.ON_POWER_CAST,
+        player,
+        damage: power.manaCost,
+      });
+      Object.assign(player, powerCastResult.player);
+      logs.push(...powerCastResult.logs);
+
       switch (power.effect) {
         case 'damage': {
-          const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
+          let baseDamage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
+          // Apply power damage multiplier from items (e.g., Archmage's Staff)
+          if (powerCastResult.powerDamageMultiplier) {
+            baseDamage = Math.floor(baseDamage * powerCastResult.powerDamageMultiplier);
+          }
+          const damage = baseDamage;
           enemy.health -= damage;
           logs.push(`Dealt ${damage} magical damage!`);
 
