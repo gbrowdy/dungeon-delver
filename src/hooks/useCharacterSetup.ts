@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { GameState, Player, CharacterClass, Stats, Item, ActiveBuff } from '@/types/game';
 import { CLASS_DATA } from '@/data/classes';
-import { generateStartingItem } from '@/data/items';
 import { isValidStatKey, isValidStatValue } from '@/utils/typeGuards';
 import { FLOOR_CONFIG } from '@/constants/game';
 import { COMBAT_BALANCE } from '@/constants/balance';
@@ -71,9 +70,6 @@ export function useCharacterSetup(
   const selectClass = useCallback((characterClass: CharacterClass) => {
     const classData = CLASS_DATA[characterClass];
 
-    // Generate starting weapon for the character
-    const startingWeapon = generateStartingItem('weapon');
-
     const player: Player = {
       name: classData.name,
       class: characterClass,
@@ -85,7 +81,7 @@ export function useCharacterSetup(
       currentStats: { ...classData.baseStats },
       powers: [{ ...classData.startingPower }],
       inventory: [],
-      equippedItems: [startingWeapon],
+      equippedItems: [], // Start with no equipment
       activeBuffs: [],
       statusEffects: [],
       isBlocking: false,
@@ -95,9 +91,6 @@ export function useCharacterSetup(
       path: null, // No path until level 2
       pendingAbilityChoice: false, // No pending ability choice at start
     };
-
-    // Recalculate stats with starting equipment
-    player.currentStats = calculateStats(player);
 
     logStateTransition(GAME_PHASE.CLASS_SELECT, GAME_PHASE.COMBAT, `select_class:${characterClass}`);
 
