@@ -60,51 +60,21 @@ export interface ShopRotation {
 /**
  * Enhancement bonus configuration per tier
  * Higher tiers get better enhancement bonuses
+ *
+ * @deprecated Use EnhancementBonus from @/constants/shop instead
  */
 export interface EnhancementBonus {
   perLevel: number; // Primary stat bonus per enhancement level
   secondary?: number; // Secondary stat bonus (specialty/legendary only)
 }
 
-/**
- * Enhancement system constants
- */
-export const ENHANCEMENT_CONFIG: Record<ShopTier, EnhancementBonus> = {
-  starter: {
-    perLevel: 1, // +1 primary stat per level
-  },
-  class: {
-    perLevel: 2, // +2 primary stat per level
-  },
-  specialty: {
-    perLevel: 2, // +2 primary stat per level
-    secondary: 1, // +1 secondary stat per level
-  },
-  legendary: {
-    perLevel: 3, // +3 primary stat per level
-    secondary: 2, // +2 secondary stat per level
-  },
-};
-
-/**
- * Enhancement costs and limits
- */
-export const ENHANCEMENT_COST = 25; // Flat cost per level
-export const MAX_ENHANCEMENT = 3; // Maximum enhancement level
-
-/**
- * Shop section price ranges (for reference/validation)
- */
-export const SHOP_PRICE_RANGES = {
-  starter: { min: 50, max: 50 },
-  class: { min: 150, max: 150 },
-  specialty: { min: 175, max: 275 },
-  legendary: { min: 400, max: 450 },
-} as const;
-
-/**
- * Shop unlock requirements
- */
-export const SHOP_UNLOCKS = {
-  legendary: 3, // Floor number when legendary items unlock
-} as const;
+// Re-export constants from @/constants/shop for backwards compatibility
+// These should be imported from @/constants/shop in new code
+export {
+  ENHANCEMENT_COST,
+  MAX_ENHANCEMENT_LEVEL as MAX_ENHANCEMENT,
+  ENHANCEMENT_BONUSES as ENHANCEMENT_CONFIG,
+  SHOP_PRICE_RANGES,
+  SHOP_UNLOCKS,
+  getTotalEnhancementCost,
+} from '@/constants/shop';
