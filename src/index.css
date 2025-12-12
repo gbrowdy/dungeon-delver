@@ -938,6 +938,14 @@ All colors MUST be HSL.
     0 4px 0 0 #ffd700,
     0 -4px 0 0 #ffd700;
   animation: pixel-twinkle 3s infinite;
+  will-change: opacity;
+}
+
+/* Hide decorative stars on small screens for performance */
+@media (max-width: 639px) {
+  .pixel-star {
+    display: none;
+  }
 }
 
 /* Pixel progress bar */
