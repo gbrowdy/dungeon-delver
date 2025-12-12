@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Player, Item, ItemType } from '@/types/game';
+import { Player } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
-import { formatItemStatBonus } from '@/utils/itemUtils';
-import { TouchTooltip } from '@/components/ui/touch-tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,38 +14,15 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-const RARITY_COLORS: Record<Item['rarity'], string> = {
-  common: 'border-rarity-common bg-rarity-common/10 text-rarity-common',
-  uncommon: 'border-rarity-uncommon bg-rarity-uncommon/10 text-rarity-uncommon',
-  rare: 'border-rarity-rare bg-rarity-rare/10 text-rarity-rare',
-  epic: 'border-rarity-epic bg-rarity-epic/10 text-rarity-epic',
-  legendary: 'border-rarity-legendary bg-rarity-legendary/10 text-rarity-legendary',
-};
-
-const TYPE_LABELS: Record<ItemType, string> = {
-  weapon: 'Weapon',
-  armor: 'Armor',
-  accessory: 'Accessory',
-};
-
-const TYPE_ICONS: Record<ItemType, string> = {
-  weapon: '⚔️',
-  armor: '🛡️',
-  accessory: '💍',
-};
-
-const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
-
 interface DeathScreenProps {
   player: Player;
-  floor: number;
-  room: number;
+  currentFloor: number;
   onRetry: () => void;
   onAbandon: () => void;
   onVisitShop: () => void;
 }
 
-export function DeathScreen({ player, floor, room, onRetry, onAbandon, onVisitShop }: DeathScreenProps) {
+export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitShop }: DeathScreenProps) {
   const [spriteState, setSpriteState] = useState<'idle' | 'hit'>('hit');
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
 
@@ -60,7 +35,7 @@ export function DeathScreen({ player, floor, room, onRetry, onAbandon, onVisitSh
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-2 sm:p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
       {/* Dark atmospheric background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-red-900/10 rounded-full blur-[120px]" />
@@ -76,182 +51,111 @@ export function DeathScreen({ player, floor, room, onRetry, onAbandon, onVisitSh
         <div className="pixel-star" style={{ top: '85%', left: '55%', animationDelay: '1.2s' }} />
       </div>
 
-      <div className="relative z-10 max-w-4xl w-full space-y-3 sm:space-y-4">
-        {/* Header - more compact */}
-        <div className="text-center space-y-1">
-          <div className="flex items-center justify-center gap-3">
-            <span className="text-3xl sm:text-4xl">💀</span>
-            <h1 className="pixel-title text-base sm:text-lg md:text-xl font-bold tracking-wider uppercase">
+      <div className="relative z-10 max-w-2xl w-full space-y-6 sm:space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center gap-3 sm:gap-4">
+            <span className="text-4xl sm:text-5xl">💀</span>
+            <h1 className="pixel-title text-lg sm:text-xl md:text-2xl font-bold tracking-wider uppercase">
               <span className="pixel-glow-red bg-gradient-to-r from-red-300 via-red-400 to-orange-400 bg-clip-text text-transparent">
-                Fallen in Battle
+                DEFEATED
               </span>
             </h1>
+            <span className="text-4xl sm:text-5xl">💀</span>
           </div>
-          <p className="pixel-text text-pixel-2xs text-slate-400 tracking-wider">
-            Defeated on Floor {floor}, Room {room}
+
+          <p className="pixel-text text-pixel-xs sm:text-pixel-sm text-slate-400 tracking-wider">
+            Floor {currentFloor}
           </p>
+
+          {/* Gold display */}
+          <div className="flex items-center justify-center gap-2 sm:gap-3">
+            <span className="text-2xl sm:text-3xl">💰</span>
+            <span className="pixel-text text-pixel-base sm:text-pixel-lg text-amber-400 font-bold">
+              Gold: {player.gold}
+            </span>
+          </div>
         </div>
 
-        {/* Character Stats Panel */}
-        <div className="pixel-panel rounded-lg p-3 sm:p-4">
-          <div className="flex flex-col md:flex-row gap-3 sm:gap-4">
-            {/* Sprite Display - more compact */}
-            <div className="flex flex-col items-center">
-              <div className="relative pixel-panel-dark rounded-lg p-2">
-                <PixelSprite
-                  type={player.class}
-                  state={spriteState}
-                  direction="right"
-                  scale={4}
-                  frame={0}
-                />
-              </div>
-              <div className="mt-1 text-center">
-                <div className="pixel-text text-pixel-xs text-amber-200">{player.name}</div>
-                <div className="pixel-text text-pixel-2xs text-slate-400">Level {player.level}</div>
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="flex-1 space-y-2">
-              {/* Resource Bars - show full since player gets restored on retry */}
-              <div className="grid grid-cols-2 gap-2">
-                <PixelStatBar
-                  label="HP"
-                  current={player.currentStats.maxHealth}
-                  max={player.currentStats.maxHealth}
-                  color="red"
-                />
-                <PixelStatBar
-                  label="MP"
-                  current={player.currentStats.maxMana}
-                  max={player.currentStats.maxMana}
-                  color="blue"
-                />
-              </div>
-
-              {/* All Stats in one compact grid */}
-              <div className="grid grid-cols-4 gap-1">
-                <PixelStatBox icon="⚔️" label="PWR" value={player.currentStats.power} />
-                <PixelStatBox icon="🛡️" label="ARM" value={player.currentStats.armor} />
-                <PixelStatBox icon="💨" label="SPD" value={player.currentStats.speed} />
-                <PixelStatBox icon="✨" label="FOR" value={player.currentStats.fortune} />
-              </div>
-
-              {/* Gold, Powers, and Equipment in one row */}
-              <div className="flex gap-2 items-stretch">
-                <div className="pixel-panel-dark flex items-center gap-1.5 rounded px-2 py-1">
-                  <span className="text-base">💰</span>
-                  <span className="pixel-text text-pixel-xs text-gold font-bold">{player.gold}</span>
-                </div>
-                {player.powers.length > 1 && (
-                  <div className="pixel-panel-dark flex items-center gap-1.5 rounded px-2 py-1">
-                    <span className="text-base">✨</span>
-                    <span className="pixel-text text-pixel-xs text-mana font-bold">{player.powers.length}</span>
-                  </div>
-                )}
-                {/* Equipment inline */}
-                <div className="flex-1 flex flex-col gap-1">
-                  {ALL_ITEM_TYPES.map((type) => {
-                    const item = player.equippedItems.find((i) => i.type === type);
-
-                    if (item) {
-                      const rarityTextColor = RARITY_COLORS[item.rarity].split(' ').pop() || 'text-slate-400';
-                      const tooltipContent = (
-                        <>
-                          <div className={cn('pixel-text text-pixel-sm font-medium', rarityTextColor)}>
-                            {item.name}
-                          </div>
-                          <div className="pixel-text text-pixel-xs text-slate-400 capitalize">{item.rarity} {item.type}</div>
-                          <div className="pixel-text text-pixel-xs text-success mt-1">{formatItemStatBonus(item)}</div>
-                          {item.effect && (
-                            <div className="pixel-text text-pixel-xs text-accent mt-1 font-medium">{item.effect.description}</div>
-                          )}
-                        </>
-                      );
-
-                      return (
-                        <TouchTooltip key={type} content={tooltipContent} side="top">
-                          <div
-                            className={cn(
-                              'pixel-panel-dark flex items-center gap-2 rounded px-2 py-1 border cursor-pointer',
-                              RARITY_COLORS[item.rarity]
-                            )}
-                          >
-                            <span className="text-base">{item.icon}</span>
-                            <div className="flex-1 min-w-0 hidden sm:block">
-                              <div className={cn('pixel-text text-pixel-xs font-medium truncate', rarityTextColor)}>
-                                {item.name}
-                              </div>
-                              <div className="pixel-text text-pixel-xs text-success truncate">
-                                {formatItemStatBonus(item)}
-                              </div>
-                            </div>
-                          </div>
-                        </TouchTooltip>
-                      );
-                    }
-
-                    // Empty slot - more visible styling
-                    return (
-                      <div
-                        key={type}
-                        className="pixel-panel-dark flex items-center gap-2 rounded px-2 py-1 border-2 border-dashed border-slate-600/50 opacity-50"
-                      >
-                        <span className="text-base text-slate-500">{TYPE_ICONS[type]}</span>
-                        <span className="pixel-text text-pixel-xs text-slate-500 hidden sm:inline">
-                          No {TYPE_LABELS[type]}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+        {/* Defeated sprite */}
+        <div className="flex justify-center">
+          <div className="relative pixel-panel-dark rounded-lg p-4 sm:p-6">
+            <PixelSprite
+              type={player.class}
+              state={spriteState}
+              direction="right"
+              scale={5}
+              frame={0}
+            />
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-2 justify-center">
-          <Button
-            onClick={onVisitShop}
-            variant="outline"
-            className="pixel-button text-pixel-xs px-4 sm:px-6 py-2 border-amber-600 hover:bg-amber-900/20 text-amber-400 uppercase"
-          >
-            🛒 Visit Shop
-          </Button>
-          <Button
-            onClick={onRetry}
-            className="pixel-button text-pixel-xs px-4 sm:px-6 py-2 bg-orange-600 hover:bg-orange-500 uppercase"
-          >
-            Retry Floor {floor}
-          </Button>
-          <Button
-            onClick={() => setShowAbandonConfirm(true)}
-            variant="outline"
-            className="pixel-button text-pixel-xs px-4 sm:px-6 py-2 border-slate-600 hover:bg-slate-800 uppercase"
-          >
-            Start Fresh
-          </Button>
+        <div className="space-y-4">
+          {/* Visit Shop Button - Prominent */}
+          <div className="flex justify-center">
+            <Button
+              onClick={onVisitShop}
+              size="lg"
+              className={cn(
+                'pixel-button text-pixel-sm px-8 sm:px-12 py-3 sm:py-4',
+                'transition-all duration-150 uppercase font-bold',
+                'bg-amber-600 hover:bg-amber-500 border-b-4 border-amber-800 hover:border-amber-700',
+                'active:border-b-2 active:translate-y-[2px]'
+              )}
+            >
+              <span className="text-xl mr-2">🛒</span>
+              Visit Shop
+            </Button>
+          </div>
+
+          {/* Retry and Abandon Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button
+              onClick={onRetry}
+              size="lg"
+              className={cn(
+                'pixel-button text-pixel-xs px-6 sm:px-8 py-3',
+                'transition-all duration-150 uppercase font-bold',
+                'bg-orange-600 hover:bg-orange-500 border-b-4 border-orange-800 hover:border-orange-700',
+                'active:border-b-2 active:translate-y-[2px]'
+              )}
+            >
+              Retry Floor {currentFloor}
+            </Button>
+            <Button
+              onClick={() => setShowAbandonConfirm(true)}
+              variant="outline"
+              size="lg"
+              className="pixel-button text-pixel-xs px-6 sm:px-8 py-3 border-slate-600 hover:bg-slate-800 uppercase"
+            >
+              Abandon Run
+            </Button>
+          </div>
         </div>
 
         {/* Abandon Confirmation Dialog */}
         <AlertDialog open={showAbandonConfirm} onOpenChange={setShowAbandonConfirm}>
           <AlertDialogContent className="pixel-panel border-2 border-red-500/50">
             <AlertDialogHeader>
-              <AlertDialogTitle className="pixel-text text-pixel-xs text-red-400">Start a New Run?</AlertDialogTitle>
+              <AlertDialogTitle className="pixel-text text-pixel-xs text-red-400">Abandon Run?</AlertDialogTitle>
               <AlertDialogDescription asChild>
-                <div className="space-y-1">
-                  <p className="pixel-text text-pixel-2xs text-slate-400">This will permanently abandon:</p>
-                  <ul className="space-y-0.5 pixel-text text-pixel-2xs text-slate-300">
+                <div className="space-y-2">
+                  <p className="pixel-text text-pixel-2xs text-slate-400">
+                    This will permanently abandon your current progress:
+                  </p>
+                  <ul className="space-y-1 pixel-text text-pixel-2xs text-slate-300">
                     <li>Level {player.level} {player.class}</li>
-                    <li>Floor {floor}, Room {room}</li>
+                    <li>Floor {currentFloor}</li>
                     <li className="text-gold">{player.gold} gold</li>
                     <li>{player.powers.length} powers learned</li>
                     {player.equippedItems.length > 0 && (
                       <li>{player.equippedItems.length} equipped items</li>
                     )}
                   </ul>
+                  <p className="pixel-text text-pixel-2xs text-red-400 pt-2">
+                    You will start fresh from the beginning.
+                  </p>
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -261,7 +165,7 @@ export function DeathScreen({ player, floor, room, onRetry, onAbandon, onVisitSh
                 onClick={onAbandon}
                 className="pixel-button text-pixel-2xs bg-red-600 hover:bg-red-500"
               >
-                Start Fresh
+                Abandon Run
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -273,59 +177,64 @@ export function DeathScreen({ player, floor, room, onRetry, onAbandon, onVisitSh
         <div className="h-1 bg-gradient-to-r from-transparent via-red-700/40 to-transparent" />
         <div className="h-px bg-gradient-to-r from-transparent via-red-500/60 to-transparent" />
       </div>
-    </div>
-  );
-}
 
-// Pixel art stat bar component - compact version
-function PixelStatBar({
-  label,
-  current,
-  max,
-  color,
-}: {
-  label: string;
-  current: number;
-  max: number;
-  color: 'red' | 'blue';
-}) {
-  const percentage = Math.max(0, Math.min(100, (current / max) * 100));
-  const bgGradient = color === 'red'
-    ? 'bg-gradient-to-r from-red-500 to-red-400'
-    : 'bg-gradient-to-r from-blue-500 to-blue-400';
-  const textColor = color === 'red' ? 'text-red-400' : 'text-blue-400';
+      {/* Inline styles for pixel effects */}
+      <style>{`
+        .pixel-title {
+          font-family: 'Press Start 2P', 'Courier New', monospace;
+          text-shadow:
+            3px 3px 0 #1a1a2e,
+            -1px -1px 0 #1a1a2e,
+            1px -1px 0 #1a1a2e,
+            -1px 1px 0 #1a1a2e;
+          letter-spacing: 0.05em;
+        }
 
-  return (
-    <div className="rounded p-1.5 pixel-panel-dark">
-      <div className="flex justify-between pixel-text text-pixel-2xs mb-0.5">
-        <span className={textColor}>{label}</span>
-        <span className="text-slate-400">{current}/{max}</span>
-      </div>
-      <div className="pixel-progress-bar h-1.5 rounded overflow-hidden">
-        <div
-          className={cn('pixel-progress-fill transition-all duration-500 h-full', bgGradient)}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-    </div>
-  );
-}
+        .pixel-glow-red {
+          filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6))
+                  drop-shadow(0 0 20px rgba(239, 68, 68, 0.3));
+        }
 
-// Pixel art stat box component - compact version
-function PixelStatBox({
-  icon,
-  label,
-  value,
-}: {
-  icon: string;
-  label: string;
-  value: string | number;
-}) {
-  return (
-    <div className="pixel-panel-dark rounded p-1 text-center">
-      <div className="text-sm">{icon}</div>
-      <div className="pixel-text text-pixel-2xs text-slate-400">{label}</div>
-      <div className="pixel-text text-pixel-2xs font-bold text-slate-200">{value}</div>
+        .pixel-text {
+          font-family: 'Press Start 2P', 'Courier New', monospace;
+        }
+
+        .pixel-panel-dark {
+          background: linear-gradient(135deg, rgba(30, 27, 75, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+          image-rendering: pixelated;
+          box-shadow:
+            inset -2px -2px 0 rgba(0, 0, 0, 0.4),
+            inset 2px 2px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .pixel-button {
+          font-family: 'Press Start 2P', 'Courier New', monospace;
+          image-rendering: pixelated;
+          box-shadow:
+            inset -2px -2px 0 rgba(0, 0, 0, 0.3),
+            inset 2px 2px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .pixel-star {
+          position: absolute;
+          width: 3px;
+          height: 3px;
+          background: white;
+          box-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
+          animation: twinkle 2s infinite;
+        }
+
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; }
+        }
+
+        .text-pixel-2xs { font-size: 0.5rem; line-height: 1.2; }
+        .text-pixel-xs { font-size: 0.625rem; line-height: 1.3; }
+        .text-pixel-sm { font-size: 0.75rem; line-height: 1.4; }
+        .text-pixel-base { font-size: 0.875rem; line-height: 1.5; }
+        .text-pixel-lg { font-size: 1rem; line-height: 1.5; }
+      `}</style>
     </div>
   );
 }

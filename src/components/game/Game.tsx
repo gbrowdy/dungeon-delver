@@ -97,8 +97,7 @@ export function Game() {
       return (
         <DeathScreen
           player={state.player}
-          floor={state.currentFloor}
-          room={state.currentRoom}
+          currentFloor={state.currentFloor}
           onRetry={actions.retryFloor}
           onAbandon={actions.restartGame}
           onVisitShop={actions.openShop}
