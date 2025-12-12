@@ -24,10 +24,9 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     subpath: null,
     effects: [
       {
-        type: 'conditional_damage',
-        value: 15,
-        condition: 'hp_below_50',
-        stat: 'power'
+        trigger: 'conditional',
+        condition: { type: 'hp_below', value: 50 },
+        statModifiers: [{ stat: 'power', percentBonus: 0.15 }]
       }
     ]
   },
@@ -41,11 +40,49 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     subpath: null,
     effects: [
       {
-        type: 'scaling_stat',
-        value: 1,
-        scalingFactor: 10,
-        condition: 'missing_hp_percent',
-        stat: 'power'
+        trigger: 'conditional',
+        condition: { type: 'hp_below', value: 90 },
+        statModifiers: [{ stat: 'power', flatBonus: 1 }]
+      },
+      {
+        trigger: 'conditional',
+        condition: { type: 'hp_below', value: 80 },
+        statModifiers: [{ stat: 'power', flatBonus: 1 }]
+      },
+      {
+        trigger: 'conditional',
+        condition: { type: 'hp_below', value: 70 },
+        statModifiers: [{ stat: 'power', flatBonus: 1 }]
+      },
+      {
+        trigger: 'conditional',
+        condition: { type: 'hp_below', value: 60 },
+        statModifiers: [{ stat: 'power', flatBonus: 1 }]
+      },
+      {
+        trigger: 'conditional',
+        condition: { type: 'hp_below', value: 50 },
+        statModifiers: [{ stat: 'power', flatBonus: 1 }]
+      },
+      {
+        trigger: 'conditional',
+        condition: { type: 'hp_below', value: 40 },
+        statModifiers: [{ stat: 'power', flatBonus: 1 }]
+      },
+      {
+        trigger: 'conditional',
+        condition: { type: 'hp_below', value: 30 },
+        statModifiers: [{ stat: 'power', flatBonus: 1 }]
+      },
+      {
+        trigger: 'conditional',
+        condition: { type: 'hp_below', value: 20 },
+        statModifiers: [{ stat: 'power', flatBonus: 1 }]
+      },
+      {
+        trigger: 'conditional',
+        condition: { type: 'hp_below', value: 10 },
+        statModifiers: [{ stat: 'power', flatBonus: 1 }]
       }
     ]
   },
@@ -59,11 +96,9 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     subpath: null,
     effects: [
       {
-        type: 'conditional_stat',
-        value: 20,
-        condition: 'hp_below_30',
-        stat: 'speed',
-        isPercentage: true
+        trigger: 'conditional',
+        condition: { type: 'hp_below', value: 30 },
+        statModifiers: [{ stat: 'speed', percentBonus: 0.20 }]
       }
     ]
   },
@@ -77,11 +112,8 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     subpath: null,
     effects: [
       {
-        type: 'on_kill',
-        trigger: 'kill',
-        effect: 'heal',
-        value: 15,
-        isPercentage: true
+        trigger: 'on_kill',
+        heal: 15 // Percentage heal - implementation should use player.maxHealth * 0.15
       }
     ]
   },
@@ -95,9 +127,10 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     subpath: null,
     effects: [
       {
-        type: 'modify_cost',
-        costType: 'hp_instead_of_mana',
-        multiplier: 0.5
+        trigger: 'on_power_use',
+        // This is a special mechanic that needs custom implementation
+        // The effect modifies power cost type from mana to HP
+        powerModifiers: [{ type: 'cost_reduction', value: 0.5 }]
       }
     ]
   },
@@ -111,9 +144,8 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     subpath: null,
     effects: [
       {
-        type: 'cooldown_reduction',
-        value: 20,
-        isPercentage: true
+        trigger: 'passive',
+        powerModifiers: [{ type: 'cooldown_reduction', value: 0.20 }]
       }
     ]
   },
@@ -129,10 +161,10 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     subpath: 'warlord',
     effects: [
       {
-        type: 'enemy_debuff',
-        stat: 'speed',
-        value: -10,
-        isPercentage: true
+        trigger: 'passive',
+        // Enemy debuff - needs custom implementation
+        // This reduces enemy speed by 10%
+        damageModifier: { type: 'bonus_damage', value: 0 }
       }
     ]
   },
@@ -146,11 +178,12 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     subpath: 'warlord',
     effects: [
       {
-        type: 'on_power_hit',
-        trigger: 'power_use',
-        effect: 'stun',
-        chance: 25,
-        duration: 1.5
+        trigger: 'on_power_use',
+        statusApplication: {
+          statusType: 'stun',
+          duration: 1.5,
+          chance: 0.25
+        }
       }
     ]
   },
@@ -164,11 +197,12 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     subpath: 'warlord',
     effects: [
       {
-        type: 'on_crit',
-        trigger: 'critical_hit',
-        effect: 'slow',
-        value: 30,
-        duration: 3
+        trigger: 'on_crit',
+        statusApplication: {
+          statusType: 'slow',
+          duration: 3,
+          chance: 1.0
+        }
       }
     ]
   },
@@ -184,10 +218,9 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     subpath: 'executioner',
     effects: [
       {
-        type: 'conditional_damage',
-        value: 25,
-        condition: 'enemy_hp_below_30',
-        stat: 'power'
+        trigger: 'conditional',
+        condition: { type: 'enemy_hp_below', value: 30 },
+        statModifiers: [{ stat: 'power', percentBonus: 0.25 }]
       }
     ]
   },
@@ -201,13 +234,9 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     subpath: 'executioner',
     effects: [
       {
-        type: 'on_kill',
-        trigger: 'kill',
-        effect: 'buff',
-        stat: 'power',
-        value: 30,
-        duration: 4,
-        isPercentage: true
+        trigger: 'on_kill',
+        statModifiers: [{ stat: 'power', percentBonus: 0.30 }],
+        duration: 4
       }
     ]
   },
@@ -221,12 +250,13 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     subpath: 'executioner',
     effects: [
       {
-        type: 'on_hit',
-        trigger: 'attack',
-        effect: 'bleed',
-        value: 5,
-        duration: 3,
-        isPercentage: true
+        trigger: 'on_hit',
+        statusApplication: {
+          statusType: 'bleed',
+          damage: 5, // 5% of damage dealt
+          duration: 3,
+          chance: 1.0
+        }
       }
     ]
   },
@@ -242,17 +272,15 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     subpath: null,
     effects: [
       {
-        type: 'cheat_death',
-        trigger: 'lethal_damage',
-        effect: 'survive',
-        remainingHp: 1,
-        usesPerCombat: 1,
-        buff: {
-          stats: ['power', 'speed'],
-          value: 50,
-          duration: 5,
-          isPercentage: true
-        }
+        trigger: 'on_damaged',
+        condition: { type: 'hp_below', value: 1 },
+        heal: 1, // Set HP to 1
+        statModifiers: [
+          { stat: 'power', percentBonus: 0.50 },
+          { stat: 'speed', percentBonus: 0.50 }
+        ],
+        duration: 5,
+        cooldown: 999999 // Once per combat (very high cooldown)
       }
     ]
   }
@@ -300,9 +328,8 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     subpath: null,
     effects: [
       {
-        type: 'stat_bonus',
-        stat: 'armor',
-        value: 3
+        trigger: 'passive',
+        statModifiers: [{ stat: 'armor', flatBonus: 3 }]
       }
     ]
   },
@@ -316,9 +343,8 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     subpath: null,
     effects: [
       {
-        type: 'stat_bonus',
-        stat: 'hp_regen',
-        value: 1.0
+        trigger: 'passive',
+        heal: 1.0 // Per second heal
       }
     ]
   },
@@ -332,9 +358,9 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     subpath: null,
     effects: [
       {
-        type: 'damage_reduction',
-        value: 10,
-        isPercentage: true
+        trigger: 'passive',
+        // Damage reduction - needs custom implementation
+        damageModifier: { type: 'bonus_damage', value: -0.10 }
       }
     ]
   },
@@ -348,10 +374,9 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     subpath: null,
     effects: [
       {
-        type: 'auto_trigger',
-        trigger: 'periodic',
-        effect: 'block',
-        interval: 8
+        trigger: 'on_damaged',
+        cooldown: 8,
+        shield: 999 // Block entire attack
       }
     ]
   },
@@ -365,11 +390,11 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     subpath: null,
     effects: [
       {
-        type: 'conditional_stats',
-        condition: 'hp_below_40',
-        bonuses: [
-          { stat: 'armor', value: 2 },
-          { stat: 'power', value: 20, isPercentage: true }
+        trigger: 'conditional',
+        condition: { type: 'hp_below', value: 40 },
+        statModifiers: [
+          { stat: 'armor', flatBonus: 2 },
+          { stat: 'power', percentBonus: 0.20 }
         ]
       }
     ]
@@ -384,10 +409,8 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     subpath: null,
     effects: [
       {
-        type: 'stat_bonus',
-        stat: 'max_hp',
-        value: 15,
-        isPercentage: true
+        trigger: 'passive',
+        statModifiers: [{ stat: 'maxHealth', percentBonus: 0.15 }]
       }
     ]
   },
@@ -403,10 +426,8 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     subpath: 'fortress',
     effects: [
       {
-        type: 'stat_multiplier',
-        stat: 'armor',
-        value: 30,
-        isPercentage: true
+        trigger: 'passive',
+        statModifiers: [{ stat: 'armor', percentBonus: 0.30 }]
       }
     ]
   },
@@ -420,8 +441,8 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     subpath: 'fortress',
     effects: [
       {
-        type: 'immunity',
-        statusEffects: ['stun', 'slow']
+        trigger: 'passive',
+        cleanse: true // Immune to stun/slow - needs custom implementation
       }
     ]
   },
@@ -435,11 +456,8 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     subpath: 'fortress',
     effects: [
       {
-        type: 'stat_bonus',
-        stat: 'hp_regen',
-        value: 2,
-        isPercentage: true,
-        basedOn: 'max_hp'
+        trigger: 'turn_start',
+        heal: 2 // 2% of max HP - implementation should calculate based on maxHealth
       }
     ]
   },
@@ -455,11 +473,8 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     subpath: 'avenger',
     effects: [
       {
-        type: 'on_damaged',
-        trigger: 'take_damage',
-        effect: 'reflect',
-        value: 15,
-        isPercentage: true
+        trigger: 'on_damaged',
+        damageModifier: { type: 'reflect', value: 0.15 }
       }
     ]
   },
@@ -473,13 +488,9 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     subpath: 'avenger',
     effects: [
       {
-        type: 'on_damaged',
-        trigger: 'take_damage',
-        effect: 'buff',
-        stat: 'power',
-        value: 40,
-        duration: 'next_attack',
-        isPercentage: true
+        trigger: 'on_damaged',
+        statModifiers: [{ stat: 'power', percentBonus: 0.40 }],
+        duration: 1 // Next attack only
       }
     ]
   },
@@ -493,10 +504,9 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     subpath: 'avenger',
     effects: [
       {
-        type: 'on_block',
-        trigger: 'block',
-        effect: 'guaranteed_crit',
-        duration: 'next_attack'
+        trigger: 'on_block',
+        // Guaranteed crit - needs custom implementation
+        damage: 100 // Placeholder for guaranteed crit boost
       }
     ]
   },
@@ -512,12 +522,10 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     subpath: null,
     effects: [
       {
-        type: 'cheat_death',
-        trigger: 'lethal_damage',
-        effect: 'heal',
-        value: 40,
-        isPercentage: true,
-        usesPerFloor: 1
+        trigger: 'on_damaged',
+        condition: { type: 'hp_below', value: 1 },
+        heal: 40, // 40% of max HP
+        cooldown: 999999 // Once per floor (very high cooldown)
       }
     ]
   }
