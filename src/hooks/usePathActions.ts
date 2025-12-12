@@ -3,6 +3,7 @@ import { GameState, Player } from '@/types/game';
 import { PathDefinition, PathAbility, PlayerPath } from '@/types/paths';
 import { GAME_PHASE } from '@/constants/enums';
 import { deepClonePlayer } from '@/utils/stateUtils';
+import { PATH_SELECTION_BONUSES } from '@/constants/paths';
 
 // Import path data for all classes
 import { WARRIOR_PATHS } from '@/data/paths/warrior';
@@ -116,6 +117,34 @@ export function usePathActions({ setState }: UsePathActionsOptions) {
         pathId,
         abilities: [],
       };
+
+      // Apply immediate stat bonuses from path selection
+      const bonus = PATH_SELECTION_BONUSES[pathId];
+      if (bonus) {
+        // Apply each bonus stat to current stats
+        if (bonus.power !== undefined) {
+          updatedPlayer.currentStats.power += bonus.power;
+        }
+        if (bonus.armor !== undefined) {
+          updatedPlayer.currentStats.armor += bonus.armor;
+        }
+        if (bonus.speed !== undefined) {
+          updatedPlayer.currentStats.speed += bonus.speed;
+        }
+        if (bonus.fortune !== undefined) {
+          updatedPlayer.currentStats.fortune += bonus.fortune;
+        }
+        // Apply maxHealth and health together
+        if (bonus.maxHealth !== undefined) {
+          updatedPlayer.currentStats.maxHealth += bonus.maxHealth;
+          updatedPlayer.currentStats.health += bonus.maxHealth;
+        }
+        // Apply maxMana and mana together
+        if (bonus.maxMana !== undefined) {
+          updatedPlayer.currentStats.maxMana += bonus.maxMana;
+          updatedPlayer.currentStats.mana += bonus.maxMana;
+        }
+      }
 
       // Transition to combat phase
       return {
