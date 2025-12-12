@@ -55,10 +55,10 @@ export function MainMenu({ onStart }: MainMenuProps) {
             {/* Marketing taglines */}
             <div className="space-y-3 pt-2">
               <p className="pixel-text text-pixel-sm text-amber-200/90 tracking-widest uppercase leading-relaxed">
-                Endless Dungeons. Countless Foes.
+                Ten Floors. One Final Boss.
               </p>
               <p className="pixel-text text-pixel-xs text-slate-400 tracking-wide leading-relaxed">
-                Battle monsters, collect loot, grow stronger.
+                Choose your path. Master your abilities. Claim victory.
               </p>
             </div>
 
