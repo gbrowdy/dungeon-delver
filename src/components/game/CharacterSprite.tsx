@@ -145,7 +145,7 @@ export function CharacterSprite({
         {/* Block/Defense shield effect - hero only */}
         {isHero && player && (
           <PixelShield
-            active={player.isBlocking || player.activeBuffs.some(buff => buff.stat === 'defense')}
+            active={player.isBlocking || player.activeBuffs.some(buff => buff.stat === 'armor')}
             variant="block"
           />
         )}

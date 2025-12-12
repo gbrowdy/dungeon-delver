@@ -44,11 +44,10 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
   // Stat label full names for accessibility (Issue #12)
   const statLabels: Record<string, string> = {
     HP: 'Health Points',
-    ATK: 'Attack Power',
-    DEF: 'Defense',
+    PWR: 'Power',
+    ARM: 'Armor',
     SPD: 'Speed',
-    CRIT: 'Critical Chance',
-    DODGE: 'Dodge Chance',
+    FOR: 'Fortune',
   };
 
   return (
@@ -169,12 +168,12 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
                     <span className="text-slate-200 font-mono">{data.baseStats.maxHealth}</span>
                   </div>
                   <div className="pixel-stat-box">
-                    <abbr title="Attack Power" className="text-orange-400 no-underline">ATK</abbr>
-                    <span className="text-slate-200 font-mono">{data.baseStats.attack}</span>
+                    <abbr title="Power" className="text-orange-400 no-underline">PWR</abbr>
+                    <span className="text-slate-200 font-mono">{data.baseStats.power}</span>
                   </div>
                   <div className="pixel-stat-box">
-                    <abbr title="Defense" className="text-blue-400 no-underline">DEF</abbr>
-                    <span className="text-slate-200 font-mono">{data.baseStats.defense}</span>
+                    <abbr title="Armor" className="text-blue-400 no-underline">ARM</abbr>
+                    <span className="text-slate-200 font-mono">{data.baseStats.armor}</span>
                   </div>
                   <div className="pixel-stat-box">
                     <abbr title="Speed" className="text-green-400 no-underline">SPD</abbr>
@@ -232,14 +231,13 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
                 </div>
 
                 {/* Full stats grid */}
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-1 sm:gap-2">
                   {[
                     { label: 'HP', value: CLASS_DATA[activeClass].baseStats.maxHealth, color: 'text-red-400' },
-                    { label: 'ATK', value: CLASS_DATA[activeClass].baseStats.attack, color: 'text-orange-400' },
-                    { label: 'DEF', value: CLASS_DATA[activeClass].baseStats.defense, color: 'text-blue-400' },
+                    { label: 'PWR', value: CLASS_DATA[activeClass].baseStats.power, color: 'text-orange-400' },
+                    { label: 'ARM', value: CLASS_DATA[activeClass].baseStats.armor, color: 'text-blue-400' },
                     { label: 'SPD', value: CLASS_DATA[activeClass].baseStats.speed, color: 'text-green-400' },
-                    { label: 'CRIT', value: `${CLASS_DATA[activeClass].baseStats.critChance}%`, color: 'text-yellow-400' },
-                    { label: 'DODGE', value: `${CLASS_DATA[activeClass].baseStats.dodgeChance}%`, color: 'text-cyan-400' },
+                    { label: 'FOR', value: CLASS_DATA[activeClass].baseStats.fortune, color: 'text-purple-400' },
                   ].map((stat) => (
                     <div key={stat.label} className="pixel-stat-box-lg">
                       <abbr title={statLabels[stat.label]} className={`${stat.color} text-pixel-xs no-underline`}>
@@ -296,8 +294,8 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
                 </div>
 
                 {/* Placeholder stats grid */}
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2">
-                  {['HP', 'ATK', 'DEF', 'SPD', 'CRIT', 'DODGE'].map((label) => (
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-1 sm:gap-2">
+                  {['HP', 'PWR', 'ARM', 'SPD', 'FOR'].map((label) => (
                     <div key={label} className="pixel-stat-box-lg opacity-50">
                       <span className="text-slate-500 text-pixel-xs">{label}</span>
                       <span className="text-slate-600 font-mono text-pixel-sm">--</span>

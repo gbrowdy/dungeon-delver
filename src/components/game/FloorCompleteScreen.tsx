@@ -204,22 +204,12 @@ export function FloorCompleteScreen({
                 />
               </div>
 
-              {/* Stat Boxes - Combat Stats */}
-              <div className="grid grid-cols-3 gap-1 w-full">
-                <PixelStatBox icon="⚔️" label="ATK" value={player.currentStats.attack} />
-                <PixelStatBox icon="🛡️" label="DEF" value={player.currentStats.defense} />
-                <PixelStatBox icon="💨" label="SPD" value={player.currentStats.speed} />
-                <PixelStatBox icon="💥" label="CRIT" value={`${player.currentStats.critChance}%`} />
-                <PixelStatBox icon="🎯" label="CDMG" value={`${Math.floor(player.currentStats.critDamage * 100)}%`} />
-                <PixelStatBox icon="🌀" label="DODGE" value={`${player.currentStats.dodgeChance}%`} />
-              </div>
-
-              {/* Stat Boxes - Regen & Utility */}
+              {/* Stat Boxes - Core Stats */}
               <div className="grid grid-cols-4 gap-1 w-full">
-                <PixelStatBox icon="💗" label="HP/s" value={player.currentStats.hpRegen.toFixed(1)} />
-                <PixelStatBox icon="💎" label="MP/s" value={player.currentStats.mpRegen.toFixed(1)} />
-                <PixelStatBox icon="⚡" label="CD" value={`${Math.floor(player.currentStats.cooldownSpeed * 100)}%`} />
-                <PixelStatBox icon="🪙" label="GOLD+" value={`${Math.floor(player.currentStats.goldFind * 100)}%`} />
+                <PixelStatBox icon="⚔️" label="PWR" value={player.currentStats.power} />
+                <PixelStatBox icon="🛡️" label="ARM" value={player.currentStats.armor} />
+                <PixelStatBox icon="💨" label="SPD" value={player.currentStats.speed} />
+                <PixelStatBox icon="✨" label="FOR" value={player.currentStats.fortune} />
               </div>
 
               {/* Gold Display */}

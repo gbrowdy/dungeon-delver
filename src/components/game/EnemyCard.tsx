@@ -25,8 +25,8 @@ export function EnemyCard({ enemy }: EnemyCardProps) {
           </h3>
         </div>
         <div className="flex gap-2 text-pixel-sm text-muted-foreground">
-          <span>⚔️ {enemy.attack}</span>
-          <span>🛡️ {enemy.defense}</span>
+          <span>⚔️ {enemy.power}</span>
+          <span>🛡️ {enemy.armor}</span>
         </div>
       </div>
       

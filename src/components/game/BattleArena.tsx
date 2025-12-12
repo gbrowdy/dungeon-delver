@@ -186,7 +186,7 @@ export function BattleArena({
                 {displayEnemy.name}
               </span>
               <div className="pixel-text text-pixel-2xs text-gray-400">
-                ATK:{displayEnemy.attack} DEF:{displayEnemy.defense}
+                PWR:{displayEnemy.power} ARM:{displayEnemy.armor}
               </div>
               {/* Enemy abilities */}
               {displayEnemy.abilities.length > 0 && (

@@ -130,17 +130,11 @@ export function DeathScreen({ player, floor, room, onRetry, onAbandon }: DeathSc
               </div>
 
               {/* All Stats in one compact grid */}
-              <div className="grid grid-cols-5 sm:grid-cols-10 gap-1">
-                <PixelStatBox icon="⚔️" label="ATK" value={player.currentStats.attack} />
-                <PixelStatBox icon="🛡️" label="DEF" value={player.currentStats.defense} />
+              <div className="grid grid-cols-4 gap-1">
+                <PixelStatBox icon="⚔️" label="PWR" value={player.currentStats.power} />
+                <PixelStatBox icon="🛡️" label="ARM" value={player.currentStats.armor} />
                 <PixelStatBox icon="💨" label="SPD" value={player.currentStats.speed} />
-                <PixelStatBox icon="💥" label="CRIT" value={`${player.currentStats.critChance}%`} />
-                <PixelStatBox icon="🌀" label="DODGE" value={`${player.currentStats.dodgeChance}%`} />
-                <PixelStatBox icon="💗" label="HP/s" value={player.currentStats.hpRegen.toFixed(1)} />
-                <PixelStatBox icon="💎" label="MP/s" value={player.currentStats.mpRegen.toFixed(1)} />
-                <PixelStatBox icon="⚡" label="CD" value={`${Math.floor(player.currentStats.cooldownSpeed * 100)}%`} />
-                <PixelStatBox icon="🎯" label="CDMG" value={`${Math.floor(player.currentStats.critDamage * 100)}%`} />
-                <PixelStatBox icon="🪙" label="GOLD" value={`${Math.floor(player.currentStats.goldFind * 100)}%`} />
+                <PixelStatBox icon="✨" label="FOR" value={player.currentStats.fortune} />
               </div>
 
               {/* Gold, Powers, and Equipment in one row */}
