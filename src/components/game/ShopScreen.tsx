@@ -501,12 +501,12 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
 
         {/* YOUR EQUIPMENT Section */}
         <section className="space-y-3">
-          <div className="flex items-center gap-2 pb-2 border-b border-emerald-700/50">
-            <div className="w-2 h-2 bg-emerald-500" />
-            <h2 className="pixel-text text-pixel-sm uppercase text-emerald-300 tracking-wider">
+          <div className="flex items-center gap-2 pb-2 border-b border-slate-600/50">
+            <div className="w-2 h-2 bg-slate-400" />
+            <h2 className="pixel-text text-pixel-sm uppercase text-slate-300 tracking-wider">
               Your Equipment
             </h2>
-            <div className="flex-1 h-[2px] bg-gradient-to-r from-emerald-700/50 to-transparent" />
+            <div className="flex-1 h-[2px] bg-gradient-to-r from-slate-600/50 to-transparent" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {/* Get equipped items by type */}
