@@ -53,8 +53,21 @@ export const LEVEL_UP_BONUSES = {
 
 // Floor and room configuration
 export const FLOOR_CONFIG = {
-  /** Default number of rooms per floor */
-  DEFAULT_ROOMS_PER_FLOOR: 5,
+  /** Maximum number of floors in the game */
+  MAX_FLOORS: 5,
+  /** Floor number where the final boss appears */
+  FINAL_BOSS_FLOOR: 5,
+  /** Floor number where legendary powers unlock */
+  LEGENDARY_UNLOCK_FLOOR: 3,
+  /**
+   * Number of rooms per floor (0-indexed array)
+   * Floor 1: 4 rooms (path selection at level 2)
+   * Floor 2: 4 rooms (path forming)
+   * Floor 3: 5 rooms (legendary unlocks)
+   * Floor 4: 5 rooms (capstone)
+   * Floor 5: 4 rooms + 1 final boss room = 5 total
+   */
+  ROOMS_PER_FLOOR: [4, 4, 5, 5, 4] as const,
   /** Starting gold for new characters */
   STARTING_GOLD: 40, // Buffed from 25 - allows one early upgrade
   /** Starting experience required for level 2 */
