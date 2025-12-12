@@ -284,7 +284,8 @@ export function FloorCompleteScreen({
               {/* Loading skeleton */}
               {isLoadingRewards ? (
                 <div className="space-y-2">
-                  {[1, 2, 3].map((i) => (
+                  {/* Show 3 skeleton placeholders to match typical shop item count */}
+                  {Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="pixel-panel-dark p-3 rounded border border-slate-700/30">
                       <div className="flex items-center gap-3">
                         <Skeleton className="h-8 w-8 rounded" />
