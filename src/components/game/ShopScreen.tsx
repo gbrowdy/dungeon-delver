@@ -82,7 +82,8 @@ interface ItemCardProps {
 function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy }: ItemCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const colors = TIER_COLORS[item.tier];
-  const IconComponent = (Icons as any)[getItemIcon(item.icon)] || Icons.Package;
+  const iconName = getItemIcon(item.icon);
+  const IconComponent = Icons[iconName as keyof typeof Icons] || Icons.Package;
 
   // Format stats for display
   const stats = Object.entries(item.stats)
