@@ -75,7 +75,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Holy Strike',
         description: 'Your attacks deal bonus holy damage based on your armor stat',
         icon: 'Sun',
-        levelRequirement: 3,
+        levelRequired: 3,
         subpath: 'templar',
         effects: [
           {
@@ -95,7 +95,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Righteous Fury',
         description: 'Critical hits trigger a burst of holy light, dealing 50% bonus damage',
         icon: 'Sparkles',
-        levelRequirement: 4,
+        levelRequired: 4,
         subpath: 'templar',
         effects: [
           {
@@ -115,7 +115,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Smite the Wicked',
         description: 'Deal 30% increased damage to enemies with debuffs',
         icon: 'Zap',
-        levelRequirement: 5,
+        levelRequired: 5,
         subpath: 'templar',
         effects: [
           {
@@ -132,7 +132,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Mark of Judgment',
         description: 'Attacks have a 25% chance to mark enemies, reducing their armor by 20%',
         icon: 'CrosshairIcon',
-        levelRequirement: 3,
+        levelRequired: 3,
         subpath: 'inquisitor',
         effects: [
           {
@@ -152,7 +152,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Weakening Light',
         description: 'Enemies you attack deal 15% reduced damage for 4 seconds',
         icon: 'ShieldAlert',
-        levelRequirement: 4,
+        levelRequired: 4,
         subpath: 'inquisitor',
         effects: [
           {
@@ -168,7 +168,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Divine Condemnation',
         description: 'Marked enemies take 25% increased damage from all sources',
         icon: 'Flame',
-        levelRequirement: 5,
+        levelRequired: 5,
         subpath: 'inquisitor',
         effects: [
           {
@@ -185,7 +185,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Holy Avenger',
         description: 'Every 5th attack unleashes a devastating smite dealing 200% bonus holy damage and applying all debuffs',
         icon: 'Sword',
-        levelRequirement: 6,
+        levelRequired: 6,
         subpath: 'templar',
         isCapstone: true,
         effects: [
@@ -209,7 +209,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Divine Wrath',
         description: 'Powers cost 25% less mana and deal 40% increased damage',
         icon: 'Zap',
-        levelRequirement: 6,
+        levelRequired: 6,
         subpath: 'inquisitor',
         isCapstone: true,
         effects: [
@@ -252,7 +252,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Blessed Recovery',
         description: 'HP regeneration increased by 100% (passive)',
         icon: 'Heart',
-        levelRequirement: 3,
+        levelRequired: 3,
         subpath: 'sentinel',
         effects: [
           {
@@ -266,7 +266,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Healing Ward',
         description: 'Regenerate 2% of max HP every 3 seconds (passive)',
         icon: 'Plus',
-        levelRequirement: 4,
+        levelRequired: 4,
         subpath: 'sentinel',
         effects: [
           {
@@ -281,7 +281,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Shield of Renewal',
         description: 'Blocking an attack heals you for 10% of max HP (passive)',
         icon: 'ShieldPlus',
-        levelRequirement: 5,
+        levelRequired: 5,
         subpath: 'sentinel',
         effects: [
           {
@@ -298,7 +298,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Enduring Faith',
         description: 'Reduce all incoming damage by 10% (passive)',
         icon: 'Shield',
-        levelRequirement: 3,
+        levelRequired: 3,
         subpath: 'martyr',
         effects: [
           {
@@ -312,7 +312,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Armor of Sacrifice',
         description: 'Damage reduction increased by 1% per 10 armor (passive)',
         icon: 'ShieldCheck',
-        levelRequirement: 4,
+        levelRequired: 4,
         subpath: 'martyr',
         effects: [
           {
@@ -327,7 +327,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Last Stand',
         description: 'Once per floor, survive a lethal blow with 1 HP and gain 50% damage reduction for 5 seconds (passive)',
         icon: 'Cross',
-        levelRequirement: 5,
+        levelRequired: 5,
         subpath: 'martyr',
         effects: [
           {
@@ -349,7 +349,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Eternal Guardian',
         description: 'HP regeneration scales with your armor (1% regen per 10 armor) and you heal for 15% of damage prevented (passive)',
         icon: 'HeartPulse',
-        levelRequirement: 6,
+        levelRequired: 6,
         subpath: 'sentinel',
         isCapstone: true,
         effects: [
@@ -369,7 +369,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
         name: 'Unbreakable Will',
         description: 'Below 30% HP, gain 30% damage reduction and cannot be reduced below 1 HP for 3 seconds (60s cooldown, passive)',
         icon: 'ShieldBan',
-        levelRequirement: 6,
+        levelRequired: 6,
         subpath: 'martyr',
         isCapstone: true,
         effects: [

@@ -1,9 +1,4 @@
-// Placeholder imports - these types will be defined in src/types/paths.ts
-// Task 2.1 is creating these types in parallel
-type PathDefinition = any;
-type PathAbility = any;
-type SubpathDefinition = any;
-type PathAbilityEffect = any;
+import type { PathDefinition, PathAbility, SubpathDefinition } from '@/types/paths';
 
 /**
  * WARRIOR CLASS PATHS
@@ -24,7 +19,7 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     name: 'Blood Rage',
     description: 'Deal 15% more damage when below 50% HP',
     icon: 'Flame',
-    levelRequirement: 3,
+    levelRequired: 3,
     isCapstone: false,
     subpath: null,
     effects: [
@@ -41,7 +36,7 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     name: 'Pain Fueled',
     description: 'Gain +1 Power for every 10% missing HP',
     icon: 'Zap',
-    levelRequirement: 3,
+    levelRequired: 3,
     isCapstone: false,
     subpath: null,
     effects: [
@@ -59,7 +54,7 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     name: 'Adrenaline Rush',
     description: 'Gain 20% Speed when below 30% HP',
     icon: 'Zap',
-    levelRequirement: 4,
+    levelRequired: 4,
     isCapstone: false,
     subpath: null,
     effects: [
@@ -77,7 +72,7 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     name: 'Bloodbath',
     description: 'Killing an enemy heals you for 15% of your max HP',
     icon: 'Heart',
-    levelRequirement: 4,
+    levelRequired: 4,
     isCapstone: false,
     subpath: null,
     effects: [
@@ -95,7 +90,7 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     name: 'Reckless Fury',
     description: 'Powers cost HP instead of Mana (50% of mana cost)',
     icon: 'Skull',
-    levelRequirement: 5,
+    levelRequired: 5,
     isCapstone: false,
     subpath: null,
     effects: [
@@ -111,7 +106,7 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     name: 'Battle Trance',
     description: 'Power cooldowns reduced by 20%',
     icon: 'Timer',
-    levelRequirement: 5,
+    levelRequired: 5,
     isCapstone: false,
     subpath: null,
     effects: [
@@ -129,7 +124,7 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     name: 'Intimidating Presence',
     description: 'Enemies attack 10% slower',
     icon: 'Shield',
-    levelRequirement: 3,
+    levelRequired: 3,
     isCapstone: false,
     subpath: 'warlord',
     effects: [
@@ -146,7 +141,7 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     name: 'Warlord Command',
     description: 'Your powers have a 25% chance to stun enemies for 1.5s',
     icon: 'Swords',
-    levelRequirement: 4,
+    levelRequired: 4,
     isCapstone: false,
     subpath: 'warlord',
     effects: [
@@ -164,7 +159,7 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     name: 'Crushing Blows',
     description: 'Critical hits slow enemies by 30% for 3s',
     icon: 'Hammer',
-    levelRequirement: 5,
+    levelRequired: 5,
     isCapstone: false,
     subpath: 'warlord',
     effects: [
@@ -184,7 +179,7 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     name: "Executioner's Strike",
     description: 'Deal 25% more damage to enemies below 30% HP',
     icon: 'Sword',
-    levelRequirement: 3,
+    levelRequired: 3,
     isCapstone: false,
     subpath: 'executioner',
     effects: [
@@ -201,7 +196,7 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     name: 'Killing Spree',
     description: 'Killing an enemy grants +30% Power for 4s',
     icon: 'Sparkles',
-    levelRequirement: 4,
+    levelRequired: 4,
     isCapstone: false,
     subpath: 'executioner',
     effects: [
@@ -221,7 +216,7 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     name: 'Mortal Wounds',
     description: 'Your attacks apply Bleed, dealing 5% of damage dealt over 3s',
     icon: 'Droplet',
-    levelRequirement: 5,
+    levelRequired: 5,
     isCapstone: false,
     subpath: 'executioner',
     effects: [
@@ -242,7 +237,7 @@ const BERSERKER_ABILITIES: PathAbility[] = [
     name: 'Undying Fury',
     description: 'Once per combat, survive a lethal hit with 1 HP and gain 50% Power and Speed for 5s',
     icon: 'Flame',
-    levelRequirement: 6,
+    levelRequired: 6,
     isCapstone: true,
     subpath: null,
     effects: [
@@ -283,7 +278,7 @@ const BERSERKER_PATH: PathDefinition = {
   id: 'berserker',
   name: 'Berserker',
   description: 'Risk and reward. Gain power as you take damage, enhanced abilities at low HP.',
-  playstyle: 'active',
+  type: 'active',
   icon: 'Flame',
   abilities: BERSERKER_ABILITIES,
   subpaths: [WARLORD_SUBPATH, EXECUTIONER_SUBPATH]
@@ -300,7 +295,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     name: 'Iron Skin',
     description: 'Gain +3 Armor permanently',
     icon: 'Shield',
-    levelRequirement: 3,
+    levelRequired: 3,
     isCapstone: false,
     subpath: null,
     effects: [
@@ -316,7 +311,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     name: 'Regeneration',
     description: 'Increase HP regeneration by +1.0 per second',
     icon: 'Heart',
-    levelRequirement: 3,
+    levelRequired: 3,
     isCapstone: false,
     subpath: null,
     effects: [
@@ -332,7 +327,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     name: 'Stalwart',
     description: 'Reduce all incoming damage by 10%',
     icon: 'ShieldCheck',
-    levelRequirement: 4,
+    levelRequired: 4,
     isCapstone: false,
     subpath: null,
     effects: [
@@ -348,7 +343,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     name: 'Auto Block',
     description: 'Automatically block the first attack every 8 seconds',
     icon: 'ShieldAlert',
-    levelRequirement: 4,
+    levelRequired: 4,
     isCapstone: false,
     subpath: null,
     effects: [
@@ -365,7 +360,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     name: 'Last Stand',
     description: 'Gain +2 Armor and +20% damage when below 40% HP',
     icon: 'Shield',
-    levelRequirement: 5,
+    levelRequired: 5,
     isCapstone: false,
     subpath: null,
     effects: [
@@ -384,7 +379,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     name: 'Endurance',
     description: 'Gain +15% maximum HP',
     icon: 'HeartPulse',
-    levelRequirement: 5,
+    levelRequired: 5,
     isCapstone: false,
     subpath: null,
     effects: [
@@ -403,7 +398,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     name: 'Fortress Stance',
     description: 'Your Armor is 30% more effective',
     icon: 'Castle',
-    levelRequirement: 3,
+    levelRequired: 3,
     isCapstone: false,
     subpath: 'fortress',
     effects: [
@@ -420,7 +415,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     name: 'Immovable Object',
     description: 'Immune to stuns and slows',
     icon: 'Mountain',
-    levelRequirement: 4,
+    levelRequired: 4,
     isCapstone: false,
     subpath: 'fortress',
     effects: [
@@ -435,7 +430,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     name: 'Healing Aura',
     description: 'Regenerate 2% of max HP every second',
     icon: 'Sparkles',
-    levelRequirement: 5,
+    levelRequired: 5,
     isCapstone: false,
     subpath: 'fortress',
     effects: [
@@ -455,7 +450,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     name: 'Thorns',
     description: 'Reflect 15% of damage taken back to attackers',
     icon: 'Swords',
-    levelRequirement: 3,
+    levelRequired: 3,
     isCapstone: false,
     subpath: 'avenger',
     effects: [
@@ -473,7 +468,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     name: 'Vengeful Strike',
     description: 'After taking damage, your next attack deals 40% more damage',
     icon: 'Sword',
-    levelRequirement: 4,
+    levelRequired: 4,
     isCapstone: false,
     subpath: 'avenger',
     effects: [
@@ -493,7 +488,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     name: 'Retribution',
     description: 'When you block, your next attack is a guaranteed critical hit',
     icon: 'Zap',
-    levelRequirement: 5,
+    levelRequired: 5,
     isCapstone: false,
     subpath: 'avenger',
     effects: [
@@ -512,7 +507,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     name: 'Immortal Guardian',
     description: 'When you would die, instead heal to 40% HP. Can occur once per floor.',
     icon: 'ShieldCheck',
-    levelRequirement: 6,
+    levelRequired: 6,
     isCapstone: true,
     subpath: null,
     effects: [
@@ -548,7 +543,7 @@ const GUARDIAN_PATH: PathDefinition = {
   id: 'guardian',
   name: 'Guardian',
   description: 'Passive survivability. Outlast your enemies with regeneration and damage reduction.',
-  playstyle: 'passive',
+  type: 'passive',
   icon: 'Shield',
   abilities: GUARDIAN_ABILITIES,
   subpaths: [FORTRESS_SUBPATH, AVENGER_SUBPATH]
