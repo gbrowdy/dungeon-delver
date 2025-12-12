@@ -4,8 +4,9 @@
  * Helper functions for working with power synergies and player paths.
  */
 
-import { Power } from '@/types/game';
+import { Player, Power } from '@/types/game';
 import { PowerSynergy } from '@/types/powers';
+import { CLASS_DATA } from '@/data/classes';
 
 /**
  * Extended Power interface with synergies
@@ -69,4 +70,22 @@ export function getPathName(pathId: string): string {
   };
 
   return pathNames[pathId] ?? pathId.toUpperCase();
+}
+
+/**
+ * Get display name for a player that includes their path if selected.
+ * Returns "PathName ClassName" when path is selected, otherwise just "ClassName".
+ * Example: "Rage Warrior", "Fire Mage", or just "Warrior" if no path selected.
+ */
+export function getPlayerDisplayName(player: Player): string {
+  const className = CLASS_DATA[player.class].name;
+
+  if (player.path) {
+    const pathName = getPathName(player.path.pathId);
+    // Convert to title case for nicer display (e.g., "RAGE" -> "Rage")
+    const formattedPathName = pathName.charAt(0) + pathName.slice(1).toLowerCase();
+    return `${formattedPathName} ${className}`;
+  }
+
+  return className;
 }

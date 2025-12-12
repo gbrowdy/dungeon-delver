@@ -2,6 +2,7 @@ import { Player } from '@/types/game';
 import { HealthBar } from './HealthBar';
 import { StatDisplay } from './StatDisplay';
 import { CLASS_DATA } from '@/data/classes';
+import { getPlayerDisplayName } from '@/utils/powerSynergies';
 
 interface PlayerCardProps {
   player: Player;
@@ -16,7 +17,7 @@ export function PlayerCard({ player }: PlayerCardProps) {
         <div className="flex items-center gap-3">
           <span className="text-3xl">{classData.icon}</span>
           <div>
-            <h3 className="font-bold text-foreground">{player.name}</h3>
+            <h3 className="font-bold text-foreground">{getPlayerDisplayName(player)}</h3>
             <p className="text-pixel-sm text-muted-foreground">Level {player.level}</p>
           </div>
         </div>

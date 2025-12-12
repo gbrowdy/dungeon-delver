@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
 import { Trophy, Star, Crown, Sparkles } from 'lucide-react';
-import { getPathName } from '@/utils/powerSynergies';
+import { getPlayerDisplayName } from '@/utils/powerSynergies';
 import { FLOOR_CONFIG } from '@/constants/game';
 
 interface VictoryScreenProps {
@@ -32,8 +32,6 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
       clearTimeout(statsTimer);
     };
   }, []);
-
-  const pathName = player.path ? getPathName(player.path.pathId) : 'No Path';
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-950 via-yellow-950 to-slate-950 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
@@ -113,18 +111,11 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            {/* Class and Path */}
-            <div className="pixel-panel-dark rounded p-3">
+            {/* Class (with path) */}
+            <div className="pixel-panel-dark rounded p-3 sm:col-span-2">
               <div className="pixel-text text-pixel-2xs sm:text-pixel-xs text-slate-400 mb-1">Class</div>
-              <div className="pixel-text text-pixel-xs sm:text-pixel-sm text-amber-300 font-bold capitalize">
-                {player.class}
-              </div>
-            </div>
-
-            <div className="pixel-panel-dark rounded p-3">
-              <div className="pixel-text text-pixel-2xs sm:text-pixel-xs text-slate-400 mb-1">Path</div>
               <div className="pixel-text text-pixel-xs sm:text-pixel-sm text-amber-300 font-bold">
-                {pathName}
+                {getPlayerDisplayName(player)}
               </div>
             </div>
 

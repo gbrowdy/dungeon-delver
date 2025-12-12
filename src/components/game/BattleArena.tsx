@@ -8,6 +8,7 @@ import { CharacterSprite } from './CharacterSprite';
 import { EnemyIntentDisplay } from './EnemyIntentDisplay';
 import { BattleOverlay } from './BattleOverlay';
 import { ScreenReaderAnnouncer } from './ScreenReaderAnnouncer';
+import { getPlayerDisplayName } from '@/utils/powerSynergies';
 
 interface BattleArenaProps {
   player: Player;
@@ -182,13 +183,13 @@ export function BattleArena({
         <div className="absolute top-1 xs:top-2 left-1 xs:left-2 right-1 xs:right-2 justify-between items-start pointer-events-none gap-1 hidden sm:flex">
           {/* Player name badge - visible only on sm+ screens */}
           <div className="pixel-panel-dark rounded px-2 py-1 flex-shrink-0">
-            <span className="pixel-text text-pixel-sm text-gold font-bold">{player.name}</span>
+            <span className="pixel-text text-pixel-sm text-gold font-bold">{getPlayerDisplayName(player)}</span>
             <span className="pixel-text text-pixel-xs text-gray-300 ml-2">Lv.{player.level}</span>
           </div>
           {/* Enemy info - visible only on sm+ screens */}
           {displayEnemy && !displayEnemy.isDying && (
-            <div className="pixel-panel-dark rounded px-2 py-1 text-right max-w-[200px] flex-shrink min-w-0">
-              <span className={cn('pixel-text text-pixel-sm font-bold truncate block', displayEnemy.isBoss ? 'text-gold' : 'text-health')}>
+            <div className="pixel-panel-dark rounded px-2 py-1 text-right max-w-[300px] flex-shrink min-w-0">
+              <span className={cn('pixel-text text-pixel-xs font-bold block break-words', displayEnemy.isBoss ? 'text-gold' : 'text-health')}>
                 {displayEnemy.name}
               </span>
               <div className="pixel-text text-pixel-2xs text-gray-400">
@@ -196,8 +197,8 @@ export function BattleArena({
               </div>
               {/* Enemy abilities */}
               {displayEnemy.abilities.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1 justify-end max-h-12 overflow-hidden">
-                  {displayEnemy.abilities.slice(0, 3).map(ability => (
+                <div className="flex flex-wrap gap-1 mt-1 justify-end">
+                  {displayEnemy.abilities.slice(0, 4).map(ability => (
                     <div
                       key={ability.id}
                       className="bg-health/20 border border-health/50 rounded px-1 py-0.5 flex items-center gap-0.5"
@@ -207,9 +208,9 @@ export function BattleArena({
                       <span className="pixel-text text-pixel-2xs text-health/90">{ability.name}</span>
                     </div>
                   ))}
-                  {displayEnemy.abilities.length > 3 && (
+                  {displayEnemy.abilities.length > 4 && (
                     <span className="pixel-text text-pixel-2xs text-slate-500">
-                      +{displayEnemy.abilities.length - 3}
+                      +{displayEnemy.abilities.length - 4}
                     </span>
                   )}
                 </div>

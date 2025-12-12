@@ -11,6 +11,20 @@ import { TouchTooltip } from '@/components/ui/touch-tooltip';
 import { formatItemStatBonus } from '@/utils/itemUtils';
 import { getCritChance, getCritDamage, getDodgeChance } from '@/utils/fortuneUtils';
 import { ReactNode } from 'react';
+import { getPlayerDisplayName } from '@/utils/powerSynergies';
+import * as Icons from 'lucide-react';
+
+/**
+ * Get the Lucide icon component for an item.
+ * Item data stores icon names directly as valid Lucide icon names (e.g., 'Sword', 'Axe', 'Wand2').
+ * Falls back to 'Package' if the icon doesn't exist.
+ */
+function getItemIcon(iconName: string | undefined): keyof typeof Icons {
+  if (iconName && iconName in Icons) {
+    return iconName as keyof typeof Icons;
+  }
+  return 'Package';
+}
 
 const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
 
@@ -39,7 +53,7 @@ export function PlayerStatsPanel() {
       {/* Header: Player info and equipment - more compact on mobile */}
       <div className="flex items-center justify-between flex-wrap gap-1 xs:gap-2">
         <PlayerInfo
-          name={player.name}
+          name={getPlayerDisplayName(player)}
           playerClass={player.class}
           level={player.level}
         />
@@ -233,7 +247,11 @@ function EquipmentSlot({ item }: EquipmentSlotProps) {
       )}
       aria-label={`${item.name}: ${item.rarity} ${item.type}. ${statText}${item.effect ? `. ${item.effect.description}` : ''}`}
     >
-      <span className="text-base" aria-hidden="true">{item.icon}</span>
+      {(() => {
+        const iconName = getItemIcon(item.icon);
+        const IconComponent = Icons[iconName] as React.ComponentType<{ className?: string }>;
+        return <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />;
+      })()}
       {itemHasEffect && (
         <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-accent rounded-full border border-background flex items-center justify-center text-[6px]" aria-hidden="true">
           ✨

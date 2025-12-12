@@ -6,7 +6,7 @@ import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
 import { PowerChoice, isPowerUpgrade } from '@/data/powers';
 import { formatItemStatBonus } from '@/utils/itemUtils';
-import { PowerWithSynergies, hasSynergy, getSynergy, getPathName } from '@/utils/powerSynergies';
+import { PowerWithSynergies, hasSynergy, getSynergy, getPathName, getPlayerDisplayName } from '@/utils/powerSynergies';
 import { Star } from 'lucide-react';
 import { PixelDivider } from '@/components/ui/PixelDivider';
 
@@ -183,7 +183,7 @@ export function FloorCompleteScreen({
                 <div className="absolute inset-0 bg-primary/10 rounded-lg animate-pulse" />
               </div>
               <div className="text-center">
-                <div className="pixel-text text-pixel-sm text-amber-200">{player.name}</div>
+                <div className="pixel-text text-pixel-sm text-amber-200">{getPlayerDisplayName(player)}</div>
                 <div className="pixel-text text-pixel-xs text-slate-400">Level {player.level}</div>
               </div>
 
@@ -520,7 +520,7 @@ export function FloorCompleteScreen({
             variant="outline"
             className="pixel-button text-pixel-sm px-6 sm:px-8 py-3 sm:py-4 border-amber-600 hover:bg-amber-900/20 text-amber-400 uppercase"
           >
-            🛒 Visit Shop
+            ⚒️ Visit Shop
           </Button>
           <Button
             onClick={onContinue}
