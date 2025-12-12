@@ -225,6 +225,10 @@ All colors MUST be HSL.
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  .combo-pulse {
+    animation: none;
+  }
 }
 
 /* Battle Arena Animations */
@@ -343,6 +347,11 @@ All colors MUST be HSL.
   50% { opacity: 0.5; }
 }
 
+@keyframes combo-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 @keyframes fade-in {
   0% { opacity: 0; }
   100% { opacity: 1; }
@@ -432,6 +441,10 @@ All colors MUST be HSL.
 
 .animate-pulse-fast {
   animation: pulse-fast 0.3s ease-in-out infinite;
+}
+
+.combo-pulse {
+  animation: combo-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .animate-fade-in {
