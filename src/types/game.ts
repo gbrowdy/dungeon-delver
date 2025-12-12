@@ -185,6 +185,7 @@ export interface GameState {
   isTransitioning: boolean; // True when hero is walking to next room (between enemy death and next spawn)
   shopState: ShopState | null; // null until shop is initialized
   previousPhase: 'menu' | 'class-select' | 'path-select' | 'combat' | 'shop' | 'upgrade' | 'victory' | 'defeat' | 'floor-complete' | null; // Track previous phase for returning from shop
+  deathFloor: number | null; // Floor where player died (for retry tracking)
 }
 
 export interface ClassData {

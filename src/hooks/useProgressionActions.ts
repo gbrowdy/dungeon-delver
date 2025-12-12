@@ -214,6 +214,9 @@ export function useProgressionActions({
       shopItems: [],
       availablePowers: [],
       isTransitioning: false,
+      shopState: null,
+      previousPhase: null,
+      deathFloor: null,
     });
   }, [clearCombatTimeouts, setLastCombatEvent, setState]);
 
@@ -224,7 +227,8 @@ export function useProgressionActions({
     setState((prev: GameState) => {
       if (!prev.player) return prev;
 
-      // Reset HP/MP to max and start floor from room 0
+      // PRESERVE on retry: gold, equipment, level, path, baseStats
+      // RESET: HP/MP to max, room to 0, combat state (buffs/effects/cooldowns)
       const player = { ...prev.player };
       // Recalculate stats to ensure equipment bonuses are applied
       player.currentStats = calculateStats(player);
@@ -244,7 +248,7 @@ export function useProgressionActions({
       player.lastPowerUsed = null;
       player.isDying = false; // Clear dying state on retry
 
-      prev.combatLog.add(`Retrying Floor ${prev.currentFloor}...`);
+      prev.combatLog.add(`Retrying Floor ${prev.deathFloor ?? prev.currentFloor}...`);
       return {
         ...prev,
         player,
@@ -254,6 +258,7 @@ export function useProgressionActions({
         isPaused: false,
         pauseReason: null,
         isTransitioning: false,
+        deathFloor: null, // Clear death floor after retry starts
       };
     });
   }, [clearCombatTimeouts, setLastCombatEvent, setState]);

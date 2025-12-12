@@ -118,6 +118,7 @@ export function useRoomTransitions(
 
   // Called when player death animation completes
   // This transitions to the defeat screen with restored stats
+  // Preserves: gold, equipment, level, path (for retry system)
   const handlePlayerDeathAnimationComplete = useCallback(() => {
     setState((prev: GameState) => {
       if (!prev.player?.isDying) return prev;
@@ -129,6 +130,8 @@ export function useRoomTransitions(
       });
       logStateTransition(GAME_PHASE.COMBAT, GAME_PHASE.DEFEAT, 'player_death');
 
+      // Preserve all player state - only restore HP/MP for UI display
+      // Equipment, gold, level, and path all persist through death
       const player = { ...prev.player };
       player.isDying = false;
       player.currentStats.health = player.currentStats.maxHealth;
@@ -140,6 +143,7 @@ export function useRoomTransitions(
         ...prev,
         player,
         gamePhase: GAME_PHASE.DEFEAT,
+        deathFloor: prev.currentFloor, // Track floor for retry
       };
     });
   }, [setState]);
