@@ -368,8 +368,8 @@ function EquippedItemCard({ item, slotType, playerGold, onEnhance }: EquippedIte
         </div>
       )}
 
-      {/* Enhancement preview on hover */}
-      {isHovered && canEnhanceItem && nextBonus && (
+      {/* Enhancement preview */}
+      {canEnhanceItem && nextBonus && (
         <div className="mb-2 p-1.5 rounded bg-green-900/20 border border-green-500/30">
           <p className="pixel-text text-pixel-2xs text-green-400 mb-0.5">Next Level:</p>
           <div className="flex flex-wrap gap-1">
