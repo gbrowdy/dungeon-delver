@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { CharacterClass } from '@/types/game';
 import { PathDefinition } from '@/types/paths';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,6 +45,7 @@ const TYPE_COLORS = {
 export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelectionScreenProps) {
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
 
   const paths = CLASS_PATHS[characterClass];
 
@@ -143,6 +144,8 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     setSelectedPath(path.id);
+                    // Focus the confirm button for better keyboard flow
+                    confirmButtonRef.current?.focus();
                   }
                 }}
               >
@@ -281,6 +284,7 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
         {/* Confirm button */}
         <div className="text-center pt-2 sm:pt-4">
           <Button
+            ref={confirmButtonRef}
             onClick={handleSelect}
             disabled={!selectedPath}
             size="lg"
@@ -365,8 +369,9 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
         /* Focus indicator for keyboard navigation */
         .pixel-card:focus-visible {
           outline: 3px solid var(--ring-color, #ffffff);
-          outline-offset: 2px;
+          outline-offset: 3px;
           box-shadow:
+            0 0 0 6px rgba(255, 255, 255, 0.15),
             0 0 20px var(--card-glow, rgba(255, 255, 255, 0.2)),
             inset -2px -2px 0 rgba(0, 0, 0, 0.4),
             inset 2px 2px 0 rgba(255, 255, 255, 0.1);
