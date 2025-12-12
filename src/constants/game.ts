@@ -68,6 +68,8 @@ export const FLOOR_CONFIG = {
    * Floor 5: 4 rooms + 1 final boss room = 5 total
    */
   ROOMS_PER_FLOOR: [4, 4, 5, 5, 4] as const,
+  /** Default rooms per floor (used in initial state) */
+  DEFAULT_ROOMS_PER_FLOOR: 4,
   /** Starting gold for new characters */
   STARTING_GOLD: 40, // Buffed from 25 - allows one early upgrade
   /** Starting experience required for level 2 */

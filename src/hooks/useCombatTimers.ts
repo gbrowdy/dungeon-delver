@@ -1,21 +1,55 @@
 import { useEffect } from 'react';
 import { GameState, Power } from '@/types/game';
 import { COMBAT_BALANCE } from '@/constants/balance';
-import { deepCloneEnemy } from '@/utils/stateUtils';
+import { COMBAT_MECHANICS } from '@/constants/game';
+import { deepCloneEnemy, deepClonePlayer } from '@/utils/stateUtils';
 
 /**
- * Hook for managing time-based combat effects: power cooldowns and enemy regen.
+ * Hook for managing time-based combat effects: power cooldowns, enemy regen, and MP regen.
  *
  * These effects tick independently of attack timing and scale with combat speed.
  * This is separated from the main game state hook for better organization and testability.
- *
- * Note: HP/MP regeneration removed - will be added via path abilities later.
  */
 export function useCombatTimers(
   setState: React.Dispatch<React.SetStateAction<GameState>>,
   enabled: boolean
 ) {
-  // HP and MP regeneration disabled for now - will be added via path abilities later
+  // MP regeneration - base regen that makes powers usable
+  // Ticks every second, scaled by combat speed
+  useEffect(() => {
+    if (!enabled) return;
+
+    const MP_REGEN_INTERVAL = 1000; // 1 second per tick
+
+    const interval = setInterval(() => {
+      setState((prev: GameState) => {
+        if (!prev.player || prev.isPaused) return prev;
+
+        const { player } = prev;
+        const { mana, maxMana } = player.currentStats;
+
+        // Don't regen if already at max
+        if (mana >= maxMana) return prev;
+
+        // Base mana regen scaled by combat speed
+        const regenAmount = COMBAT_MECHANICS.MANA_REGEN_PER_TICK * prev.combatSpeed;
+        const newMana = Math.min(maxMana, mana + regenAmount);
+
+        // Skip if no change
+        if (newMana === mana) return prev;
+
+        const updatedPlayer = deepClonePlayer(player);
+        updatedPlayer.currentStats.mana = newMana;
+
+        return {
+          ...prev,
+          player: updatedPlayer,
+        };
+      });
+    }, MP_REGEN_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [enabled, setState]);
 
   // Enemy regenerating modifier - heals 2% HP per tick (every 500ms)
   useEffect(() => {
