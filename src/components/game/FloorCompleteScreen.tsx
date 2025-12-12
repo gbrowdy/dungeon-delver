@@ -31,6 +31,12 @@ const TYPE_ICONS: Record<ItemType, string> = {
   accessory: '💍',
 };
 
+const TYPE_LABELS: Record<ItemType, string> = {
+  weapon: 'Weapon',
+  armor: 'Armor',
+  accessory: 'Accessory',
+};
+
 const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
 
 interface FloorCompleteScreenProps {
