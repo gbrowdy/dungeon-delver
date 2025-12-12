@@ -151,7 +151,7 @@ export function FloorCompleteScreen({
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="text-5xl sm:text-6xl mb-2">🏆</div>
-          <h1 className="pixel-title text-lg sm:text-xl md:text-2xl font-bold tracking-wider uppercase">
+          <h1 className="pixel-title text-base sm:text-lg md:text-xl lg:text-2xl font-bold tracking-wider uppercase">
             <span className="pixel-glow-gold bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 bg-clip-text text-transparent">
               Floor {floor} Complete!
             </span>
