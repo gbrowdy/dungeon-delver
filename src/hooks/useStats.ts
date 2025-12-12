@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Player, Stats, Item, ActiveBuff } from '@/types/game';
 import { isValidStatKey, isValidStatValue } from '@/utils/typeGuards';
+import { getEnhancedStats } from '@/utils/enhancementUtils';
 
 /**
  * Hook for calculating player stats from base stats, equipment, and buffs.
@@ -9,9 +10,11 @@ export function useStats() {
   const calculateStats = useCallback((player: Player): Stats => {
     const stats = { ...player.baseStats };
 
-    // Apply equipment bonuses
+    // Apply equipment bonuses (with enhancement bonuses)
     player.equippedItems.forEach((item: Item) => {
-      Object.entries(item.statBonus).forEach(([key, value]) => {
+      // Use getEnhancedStats to include enhancement bonuses
+      const enhancedStats = getEnhancedStats(item);
+      Object.entries(enhancedStats).forEach(([key, value]) => {
         if (isValidStatKey(key) && isValidStatValue(value)) {
           stats[key] += value;
         }
