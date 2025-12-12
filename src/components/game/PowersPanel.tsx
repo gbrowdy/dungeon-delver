@@ -44,6 +44,7 @@ export function PowersPanel() {
             currentMana={player.currentStats.mana}
             onUse={() => actions.usePower(power.id)}
             disabled={!canUsePowers}
+            playerPathId={player.path?.pathId ?? null}
           />
         ))}
       </div>

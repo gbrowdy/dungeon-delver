@@ -5,15 +5,7 @@
  */
 
 import { Power } from '@/types/game';
-
-/**
- * Synergy information for a power
- * This matches the expected structure from Task 6.1
- */
-export interface PowerSynergy {
-  pathId: string;
-  description: string;
-}
+import { PowerSynergy } from '@/types/powers';
 
 /**
  * Extended Power interface with synergies
