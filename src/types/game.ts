@@ -1,6 +1,7 @@
 import { CircularBuffer } from '@/utils/circularBuffer';
 import { PlayerPath } from './paths';
 import { ShopState, ShopTier } from './shop';
+import { PowerCategory, PowerSynergy } from './powers';
 
 export type CharacterClass = 'warrior' | 'mage' | 'rogue' | 'paladin';
 
@@ -92,6 +93,8 @@ export interface Power {
   value: number;
   icon: string;
   upgradeLevel?: number; // Current upgrade level (1 = base, 2+ = upgraded)
+  category?: PowerCategory; // Optional: Power category for new power system
+  synergies?: PowerSynergy[]; // Optional: Path synergies for new power system
 }
 
 // Represents a power upgrade offer (not the power itself)
