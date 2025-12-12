@@ -5,6 +5,7 @@ import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
 import { Trophy, Star, Crown, Sparkles } from 'lucide-react';
 import { getPathName } from '@/utils/powerSynergies';
+import { FLOOR_CONFIG } from '@/constants/game';
 
 interface VictoryScreenProps {
   player: Player;
@@ -131,7 +132,7 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
             <div className="pixel-panel-dark rounded p-3">
               <div className="pixel-text text-pixel-2xs sm:text-pixel-xs text-slate-400 mb-1">Floors Cleared</div>
               <div className="pixel-text text-pixel-xs sm:text-pixel-sm text-green-400 font-bold">
-                5 / 5
+                {FLOOR_CONFIG.MAX_FLOORS} / {FLOOR_CONFIG.MAX_FLOORS}
               </div>
             </div>
 
