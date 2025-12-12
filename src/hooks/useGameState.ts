@@ -15,6 +15,7 @@ import { useGameFlow } from '@/hooks/useGameFlow';
 import { useCombatActions } from '@/hooks/useCombatActions';
 import { usePowerActions } from '@/hooks/usePowerActions';
 import { usePauseControl } from '@/hooks/usePauseControl';
+import { usePathActions } from '@/hooks/usePathActions';
 import { FLOOR_CONFIG } from '@/constants/game';
 import { COMBAT_EVENT_DELAYS } from '@/constants/balance';
 import { GAME_PHASE, STATUS_EFFECT_TYPE } from '@/constants/enums';
@@ -68,6 +69,15 @@ export function useGameState() {
 
   // Use the pause control hook
   const { togglePause } = usePauseControl({ setState });
+
+  // Use the path actions hook
+  const {
+    selectPath,
+    selectAbility,
+    selectSubpath,
+    getAbilityChoices,
+    getPathById,
+  } = usePathActions({ setState });
 
   // Use the extracted room transitions hook
   const {
@@ -313,9 +323,14 @@ export function useGameState() {
     heroProgress: shouldRunCombatLoop ? heroProgress : 0,
     enemyProgress: shouldRunCombatLoop ? enemyProgress : 0,
     isHeroStunned,
+    getAbilityChoices,
+    getPathById,
     actions: {
       startGame,
       selectClass,
+      selectPath,
+      selectAbility,
+      selectSubpath,
       usePower,
       buyItem,
       learnPower,

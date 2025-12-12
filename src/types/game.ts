@@ -1,4 +1,5 @@
 import { CircularBuffer } from '@/utils/circularBuffer';
+import { PlayerPath } from './paths';
 
 export type CharacterClass = 'warrior' | 'mage' | 'rogue' | 'paladin';
 
@@ -157,6 +158,8 @@ export interface Player {
   lastPowerUsed: string | null; // For combo tracking
   // upgradePurchases: UpgradePurchases; // DEPRECATED: Removed in favor of shop system
   isDying?: boolean; // True when health <= 0, awaiting death animation
+  path: PlayerPath | null; // null until level 2
+  pendingAbilityChoice: boolean; // true when level-up needs ability selection
 }
 
 export interface GameState {
@@ -166,7 +169,7 @@ export interface GameState {
   currentRoom: number;
   roomsPerFloor: number;
   combatLog: CircularBuffer<string>; // Circular buffer to prevent unbounded growth
-  gamePhase: 'menu' | 'class-select' | 'combat' | 'shop' | 'upgrade' | 'victory' | 'defeat' | 'floor-complete';
+  gamePhase: 'menu' | 'class-select' | 'path-select' | 'combat' | 'shop' | 'upgrade' | 'victory' | 'defeat' | 'floor-complete';
   isPaused: boolean; // Derived from pauseReason !== null for backwards compatibility
   pauseReason: PauseReason; // Explicit reason why game is paused (null = not paused)
   combatSpeed: CombatSpeed; // 1x, 2x, 3x speed

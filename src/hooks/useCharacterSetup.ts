@@ -88,6 +88,8 @@ export function useCharacterSetup(
       comboCount: 0,
       lastPowerUsed: null,
       // upgradePurchases removed - old upgrade system deprecated
+      path: null, // No path until level 2
+      pendingAbilityChoice: false, // No pending ability choice at start
     };
 
     // Recalculate stats with starting equipment

@@ -7,6 +7,7 @@
 export const GAME_PHASE = {
   MENU: 'menu',
   CLASS_SELECT: 'class-select',
+  PATH_SELECT: 'path-select',
   COMBAT: 'combat',
   SHOP: 'shop',
   UPGRADE: 'upgrade',

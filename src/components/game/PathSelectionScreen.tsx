@@ -10,8 +10,8 @@ import * as Icons from 'lucide-react';
 // Import path data for all classes
 import { WARRIOR_PATHS } from '@/data/paths/warrior';
 import { MAGE_PATHS } from '@/data/paths/mage';
-import ROGUE_PATHS from '@/data/paths/rogue';
-import PALADIN_PATHS from '@/data/paths/paladin';
+import { ROGUE_PATHS } from '@/data/paths/rogue';
+import { PALADIN_PATHS } from '@/data/paths/paladin';
 
 interface PathSelectionScreenProps {
   characterClass: CharacterClass;

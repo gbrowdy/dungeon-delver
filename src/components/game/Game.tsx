@@ -1,6 +1,7 @@
 import { useGameState } from '@/hooks/useGameState';
 import { MainMenu } from './MainMenu';
 import { ClassSelect } from './ClassSelect';
+import { PathSelectionScreen } from './PathSelectionScreen';
 import { CombatScreen } from './CombatScreen';
 import { DeathScreen } from './DeathScreen';
 import { FloorCompleteScreen } from './FloorCompleteScreen';
@@ -8,7 +9,15 @@ import { GameErrorBoundary, SimpleErrorBoundary } from '@/components/ErrorBounda
 import { CombatErrorBoundary } from './CombatErrorBoundary';
 
 export function Game() {
-  const { state, shopItems, availablePowers, droppedItem, lastCombatEvent, heroProgress, enemyProgress, isHeroStunned, actions } = useGameState();
+  const { state, shopItems, availablePowers, droppedItem, lastCombatEvent, heroProgress, enemyProgress, isHeroStunned, getAbilityChoices, getPathById, actions } = useGameState();
+
+  // Get ability choices for player if they have pending ability choice
+  const abilityChoices = state.player?.pendingAbilityChoice && state.player?.path
+    ? (() => {
+        const pathDef = getPathById(state.player.path.pathId);
+        return pathDef ? getAbilityChoices(state.player, pathDef) : null;
+      })()
+    : null;
 
   switch (state.gamePhase) {
     case 'menu':
@@ -16,6 +25,10 @@ export function Game() {
 
     case 'class-select':
       return <ClassSelect onSelect={actions.selectClass} />;
+
+    case 'path-select':
+      if (!state.player) return null;
+      return <PathSelectionScreen characterClass={state.player.class} onSelectPath={actions.selectPath} />;
 
     case 'combat':
       return (
@@ -40,6 +53,8 @@ export function Game() {
             onDismissLevelUp={actions.dismissLevelUp}
             onEquipDroppedItem={actions.equipDroppedItem}
             onDismissDroppedItem={actions.dismissDroppedItem}
+            abilityChoices={abilityChoices}
+            onSelectAbility={actions.selectAbility}
           />
         </CombatErrorBoundary>
       );

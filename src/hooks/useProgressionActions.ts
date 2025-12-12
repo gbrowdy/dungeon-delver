@@ -93,28 +93,64 @@ export function useProgressionActions({
 
   // Dismiss level up popup and resume game
   // If there's a pending item drop, transition to item_drop pause instead of clearing
+  // If player reached level 2 without a path, transition to path selection screen
+  // If player has a path and leveled up, trigger ability choice
   // Dispatches LEVEL_UP_DISMISSED event to trigger next transition if needed
   const dismissLevelUp = useCallback(() => {
-    // Check if there's a pending item drop that should show next
-    if (droppedItem) {
-      setState((prev: GameState) => ({
+    setState((prev: GameState) => {
+      if (!prev.player) return prev;
+
+      // Check if player reached level 2 and needs to choose a path
+      if (prev.player.level === 2 && prev.player.path === null) {
+        logStateTransition(prev.gamePhase, GAME_PHASE.PATH_SELECT, 'level_2_path_selection');
+        return {
+          ...prev,
+          pendingLevelUp: null,
+          gamePhase: GAME_PHASE.PATH_SELECT,
+          isPaused: false,
+          pauseReason: null,
+        };
+      }
+
+      // Check if player has a path and should choose an ability (level 3+)
+      // Set pendingAbilityChoice flag which will trigger the AbilityChoicePopup
+      if (prev.player.path && prev.player.level >= 3) {
+        const updatedPlayer = deepClonePlayer(prev.player);
+        updatedPlayer.pendingAbilityChoice = true;
+
+        return {
+          ...prev,
+          player: updatedPlayer,
+          pendingLevelUp: null,
+          // Keep paused if there's an item drop, otherwise unpause
+          isPaused: !!droppedItem,
+          pauseReason: droppedItem ? PAUSE_REASON.ITEM_DROP : null,
+        };
+      }
+
+      // No path-related transition needed
+      // Check if there's a pending item drop that should show next
+      if (droppedItem) {
+        return {
+          ...prev,
+          pendingLevelUp: null,
+          isPaused: true,
+          pauseReason: PAUSE_REASON.ITEM_DROP,
+        };
+      }
+
+      // Just unpause and continue
+      return {
         ...prev,
         pendingLevelUp: null,
-      }));
-      pause(PAUSE_REASON.ITEM_DROP, 'level_up_to_item_drop');
-      // Don't dispatch LEVEL_UP_DISMISSED - item popup will handle the transition
-    } else {
-      setState((prev: GameState) => ({
-        ...prev,
-        pendingLevelUp: null,
-      }));
-      unpause('dismiss_level_up');
-      // Dispatch event after state update to trigger next transition
-      // Use tracked timeout to ensure React has processed the state update first
-      // (setState is async, so getState() would return stale state if called synchronously)
-      createTrackedTimeout(() => dispatchFlowEvent?.({ type: 'LEVEL_UP_DISMISSED' }), 0);
-    }
-  }, [setState, dispatchFlowEvent, droppedItem, createTrackedTimeout, pause, unpause]);
+        isPaused: false,
+        pauseReason: null,
+      };
+    });
+
+    // Dispatch flow event if no special transition happened
+    createTrackedTimeout(() => dispatchFlowEvent?.({ type: 'LEVEL_UP_DISMISSED' }), 0);
+  }, [setState, dispatchFlowEvent, droppedItem, createTrackedTimeout]);
 
   const continueFromFloorComplete = useCallback(() => {
     setState((prev: GameState) => {
