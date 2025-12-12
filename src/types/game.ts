@@ -2,6 +2,7 @@ import { CircularBuffer } from '@/utils/circularBuffer';
 import { PlayerPath } from './paths';
 import { ShopState, ShopTier } from './shop';
 import { PowerCategory, PowerSynergy } from './powers';
+import { FloorTheme } from '@/data/floorThemes';
 
 export type CharacterClass = 'warrior' | 'mage' | 'rogue' | 'paladin';
 
@@ -191,6 +192,7 @@ export interface GameState {
   currentFloor: number;
   currentRoom: number;
   roomsPerFloor: number;
+  currentFloorTheme: FloorTheme | null; // Theme variant selected for current floor
   combatLog: CircularBuffer<string>; // Circular buffer to prevent unbounded growth
   gamePhase: 'menu' | 'class-select' | 'path-select' | 'combat' | 'shop' | 'upgrade' | 'victory' | 'defeat' | 'floor-complete';
   isPaused: boolean; // Derived from pauseReason !== null for backwards compatibility

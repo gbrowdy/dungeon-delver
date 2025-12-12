@@ -8,6 +8,7 @@ import { COMBAT_BALANCE } from '@/constants/balance';
 import { GAME_PHASE, BUFF_STAT } from '@/constants/enums';
 import { logStateTransition } from '@/utils/gameLogger';
 import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
+import { selectFloorTheme } from '@/data/floorThemes';
 
 /**
  * Pure function to calculate a player's current stats based on base stats,
@@ -97,8 +98,12 @@ export function useCharacterSetup(
 
     logStateTransition(GAME_PHASE.CLASS_SELECT, GAME_PHASE.COMBAT, `select_class:${characterClass}`);
 
+    // Select a theme for Floor 1
+    const floorTheme = selectFloorTheme(1);
+
     const combatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
     combatLog.add(`${classData.name} begins their adventure!`);
+    combatLog.add(`🎯 Floor 1: ${floorTheme.name} - ${floorTheme.description}`);
 
     setState((prev: GameState) => ({
       ...prev,
@@ -106,6 +111,7 @@ export function useCharacterSetup(
       gamePhase: GAME_PHASE.COMBAT,
       currentFloor: 1,
       currentRoom: 0,
+      currentFloorTheme: floorTheme,
       combatLog,
       combatSpeed: 1,
     }));
