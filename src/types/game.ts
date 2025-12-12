@@ -2,6 +2,7 @@ import { CircularBuffer } from '@/utils/circularBuffer';
 import { PlayerPath } from './paths';
 import { ShopState, ShopTier } from './shop';
 import { PowerCategory, PowerSynergy } from './powers';
+import { ModifierEffect } from '@/data/enemyModifiers';
 
 export type CharacterClass = 'warrior' | 'mage' | 'rogue' | 'paladin';
 
@@ -160,6 +161,7 @@ export interface Enemy {
   basePower?: number; // Original power before enrage (to prevent stacking)
   isDying?: boolean; // True when health <= 0, awaiting death animation completion
   isFinalBoss?: boolean; // True if this is the final boss on Floor 5
+  modifiers?: ModifierEffect[]; // Optional elite/rare enemy modifiers
 }
 
 export interface Player {
