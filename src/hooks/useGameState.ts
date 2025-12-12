@@ -24,6 +24,11 @@ import { logRecovery } from '@/utils/gameLogger';
 import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
 import { deepClonePlayer } from '@/utils/stateUtils';
 import { calculateStats } from '@/hooks/useCharacterSetup';
+import {
+  canEnhance,
+  getEnhancementCost,
+  enhanceItem,
+} from '@/utils/enhancementUtils';
 
 // Base combat tick interval (ms) - modified by speed multiplier
 // At 1x: 2500ms per combat round (gives time to see intent + animations)
@@ -253,6 +258,52 @@ export function useGameState() {
     });
   }, [shopStateManager]);
 
+  const enhanceEquippedItem = useCallback((itemId: string) => {
+    setState((prev: GameState) => {
+      if (!prev.player) return prev;
+
+      // Find the item in equipped items
+      const item = prev.player.equippedItems.find(item => item.id === itemId);
+      if (!item) {
+        console.warn('Item not found in equipped items:', itemId);
+        return prev;
+      }
+
+      // Check if enhancement is possible
+      if (!canEnhance(item)) {
+        console.warn('Item is already at max enhancement:', item.name);
+        return prev;
+      }
+
+      const cost = getEnhancementCost(item);
+      if (prev.player.gold < cost) {
+        console.warn('Not enough gold for enhancement. Need:', cost, 'Have:', prev.player.gold);
+        return prev;
+      }
+
+      // Clone player
+      const updatedPlayer = deepClonePlayer(prev.player);
+
+      // Deduct gold
+      updatedPlayer.gold -= cost;
+
+      // Enhance the item (creates new item with increased level)
+      const enhancedItem = enhanceItem(item);
+
+      // Replace item in equipped items (replace the matching item)
+      updatedPlayer.equippedItems = updatedPlayer.equippedItems.map(i =>
+        i.id === itemId ? enhancedItem : i
+      );
+
+      // Recalculate stats using the centralized function
+      updatedPlayer.currentStats = calculateStats(updatedPlayer);
+
+      return {
+        ...prev,
+        player: updatedPlayer,
+      };
+    });
+  }, []);
 
   // Use frame-rate independent combat loop with separate hero/enemy timers
   // Also stop combat if player is dying (reached 0 HP)
@@ -449,6 +500,7 @@ export function useGameState() {
       openShop,
       closeShop,
       purchaseShopItem,
+      enhanceEquippedItem,
     },
   };
 }
