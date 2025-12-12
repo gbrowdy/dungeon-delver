@@ -210,6 +210,7 @@ function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy }:
             className={cn(
               'w-full pixel-button text-pixel-xs uppercase font-bold',
               'transition-all duration-150',
+              // Active state provides press feedback (verified H3)
               canAfford
                 ? 'border-b-4 active:border-b-2 active:translate-y-[2px]'
                 : 'cursor-not-allowed opacity-50'
@@ -423,6 +424,7 @@ function EquippedItemCard({ item, slotType, playerGold, onEnhance }: EquippedIte
             className={cn(
               'w-full pixel-button text-pixel-xs uppercase font-bold',
               'transition-all duration-150',
+              // Active state provides press feedback (verified H3)
               canAfford
                 ? 'border-b-4 active:border-b-2 active:translate-y-[2px]'
                 : 'cursor-not-allowed opacity-50'
