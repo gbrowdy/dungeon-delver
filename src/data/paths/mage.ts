@@ -25,13 +25,12 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     description: 'Your spells deal 20% increased damage.',
     icon: 'Sparkles',
     levelRequired: 3,
+    subpath: null,
     effects: [
       {
-        type: 'stat_bonus',
-        stat: 'spell_damage',
-        value: 0.2,
-        valueType: 'percentage',
-      } as PathAbilityEffect,
+        trigger: 'passive',
+        statModifiers: [{ stat: 'power', percentBonus: 0.2 }],
+      },
     ],
   },
   {
@@ -40,12 +39,12 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     description: 'Powers cost 15% less mana.',
     icon: 'Droplets',
     levelRequired: 3,
+    subpath: null,
     effects: [
       {
-        type: 'mana_cost_reduction',
-        value: 0.15,
-        valueType: 'percentage',
-      } as PathAbilityEffect,
+        trigger: 'passive',
+        powerModifiers: [{ type: 'cost_reduction', value: 0.15 }],
+      },
     ],
   },
   {
@@ -54,12 +53,12 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     description: 'Power cooldowns recover 20% faster.',
     icon: 'Clock',
     levelRequired: 4,
+    subpath: null,
     effects: [
       {
-        type: 'cooldown_reduction',
-        value: 0.2,
-        valueType: 'percentage',
-      } as PathAbilityEffect,
+        trigger: 'passive',
+        powerModifiers: [{ type: 'cooldown_reduction', value: 0.2 }],
+      },
     ],
   },
   {
@@ -68,12 +67,13 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     description: 'Powers have a 25% chance to deal double damage.',
     icon: 'Zap',
     levelRequired: 4,
+    subpath: null,
     effects: [
       {
-        type: 'spell_crit_chance',
-        value: 0.25,
-        valueType: 'percentage',
-      } as PathAbilityEffect,
+        trigger: 'on_power_use',
+        damageModifier: { type: 'bonus_damage', value: 1.0 },
+        chance: 0.25,
+      },
     ],
   },
 
@@ -87,14 +87,14 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     subpath: 'elementalist',
     effects: [
       {
-        type: 'on_power_hit',
-        trigger: 'fire',
-        applyEffect: {
-          type: 'burn',
-          damagePercent: 0.3,
-          duration: 3000,
+        trigger: 'on_power_use',
+        statusApplication: {
+          statusType: 'bleed',
+          damage: 10,
+          duration: 3,
+          chance: 1.0,
         },
-      } as PathAbilityEffect,
+      },
     ],
   },
   {
@@ -106,14 +106,13 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     subpath: 'elementalist',
     effects: [
       {
-        type: 'on_power_hit',
-        trigger: 'ice',
-        applyEffect: {
-          type: 'slow',
-          amount: 0.3,
-          duration: 2000,
+        trigger: 'on_power_use',
+        statusApplication: {
+          statusType: 'slow',
+          duration: 2,
+          chance: 1.0,
         },
-      } as PathAbilityEffect,
+      },
     ],
   },
   {
@@ -125,12 +124,9 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     subpath: 'elementalist',
     effects: [
       {
-        type: 'on_power_hit',
-        trigger: 'lightning',
-        additionalHit: {
-          damagePercent: 0.4,
-        },
-      } as PathAbilityEffect,
+        trigger: 'on_power_use',
+        damage: 0.4,
+      },
     ],
   },
   {
@@ -143,10 +139,10 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     isCapstone: true,
     effects: [
       {
-        type: 'combo_tracker',
-        requireElements: ['fire', 'ice', 'lightning'],
-        bonusDamage: 1.0,
-      } as PathAbilityEffect,
+        trigger: 'on_combo',
+        condition: { type: 'combo_count', value: 3 },
+        damageModifier: { type: 'bonus_damage', value: 1.0 },
+      },
     ],
   },
 
@@ -160,16 +156,13 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     subpath: 'destroyer',
     effects: [
       {
-        type: 'stat_bonus',
-        stat: 'spell_damage',
-        value: 0.35,
-        valueType: 'percentage',
-      } as PathAbilityEffect,
+        trigger: 'passive',
+        statModifiers: [{ stat: 'power', percentBonus: 0.35 }],
+      },
       {
-        type: 'mana_cost_increase',
-        value: 0.2,
-        valueType: 'percentage',
-      } as PathAbilityEffect,
+        trigger: 'passive',
+        powerModifiers: [{ type: 'cost_reduction', value: -0.2 }],
+      },
     ],
   },
   {
@@ -181,10 +174,10 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     subpath: 'destroyer',
     effects: [
       {
-        type: 'on_power_cast',
+        trigger: 'on_power_use',
+        powerModifiers: [{ type: 'cooldown_reduction', value: 1.0 }],
         chance: 0.15,
-        effect: 'reset_cooldown',
-      } as PathAbilityEffect,
+      },
     ],
   },
   {
@@ -196,17 +189,13 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     subpath: 'destroyer',
     effects: [
       {
-        type: 'stat_bonus',
-        stat: 'spell_damage',
-        value: 0.5,
-        valueType: 'percentage',
-      } as PathAbilityEffect,
+        trigger: 'passive',
+        statModifiers: [{ stat: 'power', percentBonus: 0.5 }],
+      },
       {
-        type: 'stat_penalty',
-        stat: 'damage_taken',
-        value: 0.2,
-        valueType: 'percentage',
-      } as PathAbilityEffect,
+        trigger: 'passive',
+        statModifiers: [{ stat: 'armor', percentBonus: -0.2 }],
+      },
     ],
   },
   {
@@ -219,12 +208,11 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     isCapstone: true,
     effects: [
       {
-        type: 'timed_buff',
-        interval: 10000,
-        buffType: 'next_power',
-        damageMultiplier: 3.0,
-        freeCast: true,
-      } as PathAbilityEffect,
+        trigger: 'on_power_use',
+        damageModifier: { type: 'bonus_damage', value: 2.0 },
+        powerModifiers: [{ type: 'cost_reduction', value: 1.0 }],
+        cooldown: 10,
+      },
     ],
   },
 ];
@@ -241,15 +229,12 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     description: 'Your basic attacks deal bonus magic damage equal to 30% of your power.',
     icon: 'Wand2',
     levelRequired: 3,
+    subpath: null,
     effects: [
       {
-        type: 'on_attack',
-        bonusDamage: {
-          type: 'scaling',
-          stat: 'power',
-          value: 0.3,
-        },
-      } as PathAbilityEffect,
+        trigger: 'on_hit',
+        damageModifier: { type: 'bonus_damage', value: 0.3 },
+      },
     ],
   },
   {
@@ -258,13 +243,12 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     description: 'Regenerate 2 additional mana per second.',
     icon: 'Droplets',
     levelRequired: 3,
+    subpath: null,
     effects: [
       {
-        type: 'stat_bonus',
-        stat: 'mana_regen',
-        value: 2,
-        valueType: 'flat',
-      } as PathAbilityEffect,
+        trigger: 'turn_start',
+        manaRestore: 2,
+      },
     ],
   },
   {
@@ -273,12 +257,12 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     description: 'Passively deal 5 magic damage per second to enemies.',
     icon: 'Sparkles',
     levelRequired: 4,
+    subpath: null,
     effects: [
       {
-        type: 'damage_aura',
+        trigger: 'turn_start',
         damage: 5,
-        interval: 1000,
-      } as PathAbilityEffect,
+      },
     ],
   },
   {
@@ -287,12 +271,12 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     description: 'Your damage over time effects last 50% longer and deal 25% more damage.',
     icon: 'Timer',
     levelRequired: 4,
+    subpath: null,
     effects: [
       {
-        type: 'dot_amplification',
-        durationBonus: 0.5,
-        damageBonus: 0.25,
-      } as PathAbilityEffect,
+        trigger: 'passive',
+        damageModifier: { type: 'bonus_damage', value: 0.25 },
+      },
     ],
   },
 
@@ -306,9 +290,9 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     subpath: 'spellweaver',
     effects: [
       {
-        type: 'auto_cast',
-        powerSlot: 1,
-      } as PathAbilityEffect,
+        trigger: 'turn_start',
+        powerModifiers: [{ type: 'cooldown_reduction', value: 0.1 }],
+      },
     ],
   },
   {
@@ -320,11 +304,10 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     subpath: 'spellweaver',
     effects: [
       {
-        type: 'on_power_cast',
-        trigger: 'manual',
-        effect: 'cast_random_power',
+        trigger: 'on_power_use',
+        powerModifiers: [{ type: 'combo_bonus', value: 0.2 }],
         chance: 1.0,
-      } as PathAbilityEffect,
+      },
     ],
   },
   {
@@ -336,10 +319,9 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     subpath: 'spellweaver',
     effects: [
       {
-        type: 'conditional_cost_reduction',
-        condition: 'auto_cast',
-        value: 0.5,
-      } as PathAbilityEffect,
+        trigger: 'conditional',
+        powerModifiers: [{ type: 'cost_reduction', value: 0.5 }],
+      },
     ],
   },
   {
@@ -352,14 +334,9 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     isCapstone: true,
     effects: [
       {
-        type: 'auto_cast',
-        powerSlot: 'all',
-      } as PathAbilityEffect,
-      {
-        type: 'cooldown_reduction',
-        value: 0.5,
-        valueType: 'percentage',
-      } as PathAbilityEffect,
+        trigger: 'turn_start',
+        powerModifiers: [{ type: 'cooldown_reduction', value: 0.5 }],
+      },
     ],
   },
 
@@ -373,10 +350,10 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     subpath: 'sage',
     effects: [
       {
-        type: 'conditional_mana_regen',
-        condition: 'enemy_status_effects',
-        valuePerEffect: 1,
-      } as PathAbilityEffect,
+        trigger: 'conditional',
+        condition: { type: 'enemy_hp_below', value: 1.0 },
+        manaRestore: 1,
+      },
     ],
   },
   {
@@ -388,11 +365,14 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     subpath: 'sage',
     effects: [
       {
-        type: 'damage_aura',
-        damage: 8,
-        interval: 1000,
-        effectType: 'poison',
-      } as PathAbilityEffect,
+        trigger: 'combat_start',
+        statusApplication: {
+          statusType: 'poison',
+          damage: 8,
+          duration: 999,
+          chance: 1.0,
+        },
+      },
     ],
   },
   {
@@ -404,10 +384,13 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     subpath: 'sage',
     effects: [
       {
-        type: 'enemy_debuff_aura',
-        stat: 'attack_speed',
-        value: -0.2,
-      } as PathAbilityEffect,
+        trigger: 'combat_start',
+        statusApplication: {
+          statusType: 'slow',
+          duration: 999,
+          chance: 1.0,
+        },
+      },
     ],
   },
   {
@@ -420,16 +403,19 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     isCapstone: true,
     effects: [
       {
-        type: 'aura_amplification',
-        damageMultiplier: 3.0,
-      } as PathAbilityEffect,
+        trigger: 'passive',
+        damageModifier: { type: 'bonus_damage', value: 2.0 },
+      },
       {
-        type: 'damage_aura',
+        trigger: 'turn_start',
         damage: 15,
-        interval: 1000,
-        effectType: 'multi',
-        applyEffects: ['poison', 'slow', 'burn'],
-      } as PathAbilityEffect,
+        statusApplication: {
+          statusType: 'poison',
+          damage: 5,
+          duration: 3,
+          chance: 1.0,
+        },
+      },
     ],
   },
 ];
