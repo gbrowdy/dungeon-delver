@@ -5,18 +5,12 @@ export type CharacterClass = 'warrior' | 'mage' | 'rogue' | 'paladin';
 export interface Stats {
   health: number;
   maxHealth: number;
-  attack: number;
-  defense: number;
+  power: number;      // Replaces attack - offensive stat
+  armor: number;      // Replaces defense - damage reduction
   speed: number;
-  critChance: number;
-  dodgeChance: number;
   mana: number;
   maxMana: number;
-  hpRegen: number; // HP regenerated per second (default 0)
-  mpRegen: number; // MP regenerated per second (default 2)
-  cooldownSpeed: number; // Multiplier for power cooldown recovery (default 1.0, higher = faster)
-  critDamage: number; // Crit damage multiplier (default 2.0 = 200% damage)
-  goldFind: number; // Gold find bonus (default 0, 0.1 = +10% gold)
+  fortune: number;    // Unified luck stat - affects crit, dodge, drops, proc chances
 }
 
 // DEPRECATED: Old upgrade purchase system removed in favor of shop system
@@ -28,7 +22,7 @@ export type UpgradePurchases = Record<string, number>;
 export interface ActiveBuff {
   id: string;
   name: string;
-  stat: 'attack' | 'defense' | 'critChance' | 'dodgeChance';
+  stat: 'power' | 'armor' | 'speed' | 'fortune';
   multiplier: number; // e.g., 1.5 for +50%
   remainingTurns: number;
   icon: string;
@@ -127,8 +121,8 @@ export interface Enemy {
   name: string;
   health: number;
   maxHealth: number;
-  attack: number;
-  defense: number;
+  power: number;
+  armor: number;
   speed: number;
   experienceReward: number;
   goldReward: number;
@@ -140,7 +134,7 @@ export interface Enemy {
   shieldTurnsRemaining?: number; // Turns until shield expires
   isEnraged?: boolean; // Enrage buff active
   enrageTurnsRemaining?: number; // Turns until enrage expires
-  baseAttack?: number; // Original attack before enrage (to prevent stacking)
+  basePower?: number; // Original power before enrage (to prevent stacking)
   isDying?: boolean; // True when health <= 0, awaiting death animation completion
 }
 

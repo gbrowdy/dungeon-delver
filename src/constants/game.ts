@@ -75,10 +75,10 @@ export const ENEMY_SCALING = {
 
 // Enemy base stats by tier - adjusted for harder early game
 export const ENEMY_BASE_STATS = {
-  boss: { health: 100, attack: 16, defense: 6 },
-  rare: { health: 55, attack: 13, defense: 4 },
-  uncommon: { health: 38, attack: 11, defense: 3 },
-  common: { health: 25, attack: 9, defense: 2 },
+  boss: { health: 100, power: 16, armor: 6 },
+  rare: { health: 55, power: 13, armor: 4 },
+  uncommon: { health: 38, power: 11, armor: 3 },
+  common: { health: 25, power: 9, armor: 2 },
 } as const;
 
 // Animation constants

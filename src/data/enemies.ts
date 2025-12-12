@@ -273,7 +273,7 @@ export function calculateEnemyIntent(enemy: Enemy): EnemyIntent {
           type: 'ability',
           ability,
           damage: ability.type === 'multi_hit'
-            ? Math.floor(enemy.attack * COMBAT_BALANCE.MULTI_HIT_DAMAGE_MODIFIER * ability.value) // Multi-hit total damage
+            ? Math.floor(enemy.power * COMBAT_BALANCE.MULTI_HIT_DAMAGE_MODIFIER * ability.value) // Multi-hit total damage
             : ability.type === 'poison'
               ? ability.value * COMBAT_BALANCE.DEFAULT_POISON_DURATION // Total poison damage over duration
               : undefined,
@@ -286,7 +286,7 @@ export function calculateEnemyIntent(enemy: Enemy): EnemyIntent {
   // Default: basic attack
   return {
     type: 'attack',
-    damage: enemy.attack,
+    damage: enemy.power,
     icon: '⚔️',
   };
 }
@@ -313,32 +313,32 @@ export function generateEnemy(floor: number, room: number, roomsPerFloor: number
 
   const isBoss = room === roomsPerFloor;
   const difficultyMultiplier = 1 + (floor - 1) * ENEMY_SCALING.PER_FLOOR_MULTIPLIER + (room - 1) * ENEMY_SCALING.PER_ROOM_MULTIPLIER;
-  
+
   let namePool: readonly string[];
   let baseHealth: number;
-  let baseAttack: number;
-  let baseDefense: number;
-  
+  let basePower: number;
+  let baseArmor: number;
+
   if (isBoss) {
     namePool = ENEMY_NAMES.boss;
     baseHealth = ENEMY_BASE_STATS.boss.health;
-    baseAttack = ENEMY_BASE_STATS.boss.attack;
-    baseDefense = ENEMY_BASE_STATS.boss.defense;
+    basePower = ENEMY_BASE_STATS.boss.power;
+    baseArmor = ENEMY_BASE_STATS.boss.armor;
   } else if (room > roomsPerFloor * ENEMY_SCALING.RARE_THRESHOLD) {
     namePool = ENEMY_NAMES.rare;
     baseHealth = ENEMY_BASE_STATS.rare.health;
-    baseAttack = ENEMY_BASE_STATS.rare.attack;
-    baseDefense = ENEMY_BASE_STATS.rare.defense;
+    basePower = ENEMY_BASE_STATS.rare.power;
+    baseArmor = ENEMY_BASE_STATS.rare.armor;
   } else if (room > roomsPerFloor * ENEMY_SCALING.UNCOMMON_THRESHOLD) {
     namePool = ENEMY_NAMES.uncommon;
     baseHealth = ENEMY_BASE_STATS.uncommon.health;
-    baseAttack = ENEMY_BASE_STATS.uncommon.attack;
-    baseDefense = ENEMY_BASE_STATS.uncommon.defense;
+    basePower = ENEMY_BASE_STATS.uncommon.power;
+    baseArmor = ENEMY_BASE_STATS.uncommon.armor;
   } else {
     namePool = ENEMY_NAMES.common;
     baseHealth = ENEMY_BASE_STATS.common.health;
-    baseAttack = ENEMY_BASE_STATS.common.attack;
-    baseDefense = ENEMY_BASE_STATS.common.defense;
+    basePower = ENEMY_BASE_STATS.common.power;
+    baseArmor = ENEMY_BASE_STATS.common.armor;
   }
   
   const nameIndex = Math.floor(Math.random() * namePool.length);
@@ -356,16 +356,16 @@ export function generateEnemy(floor: number, room: number, roomsPerFloor: number
   const statMultiplier = 1 - powerCost;
 
   const health = Math.floor(baseHealth * difficultyMultiplier * statMultiplier);
-  const attack = Math.floor(baseAttack * difficultyMultiplier * statMultiplier);
-  const defense = Math.floor(baseDefense * difficultyMultiplier * statMultiplier);
+  const power = Math.floor(basePower * difficultyMultiplier * statMultiplier);
+  const armor = Math.floor(baseArmor * difficultyMultiplier * statMultiplier);
 
   const enemy: Enemy = {
     id: `enemy-${Date.now()}-${Math.random()}`,
     name: displayName,
     health,
     maxHealth: health,
-    attack,
-    defense,
+    power,
+    armor,
     speed: REWARD_CONFIG.ENEMY_BASE_SPEED + Math.floor(Math.random() * REWARD_CONFIG.ENEMY_SPEED_RANGE),
     experienceReward: Math.floor((REWARD_CONFIG.BASE_ENEMY_XP * 2 + floor * REWARD_CONFIG.XP_PER_FLOOR + room * REWARD_CONFIG.XP_PER_ROOM) * (isBoss ? REWARD_CONFIG.BOSS_XP_MULTIPLIER : 1)),
     goldReward: Math.floor((REWARD_CONFIG.BASE_ENEMY_GOLD + floor * REWARD_CONFIG.GOLD_PER_FLOOR + room * REWARD_CONFIG.GOLD_PER_ROOM) * (isBoss ? REWARD_CONFIG.BOSS_GOLD_MULTIPLIER : 1) * (REWARD_CONFIG.GOLD_VARIANCE_MIN + Math.random() * REWARD_CONFIG.GOLD_VARIANCE_RANGE)),
