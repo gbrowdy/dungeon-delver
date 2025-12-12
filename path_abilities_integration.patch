@@ -1,0 +1,23 @@
+diff --git a/src/hooks/useCombatActions.ts b/src/hooks/useCombatActions.ts
+index original..modified 100644
+--- a/src/hooks/useCombatActions.ts
++++ b/src/hooks/useCombatActions.ts
+@@ -29,6 +29,7 @@ import {
+ import { logPauseChange } from '@/utils/gameLogger';
+ import { generateEventId } from '@/utils/eventId';
+ import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+ import { getDodgeChance } from '@/utils/fortuneUtils';
++import { usePathAbilities } from '@/hooks/usePathAbilities';
+ import type { PauseReasonType } from '@/constants/enums';
+ import type { CombatEvent } from '@/hooks/useBattleAnimation';
+
+@@ -53,6 +54,9 @@ export function useCombatActions({
+   enemyDeathProcessedRef,
+   playerDeathProcessedRef,
+ }: UseCombatActionsParams) {
++
++  // Initialize path abilities hook
++  const { processTrigger } = usePathAbilities();
+
+   /**
+    * Hero attack callback - called when hero's attack timer fills

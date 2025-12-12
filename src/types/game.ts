@@ -38,6 +38,7 @@ export interface StatusEffect {
   id: string;
   type: 'poison' | 'stun' | 'slow' | 'bleed';
   damage?: number; // For DoT effects
+  value?: number; // For slow (speed reduction %), stun (chance), etc.
   remainingTurns: number;
   icon: string;
 }

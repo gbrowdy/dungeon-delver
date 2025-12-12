@@ -89,9 +89,59 @@ export function usePowerActions(context: PowerActivationContext) {
 
       switch (power.effect) {
         case 'damage': {
-          const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
-          enemy.health -= damage;
-          logs.push(`Dealt ${damage} magical damage!`);
+          let baseDamage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
+          let totalDamage = 0;
+
+          // Handle category-specific mechanics
+          if (power.category === 'burst') {
+            // Multi-hit powers - divide damage across hits
+            const hitCount = power.id === 'fan-of-knives' ? 5 : 3;
+            const damagePerHit = Math.floor(baseDamage / hitCount);
+
+            for (let i = 0; i < hitCount; i++) {
+              // Each hit can crit independently
+              const hitDamage = damagePerHit;
+              enemy.health -= hitDamage;
+              totalDamage += hitDamage;
+            }
+            logs.push(`Dealt ${totalDamage} damage in ${hitCount} hits!`);
+          } else if (power.category === 'execute') {
+            // Execute powers - bonus damage vs low HP enemies
+            const hpPercent = enemy.health / enemy.maxHealth;
+            let executeThreshold = 0.25;
+            let executeMultiplier = 2;
+
+            if (power.id === 'coup-de-grace') {
+              executeThreshold = 0.30;
+              executeMultiplier = 250 / 80; // 250% damage vs 80% base
+            }
+
+            if (hpPercent < executeThreshold) {
+              baseDamage = Math.floor(baseDamage * executeMultiplier);
+              logs.push(`💀 EXECUTE! Enemy below ${Math.floor(executeThreshold * 100)}% HP!`);
+            }
+
+            enemy.health -= baseDamage;
+            totalDamage = baseDamage;
+            logs.push(`Dealt ${totalDamage} damage!`);
+          } else if (power.category === 'sacrifice') {
+            // Sacrifice powers - spend HP for damage
+            const hpCostPercent = power.id === 'reckless-swing' ? 0.15 : 0.20;
+            const hpCost = Math.floor(player.currentStats.maxHealth * hpCostPercent);
+            player.currentStats.health = Math.max(1, player.currentStats.health - hpCost);
+            logs.push(`🩸 Sacrificed ${hpCost} HP!`);
+
+            enemy.health -= baseDamage;
+            totalDamage = baseDamage;
+            logs.push(`Dealt ${totalDamage} damage!`);
+          } else {
+            // Strike and other damage powers
+            enemy.health -= baseDamage;
+            totalDamage = baseDamage;
+            logs.push(`Dealt ${totalDamage} magical damage!`);
+          }
+
+          const damage = totalDamage;
 
           // Check if enemy will die from this hit
           const enemyWillDie = enemy.health <= 0;
@@ -131,7 +181,20 @@ export function usePowerActions(context: PowerActivationContext) {
           break;
         }
         case 'heal': {
-          if (power.id === 'mana-surge') {
+          if (power.id === 'blood-pact') {
+            // Sacrifice power - spend HP to restore mana
+            const hpCostPercent = 0.20;
+            const hpCost = Math.floor(player.currentStats.maxHealth * hpCostPercent);
+            player.currentStats.health = Math.max(1, player.currentStats.health - hpCost);
+            logs.push(`🩸 Sacrificed ${hpCost} HP!`);
+
+            const manaRestored = power.value; // Flat 50 mana
+            player.currentStats.mana = Math.min(
+              player.currentStats.maxMana,
+              player.currentStats.mana + manaRestored
+            );
+            logs.push(`Restored ${manaRestored} mana!`);
+          } else if (power.id === 'mana-surge') {
             const manaRestored = Math.floor(player.currentStats.maxMana * power.value);
             player.currentStats.mana = Math.min(
               player.currentStats.maxMana,
@@ -189,6 +252,49 @@ export function usePowerActions(context: PowerActivationContext) {
 
           // Recalculate stats with new buff
           player.currentStats = calculateStats(player);
+          break;
+        }
+        case 'debuff': {
+          // Control powers - apply status effects to enemy
+          if (power.category === 'control') {
+            if (power.id === 'frost-nova') {
+              // Deal damage first
+              const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
+              enemy.health -= damage;
+              logs.push(`Dealt ${damage} frost damage!`);
+
+              // Apply slow effect
+              enemy.statusEffects = enemy.statusEffects || [];
+              enemy.statusEffects.push({
+                id: `slow-${Date.now()}`,
+                type: 'slow',
+                value: 0.3, // 30% slow
+                remainingTurns: 4,
+                icon: '❄️',
+              });
+              logs.push(`❄️ Enemy slowed by 30% for 4 turns!`);
+            } else if (power.id === 'stunning-blow') {
+              // Deal damage first
+              const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
+              enemy.health -= damage;
+              logs.push(`Dealt ${damage} damage!`);
+
+              // 40% chance to stun
+              const stunChance = 0.4;
+              if (Math.random() < stunChance) {
+                enemy.statusEffects = enemy.statusEffects || [];
+                enemy.statusEffects.push({
+                  id: `stun-${Date.now()}`,
+                  type: 'stun',
+                  remainingTurns: 2,
+                  icon: '💫',
+                });
+                logs.push(`💫 Enemy stunned for 2 turns!`);
+              } else {
+                logs.push(`Stun failed!`);
+              }
+            }
+          }
           break;
         }
       }

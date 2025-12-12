@@ -126,6 +126,13 @@ export function useCombatActions({
       enemy.health -= finalDamage;
       logs.push(`You deal ${finalDamage} damage to ${enemy.name}`);
 
+      // Thorned modifier: Reflect damage back to player
+      if (enemy.modifiers?.some(m => m.id === 'thorned')) {
+        const reflectDamage = Math.floor(finalDamage * 0.1);
+        playerAfterEffects.currentStats.health -= reflectDamage;
+        logs.push(`🌵 Thorns reflect ${reflectDamage} damage back to you!`);
+      }
+
       // Emit player attack event immediately
       const playerAttackEvent: import('@/hooks/useBattleAnimation').PlayerAttackEvent = {
         type: COMBAT_EVENT_TYPE.PLAYER_ATTACK,
@@ -375,6 +382,13 @@ export function useCombatActions({
           player.currentStats.health -= enemyDamage;
           logs.push(`${enemy.name} deals ${enemyDamage} damage to you`);
 
+          // Vampiric modifier: Heal enemy based on damage dealt
+          if (enemy.modifiers?.some(m => m.id === 'vampiric')) {
+            const vampHeal = Math.floor(enemyDamage * 0.2);
+            enemy.health = Math.min(enemy.maxHealth, enemy.health + vampHeal);
+            logs.push(`🩸 ${enemy.name} drains ${vampHeal} life!`);
+          }
+
           // Trigger on_damaged item effects
           player.equippedItems.forEach((item: Item) => {
             if (item.effect?.trigger === ITEM_EFFECT_TRIGGER.ON_DAMAGED) {
@@ -435,6 +449,18 @@ export function useCombatActions({
 
       // Reset blocking after enemy has attacked
       player.isBlocking = false;
+
+      // Berserking modifier: Auto-enrage at 50% HP (instead of default 30%)
+      if (enemy.modifiers?.some(m => m.id === 'berserking') && !enemy.isEnraged) {
+        const hpPercent = enemy.health / enemy.maxHealth;
+        if (hpPercent <= 0.5 && hpPercent > 0) {
+          enemy.basePower = enemy.power;
+          enemy.power = Math.floor(enemy.power * 1.5); // 50% damage boost
+          enemy.isEnraged = true;
+          enemy.enrageTurnsRemaining = 999; // Permanent enrage for berserking modifier
+          logs.push(`😡 ${enemy.name} enters a berserking rage!`);
+        }
+      }
 
       // Calculate enemy's next intent for display
       enemy.intent = calculateEnemyIntent(enemy);

@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
 import { GameState, Power } from '@/types/game';
 import { COMBAT_BALANCE } from '@/constants/balance';
+import { deepCloneEnemy } from '@/utils/stateUtils';
 
 /**
- * Hook for managing time-based combat effects: power cooldowns.
+ * Hook for managing time-based combat effects: power cooldowns and enemy regen.
  *
  * These effects tick independently of attack timing and scale with combat speed.
  * This is separated from the main game state hook for better organization and testability.
@@ -15,6 +16,46 @@ export function useCombatTimers(
   enabled: boolean
 ) {
   // HP and MP regeneration disabled for now - will be added via path abilities later
+
+  // Enemy regenerating modifier - heals 2% HP per tick (every 500ms)
+  useEffect(() => {
+    if (!enabled) return;
+
+    const REGEN_TICK_INTERVAL = 500; // 500ms per tick
+
+    const interval = setInterval(() => {
+      setState((prev: GameState) => {
+        if (!prev.currentEnemy || prev.isPaused) return prev;
+
+        const enemy = prev.currentEnemy;
+
+        // Check if enemy has regenerating modifier
+        const hasRegenerating = enemy.modifiers?.some(m => m.id === 'regenerating');
+        if (!hasRegenerating) return prev;
+
+        // Don't regen if dying
+        if (enemy.isDying || enemy.health <= 0) return prev;
+
+        const regenAmount = Math.floor(enemy.maxHealth * 0.02);
+        const newHealth = Math.min(enemy.maxHealth, enemy.health + regenAmount);
+
+        // Only update if health actually changed
+        if (newHealth === enemy.health) return prev;
+
+        const updatedEnemy = deepCloneEnemy(enemy);
+        updatedEnemy.health = newHealth;
+
+        prev.combatLog.add(`💚 ${enemy.name} regenerates ${regenAmount} HP!`);
+
+        return {
+          ...prev,
+          currentEnemy: updatedEnemy,
+        };
+      });
+    }, REGEN_TICK_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [enabled, setState]);
 
   // Time-based power cooldown ticker - independent of turns
   // Cooldowns tick down in real-time at constant speed (cooldownSpeed stat removed)
