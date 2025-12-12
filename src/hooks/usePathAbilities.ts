@@ -59,7 +59,11 @@ export interface TriggerResult {
 }
 
 /**
- * Hook for processing path ability effects
+ * Hook for processing path ability effects during combat.
+ *
+ * Handles passive stat bonuses, trigger-based effects, and conditional abilities from player's chosen path.
+ *
+ * @returns Object with methods to process path abilities and retrieve active bonuses
  */
 export function usePathAbilities() {
   /**

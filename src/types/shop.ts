@@ -60,17 +60,6 @@ export interface ShopRotation {
   seed: number; // For deterministic rotation per run
 }
 
-/**
- * Enhancement bonus configuration per tier
- * Higher tiers get better enhancement bonuses
- *
- * @deprecated Use EnhancementBonus from @/constants/shop instead
- */
-export interface EnhancementBonus {
-  perLevel: number; // Primary stat bonus per enhancement level
-  secondary?: number; // Secondary stat bonus (specialty/legendary only)
-}
-
 // Re-export constants from @/constants/shop for backwards compatibility
 // These should be imported from @/constants/shop in new code
 export {
