@@ -110,13 +110,27 @@ export function usePowerActions(context: PowerActivationContext) {
 
           // Handle category-specific mechanics
           if (power.category === 'burst') {
-            // Multi-hit powers - divide damage across hits
+            // Multi-hit powers - divide damage across hits and proc on-hit effects
             const hitCount = power.id === 'fan-of-knives' ? 5 : 3;
             const damagePerHit = Math.floor(baseDamage / hitCount);
 
             for (let i = 0; i < hitCount; i++) {
               // Each hit can crit independently
-              const hitDamage = damagePerHit;
+              let hitDamage = damagePerHit;
+
+              // Process ON_HIT item effects for each hit
+              const hitResult = processItemEffects({
+                trigger: ITEM_EFFECT_TRIGGER.ON_HIT,
+                player,
+                damage: hitDamage,
+                enemy,
+              });
+              Object.assign(player, hitResult.player);
+              logs.push(...hitResult.logs);
+
+              // Add any additional damage from on-hit effects
+              hitDamage += hitResult.additionalDamage;
+
               enemy.health -= hitDamage;
               totalDamage += hitDamage;
             }
