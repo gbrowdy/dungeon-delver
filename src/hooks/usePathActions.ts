@@ -74,7 +74,7 @@ export function usePathActions({ setState }: UsePathActionsOptions) {
       }
 
       // Check level requirement
-      if (ability.level > player.level) {
+      if (ability.levelRequired > player.level) {
         return false;
       }
 
@@ -84,8 +84,8 @@ export function usePathActions({ setState }: UsePathActionsOptions) {
       }
 
       // If player has a subpath, only offer abilities from that subpath (or general abilities)
-      if (player.path?.subpathId && ability.subpathId) {
-        return ability.subpathId === player.path.subpathId;
+      if (player.path?.subpathId && ability.subpath) {
+        return ability.subpath === player.path.subpathId;
       }
 
       return true;
@@ -174,6 +174,9 @@ export function usePathActions({ setState }: UsePathActionsOptions) {
       return {
         ...prev,
         player: updatedPlayer,
+        // Unpause the game after ability selection
+        isPaused: false,
+        pauseReason: null,
       };
     });
   }, [setState]);
