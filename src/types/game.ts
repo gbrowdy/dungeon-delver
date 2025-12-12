@@ -159,6 +159,7 @@ export interface Enemy {
   enrageTurnsRemaining?: number; // Turns until enrage expires
   basePower?: number; // Original power before enrage (to prevent stacking)
   isDying?: boolean; // True when health <= 0, awaiting death animation completion
+  isFinalBoss?: boolean; // True if this is the final boss on Floor 5
 }
 
 export interface Player {

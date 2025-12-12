@@ -2,12 +2,14 @@ import { Enemy, EnemyAbility, EnemyIntent } from '@/types/game';
 import {
   ENEMY_SCALING,
   ENEMY_BASE_STATS,
+  FLOOR_CONFIG,
 } from '@/constants/game';
 import {
   COMBAT_BALANCE,
   REWARD_CONFIG,
   ENEMY_ABILITY_CONFIG,
 } from '@/constants/balance';
+import { generateFinalBoss } from './finalBoss';
 
 const ENEMY_NAMES = {
   common: ['Goblin', 'Skeleton', 'Slime', 'Rat', 'Spider', 'Imp', 'Zombie'],
@@ -300,6 +302,7 @@ const MIN_ROOMS_PER_FLOOR = 1;
 /**
  * Generates an enemy based on floor, room, and difficulty parameters.
  * Includes input validation to ensure safe parameter ranges.
+ * On Floor 5, Room 5 (final room), spawns the final boss instead of a regular enemy.
  */
 export function generateEnemy(floor: number, room: number, roomsPerFloor: number): Enemy {
   // Input validation - validate AFTER converting to ensure bounds
@@ -312,6 +315,12 @@ export function generateEnemy(floor: number, room: number, roomsPerFloor: number
   room = Math.min(room, roomsPerFloor);
 
   const isBoss = room === roomsPerFloor;
+
+  // Check if this should be the final boss
+  // Final boss appears on Floor 5, last room
+  if (floor === FLOOR_CONFIG.FINAL_BOSS_FLOOR && isBoss) {
+    return generateFinalBoss();
+  }
   const difficultyMultiplier = 1 + (floor - 1) * ENEMY_SCALING.PER_FLOOR_MULTIPLIER + (room - 1) * ENEMY_SCALING.PER_ROOM_MULTIPLIER;
 
   let namePool: readonly string[];
