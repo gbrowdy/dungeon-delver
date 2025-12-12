@@ -10,6 +10,8 @@ import {
   ENEMY_ABILITY_CONFIG,
 } from '@/constants/balance';
 import { generateFinalBoss } from './finalBoss';
+import { FloorTheme } from '@/data/floorThemes';
+import { getRandomModifiers, toModifierEffect, ModifierEffect } from '@/data/enemyModifiers';
 
 const ENEMY_NAMES = {
   common: ['Goblin', 'Skeleton', 'Slime', 'Rat', 'Spider', 'Imp', 'Zombie'],
@@ -303,8 +305,12 @@ const MIN_ROOMS_PER_FLOOR = 1;
  * Generates an enemy based on floor, room, and difficulty parameters.
  * Includes input validation to ensure safe parameter ranges.
  * On Floor 5, Room 5 (final room), spawns the final boss instead of a regular enemy.
+ * @param floor The current floor number
+ * @param room The current room number
+ * @param roomsPerFloor Total rooms per floor
+ * @param floorTheme Optional floor theme to apply stat modifiers and ability biases
  */
-export function generateEnemy(floor: number, room: number, roomsPerFloor: number): Enemy {
+export function generateEnemy(floor: number, room: number, roomsPerFloor: number, floorTheme?: FloorTheme): Enemy {
   // Input validation - validate AFTER converting to ensure bounds
   // Use Math.max/min to clamp values safely
   floor = Math.max(MIN_FLOOR, Math.min(MAX_FLOOR, Math.floor(Number(floor) || MIN_FLOOR)));
@@ -323,50 +329,116 @@ export function generateEnemy(floor: number, room: number, roomsPerFloor: number
   }
   const difficultyMultiplier = 1 + (floor - 1) * ENEMY_SCALING.PER_FLOOR_MULTIPLIER + (room - 1) * ENEMY_SCALING.PER_ROOM_MULTIPLIER;
 
+  // Determine enemy tier for stat selection and modifier assignment
   let namePool: readonly string[];
   let baseHealth: number;
   let basePower: number;
   let baseArmor: number;
+  let enemyTier: 'common' | 'uncommon' | 'rare' | 'boss';
 
   if (isBoss) {
     namePool = ENEMY_NAMES.boss;
     baseHealth = ENEMY_BASE_STATS.boss.health;
     basePower = ENEMY_BASE_STATS.boss.power;
     baseArmor = ENEMY_BASE_STATS.boss.armor;
+    enemyTier = 'boss';
   } else if (room > roomsPerFloor * ENEMY_SCALING.RARE_THRESHOLD) {
     namePool = ENEMY_NAMES.rare;
     baseHealth = ENEMY_BASE_STATS.rare.health;
     basePower = ENEMY_BASE_STATS.rare.power;
     baseArmor = ENEMY_BASE_STATS.rare.armor;
+    enemyTier = 'rare';
   } else if (room > roomsPerFloor * ENEMY_SCALING.UNCOMMON_THRESHOLD) {
     namePool = ENEMY_NAMES.uncommon;
     baseHealth = ENEMY_BASE_STATS.uncommon.health;
     basePower = ENEMY_BASE_STATS.uncommon.power;
     baseArmor = ENEMY_BASE_STATS.uncommon.armor;
+    enemyTier = 'uncommon';
   } else {
     namePool = ENEMY_NAMES.common;
     baseHealth = ENEMY_BASE_STATS.common.health;
     basePower = ENEMY_BASE_STATS.common.power;
     baseArmor = ENEMY_BASE_STATS.common.armor;
+    enemyTier = 'common';
   }
   
   const nameIndex = Math.floor(Math.random() * namePool.length);
   const baseName = namePool[nameIndex] ?? 'Unknown';
 
+  // Assign modifiers based on enemy tier
+  let modifiers: ModifierEffect[] = [];
+  if (enemyTier === 'rare') {
+    // Rare enemies get 1 modifier
+    const selectedModifiers = getRandomModifiers(1);
+    modifiers = selectedModifiers.map(toModifierEffect);
+  } else if (enemyTier === 'boss') {
+    // Boss enemies get 1-2 modifiers
+    const modifierCount = Math.random() < 0.5 ? 1 : 2;
+    const selectedModifiers = getRandomModifiers(modifierCount);
+    modifiers = selectedModifiers.map(toModifierEffect);
+  }
+
   // Get abilities for this enemy (determines prefix and power cost)
   const { abilities, powerCost, prefix: abilityPrefix } = getEnemyAbilities(baseName, floor, isBoss);
 
-  // Build enemy name: [Ability Prefix] [Base Name]
-  // e.g., "Venomous Spider" or just "Goblin" if no abilities
-  const displayName = abilityPrefix ? `${abilityPrefix} ${baseName}` : baseName;
+  // Build enemy name with modifier and ability prefixes
+  // Priority: [Modifier Prefix(es)] [Ability Prefix] [Base Name]
+  // e.g., "Swift Venomous Spider" or "Armored Berserker Orc"
+  const namePrefixes: string[] = [];
+
+  // Add modifier prefixes
+  if (modifiers.length > 0) {
+    namePrefixes.push(...modifiers.map(m => m.name));
+  }
+
+  // Add ability prefix
+  if (abilityPrefix) {
+    namePrefixes.push(abilityPrefix);
+  }
+
+  const displayName = namePrefixes.length > 0
+    ? `${namePrefixes.join(' ')} ${baseName}`
+    : baseName;
 
   // Apply power budget: enemies with abilities have slightly reduced base stats
   // This makes abilities feel like a trade-off rather than pure power creep
   const statMultiplier = 1 - powerCost;
 
-  const health = Math.floor(baseHealth * difficultyMultiplier * statMultiplier);
-  const power = Math.floor(basePower * difficultyMultiplier * statMultiplier);
-  const armor = Math.floor(baseArmor * difficultyMultiplier * statMultiplier);
+  // Apply floor theme stat modifiers if theme is provided
+  let themeHealthMult = 1;
+  let themePowerMult = 1;
+  let themeArmorMult = 1;
+  let themeSpeedMult = 1;
+
+  if (floorTheme) {
+    themeHealthMult = floorTheme.statModifiers.health;
+    themePowerMult = floorTheme.statModifiers.power;
+    themeArmorMult = floorTheme.statModifiers.armor;
+    themeSpeedMult = floorTheme.statModifiers.speed;
+  }
+
+  // Calculate base stats with difficulty and theme multipliers
+  const health = Math.floor(baseHealth * difficultyMultiplier * statMultiplier * themeHealthMult);
+  const power = Math.floor(basePower * difficultyMultiplier * statMultiplier * themePowerMult);
+
+  // Armor and speed may be modified by modifiers, so use let
+  let armor = Math.floor(baseArmor * difficultyMultiplier * statMultiplier * themeArmorMult);
+  let speed = REWARD_CONFIG.ENEMY_BASE_SPEED + Math.floor(Math.random() * REWARD_CONFIG.ENEMY_SPEED_RANGE);
+
+  // Apply base theme speed multiplier
+  speed = Math.floor(speed * themeSpeedMult);
+
+  // Apply modifier-specific stat changes
+  for (const modifier of modifiers) {
+    // Swift modifier: increase speed
+    if (modifier.id === 'swift' && modifier.speedBonus) {
+      speed = Math.floor(speed * (1 + modifier.speedBonus));
+    }
+    // Armored modifier: increase armor
+    if (modifier.id === 'armored' && modifier.armorBonus) {
+      armor = Math.floor(armor * (1 + modifier.armorBonus));
+    }
+  }
 
   const enemy: Enemy = {
     id: `enemy-${Date.now()}-${Math.random()}`,
@@ -375,7 +447,7 @@ export function generateEnemy(floor: number, room: number, roomsPerFloor: number
     maxHealth: health,
     power,
     armor,
-    speed: REWARD_CONFIG.ENEMY_BASE_SPEED + Math.floor(Math.random() * REWARD_CONFIG.ENEMY_SPEED_RANGE),
+    speed,
     experienceReward: Math.floor((REWARD_CONFIG.BASE_ENEMY_XP * 2 + floor * REWARD_CONFIG.XP_PER_FLOOR + room * REWARD_CONFIG.XP_PER_ROOM) * (isBoss ? REWARD_CONFIG.BOSS_XP_MULTIPLIER : 1)),
     goldReward: Math.floor((REWARD_CONFIG.BASE_ENEMY_GOLD + floor * REWARD_CONFIG.GOLD_PER_FLOOR + room * REWARD_CONFIG.GOLD_PER_ROOM) * (isBoss ? REWARD_CONFIG.BOSS_GOLD_MULTIPLIER : 1) * (REWARD_CONFIG.GOLD_VARIANCE_MIN + Math.random() * REWARD_CONFIG.GOLD_VARIANCE_RANGE)),
     isBoss,
@@ -384,6 +456,7 @@ export function generateEnemy(floor: number, room: number, roomsPerFloor: number
     statusEffects: [],
     isShielded: false,
     isEnraged: false,
+    modifiers: modifiers.length > 0 ? modifiers : undefined,
   };
 
   // Calculate initial intent
