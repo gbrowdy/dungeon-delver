@@ -42,9 +42,9 @@ export const COMBAT_BALANCE = {
 
 export const REWARD_CONFIG = {
   // XP rewards - reduced for slower leveling
-  BASE_ENEMY_XP: 3,  // Reduced from 5
+  BASE_ENEMY_XP: 5,  // Reduced from 5
   XP_PER_FLOOR: 3,   // Reduced from 5
-  XP_PER_ROOM: 1,    // Reduced from 2
+  XP_PER_ROOM: 2,    // Reduced from 2
   BOSS_XP_MULTIPLIER: 2, // Reduced from 3
 
   // Gold rewards - balanced for early game affordability

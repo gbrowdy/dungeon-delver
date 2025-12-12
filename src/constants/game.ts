@@ -43,9 +43,9 @@ export const COMBAT_MECHANICS = {
 
 // Level up bonuses - simplified stat gains
 export const LEVEL_UP_BONUSES = {
-  MAX_HEALTH: 3, // +3 Health per level
-  POWER: 1, // +1 Power per level
-  MAX_MANA: 5, // +5 Mana per level
+  MAX_HEALTH: 5, // +5 Health per level
+  POWER: 2, // +2 Power per level
+  MAX_MANA: 8, // +8 Mana per level
   // No other stat gains - real power comes from path abilities
   /** Experience required multiplier per level */
   EXP_MULTIPLIER: 1.5, // Reduced from 1.8 - faster leveling pace
