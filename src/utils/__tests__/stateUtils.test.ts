@@ -18,15 +18,9 @@ describe('stateUtils', () => {
           power: 10,
           armor: 5,
           speed: 8,
-          fortune: 0.1,
-          fortune: 0.05,
           mana: 30,
           maxMana: 30,
-          
-          
-          
-          
-          
+          fortune: 5,
         },
         currentStats: {
           health: 45,
@@ -34,15 +28,9 @@ describe('stateUtils', () => {
           power: 10,
           armor: 5,
           speed: 8,
-          fortune: 0.1,
-          fortune: 0.05,
           mana: 25,
           maxMana: 30,
-          
-          
-          
-          
-          
+          fortune: 5,
         },
         powers: [
           {
@@ -129,15 +117,9 @@ describe('stateUtils', () => {
           power: 10,
           armor: 5,
           speed: 8,
-          fortune: 0.1,
-          fortune: 0.05,
           mana: 30,
           maxMana: 30,
-          
-          
-          
-          
-          
+          fortune: 5,
         },
         currentStats: {
           health: 50,
@@ -145,10 +127,9 @@ describe('stateUtils', () => {
           power: 10,
           armor: 5,
           speed: 8,
-          fortune: 0.1,
-          fortune: 0.05,
           mana: 30,
           maxMana: 30,
+          fortune: 5,
           
           
           
@@ -192,12 +173,12 @@ describe('stateUtils', () => {
         gold: 0,
         baseStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          fortune: 0.1, fortune: 0.05, mana: 30, maxMana: 30,
+          mana: 30, maxMana: 30, fortune: 5,
               
         },
         currentStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          fortune: 0.1, fortune: 0.05, mana: 30, maxMana: 30,
+          mana: 30, maxMana: 30, fortune: 5,
               
         },
         powers: [],
@@ -243,12 +224,12 @@ describe('stateUtils', () => {
         gold: 0,
         baseStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          fortune: 0.1, fortune: 0.05, mana: 30, maxMana: 30,
+          mana: 30, maxMana: 30, fortune: 5,
               
         },
         currentStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          fortune: 0.1, fortune: 0.05, mana: 30, maxMana: 30,
+          mana: 30, maxMana: 30, fortune: 5,
               
         },
         powers: [],
@@ -309,12 +290,12 @@ describe('stateUtils', () => {
         gold: 0,
         baseStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          fortune: 0.1, fortune: 0.05, mana: 30, maxMana: 30,
+          mana: 30, maxMana: 30, fortune: 5,
               
         },
         currentStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          fortune: 0.1, fortune: 0.05, mana: 30, maxMana: 30,
+          mana: 30, maxMana: 30, fortune: 5,
               
         },
         powers: [],
@@ -357,12 +338,12 @@ describe('stateUtils', () => {
         gold: 0,
         baseStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          fortune: 0.1, fortune: 0.05, mana: 30, maxMana: 30,
+          mana: 30, maxMana: 30, fortune: 5,
               
         },
         currentStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          fortune: 0.1, fortune: 0.05, mana: 30, maxMana: 30,
+          mana: 30, maxMana: 30, fortune: 5,
               
         },
         powers: [
