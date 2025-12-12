@@ -90,7 +90,13 @@ export function BattleArena({
 
         {/* Mountains */}
         <div className="absolute bottom-16 left-0 right-0 h-32">
-          <svg viewBox="0 0 400 100" className="w-full h-full opacity-30" preserveAspectRatio="none">
+          <svg
+            viewBox="0 0 400 100"
+            className="w-full h-full opacity-30"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+            role="presentation"
+          >
             <path d="M0 100 L0 60 L50 40 L100 55 L150 30 L200 50 L250 35 L300 55 L350 25 L400 45 L400 100 Z" fill="#1e293b" />
             <path d="M0 100 L0 70 L80 50 L160 65 L240 45 L320 60 L400 50 L400 100 Z" fill="#334155" />
           </svg>
