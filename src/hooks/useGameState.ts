@@ -54,6 +54,7 @@ const INITIAL_STATE: GameState = {
   isTransitioning: false,
   shopState: null,
   previousPhase: null,
+  deathFloor: null,
 };
 
 export function useGameState() {
