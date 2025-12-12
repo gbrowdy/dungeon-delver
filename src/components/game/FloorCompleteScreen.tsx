@@ -6,6 +6,8 @@ import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
 import { PowerChoice, isPowerUpgrade } from '@/data/powers';
 import { formatItemStatBonus } from '@/utils/itemUtils';
+import { PowerWithSynergies, hasSynergy, getSynergy, getPathName } from '@/utils/powerSynergies';
+import { Star } from 'lucide-react';
 
 const RARITY_COLORS: Record<Item['rarity'], string> = {
   common: 'border-rarity-common bg-rarity-common/10 text-rarity-common',
@@ -387,6 +389,12 @@ export function FloorCompleteScreen({
                   {availablePowers.map((choice, index) => {
                     const isUpgrade = isPowerUpgrade(choice);
 
+                    // Check for synergy with player's path (only for new powers, not upgrades)
+                    const powerWithSynergies = !isUpgrade ? (choice as PowerWithSynergies) : null;
+                    const playerPathId = player.path?.pathId ?? null;
+                    const synergizes = powerWithSynergies && playerPathId ? hasSynergy(powerWithSynergies, playerPathId) : false;
+                    const synergy = powerWithSynergies && playerPathId ? getSynergy(powerWithSynergies, playerPathId) : null;
+
                     if (isUpgrade) {
                       return (
                         <div
@@ -420,9 +428,26 @@ export function FloorCompleteScreen({
                       return (
                         <div
                           key={choice.id}
-                          className="pixel-panel-dark p-3 rounded border border-info/30 hover:border-info/60 transition-all cursor-pointer"
+                          className={cn(
+                            "pixel-panel-dark p-3 rounded border transition-all cursor-pointer relative",
+                            synergizes
+                              ? "border-amber-500/50 hover:border-amber-400/70 bg-amber-500/5 shadow-sm shadow-amber-500/10"
+                              : "border-info/30 hover:border-info/60"
+                          )}
                           onClick={() => onLearnPower(index)}
                         >
+                          {/* Synergy indicator badge */}
+                          {synergizes && synergy && (
+                            <div className="absolute top-2 right-2">
+                              <div className="flex items-center gap-0.5 bg-amber-500/20 border border-amber-500/40 rounded px-1.5 py-0.5">
+                                <Star className="h-2.5 w-2.5 text-amber-400 fill-amber-400" aria-hidden="true" />
+                                <span className="pixel-text text-pixel-2xs text-amber-400 font-bold">
+                                  {getPathName(synergy.pathId)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
                           <div className="flex items-center gap-3">
                             <span className="text-2xl">{choice.icon}</span>
                             <div className="flex-1 min-w-0">
@@ -437,8 +462,22 @@ export function FloorCompleteScreen({
                                 <span>💧 {choice.manaCost} MP</span>
                                 <span>⏱️ {choice.cooldown}s CD</span>
                               </div>
+                              {/* Synergy description */}
+                              {synergy && (
+                                <div className="mt-2 pt-2 border-t border-amber-500/20">
+                                  <p className="pixel-text text-pixel-2xs text-amber-300 italic">
+                                    ★ {synergy.description}
+                                  </p>
+                                </div>
+                              )}
                             </div>
-                            <Button size="sm" className="pixel-button text-pixel-xs h-6 px-2">
+                            <Button
+                              size="sm"
+                              className={cn(
+                                "pixel-button text-pixel-xs h-6 px-2",
+                                synergizes && "bg-amber-600 hover:bg-amber-500 text-black font-bold"
+                              )}
+                            >
                               Learn
                             </Button>
                           </div>
