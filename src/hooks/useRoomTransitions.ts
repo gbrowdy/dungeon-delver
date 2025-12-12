@@ -25,7 +25,7 @@ export function useRoomTransitions(
       if (!prev.player) return prev;
 
       const newRoom = prev.currentRoom + 1;
-      const enemy = generateEnemy(prev.currentFloor, newRoom, prev.roomsPerFloor);
+      const enemy = generateEnemy(prev.currentFloor, newRoom, prev.roomsPerFloor, prev.currentFloorTheme || undefined);
       const logs: string[] = [`Room ${newRoom}: A ${enemy.name} appears!`];
 
       logCombatEvent('enemy_spawn', {
