@@ -44,9 +44,10 @@ interface DeathScreenProps {
   room: number;
   onRetry: () => void;
   onAbandon: () => void;
+  onVisitShop: () => void;
 }
 
-export function DeathScreen({ player, floor, room, onRetry, onAbandon }: DeathScreenProps) {
+export function DeathScreen({ player, floor, room, onRetry, onAbandon, onVisitShop }: DeathScreenProps) {
   const [spriteState, setSpriteState] = useState<'idle' | 'hit'>('hit');
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
 
@@ -211,7 +212,14 @@ export function DeathScreen({ player, floor, room, onRetry, onAbandon }: DeathSc
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2 justify-center">
+        <div className="flex flex-wrap gap-2 justify-center">
+          <Button
+            onClick={onVisitShop}
+            variant="outline"
+            className="pixel-button text-pixel-xs px-4 sm:px-6 py-2 border-amber-600 hover:bg-amber-900/20 text-amber-400 uppercase"
+          >
+            🛒 Visit Shop
+          </Button>
           <Button
             onClick={onRetry}
             className="pixel-button text-pixel-xs px-4 sm:px-6 py-2 bg-orange-600 hover:bg-orange-500 uppercase"

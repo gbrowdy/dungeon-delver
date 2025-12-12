@@ -45,6 +45,7 @@ interface FloorCompleteScreenProps {
   onClaimItem: (index: number) => void;
   onLearnPower: (index: number) => void;
   onContinue: () => void;
+  onVisitShop: () => void;
 }
 
 export function FloorCompleteScreen({
@@ -55,6 +56,7 @@ export function FloorCompleteScreen({
   onClaimItem,
   onLearnPower,
   onContinue,
+  onVisitShop,
 }: FloorCompleteScreenProps) {
   const [spriteState, setSpriteState] = useState<'idle' | 'walk'>('walk');
   const [highlightedSlot, setHighlightedSlot] = useState<ItemType | null>(null);
@@ -476,8 +478,15 @@ export function FloorCompleteScreen({
           </div>
         </div>
 
-        {/* Continue Button */}
-        <div className="flex justify-center pt-2">
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-2 justify-center pt-2">
+          <Button
+            onClick={onVisitShop}
+            variant="outline"
+            className="pixel-button text-pixel-sm px-6 sm:px-8 py-3 sm:py-4 border-amber-600 hover:bg-amber-900/20 text-amber-400 uppercase"
+          >
+            🛒 Visit Shop
+          </Button>
           <Button
             onClick={onContinue}
             className="pixel-button text-pixel-sm px-8 sm:px-12 py-3 sm:py-4 bg-orange-600 hover:bg-orange-500 uppercase"

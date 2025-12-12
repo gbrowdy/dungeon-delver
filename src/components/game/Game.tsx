@@ -5,6 +5,7 @@ import { PathSelectionScreen } from './PathSelectionScreen';
 import { CombatScreen } from './CombatScreen';
 import { DeathScreen } from './DeathScreen';
 import { FloorCompleteScreen } from './FloorCompleteScreen';
+import { ShopScreen } from './ShopScreen';
 import { GameErrorBoundary, SimpleErrorBoundary } from '@/components/ErrorBoundary';
 import { CombatErrorBoundary } from './CombatErrorBoundary';
 
@@ -71,6 +72,21 @@ export function Game() {
             onClaimItem={actions.claimItem}
             onLearnPower={actions.learnPower}
             onContinue={actions.continueFromFloorComplete}
+            onVisitShop={actions.openShop}
+          />
+        </SimpleErrorBoundary>
+      );
+
+    case 'shop':
+      if (!state.player || !state.shopState) return null;
+      return (
+        <SimpleErrorBoundary>
+          <ShopScreen
+            player={state.player}
+            shopState={state.shopState}
+            currentFloor={state.currentFloor}
+            onPurchase={actions.purchaseShopItem}
+            onClose={actions.closeShop}
           />
         </SimpleErrorBoundary>
       );
@@ -84,6 +100,7 @@ export function Game() {
           room={state.currentRoom}
           onRetry={actions.retryFloor}
           onAbandon={actions.restartGame}
+          onVisitShop={actions.openShop}
         />
       );
       

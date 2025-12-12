@@ -1,5 +1,6 @@
 import { CircularBuffer } from '@/utils/circularBuffer';
 import { PlayerPath } from './paths';
+import { ShopState } from './shop';
 
 export type CharacterClass = 'warrior' | 'mage' | 'rogue' | 'paladin';
 
@@ -178,6 +179,8 @@ export interface GameState {
   shopItems: Item[]; // Items available in shop/floor complete screen
   availablePowers: (Power | PowerUpgradeOffer)[]; // Power choices available (can be new powers or upgrade offers)
   isTransitioning: boolean; // True when hero is walking to next room (between enemy death and next spawn)
+  shopState: ShopState | null; // null until shop is initialized
+  previousPhase: 'menu' | 'class-select' | 'path-select' | 'combat' | 'shop' | 'upgrade' | 'victory' | 'defeat' | 'floor-complete' | null; // Track previous phase for returning from shop
 }
 
 export interface ClassData {

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   GameState, Item,
-  StatusEffect, CombatSpeed
+  StatusEffect, CombatSpeed, CharacterClass
 } from '@/types/game';
 import { CombatEvent } from '@/hooks/useBattleAnimation';
 import { useEventQueue } from '@/hooks/useEventQueue';
@@ -16,11 +16,13 @@ import { useCombatActions } from '@/hooks/useCombatActions';
 import { usePowerActions } from '@/hooks/usePowerActions';
 import { usePauseControl } from '@/hooks/usePauseControl';
 import { usePathActions } from '@/hooks/usePathActions';
+import { useShopState } from '@/hooks/useShopState';
 import { FLOOR_CONFIG } from '@/constants/game';
 import { COMBAT_EVENT_DELAYS } from '@/constants/balance';
 import { GAME_PHASE, STATUS_EFFECT_TYPE } from '@/constants/enums';
 import { logRecovery } from '@/utils/gameLogger';
 import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
+import { deepClonePlayer } from '@/utils/stateUtils';
 
 // Base combat tick interval (ms) - modified by speed multiplier
 // At 1x: 2500ms per combat round (gives time to see intent + animations)
@@ -44,6 +46,8 @@ const INITIAL_STATE: GameState = {
   shopItems: [],
   availablePowers: [],
   isTransitioning: false,
+  shopState: null,
+  previousPhase: null,
 };
 
 export function useGameState() {
@@ -64,20 +68,42 @@ export function useGameState() {
     tickInterval: COMBAT_EVENT_DELAYS.EVENT_QUEUE_TICK_INTERVAL,
   });
 
-  // Use the extracted character setup hook
-  const { selectClass } = useCharacterSetup(setState);
+  // Use the shop state hook
+  const shopStateManager = useShopState();
+
+  // Use the extracted character setup hook (needs shopStateManager)
+  const { selectClass: selectClassBase } = useCharacterSetup(setState);
+
+  // Wrap selectClass to also initialize shop
+  const selectClass = useCallback((characterClass: CharacterClass) => {
+    selectClassBase(characterClass);
+    // Shop will be initialized when openShop is called
+  }, [selectClassBase]);
 
   // Use the pause control hook
   const { togglePause } = usePauseControl({ setState });
 
   // Use the path actions hook
   const {
-    selectPath,
+    selectPath: selectPathBase,
     selectAbility,
     selectSubpath,
     getAbilityChoices,
     getPathById,
   } = usePathActions({ setState });
+
+  // Wrap selectPath to also update shop
+  const selectPath = useCallback((pathId: string) => {
+    selectPathBase(pathId);
+    // Update shop with new path-specific gear if shop is initialized
+    if (state.shopState) {
+      shopStateManager.updateShopForPath(pathId);
+      setState((prev: GameState) => ({
+        ...prev,
+        shopState: { ...shopStateManager.shopState },
+      }));
+    }
+  }, [selectPathBase, state.shopState, shopStateManager]);
 
   // Use the extracted room transitions hook
   const {
@@ -156,6 +182,83 @@ export function useGameState() {
   const setCombatSpeed = useCallback((speed: CombatSpeed) => {
     setState((prev: GameState) => ({ ...prev, combatSpeed: speed }));
   }, []);
+
+  // Shop actions
+  const openShop = useCallback(() => {
+    setState((prev: GameState) => {
+      if (!prev.player) return prev;
+
+      // Initialize shop if not already initialized
+      let newShopState = prev.shopState;
+      if (!newShopState) {
+        shopStateManager.initializeShop(
+          prev.player.class,
+          prev.player.path?.pathId || null,
+          prev.currentFloor
+        );
+        newShopState = shopStateManager.shopState;
+      }
+
+      return {
+        ...prev,
+        previousPhase: prev.gamePhase,
+        gamePhase: GAME_PHASE.SHOP,
+        shopState: newShopState,
+      };
+    });
+  }, [shopStateManager]);
+
+  const closeShop = useCallback(() => {
+    setState((prev: GameState) => ({
+      ...prev,
+      gamePhase: prev.previousPhase || GAME_PHASE.FLOOR_COMPLETE,
+      previousPhase: null,
+    }));
+  }, []);
+
+  const purchaseShopItem = useCallback((itemId: string) => {
+    setState((prev: GameState) => {
+      if (!prev.player || !prev.shopState) return prev;
+
+      const result = shopStateManager.purchaseItem(itemId, prev.player);
+
+      if (!result.success || !result.item) {
+        console.warn('Purchase failed:', result.message);
+        return prev;
+      }
+
+      // Clone player and update gold
+      const updatedPlayer = deepClonePlayer(prev.player);
+      updatedPlayer.gold -= shopStateManager.getItemById(itemId)?.price || 0;
+
+      // Add item to equipped items (replacing existing item of same type)
+      const itemType = result.item.type;
+      updatedPlayer.equippedItems = [
+        ...updatedPlayer.equippedItems.filter(i => i.type !== itemType),
+        result.item,
+      ];
+
+      // Recalculate stats (simple version - just add stat bonuses)
+      updatedPlayer.currentStats = { ...updatedPlayer.baseStats };
+      updatedPlayer.equippedItems.forEach(item => {
+        Object.entries(item.statBonus).forEach(([stat, bonus]) => {
+          if (bonus) {
+            (updatedPlayer.currentStats as any)[stat] =
+              ((updatedPlayer.currentStats as any)[stat] || 0) + bonus;
+          }
+        });
+      });
+
+      // Update shop state to mark item as purchased
+      const updatedShopState = { ...shopStateManager.shopState };
+
+      return {
+        ...prev,
+        player: updatedPlayer,
+        shopState: updatedShopState,
+      };
+    });
+  }, [shopStateManager]);
 
 
   // Use frame-rate independent combat loop with separate hero/enemy timers
@@ -350,6 +453,9 @@ export function useGameState() {
       handleTransitionComplete,
       handleEnemyDeathAnimationComplete,
       handlePlayerDeathAnimationComplete,
+      openShop,
+      closeShop,
+      purchaseShopItem,
     },
   };
 }
