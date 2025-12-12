@@ -197,7 +197,7 @@ export function useProgressionActions({
   const restartGame = useCallback(() => {
     clearCombatTimeouts(); // Clean up pending timeouts
     setLastCombatEvent(null); // Clear any leftover combat events
-    logStateTransition('*', GAME_PHASE.MENU, 'restart_game');
+    logStateTransition('*', GAME_PHASE.CLASS_SELECT, 'abandon_run');
     setState({
       player: null,
       currentEnemy: null,
@@ -205,7 +205,7 @@ export function useProgressionActions({
       currentRoom: 0,
       roomsPerFloor: 5,
       combatLog: new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE),
-      gamePhase: GAME_PHASE.MENU,
+      gamePhase: GAME_PHASE.CLASS_SELECT,
       isPaused: false,
       pauseReason: null,
       combatSpeed: 1,
