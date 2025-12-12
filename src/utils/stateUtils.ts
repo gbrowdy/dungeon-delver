@@ -91,6 +91,9 @@ function cloneItems(items: Item[]): Item[] {
       chance: item.effect.chance,
       description: item.effect.description,
     } : undefined,
+    enhancementLevel: item.enhancementLevel,
+    maxEnhancement: item.maxEnhancement,
+    tier: item.tier,
   }));
 }
 
@@ -166,6 +169,8 @@ export function deepClonePlayer(player: Player): Player {
     lastPowerUsed: player.lastPowerUsed,
     // upgradePurchases removed - old upgrade system deprecated
     isDying: player.isDying,
+    path: player.path,
+    pendingAbilityChoice: player.pendingAbilityChoice,
   };
 }
 
