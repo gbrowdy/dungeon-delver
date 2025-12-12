@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, ReactNode, useMemo } from 'react';
 import { GameState, CombatSpeed, Item, Player } from '@/types/game';
 import { CombatEvent } from '@/hooks/useBattleAnimation';
