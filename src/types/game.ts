@@ -66,11 +66,25 @@ export interface EnemyIntent {
 }
 
 // Item special effects
-export type ItemEffectTrigger = 'on_hit' | 'on_crit' | 'on_kill' | 'on_damaged' | 'combat_start' | 'turn_start';
+export type ItemEffectTrigger =
+  | 'on_hit'
+  | 'on_crit'
+  | 'on_kill'
+  | 'on_damaged'
+  | 'combat_start'
+  | 'turn_start'
+  // New triggers for expanded item system
+  | 'passive' // Always active effects (calculated at stat time)
+  | 'on_damage_dealt' // When dealing damage (for lifesteal scaling)
+  | 'on_lethal_damage' // When receiving lethal damage (survival effects)
+  | 'out_of_combat' // Between combats (regen effects)
+  | 'on_power_cast' // When using a power
+  | 'on_death' // When player would die (phoenix effects)
+  | 'on_damage_taken'; // Alias for ON_DAMAGED
 
 export interface ItemEffect {
   trigger: ItemEffectTrigger;
-  type: 'heal' | 'damage' | 'buff' | 'mana';
+  type: 'heal' | 'damage' | 'buff' | 'mana' | 'debuff' | 'special';
   value: number;
   chance?: number; // Probability (0-1), defaults to 1
   description: string;

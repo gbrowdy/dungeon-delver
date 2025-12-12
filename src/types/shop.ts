@@ -28,6 +28,9 @@ export interface ShopItem {
   classRestriction?: CharacterClass; // If set, only this class can buy
   pathRestriction?: string; // Path ID if path-specific
 
+  // Path synergies for UI highlighting
+  pathSynergies?: string[]; // Path IDs this item synergizes with
+
   // For class gear that changes with path choice
   // When player chooses a path, class gear items are replaced with path-specific versions
   replacedBy?: string; // ID of item that replaces this after path choice

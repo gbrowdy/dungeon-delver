@@ -410,4 +410,114 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     description: 'Heavy gauntlets that provide superior early defense.',
     pathSynergies: ['guardian', 'protector'],
   },
+
+  // NEW: Crusader/Templar path items
+  {
+    id: 'crusaders_mace',
+    name: "Crusader's Mace",
+    type: 'weapon',
+    price: 225,
+    stats: {
+      power: 4,
+      armor: 2,
+    },
+    effect: {
+      trigger: 'on_crit',
+      type: 'heal',
+      value: 5,
+      description: 'Heal 5 HP on critical hit',
+    },
+    tier: 'specialty',
+    icon: 'Hammer',
+    description: 'A blessed mace that channels divine energy into healing strikes.',
+    pathSynergies: ['crusader', 'templar', 'guardian'],
+  },
+
+  {
+    id: 'templar_banner',
+    name: 'Templar Banner',
+    type: 'accessory',
+    price: 200,
+    stats: {
+      health: 15,
+      maxHealth: 15,
+      armor: 2,
+    },
+    effect: {
+      trigger: 'passive',
+      type: 'buff',
+      value: 0.15,
+      description: '+15% effectiveness to all healing effects',
+    },
+    tier: 'specialty',
+    icon: 'Flag',
+    description: 'A holy banner that amplifies divine healing.',
+    pathSynergies: ['templar', 'crusader', 'guardian'],
+  },
+
+  // NEW: Stun/Control items
+  {
+    id: 'stun_baton',
+    name: 'Stun Baton',
+    type: 'weapon',
+    price: 250,
+    stats: {
+      power: 3,
+      speed: 5,
+    },
+    effect: {
+      trigger: 'on_hit',
+      type: 'debuff',
+      value: 1,
+      chance: 0.12,
+      description: '12% chance to stun enemy for 1 turn',
+    },
+    tier: 'specialty',
+    icon: 'Zap',
+    description: 'A crackling baton that can shock enemies into paralysis.',
+    pathSynergies: ['duelist', 'protector'],
+  },
+
+  {
+    id: 'gravity_orb',
+    name: 'Gravity Orb',
+    type: 'accessory',
+    price: 225,
+    stats: {
+      fortune: 3,
+    },
+    effect: {
+      trigger: 'on_hit',
+      type: 'debuff',
+      value: 0.15,
+      chance: 0.25,
+      description: '25% chance to reduce enemy attack speed by 15% for 4 turns',
+    },
+    tier: 'specialty',
+    icon: 'Moon',
+    description: 'An orb that manipulates gravitational forces to slow enemies.',
+    pathSynergies: ['elementalist', 'guardian'],
+  },
+
+  // NEW: Additional defensive utility
+  {
+    id: 'barrier_crystal',
+    name: 'Barrier Crystal',
+    type: 'accessory',
+    price: 250,
+    stats: {
+      armor: 3,
+      maxHealth: 10,
+    },
+    effect: {
+      trigger: 'passive',
+      type: 'buff',
+      value: 5,
+      description: 'Reduce all incoming damage by 5 (flat reduction)',
+    },
+    tier: 'specialty',
+    icon: 'Gem',
+    description: 'A crystal that creates a protective barrier around its wielder.',
+    pathSynergies: ['guardian', 'protector'],
+  },
 ];
