@@ -29,6 +29,7 @@ import {
 import { logPauseChange } from '@/utils/gameLogger';
 import { generateEventId } from '@/utils/eventId';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+import { getDodgeChance } from '@/utils/fortuneUtils';
 import type { PauseReasonType } from '@/constants/enums';
 import type { CombatEvent } from '@/hooks/useBattleAnimation';
 
@@ -105,7 +106,7 @@ export function useCombatActions({
       // Calculate attack damage with variance and crit
       const damageResult = calculateAttackDamage(
         updatedPlayer.currentStats,
-        enemy.defense,
+        enemy.armor,
         enemy.isShielded || false
       );
       logs = [...logs, ...damageResult.logs];
@@ -252,9 +253,9 @@ export function useCombatActions({
         if (enemy.enrageTurnsRemaining <= 0) {
           enemy.isEnraged = false;
           enemy.enrageTurnsRemaining = undefined;
-          if (enemy.baseAttack !== undefined) {
-            enemy.attack = enemy.baseAttack;
-            enemy.baseAttack = undefined;
+          if (enemy.basePower !== undefined) {
+            enemy.power = enemy.basePower;
+            enemy.basePower = undefined;
           }
           logs.push(`😤 ${enemy.name}'s rage subsides!`);
         }
@@ -276,10 +277,11 @@ export function useCombatActions({
         switch (ability.type) {
           case 'multi_hit': {
             const hits = ability.value;
-            const damagePerHit = Math.max(1, Math.floor((enemy.attack * COMBAT_BALANCE.MULTI_HIT_DAMAGE_MODIFIER - player.currentStats.defense / 2)));
+            const damagePerHit = Math.max(1, Math.floor((enemy.power * COMBAT_BALANCE.MULTI_HIT_DAMAGE_MODIFIER - player.currentStats.armor / 2)));
             let totalDamage = 0;
+            const playerDodgeChance = getDodgeChance(player.currentStats.fortune);
             for (let i = 0; i < hits; i++) {
-              const dodged = Math.random() * 100 < player.currentStats.dodgeChance;
+              const dodged = Math.random() < playerDodgeChance;
               if (!dodged) {
                 let hitDamage = Math.floor(damagePerHit * (COMBAT_MECHANICS.DAMAGE_VARIANCE_MIN + Math.random() * COMBAT_MECHANICS.DAMAGE_VARIANCE_RANGE));
                 if (player.isBlocking) {
@@ -330,8 +332,8 @@ export function useCombatActions({
           }
           case 'enrage': {
             if (!enemy.isEnraged) {
-              enemy.baseAttack = enemy.attack;
-              enemy.attack = Math.floor(enemy.attack * (1 + ability.value));
+              enemy.basePower = enemy.power;
+              enemy.power = Math.floor(enemy.power * (1 + ability.value));
               enemy.isEnraged = true;
               enemy.enrageTurnsRemaining = 3;
               logs.push(`😤 ${enemy.name} becomes enraged! Attack increased for 3 turns!`);
@@ -350,12 +352,13 @@ export function useCombatActions({
         }
       } else {
         // Regular attack
-        const playerDodged = !enemyCrit && Math.random() * 100 < player.currentStats.dodgeChance;
+        const playerDodgeChance = getDodgeChance(player.currentStats.fortune);
+        const playerDodged = !enemyCrit && Math.random() < playerDodgeChance;
 
         if (playerDodged) {
           logs.push(`💨 You dodged ${enemy.name}'s attack!`);
         } else {
-          const enemyBaseDamage = Math.max(1, enemy.attack - player.currentStats.defense / 2);
+          const enemyBaseDamage = Math.max(1, enemy.power - player.currentStats.armor / 2);
           const enemyDamageVariance = COMBAT_MECHANICS.DAMAGE_VARIANCE_MIN + Math.random() * COMBAT_MECHANICS.DAMAGE_VARIANCE_RANGE;
           enemyDamage = Math.floor(enemyBaseDamage * enemyDamageVariance);
 

@@ -12,6 +12,7 @@ import {
   EFFECT_TYPE,
 } from '@/constants/enums';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+import { getCritChance, getCritDamage, getDropQualityBonus } from '@/utils/fortuneUtils';
 
 /**
  * Result of processing turn-start effects
@@ -126,32 +127,33 @@ export function processTurnStartEffects(
  * Calculate attack damage with variance and critical hit logic
  *
  * @param playerStats - Player's current stats
- * @param enemyDefense - Enemy's defense value
+ * @param enemyArmor - Enemy's armor value
  * @param isEnemyShielded - Whether enemy has shield active
  * @returns Damage amount, crit status, and logs
  */
 export function calculateAttackDamage(
   playerStats: Player['currentStats'],
-  enemyDefense: number,
+  enemyArmor: number,
   isEnemyShielded: boolean
 ): AttackDamageResult {
   const logs: string[] = [];
 
-  // Check for critical hit
-  const isCrit = Math.random() * 100 < playerStats.critChance;
+  // Check for critical hit using fortune-based calculation
+  const critChance = getCritChance(playerStats.fortune);
+  const isCrit = Math.random() < critChance;
 
   // Calculate base damage
-  const effectiveDefense = isEnemyShielded ? enemyDefense * 1.5 : enemyDefense;
-  const baseDamage = Math.max(1, playerStats.attack - effectiveDefense / 2);
+  const effectiveArmor = isEnemyShielded ? enemyArmor * 1.5 : enemyArmor;
+  const baseDamage = Math.max(1, playerStats.power - effectiveArmor / 2);
 
   // Apply damage variance
   const damageVariance = COMBAT_MECHANICS.DAMAGE_VARIANCE_MIN +
     Math.random() * COMBAT_MECHANICS.DAMAGE_VARIANCE_RANGE;
   let damage = baseDamage * damageVariance;
 
-  // Apply critical hit multiplier
+  // Apply critical hit multiplier using fortune-based calculation
   if (isCrit) {
-    const critMultiplier = playerStats.critDamage || 2.0;
+    const critMultiplier = getCritDamage(playerStats.fortune);
     damage *= critMultiplier;
     logs.push(`💥 Critical hit! (${Math.floor(critMultiplier * 100)}%)`);
   }
@@ -301,11 +303,12 @@ export function processEnemyDeath(
   updatedPlayer.statusEffects = [];
 
   // Check for item drop with pity system
+  const dropQualityBonus = getDropQualityBonus(updatedPlayer.currentStats.fortune);
   const itemDropResult = calculateItemDrop(
     updatedEnemy,
     currentFloor,
     itemPityCounter,
-    updatedPlayer.currentStats.goldFind || 0
+    dropQualityBonus
   );
 
   if (itemDropResult.droppedItem) {
