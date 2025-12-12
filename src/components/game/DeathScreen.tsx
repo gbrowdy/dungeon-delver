@@ -105,7 +105,7 @@ export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitS
                 'active:border-b-2 active:translate-y-[2px]'
               )}
             >
-              <span className="text-xl mr-2">🛒</span>
+              <span className="text-xl mr-2">⚒️</span>
               Visit Shop
             </Button>
           </div>
