@@ -461,7 +461,7 @@ export const CLASS_GEAR: Record<CharacterClass, ClassGearSet> = {
     ],
     paths: {
       // Crusader path - holy damage, smite
-      crusader: [
+      paladin_crusader: [
         {
           id: 'crusader_hammer',
           name: "Crusader's Hammer",
@@ -472,7 +472,7 @@ export const CLASS_GEAR: Record<CharacterClass, ClassGearSet> = {
           icon: 'Hammer',
           description: '+5 Power, +5 Fortune. Deal 15% bonus damage to enemies.',
           classRestriction: 'paladin',
-          pathRestriction: 'crusader',
+          pathRestriction: 'paladin_crusader',
           effectDescription: '+15% holy damage',
         },
         {
@@ -485,7 +485,7 @@ export const CLASS_GEAR: Record<CharacterClass, ClassGearSet> = {
           icon: 'Shield',
           description: '+4 Armor, +15 Health. Blessed protection.',
           classRestriction: 'paladin',
-          pathRestriction: 'crusader',
+          pathRestriction: 'paladin_crusader',
         },
         {
           id: 'smite_sigil',
@@ -497,12 +497,12 @@ export const CLASS_GEAR: Record<CharacterClass, ClassGearSet> = {
           icon: 'Zap',
           description: '+4 Power, +10 Max Mana. Critical hits deal holy damage.',
           classRestriction: 'paladin',
-          pathRestriction: 'crusader',
+          pathRestriction: 'paladin_crusader',
           effectDescription: 'Crits: +20% holy damage',
         },
       ],
       // Protector path - healing, regen, damage reduction
-      protector: [
+      paladin_protector: [
         {
           id: 'protector_mace',
           name: "Protector's Mace",
@@ -513,7 +513,7 @@ export const CLASS_GEAR: Record<CharacterClass, ClassGearSet> = {
           icon: 'Hammer',
           description: '+3 Power, +15 Health. Healing effects 10% stronger.',
           classRestriction: 'paladin',
-          pathRestriction: 'protector',
+          pathRestriction: 'paladin_protector',
           effectDescription: 'Healing: +10% effectiveness',
         },
         {
@@ -526,7 +526,7 @@ export const CLASS_GEAR: Record<CharacterClass, ClassGearSet> = {
           icon: 'ShieldCheck',
           description: '+5 Armor, +20 Health. Reduces all damage by 5%.',
           classRestriction: 'paladin',
-          pathRestriction: 'protector',
+          pathRestriction: 'paladin_protector',
           effectDescription: '-5% damage taken',
         },
         {
@@ -539,7 +539,7 @@ export const CLASS_GEAR: Record<CharacterClass, ClassGearSet> = {
           icon: 'Heart',
           description: '+20 Health, +15 Max Mana. Regenerate 1 HP per second.',
           classRestriction: 'paladin',
-          pathRestriction: 'protector',
+          pathRestriction: 'paladin_protector',
           effectDescription: '+1 HP regen/sec',
         },
       ],
