@@ -11,42 +11,7 @@
  *     └── Phantom - Automatic dodge every X attacks
  */
 
-// Placeholder types - will be defined in src/types/paths.ts by Task 2.1
-interface PathAbilityEffect {
-  type: string;
-  value: number;
-  target?: string;
-  trigger?: string;
-  duration?: number;
-}
-
-interface PathAbility {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  levelRequired: number;
-  subpath: string;
-  effects: PathAbilityEffect[];
-  isCapstone?: boolean;
-}
-
-interface SubpathDefinition {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-}
-
-interface PathDefinition {
-  id: string;
-  name: string;
-  description: string;
-  playStyle: 'active' | 'passive';
-  icon: string;
-  subpaths: SubpathDefinition[];
-  abilities: PathAbility[];
-}
+import type { PathDefinition, PathAbility, PathAbilityEffect, SubpathDefinition } from '@/types/paths';
 
 // ============================================================================
 // ASSASSIN PATH - Active burst damage and kill chains
@@ -55,8 +20,8 @@ interface PathDefinition {
 const ASSASSIN_PATH: PathDefinition = {
   id: 'assassin',
   name: 'Assassin',
-  description: 'Strike from the shadows with devastating burst damage and chain your kills into unstoppable momentum.',
   type: 'active',
+  description: 'Strike from the shadows with devastating burst damage and chain your kills into unstoppable momentum.',
   icon: 'Crosshair',
   subpaths: [
     {
@@ -82,8 +47,11 @@ const ASSASSIN_PATH: PathDefinition = {
       levelRequired: 3,
       subpath: 'shadowblade',
       effects: [
-        { type: 'power_guaranteed_crit', value: 1 },
-        { type: 'power_crit_damage_bonus', value: 0.5 }
+        {
+          trigger: 'on_power_use',
+          chance: 1.0,
+          damageModifier: { type: 'bonus_damage', value: 0.5 }
+        }
       ]
     },
     {
@@ -94,8 +62,11 @@ const ASSASSIN_PATH: PathDefinition = {
       levelRequired: 4,
       subpath: 'shadowblade',
       effects: [
-        { type: 'first_strike_guaranteed_crit', value: 1 },
-        { type: 'first_strike_damage_bonus', value: 1.0 }
+        {
+          trigger: 'combat_start',
+          chance: 1.0,
+          damageModifier: { type: 'bonus_damage', value: 1.0 }
+        }
       ]
     },
     {
@@ -106,8 +77,13 @@ const ASSASSIN_PATH: PathDefinition = {
       levelRequired: 5,
       subpath: 'shadowblade',
       effects: [
-        { type: 'crit_chance_bonus', value: 0.15 },
-        { type: 'crit_damage_bonus', value: 0.75 }
+        {
+          trigger: 'passive',
+          statModifiers: [
+            { stat: 'power', percentBonus: 0.15 }
+          ],
+          damageModifier: { type: 'bonus_damage', value: 0.75 }
+        }
       ]
     },
 
@@ -120,8 +96,11 @@ const ASSASSIN_PATH: PathDefinition = {
       levelRequired: 3,
       subpath: 'nightstalker',
       effects: [
-        { type: 'cooldown_reduction_on_kill', value: 0.5, trigger: 'on_kill' },
-        { type: 'mana_restore_on_kill', value: 25, trigger: 'on_kill' }
+        {
+          trigger: 'on_kill',
+          powerModifiers: [{ type: 'cooldown_reduction', value: 0.5 }],
+          manaRestore: 25
+        }
       ]
     },
     {
@@ -132,8 +111,11 @@ const ASSASSIN_PATH: PathDefinition = {
       levelRequired: 4,
       subpath: 'nightstalker',
       effects: [
-        { type: 'damage_bonus_on_kill', value: 0.25, trigger: 'on_kill', duration: 8 },
-        { type: 'max_stacks', value: 3 }
+        {
+          trigger: 'on_kill',
+          damageModifier: { type: 'bonus_damage', value: 0.25 },
+          duration: 8
+        }
       ]
     },
     {
@@ -144,8 +126,16 @@ const ASSASSIN_PATH: PathDefinition = {
       levelRequired: 5,
       subpath: 'nightstalker',
       effects: [
-        { type: 'low_health_damage_bonus', value: 1.0, trigger: 'health_threshold', target: 'enemy_below_30' },
-        { type: 'attack_speed_on_kill', value: 0.5, trigger: 'on_kill', duration: 3 }
+        {
+          trigger: 'conditional',
+          condition: { type: 'enemy_hp_below', value: 0.30 },
+          damageModifier: { type: 'bonus_damage', value: 1.0 }
+        },
+        {
+          trigger: 'on_kill',
+          statModifiers: [{ stat: 'speed', percentBonus: 0.5 }],
+          duration: 3
+        }
       ]
     },
 
@@ -159,9 +149,18 @@ const ASSASSIN_PATH: PathDefinition = {
       subpath: 'shadowblade',
       isCapstone: true,
       effects: [
-        { type: 'power_mana_cost_reduction', value: 0.5 },
-        { type: 'power_damage_bonus', value: 0.5 },
-        { type: 'guaranteed_crits_after_power', value: 3, trigger: 'after_power_use' }
+        {
+          trigger: 'passive',
+          powerModifiers: [
+            { type: 'cost_reduction', value: 0.5 },
+            { type: 'power_bonus', value: 0.5 }
+          ]
+        },
+        {
+          trigger: 'on_power_use',
+          chance: 1.0,
+          duration: 3
+        }
       ]
     },
     {
@@ -173,8 +172,15 @@ const ASSASSIN_PATH: PathDefinition = {
       subpath: 'nightstalker',
       isCapstone: true,
       effects: [
-        { type: 'vulnerability_debuff', value: 0.25, trigger: 'on_damage_dealt', target: 'enemy', duration: 10 },
-        { type: 'full_cooldown_reset_on_kill', value: 1, trigger: 'on_marked_kill' }
+        {
+          trigger: 'on_hit',
+          damageModifier: { type: 'bonus_damage', value: 0.25 },
+          duration: 10
+        },
+        {
+          trigger: 'on_kill',
+          powerModifiers: [{ type: 'cooldown_reduction', value: 1.0 }]
+        }
       ]
     }
   ]
@@ -187,8 +193,8 @@ const ASSASSIN_PATH: PathDefinition = {
 const DUELIST_PATH: PathDefinition = {
   id: 'duelist',
   name: 'Duelist',
-  description: 'Dance between attacks with superior evasion, turning defense into devastating counter-strikes.',
   type: 'passive',
+  description: 'Dance between attacks with superior evasion, turning defense into devastating counter-strikes.',
   icon: 'Shield',
   subpaths: [
     {
@@ -214,8 +220,11 @@ const DUELIST_PATH: PathDefinition = {
       levelRequired: 3,
       subpath: 'swashbuckler',
       effects: [
-        { type: 'counter_attack_on_dodge', value: 1.5, trigger: 'on_dodge' },
-        { type: 'counter_cannot_miss', value: 1 }
+        {
+          trigger: 'on_dodge',
+          damage: 150,
+          chance: 1.0
+        }
       ]
     },
     {
@@ -226,9 +235,11 @@ const DUELIST_PATH: PathDefinition = {
       levelRequired: 4,
       subpath: 'swashbuckler',
       effects: [
-        { type: 'crit_chance_on_dodge', value: 0.2, trigger: 'on_dodge' },
-        { type: 'buff_duration_attacks', value: 2 },
-        { type: 'max_stacks', value: 3 }
+        {
+          trigger: 'on_dodge',
+          statModifiers: [{ stat: 'power', percentBonus: 0.2 }],
+          duration: 2
+        }
       ]
     },
     {
@@ -239,8 +250,15 @@ const DUELIST_PATH: PathDefinition = {
       levelRequired: 5,
       subpath: 'swashbuckler',
       effects: [
-        { type: 'dodge_chance_bonus', value: 0.15 },
-        { type: 'dodge_chance_on_crit', value: 0.1, trigger: 'on_crit', duration: 5 }
+        {
+          trigger: 'passive',
+          statModifiers: [{ stat: 'speed', percentBonus: 0.15 }]
+        },
+        {
+          trigger: 'on_crit',
+          statModifiers: [{ stat: 'speed', percentBonus: 0.1 }],
+          duration: 5
+        }
       ]
     },
 
@@ -253,8 +271,10 @@ const DUELIST_PATH: PathDefinition = {
       levelRequired: 3,
       subpath: 'phantom',
       effects: [
-        { type: 'dodge_chance_bonus', value: 0.2 },
-        { type: 'dodge_chance_floor', value: 0.1 }
+        {
+          trigger: 'passive',
+          statModifiers: [{ stat: 'speed', percentBonus: 0.2 }]
+        }
       ]
     },
     {
@@ -265,8 +285,10 @@ const DUELIST_PATH: PathDefinition = {
       levelRequired: 4,
       subpath: 'phantom',
       effects: [
-        { type: 'guaranteed_dodge_every_n_attacks', value: 5 },
-        { type: 'counter_reduction_on_hit', value: 1 }
+        {
+          trigger: 'passive',
+          chance: 1.0
+        }
       ]
     },
     {
@@ -277,9 +299,12 @@ const DUELIST_PATH: PathDefinition = {
       levelRequired: 5,
       subpath: 'phantom',
       effects: [
-        { type: 'untargetable_on_dodge_streak', value: 3, trigger: 'dodge_streak' },
-        { type: 'untargetable_duration', value: 2 },
-        { type: 'internal_cooldown', value: 15 }
+        {
+          trigger: 'on_dodge',
+          shield: 100,
+          duration: 2,
+          cooldown: 15
+        }
       ]
     },
 
@@ -293,10 +318,14 @@ const DUELIST_PATH: PathDefinition = {
       subpath: 'swashbuckler',
       isCapstone: true,
       effects: [
-        { type: 'dodge_chance_bonus', value: 0.25 },
-        { type: 'momentum_stack_on_dodge', value: 1, trigger: 'on_dodge' },
-        { type: 'max_momentum_stacks', value: 5 },
-        { type: 'momentum_burst_damage', value: 3.0, trigger: 'at_max_stacks' }
+        {
+          trigger: 'passive',
+          statModifiers: [{ stat: 'speed', percentBonus: 0.25 }]
+        },
+        {
+          trigger: 'on_dodge',
+          damageModifier: { type: 'bonus_damage', value: 3.0 }
+        }
       ]
     },
     {
@@ -308,8 +337,15 @@ const DUELIST_PATH: PathDefinition = {
       subpath: 'phantom',
       isCapstone: true,
       effects: [
-        { type: 'untargetable_during_attack', value: 1 },
-        { type: 'damage_reduction_after_dodge', value: 0.75, trigger: 'first_hit_after_dodge' }
+        {
+          trigger: 'passive',
+          shield: 1000
+        },
+        {
+          trigger: 'on_dodge',
+          damageModifier: { type: 'reflect', value: 0.75 },
+          duration: 1
+        }
       ]
     }
   ]
