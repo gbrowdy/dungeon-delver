@@ -13,6 +13,25 @@ import { generateFinalBoss } from './finalBoss';
 import { FloorTheme } from '@/data/floorThemes';
 import { getRandomModifiers, toModifierEffect, ModifierEffect } from '@/data/enemyModifiers';
 
+/**
+ * Default floor theme with neutral modifiers
+ * Used when no floor theme is provided to generateEnemy
+ */
+const DEFAULT_FLOOR_THEME: FloorTheme = {
+  id: 'default',
+  name: 'Standard',
+  description: 'A balanced floor with no special modifiers.',
+  composition: 'mixed',
+  statModifiers: {
+    health: 1.0,
+    power: 1.0,
+    armor: 1.0,
+    speed: 1.0,
+  },
+  favoredAbilities: [],
+  extraAbilityChance: 0,
+};
+
 const ENEMY_NAMES = {
   common: ['Goblin', 'Skeleton', 'Slime', 'Rat', 'Spider', 'Imp', 'Zombie'],
   uncommon: ['Orc', 'Dark Elf', 'Werewolf', 'Ghost', 'Harpy', 'Minotaur'],
@@ -308,9 +327,9 @@ const MIN_ROOMS_PER_FLOOR = 1;
  * @param floor The current floor number
  * @param room The current room number
  * @param roomsPerFloor Total rooms per floor
- * @param floorTheme Optional floor theme to apply stat modifiers and ability biases
+ * @param floorTheme Floor theme to apply stat modifiers and ability biases (defaults to neutral theme)
  */
-export function generateEnemy(floor: number, room: number, roomsPerFloor: number, floorTheme?: FloorTheme): Enemy {
+export function generateEnemy(floor: number, room: number, roomsPerFloor: number, floorTheme: FloorTheme = DEFAULT_FLOOR_THEME): Enemy {
   // Input validation - validate AFTER converting to ensure bounds
   // Use Math.max/min to clamp values safely
   floor = Math.max(MIN_FLOOR, Math.min(MAX_FLOOR, Math.floor(Number(floor) || MIN_FLOOR)));
@@ -404,18 +423,11 @@ export function generateEnemy(floor: number, room: number, roomsPerFloor: number
   // This makes abilities feel like a trade-off rather than pure power creep
   const statMultiplier = 1 - powerCost;
 
-  // Apply floor theme stat modifiers if theme is provided
-  let themeHealthMult = 1;
-  let themePowerMult = 1;
-  let themeArmorMult = 1;
-  let themeSpeedMult = 1;
-
-  if (floorTheme) {
-    themeHealthMult = floorTheme.statModifiers.health;
-    themePowerMult = floorTheme.statModifiers.power;
-    themeArmorMult = floorTheme.statModifiers.armor;
-    themeSpeedMult = floorTheme.statModifiers.speed;
-  }
+  // Apply floor theme stat modifiers
+  const themeHealthMult = floorTheme.statModifiers.health;
+  const themePowerMult = floorTheme.statModifiers.power;
+  const themeArmorMult = floorTheme.statModifiers.armor;
+  const themeSpeedMult = floorTheme.statModifiers.speed;
 
   // Calculate base stats with difficulty and theme multipliers
   const health = Math.floor(baseHealth * difficultyMultiplier * statMultiplier * themeHealthMult);
