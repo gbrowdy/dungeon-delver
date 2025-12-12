@@ -86,6 +86,7 @@ export function Game() {
             shopState={state.shopState}
             currentFloor={state.currentFloor}
             onPurchase={actions.purchaseShopItem}
+            onEnhance={actions.enhanceEquippedItem}
             onClose={actions.closeShop}
           />
         </SimpleErrorBoundary>
