@@ -10,6 +10,7 @@ import {
 import { TouchTooltip } from '@/components/ui/touch-tooltip';
 import { formatItemStatBonus } from '@/utils/itemUtils';
 import { getCritChance, getCritDamage, getDodgeChance } from '@/utils/fortuneUtils';
+import { ReactNode } from 'react';
 
 const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
 
@@ -323,7 +324,13 @@ function StatsGrid({
         icon="✨"
         label="FOR"
         value={fortune}
-        tooltip={`Fortune - affects luck\nCrit: ${critChance}% | Dodge: ${dodgeChance}%\nCrit Dmg: ${critDamage}%`}
+        tooltip={
+          <>
+            <div>Fortune - affects luck</div>
+            <div>Crit: {critChance}% | Dodge: {dodgeChance}%</div>
+            <div>Crit Dmg: {critDamage}%</div>
+          </>
+        }
       />
     </div>
   );
@@ -336,7 +343,7 @@ interface StatItemWithTooltipProps {
   icon: string;
   label: string;
   value: string | number;
-  tooltip: string;
+  tooltip: ReactNode;
 }
 
 function StatItemWithTooltip({ icon, label, value, tooltip }: StatItemWithTooltipProps) {
@@ -354,7 +361,7 @@ function StatItemWithTooltip({ icon, label, value, tooltip }: StatItemWithToolti
       <div className="xs:hidden">
         <TouchTooltip
           content={
-            <div className="pixel-text text-pixel-xs text-slate-200 whitespace-pre-line">
+            <div className="pixel-text text-pixel-xs text-slate-200">
               {tooltip}
             </div>
           }
@@ -372,7 +379,7 @@ function StatItemWithTooltip({ icon, label, value, tooltip }: StatItemWithToolti
               {content}
             </TooltipTrigger>
             <TooltipContent side="top" className="pixel-panel max-w-xs">
-              <div className="pixel-text text-pixel-xs text-slate-200 whitespace-pre-line">
+              <div className="pixel-text text-pixel-xs text-slate-200">
                 {tooltip}
               </div>
             </TooltipContent>
