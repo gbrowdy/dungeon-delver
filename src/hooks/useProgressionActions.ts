@@ -13,6 +13,7 @@ import { FLOOR_CONFIG } from '@/constants/game';
 import { logStateTransition } from '@/utils/gameLogger';
 import { deepClonePlayer } from '@/utils/stateUtils';
 import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
+import { selectFloorTheme } from '@/data/floorThemes';
 
 interface UseProgressionActionsOptions {
   setState: React.Dispatch<React.SetStateAction<GameState>>;
@@ -174,7 +175,11 @@ export function useProgressionActions({
     setState((prev: GameState) => {
       if (!prev.player) return prev;
 
-      logStateTransition(GAME_PHASE.FLOOR_COMPLETE, GAME_PHASE.COMBAT, `next_floor:${prev.currentFloor + 1}`);
+      const nextFloor = prev.currentFloor + 1;
+      logStateTransition(GAME_PHASE.FLOOR_COMPLETE, GAME_PHASE.COMBAT, `next_floor:${nextFloor}`);
+
+      // Select a random theme for the new floor
+      const newTheme = selectFloorTheme(nextFloor);
 
       // Reset health and mana to full when moving to next floor
       const player = { ...prev.player };
@@ -190,13 +195,15 @@ export function useProgressionActions({
       player.powers = player.powers.map((p: Power) => ({ ...p, currentCooldown: 0 }));
 
       const combatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
-      combatLog.add(`Entering Floor ${prev.currentFloor + 1}... Health and Mana restored!`);
+      combatLog.add(`Entering Floor ${nextFloor}: ${newTheme.name}... Health and Mana restored!`);
+      combatLog.add(`🎯 ${newTheme.description}`);
 
       return {
         ...prev,
         player,
-        currentFloor: prev.currentFloor + 1,
+        currentFloor: nextFloor,
         currentRoom: 0,
+        currentFloorTheme: newTheme,
         gamePhase: GAME_PHASE.COMBAT,
         combatLog,
         shopItems: [],
@@ -222,6 +229,7 @@ export function useProgressionActions({
       currentFloor: 1,
       currentRoom: 0,
       roomsPerFloor: 5,
+      currentFloorTheme: null,
       combatLog: new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE),
       gamePhase: GAME_PHASE.CLASS_SELECT,
       isPaused: false,
@@ -269,9 +277,13 @@ export function useProgressionActions({
       // Determine which floor to retry
       const floorToRetry = prev.deathFloor ?? prev.currentFloor;
 
+      // Select a new theme for the retry (gives variety on retries)
+      const newTheme = selectFloorTheme(floorToRetry);
+
       // Clear combat log and add retry message
       const combatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
-      combatLog.add(`Retrying Floor ${floorToRetry}... Health and Mana restored!`);
+      combatLog.add(`Retrying Floor ${floorToRetry}: ${newTheme.name}... Health and Mana restored!`);
+      combatLog.add(`🎯 ${newTheme.description}`);
 
       return {
         ...prev,
@@ -279,6 +291,7 @@ export function useProgressionActions({
         currentFloor: floorToRetry, // Use death floor if available
         currentRoom: 0, // Reset to room 0 (will generate room 1 enemy on combat start)
         currentEnemy: null, // Will regenerate on combat start
+        currentFloorTheme: newTheme,
         combatLog,
         gamePhase: GAME_PHASE.COMBAT,
         isPaused: false,

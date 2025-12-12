@@ -42,6 +42,7 @@ const INITIAL_STATE: GameState = {
   currentFloor: 1,
   currentRoom: 0,
   roomsPerFloor: FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR,
+  currentFloorTheme: null,
   combatLog: new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE),
   gamePhase: GAME_PHASE.MENU,
   isPaused: false,
