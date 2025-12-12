@@ -348,7 +348,7 @@ export function usePowerActions(context: PowerActivationContext) {
 
         // Apply fortune-based gold bonus
         const dropQualityBonus = getDropQualityBonus(player.currentStats.fortune);
-        const bonusGold = Math.floor(enemy.goldReward * (1 + dropQualityBonus));
+        const bonusGold = Math.floor(enemy.goldReward * dropQualityBonus);
 
         player.experience += enemy.experienceReward;
         player.gold += bonusGold;

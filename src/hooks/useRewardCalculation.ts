@@ -55,7 +55,7 @@ export function calculateRewards(
 
   // Apply fortune-based drop quality bonus on top of adjusted gold
   const dropQualityBonus = getDropQualityBonus(player.currentStats.fortune);
-  const finalGold = Math.floor(adjustedGold * (1 + dropQualityBonus));
+  const finalGold = Math.floor(adjustedGold * dropQualityBonus);
 
   // Update player experience and gold
   const updatedPlayer = {
