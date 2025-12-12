@@ -41,12 +41,12 @@ export const COMBAT_MECHANICS = {
   DEFENSE_REDUCTION_FACTOR: 1, // Changed from 2 - defense now fully subtracts (ATK - DEF)
 } as const;
 
-// Level up bonuses - balanced for meaningful progression
+// Level up bonuses - simplified stat gains
 export const LEVEL_UP_BONUSES = {
-  MAX_HEALTH: 8, // Buffed from 5 for impactful level-ups
-  ATTACK: 2, // Buffed from 1 to keep pace with enemies
-  DEFENSE: 1, // Buffed from 0 - some defense per level
-  MAX_MANA: 5, // Buffed from 3 for better ability usage
+  MAX_HEALTH: 3, // +3 Health per level
+  POWER: 1, // +1 Power per level
+  MAX_MANA: 5, // +5 Mana per level
+  // No other stat gains - real power comes from path abilities
   /** Experience required multiplier per level */
   EXP_MULTIPLIER: 1.5, // Reduced from 1.8 - faster leveling pace
 } as const;

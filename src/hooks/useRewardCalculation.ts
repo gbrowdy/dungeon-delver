@@ -109,8 +109,7 @@ export function processLevelUp(player: Player): {
     updatedPlayer.baseStats = {
       ...updatedPlayer.baseStats,
       maxHealth: updatedPlayer.baseStats.maxHealth + LEVEL_UP_BONUSES.MAX_HEALTH,
-      attack: updatedPlayer.baseStats.attack + LEVEL_UP_BONUSES.ATTACK,
-      defense: updatedPlayer.baseStats.defense + LEVEL_UP_BONUSES.DEFENSE,
+      power: updatedPlayer.baseStats.power + LEVEL_UP_BONUSES.POWER,
       maxMana: updatedPlayer.baseStats.maxMana + LEVEL_UP_BONUSES.MAX_MANA,
     };
 

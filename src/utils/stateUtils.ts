@@ -18,18 +18,12 @@ function cloneStats(stats: Stats): Stats {
   return {
     health: stats.health,
     maxHealth: stats.maxHealth,
-    attack: stats.attack,
-    defense: stats.defense,
+    power: stats.power,
+    armor: stats.armor,
     speed: stats.speed,
-    critChance: stats.critChance,
-    dodgeChance: stats.dodgeChance,
     mana: stats.mana,
     maxMana: stats.maxMana,
-    hpRegen: stats.hpRegen,
-    mpRegen: stats.mpRegen,
-    cooldownSpeed: stats.cooldownSpeed,
-    critDamage: stats.critDamage,
-    goldFind: stats.goldFind,
+    fortune: stats.fortune,
   };
 }
 

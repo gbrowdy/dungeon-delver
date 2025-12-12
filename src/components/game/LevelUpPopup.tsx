@@ -38,10 +38,9 @@ export function LevelUpPopup({ newLevel, onContinue }: LevelUpPopupProps) {
           <h3 className="pixel-text text-pixel-sm font-medium text-gold mb-3 text-center">
             Stats Increased
           </h3>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2">
             <StatGain icon="❤️" label="Max HP" value={`+${LEVEL_UP_BONUSES.MAX_HEALTH}`} />
-            <StatGain icon="⚔️" label="Attack" value={`+${LEVEL_UP_BONUSES.ATTACK}`} />
-            <StatGain icon="🛡️" label="Defense" value={`+${LEVEL_UP_BONUSES.DEFENSE}`} />
+            <StatGain icon="⚔️" label="Power" value={`+${LEVEL_UP_BONUSES.POWER}`} />
             <StatGain icon="💧" label="Max Mana" value={`+${LEVEL_UP_BONUSES.MAX_MANA}`} />
           </div>
         </div>
