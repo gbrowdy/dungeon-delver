@@ -31,6 +31,7 @@ import { generateEventId } from '@/utils/eventId';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
+import { usePathAbilities } from '@/hooks/usePathAbilities';
 import type { PauseReasonType } from '@/constants/enums';
 import type { CombatEvent } from '@/hooks/useBattleAnimation';
 
@@ -61,6 +62,9 @@ export function useCombatActions({
   playerDeathProcessedRef,
 }: UseCombatActionsParams) {
 
+  // Initialize path abilities hook for processing path ability effects
+  const { processTrigger } = usePathAbilities();
+
   /**
    * Hero attack callback - called when hero's attack timer fills
    *
@@ -70,6 +74,7 @@ export function useCombatActions({
    * - Turn-start item effects
    * - Attack damage calculation
    * - On-hit and on-crit item effects
+   * - Path ability trigger processing (on_hit, on_crit, on_kill)
    * - Enemy death processing
    * - Reward calculation (XP, gold, items)
    * - Level-up handling
@@ -119,9 +124,55 @@ export function useCombatActions({
         damageResult.isCrit,
         logs
       );
-      const playerAfterEffects = hitEffectsResult.player;
-      const finalDamage = hitEffectsResult.damage;
+      let playerAfterEffects = hitEffectsResult.player;
+      let finalDamage = hitEffectsResult.damage;
       logs = hitEffectsResult.logs;
+
+      // Process path ability triggers: on_hit
+      const onHitResult = processTrigger('on_hit', {
+        player: playerAfterEffects,
+        enemy,
+        damage: finalDamage,
+        isCrit: damageResult.isCrit,
+      });
+      playerAfterEffects = onHitResult.player;
+      finalDamage += onHitResult.damageAmount || 0;
+      logs = [...logs, ...onHitResult.logs];
+
+      // Apply reflected damage to enemy if any
+      if (onHitResult.reflectedDamage) {
+        enemy.health -= onHitResult.reflectedDamage;
+      }
+
+      // Apply status effect to enemy if triggered
+      if (onHitResult.statusToApply) {
+        enemy.statusEffects = enemy.statusEffects || [];
+        enemy.statusEffects.push(onHitResult.statusToApply);
+      }
+
+      // Process path ability triggers: on_crit (if crit occurred)
+      if (damageResult.isCrit) {
+        const onCritResult = processTrigger('on_crit', {
+          player: playerAfterEffects,
+          enemy,
+          damage: finalDamage,
+          isCrit: true,
+        });
+        playerAfterEffects = onCritResult.player;
+        finalDamage += onCritResult.damageAmount || 0;
+        logs = [...logs, ...onCritResult.logs];
+
+        // Apply reflected damage to enemy if any
+        if (onCritResult.reflectedDamage) {
+          enemy.health -= onCritResult.reflectedDamage;
+        }
+
+        // Apply status effect to enemy if triggered
+        if (onCritResult.statusToApply) {
+          enemy.statusEffects = enemy.statusEffects || [];
+          enemy.statusEffects.push(onCritResult.statusToApply);
+        }
+      }
 
       // Apply damage to enemy
       enemy.health -= finalDamage;
@@ -163,6 +214,14 @@ export function useCombatActions({
       // Use ref for atomic check to prevent race conditions from async setState
       if (enemy.health <= 0 && enemyDeathProcessedRef.current !== enemy.id) {
         enemyDeathProcessedRef.current = enemy.id;
+
+        // Process path ability triggers: on_kill
+        const onKillResult = processTrigger('on_kill', {
+          player: playerAfterEffects,
+          enemy,
+        });
+        playerAfterEffects = onKillResult.player;
+        logs = [...logs, ...onKillResult.logs];
 
         // Process enemy death (rewards, level-up, items, on-kill effects)
         const deathResult = processEnemyDeath(
@@ -214,7 +273,7 @@ export function useCombatActions({
         currentEnemy: enemy,
       };
     });
-  }, [setState, setLastCombatEvent, setDroppedItem, scheduleCombatEvent, combatSpeed, enemyDeathProcessedRef]);
+  }, [setState, setLastCombatEvent, setDroppedItem, scheduleCombatEvent, combatSpeed, enemyDeathProcessedRef, processTrigger]);
 
   /**
    * Enemy attack callback - called when enemy's attack timer fills
@@ -404,6 +463,20 @@ export function useCombatActions({
           if (onDamagedResult.additionalDamage > 0) {
             enemy.health -= onDamagedResult.additionalDamage;
           }
+
+          // Process path ability triggers: on_damaged
+          const pathOnDamagedResult = processTrigger('on_damaged', {
+            player,
+            enemy,
+            damage: enemyDamage,
+          });
+          player.currentStats = pathOnDamagedResult.player.currentStats;
+          logs.push(...pathOnDamagedResult.logs);
+
+          // Apply reflected damage to enemy if any
+          if (pathOnDamagedResult.reflectedDamage) {
+            enemy.health -= pathOnDamagedResult.reflectedDamage;
+          }
         }
       }
 
@@ -504,7 +577,7 @@ export function useCombatActions({
         currentEnemy: enemy,
       };
     });
-  }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef]);
+  }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef, processTrigger]);
 
   /**
    * Active block - reduces incoming damage but costs mana
