@@ -182,7 +182,7 @@ export function processHitEffects(
   logs: string[]
 ): HitEffectsResult {
   let updatedPlayer = deepClonePlayer(player);
-  let updatedLogs = [...logs];
+  const updatedLogs = [...logs];
   let finalDamage = baseDamage;
 
   // Process on-crit effects using centralized processor

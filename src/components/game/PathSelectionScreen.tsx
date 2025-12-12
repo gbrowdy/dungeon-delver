@@ -110,7 +110,7 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
             const typeColors = TYPE_COLORS[path.type];
 
             // Get the icon component dynamically
-            const IconComponent = (Icons as any)[path.icon] || Icons.HelpCircle;
+            const IconComponent = (Icons as Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>>)[path.icon] || Icons.HelpCircle;
 
             // Get first 3-4 abilities for preview
             const previewAbilities = path.abilities
@@ -215,7 +215,7 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
                   {/* Preview abilities list */}
                   <div className="space-y-2">
                     {previewAbilities.map((ability) => {
-                      const AbilityIcon = (Icons as any)[ability.icon] || Icons.Circle;
+                      const AbilityIcon = (Icons as Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>>)[ability.icon] || Icons.Circle;
 
                       return (
                         <div

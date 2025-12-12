@@ -198,7 +198,7 @@ export function usePathAbilities() {
     let damageAmount = 0;
     let manaRestored = 0;
     let reflectedDamage = 0;
-    let preventDeath = false;
+    const preventDeath = false;
     let statusToApply: StatusEffect | undefined;
 
     abilities.forEach(ability => {
