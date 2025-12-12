@@ -41,7 +41,7 @@ const INITIAL_STATE: GameState = {
   currentEnemy: null,
   currentFloor: 1,
   currentRoom: 0,
-  roomsPerFloor: FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR,
+  roomsPerFloor: FLOOR_CONFIG.ROOMS_PER_FLOOR[0] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR,
   currentFloorTheme: null,
   combatLog: new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE),
   gamePhase: GAME_PHASE.MENU,
@@ -103,15 +103,10 @@ export function useGameState() {
   // Wrap selectPath to also update shop
   const selectPath = useCallback((pathId: string) => {
     selectPathBase(pathId);
-    // Update shop with new path-specific gear if shop is initialized
-    if (state.shopState) {
-      shopStateManager.updateShopForPath(pathId);
-      setState((prev: GameState) => ({
-        ...prev,
-        shopState: { ...shopStateManager.shopState },
-      }));
-    }
-  }, [selectPathBase, state.shopState, shopStateManager]);
+    // Update shop with new path-specific gear
+    // Note: We don't initialize the shop here - it will be initialized with the correct
+    // path when the player first visits the shop via openShop()
+  }, [selectPathBase]);
 
   // Use the extracted room transitions hook
   const {
@@ -199,12 +194,12 @@ export function useGameState() {
       // Initialize shop if not already initialized
       let newShopState = prev.shopState;
       if (!newShopState) {
-        shopStateManager.initializeShop(
+        // initializeShop returns the new state immediately
+        newShopState = shopStateManager.initializeShop(
           prev.player.class,
           prev.player.path?.pathId || null,
           prev.currentFloor
         );
-        newShopState = shopStateManager.shopState;
       }
 
       return {
@@ -230,7 +225,7 @@ export function useGameState() {
 
       const result = shopStateManager.purchaseItem(itemId, prev.player);
 
-      if (!result.success || !result.item) {
+      if (!result.success || !result.item || !result.updatedShopState) {
         console.warn('Purchase failed:', result.message);
         return prev;
       }
@@ -249,13 +244,10 @@ export function useGameState() {
       // Recalculate stats using the centralized function
       updatedPlayer.currentStats = calculateStats(updatedPlayer);
 
-      // Update shop state to mark item as purchased
-      const updatedShopState = { ...shopStateManager.shopState };
-
       return {
         ...prev,
         player: updatedPlayer,
-        shopState: updatedShopState,
+        shopState: result.updatedShopState,
       };
     });
   }, [shopStateManager]);

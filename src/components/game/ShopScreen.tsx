@@ -52,24 +52,17 @@ const TIER_COLORS = {
   },
 };
 
-// Map Lucide icon names for items
-const ITEM_ICONS: Record<string, keyof typeof Icons> = {
-  sword: 'Sword',
-  shield: 'Shield',
-  armor: 'ShieldCheck',
-  helmet: 'Armour',
-  ring: 'CircleDot',
-  amulet: 'Gem',
-  boots: 'Footprints',
-  gloves: 'Hand',
-  weapon: 'Sword',
-  accessory: 'Sparkles',
-  default: 'Package',
-};
-
+/**
+ * Get the Lucide icon component for an item.
+ * Item data stores icon names directly as valid Lucide icon names (e.g., 'Sword', 'Axe', 'Wand2').
+ * Falls back to 'Package' if the icon doesn't exist.
+ */
 function getItemIcon(iconName: string): keyof typeof Icons {
-  const normalized = iconName.toLowerCase();
-  return ITEM_ICONS[normalized] || 'Package';
+  // Check if the icon exists in Lucide icons
+  if (iconName in Icons) {
+    return iconName as keyof typeof Icons;
+  }
+  return 'Package';
 }
 
 interface ItemCardProps {

@@ -98,6 +98,7 @@ export interface PurchaseResult {
   success: boolean;
   message: string;
   item?: Item;
+  updatedShopState?: ShopState;
 }
 
 export interface UseShopStateResult {
@@ -107,7 +108,7 @@ export interface UseShopStateResult {
     pathId: string | null,
     currentFloor: number,
     seed?: number
-  ) => void;
+  ) => ShopState;
   updateShopForPath: (pathId: string) => void;
   purchaseItem: (itemId: string, player: Player) => PurchaseResult;
   canAfford: (itemId: string, playerGold: number) => boolean;
@@ -136,6 +137,7 @@ export function useShopState(): UseShopStateResult {
 
   /**
    * Initialize shop with starter gear, class gear, and random rotation
+   * Returns the new shop state immediately (also updates internal state)
    */
   const initializeShop = useCallback(
     (
@@ -143,7 +145,7 @@ export function useShopState(): UseShopStateResult {
       pathId: string | null,
       currentFloor: number,
       seed: number = Date.now()
-    ) => {
+    ): ShopState => {
       const rng = new SeededRandom(seed);
 
       // 1. Load starter gear (always same 3 items)
@@ -173,13 +175,16 @@ export function useShopState(): UseShopStateResult {
         legendary = shuffledLegendary[0];
       }
 
-      setShopState({
+      const newState: ShopState = {
         starterGear,
         classGear,
         todaysSelection,
         legendary,
         purchasedItems: [],
-      });
+      };
+
+      setShopState(newState);
+      return newState;
     },
     []
   );
@@ -266,6 +271,7 @@ export function useShopState(): UseShopStateResult {
   /**
    * Purchase an item from the shop
    * Validates affordability, deducts gold, and adds item to player
+   * Returns the updated shop state for immediate use (avoids async state issues)
    */
   const purchaseItem = useCallback(
     (itemId: string, player: Player): PurchaseResult => {
@@ -294,11 +300,14 @@ export function useShopState(): UseShopStateResult {
         };
       }
 
-      // Mark as purchased
-      setShopState((prev) => ({
-        ...prev,
-        purchasedItems: [...prev.purchasedItems, itemId],
-      }));
+      // Build the updated shop state
+      const updatedShopState: ShopState = {
+        ...shopState,
+        purchasedItems: [...shopState.purchasedItems, itemId],
+      };
+
+      // Update internal state
+      setShopState(updatedShopState);
 
       // Convert to Item and return
       const convertedItem = convertShopItemToItem(item);
@@ -307,9 +316,10 @@ export function useShopState(): UseShopStateResult {
         success: true,
         message: `Purchased ${item.name} for ${item.price}g`,
         item: convertedItem,
+        updatedShopState,
       };
     },
-    [getItemById, shopState.purchasedItems]
+    [getItemById, shopState]
   );
 
   /**
