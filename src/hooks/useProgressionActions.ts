@@ -229,7 +229,7 @@ export function useProgressionActions({
 
       // PRESERVE on retry: gold, equipment, level, path, baseStats
       // RESET: HP/MP to max, room to 0, combat state (buffs/effects/cooldowns)
-      const player = { ...prev.player };
+      const player = deepClonePlayer(prev.player);
       // Recalculate stats to ensure equipment bonuses are applied
       player.currentStats = calculateStats(player);
       // Then restore health/mana to max
@@ -248,12 +248,20 @@ export function useProgressionActions({
       player.lastPowerUsed = null;
       player.isDying = false; // Clear dying state on retry
 
-      prev.combatLog.add(`Retrying Floor ${prev.deathFloor ?? prev.currentFloor}...`);
+      // Determine which floor to retry
+      const floorToRetry = prev.deathFloor ?? prev.currentFloor;
+
+      // Clear combat log and add retry message
+      const combatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
+      combatLog.add(`Retrying Floor ${floorToRetry}... Health and Mana restored!`);
+
       return {
         ...prev,
         player,
-        currentRoom: 0,
-        currentEnemy: null,
+        currentFloor: floorToRetry, // Use death floor if available
+        currentRoom: 0, // Reset to room 0 (will generate room 1 enemy on combat start)
+        currentEnemy: null, // Will regenerate on combat start
+        combatLog,
         gamePhase: GAME_PHASE.COMBAT,
         isPaused: false,
         pauseReason: null,
