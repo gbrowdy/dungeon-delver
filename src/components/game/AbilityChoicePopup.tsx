@@ -183,7 +183,15 @@ export function AbilityChoicePopup({
                   </div>
 
                   <div className="bg-slate-900/50 rounded p-3 border border-slate-700/30">
-                    <AbilityEffectDisplay effect={ability.effect} />
+                    {ability.effects && ability.effects.length > 0 ? (
+                      ability.effects.map((effect, index) => (
+                        <AbilityEffectDisplay key={index} effect={effect} />
+                      ))
+                    ) : (
+                      <span className="pixel-text text-pixel-2xs text-slate-400">
+                        Passive ability
+                      </span>
+                    )}
                   </div>
                 </div>
 
