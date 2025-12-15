@@ -64,20 +64,26 @@ export function usePowerActions(context: PowerActivationContext) {
       const enemy = { ...prev.currentEnemy };
       const logs: string[] = [];
 
-      // Check for combo bonus
-      let comboMultiplier = 1;
+      // Track different powers used for combo system (e.g., Elemental Convergence)
+      // If this is a different power than the last one used, increment combo count
       if (player.lastPowerUsed && player.lastPowerUsed !== power.id) {
-        // Using a different power than last time = combo!
-        player.comboCount = Math.min(COMBAT_BALANCE.MAX_COMBO_COUNT, player.comboCount + 1);
-        comboMultiplier = 1 + (player.comboCount * COMBAT_BALANCE.COMBO_DAMAGE_BONUS_PER_LEVEL);
-        if (player.comboCount >= 2) {
+        player.comboCount = (player.comboCount || 0) + 1;
+      } else if (!player.lastPowerUsed) {
+        // First power used, initialize combo count
+        player.comboCount = 1;
+      }
+      // If same power, don't increment (but don't reset either)
+
+      player.lastPowerUsed = power.id;
+
+      // Check for vanilla combo bonus (still exists, separate from path abilities)
+      let comboMultiplier = 1;
+      if (player.comboCount >= 2) {
+        comboMultiplier = 1 + (Math.min(player.comboCount - 1, COMBAT_BALANCE.MAX_COMBO_COUNT - 1) * COMBAT_BALANCE.COMBO_DAMAGE_BONUS_PER_LEVEL);
+        if (comboMultiplier > 1) {
           logs.push(`🔥 ${player.comboCount}x COMBO! (+${Math.floor((comboMultiplier - 1) * 100)}% damage)`);
         }
-      } else {
-        // Same power or first power = reset combo
-        player.comboCount = 0;
       }
-      player.lastPowerUsed = power.id;
 
       // Use mana
       player.currentStats.mana -= power.manaCost;
@@ -183,6 +189,26 @@ export function usePowerActions(context: PowerActivationContext) {
             enemy.health -= baseDamage;
             totalDamage = baseDamage;
             logs.push(`Dealt ${totalDamage} magical damage!`);
+          }
+
+          // Process path ability triggers: on_combo (for power-based combos like Elemental Convergence)
+          // This must happen AFTER base damage is calculated
+          const onComboResult = processTrigger('on_combo', {
+            player,
+            enemy,
+            damage: totalDamage,
+            powerUsed: power.id,
+          });
+          player.currentStats = onComboResult.player.currentStats;
+
+          // Apply combo bonus damage if any
+          if (onComboResult.damageAmount && onComboResult.damageAmount > 0) {
+            enemy.health -= onComboResult.damageAmount;
+            totalDamage += onComboResult.damageAmount;
+            logs.push(...onComboResult.logs);
+
+            // Reset combo count after combo triggers
+            player.comboCount = 0;
           }
 
           const damage = totalDamage;

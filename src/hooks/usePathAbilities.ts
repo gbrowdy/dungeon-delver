@@ -299,7 +299,8 @@ export function usePathAbilities() {
               break;
             }
             case 'bonus_damage': {
-              const bonusDmg = Math.floor((context.damage || 0) * (mod.value / 100));
+              // mod.value is a decimal ratio (e.g., 2.0 = 200% bonus, 0.5 = 50% bonus)
+              const bonusDmg = Math.floor((context.damage || 0) * mod.value);
               damageAmount += bonusDmg;
               logs.push(`💥 ${ability.name}: +${bonusDmg} bonus damage`);
               break;

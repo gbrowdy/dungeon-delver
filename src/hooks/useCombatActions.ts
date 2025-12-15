@@ -211,6 +211,28 @@ export function useCombatActions({
       enemy.health -= finalDamage;
       logs.push(`You deal ${finalDamage} damage to ${enemy.name}`);
 
+      // Increment combo count for attack-based combos (e.g., Holy Avenger)
+      playerAfterEffects.comboCount = (playerAfterEffects.comboCount || 0) + 1;
+
+      // Process path ability triggers: on_combo (for attack-based combos)
+      const onComboResult = processTrigger('on_combo', {
+        player: playerAfterEffects,
+        enemy,
+        damage: finalDamage,
+      });
+      playerAfterEffects = onComboResult.player;
+
+      // Apply combo bonus damage if any (damageAmount is already calculated in usePathAbilities)
+      if (onComboResult.damageAmount && onComboResult.damageAmount > 0) {
+        const comboBonusDamage = onComboResult.damageAmount;
+        enemy.health -= comboBonusDamage;
+        finalDamage += comboBonusDamage;
+        logs.push(...onComboResult.logs);
+
+        // Reset combo count after combo triggers
+        playerAfterEffects.comboCount = 0;
+      }
+
       // Thorned modifier: Reflect damage back to player
       if (enemy.modifiers?.some(m => m.id === 'thorned')) {
         const reflectDamage = Math.floor(finalDamage * 0.1);
