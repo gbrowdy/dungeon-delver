@@ -24,7 +24,7 @@ export function useRoomTransitions(
   const nextRoomRef = useRef<(() => void) | null>(null);
 
   // Initialize path abilities hook
-  const { processTrigger } = usePathAbilities();
+  const { processTrigger, getPassiveEnemyDebuffs } = usePathAbilities();
 
   const nextRoom = useCallback(() => {
     setState((prev: GameState) => {
@@ -36,6 +36,25 @@ export function useRoomTransitions(
         ? generateEnemy(prev.currentFloor, newRoom, prev.roomsPerFloor, prev.currentFloorTheme)
         : generateEnemy(prev.currentFloor, newRoom, prev.roomsPerFloor);
       const logs: string[] = [`Room ${newRoom}: A ${enemy.name} appears!`];
+
+      // Apply passive enemy debuffs from path abilities
+      if (prev.player.path) {
+        const passiveDebuffs = getPassiveEnemyDebuffs(prev.player);
+        if (passiveDebuffs.length > 0) {
+          enemy.statDebuffs = enemy.statDebuffs || [];
+          passiveDebuffs.forEach(debuff => {
+            enemy.statDebuffs!.push({
+              id: `passive_${debuff.stat}_${Date.now()}`,
+              stat: debuff.stat,
+              percentReduction: debuff.percentReduction,
+              remainingDuration: 999999, // Effectively permanent
+              sourceName: debuff.sourceName,
+            });
+            const percentDisplay = Math.round(debuff.percentReduction * 100);
+            logs.push(`🛡️ ${debuff.sourceName}: Enemy ${debuff.stat} reduced by ${percentDisplay}%`);
+          });
+        }
+      }
 
       logCombatEvent('enemy_spawn', {
         room: newRoom,
@@ -116,7 +135,7 @@ export function useRoomTransitions(
         currentEnemy: enemy,
       };
     });
-  }, [setState, processTrigger]);
+  }, [setState, processTrigger, getPassiveEnemyDebuffs]);
 
   // Keep nextRoomRef updated for useEffect without dependency issues (Issue 14 fix)
   useEffect(() => {

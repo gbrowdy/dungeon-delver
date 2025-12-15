@@ -484,6 +484,24 @@ export function usePathAbilities() {
     return immunities;
   }, [hasAbility]);
 
+  /**
+   * Get passive enemy debuffs from player's path abilities
+   * Returns debuffs that should be applied to enemies when combat starts
+   */
+  const getPassiveEnemyDebuffs = useCallback((player: Player): { stat: 'speed' | 'power' | 'armor', percentReduction: number, sourceName: string }[] => {
+    const debuffs: { stat: 'speed' | 'power' | 'armor', percentReduction: number, sourceName: string }[] = [];
+
+    if (hasAbility(player, 'intimidating_presence')) {
+      debuffs.push({
+        stat: 'speed',
+        percentReduction: 0.10, // 10% slower
+        sourceName: 'Intimidating Presence',
+      });
+    }
+
+    return debuffs;
+  }, [hasAbility]);
+
   return {
     getPassiveStatBonuses,
     processTrigger,
@@ -491,6 +509,7 @@ export function usePathAbilities() {
     getActiveAbilities,
     getPowerModifiers,
     getStatusImmunities,
+    getPassiveEnemyDebuffs,
   };
 }
 
