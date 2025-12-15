@@ -199,6 +199,7 @@ export interface Player {
   isDying?: boolean; // True when health <= 0, awaiting death animation
   path: PlayerPath | null; // null until level 2
   pendingAbilityChoice: boolean; // true when level-up needs ability selection
+  enemyAttackCounter?: number; // Counter for Uncanny Dodge ability
 }
 
 export interface GameState {

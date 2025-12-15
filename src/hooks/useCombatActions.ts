@@ -70,7 +70,7 @@ export function useCombatActions({
 }: UseCombatActionsParams) {
 
   // Initialize path abilities hook for processing path ability effects
-  const { processTrigger } = usePathAbilities();
+  const { processTrigger, hasAbility } = usePathAbilities();
 
   /**
    * Hero attack callback - called when hero's attack timer fills
@@ -528,10 +528,28 @@ export function useCombatActions({
       } else {
         // Regular attack
         const playerDodgeChance = getDodgeChance(player.currentStats.fortune);
-        const playerDodged = !enemyCrit && Math.random() < playerDodgeChance;
+        let playerDodged = !enemyCrit && Math.random() < playerDodgeChance;
+
+        // Uncanny Dodge: Every 5th enemy attack is auto-dodged
+        let uncannyDodgeTriggered = false;
+        if (hasAbility(player, 'rogue_duelist_uncanny_dodge')) {
+          // Increment counter
+          player.enemyAttackCounter = (player.enemyAttackCounter || 0) + 1;
+
+          // Check if counter reached 5
+          if (player.enemyAttackCounter >= 5) {
+            playerDodged = true;
+            uncannyDodgeTriggered = true;
+            player.enemyAttackCounter = 0;
+          }
+        }
 
         if (playerDodged) {
-          logs.push(`💨 You dodged ${enemy.name}'s attack!`);
+          if (uncannyDodgeTriggered) {
+            logs.push(`⚔️ Uncanny Dodge! You automatically evade ${enemy.name}'s attack!`);
+          } else {
+            logs.push(`💨 You dodged ${enemy.name}'s attack!`);
+          }
 
           // Process path ability triggers: on_dodge
           const pathOnDodgeResult = processTrigger('on_dodge', {
@@ -722,7 +740,7 @@ export function useCombatActions({
         currentEnemy: enemy,
       };
     });
-  }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef, processTrigger]);
+  }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef, processTrigger, hasAbility]);
 
   /**
    * Active block - reduces incoming damage but costs mana
