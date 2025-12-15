@@ -338,6 +338,8 @@ export function usePowerActions(context: PowerActivationContext) {
         case 'debuff': {
           // Control powers - apply status effects to enemy
           if (power.category === 'control') {
+            let statusApplied = false;
+
             if (power.id === 'frost-nova') {
               // Deal damage first
               const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
@@ -354,6 +356,7 @@ export function usePowerActions(context: PowerActivationContext) {
                 icon: '❄️',
               });
               logs.push(`❄️ Enemy slowed by 30% for 4 turns!`);
+              statusApplied = true;
             } else if (power.id === 'stunning-blow') {
               // Deal damage first
               const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
@@ -371,8 +374,40 @@ export function usePowerActions(context: PowerActivationContext) {
                   icon: '💫',
                 });
                 logs.push(`💫 Enemy stunned for 2 turns!`);
+                statusApplied = true;
               } else {
                 logs.push(`Stun failed!`);
+              }
+            }
+
+            // Process path ability triggers: on_status_inflict (when status was successfully applied)
+            if (statusApplied) {
+              const onStatusInflictResult = processTrigger('on_status_inflict', {
+                player,
+                enemy,
+              });
+              player.currentStats = onStatusInflictResult.player.currentStats;
+
+              // Apply any heal/damage/mana from on_status_inflict
+              if (onStatusInflictResult.healAmount) {
+                player.currentStats.health = Math.min(
+                  player.currentStats.maxHealth,
+                  player.currentStats.health + onStatusInflictResult.healAmount
+                );
+              }
+              if (onStatusInflictResult.manaRestored) {
+                player.currentStats.mana = Math.min(
+                  player.currentStats.maxMana,
+                  player.currentStats.mana + onStatusInflictResult.manaRestored
+                );
+              }
+
+              // Apply results to enemy
+              applyTriggerResultToEnemy(enemy, onStatusInflictResult);
+
+              // Only add logs if there were actual effects
+              if (onStatusInflictResult.logs.length > 0) {
+                logs.push(...onStatusInflictResult.logs);
               }
             }
           }

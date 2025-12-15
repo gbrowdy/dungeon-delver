@@ -164,6 +164,27 @@ export function useCombatActions({
       if (onHitResult.statusToApply) {
         enemy.statusEffects = enemy.statusEffects || [];
         enemy.statusEffects.push(onHitResult.statusToApply);
+
+        // Process path ability triggers: on_status_inflict
+        const onStatusInflictResult = processTrigger('on_status_inflict', {
+          player: playerAfterEffects,
+          enemy,
+        });
+        playerAfterEffects = onStatusInflictResult.player;
+        finalDamage += onStatusInflictResult.damageAmount || 0;
+
+        // Apply reflected damage to enemy if any
+        if (onStatusInflictResult.reflectedDamage) {
+          enemy.health -= onStatusInflictResult.reflectedDamage;
+        }
+
+        // Apply results to enemy
+        applyTriggerResultToEnemy(enemy, onStatusInflictResult);
+
+        // Only add logs if there were actual effects
+        if (onStatusInflictResult.logs.length > 0) {
+          logs = [...logs, ...onStatusInflictResult.logs];
+        }
       }
 
       // Apply stat debuffs to enemy if triggered
@@ -204,6 +225,27 @@ export function useCombatActions({
         if (onCritResult.statusToApply) {
           enemy.statusEffects = enemy.statusEffects || [];
           enemy.statusEffects.push(onCritResult.statusToApply);
+
+          // Process path ability triggers: on_status_inflict
+          const onStatusInflictResult = processTrigger('on_status_inflict', {
+            player: playerAfterEffects,
+            enemy,
+          });
+          playerAfterEffects = onStatusInflictResult.player;
+          finalDamage += onStatusInflictResult.damageAmount || 0;
+
+          // Apply reflected damage to enemy if any
+          if (onStatusInflictResult.reflectedDamage) {
+            enemy.health -= onStatusInflictResult.reflectedDamage;
+          }
+
+          // Apply results to enemy
+          applyTriggerResultToEnemy(enemy, onStatusInflictResult);
+
+          // Only add logs if there were actual effects
+          if (onStatusInflictResult.logs.length > 0) {
+            logs = [...logs, ...onStatusInflictResult.logs];
+          }
         }
       }
 
