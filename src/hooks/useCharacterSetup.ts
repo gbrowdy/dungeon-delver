@@ -90,6 +90,13 @@ export function useCharacterSetup(
       // upgradePurchases removed - old upgrade system deprecated
       path: null, // No path until level 2
       pendingAbilityChoice: false, // No pending ability choice at start
+      // Path ability tracking fields (initialized to sensible defaults)
+      enemyAttackCounter: 0, // For Uncanny Dodge ability
+      usedCombatAbilities: [], // Abilities used this combat (reset per room)
+      usedFloorAbilities: [], // Abilities used this floor (reset per floor)
+      shield: 0, // Current shield amount
+      shieldMaxDuration: 0, // Max shield duration in seconds
+      shieldRemainingDuration: 0, // Remaining shield duration in seconds
     };
 
     logStateTransition(GAME_PHASE.CLASS_SELECT, GAME_PHASE.COMBAT, `select_class:${characterClass}`);

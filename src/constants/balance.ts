@@ -32,6 +32,9 @@ export const COMBAT_BALANCE = {
   DEFAULT_POISON_DURATION: 3,
   DEFAULT_STUN_DURATION: 1,
 
+  // Permanent effects (effectively infinite duration/cooldown)
+  PERMANENT_DURATION: 999999, // Used for auras and once-per-combat/floor abilities
+
   // Enemy mechanics
   SHIELDED_DEFENSE_MULTIPLIER: 1.5, // Shielded enemies have 1.5x defense
   MULTI_HIT_DAMAGE_MODIFIER: 0.7, // Multi-hit does 70% damage per hit

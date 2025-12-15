@@ -42,7 +42,7 @@ export function usePowerActions(context: PowerActivationContext) {
     combatSpeed,
   } = context;
 
-  const { processTrigger } = usePathAbilities();
+  const { processTrigger, hasAbility } = usePathAbilities();
 
   const usePower = useCallback((powerId: string) => {
     setState((prev: GameState) => {
@@ -56,8 +56,38 @@ export function usePowerActions(context: PowerActivationContext) {
       const power = prev.player.powers[powerIndex];
       if (!power) return prev;
 
-      if (power.currentCooldown > 0 || prev.player.currentStats.mana < power.manaCost) {
-        return prev;
+      // Check if player has Reckless Fury - uses HP instead of mana
+      const useHpForMana = hasAbility(prev.player, 'reckless_fury');
+
+      if (power.currentCooldown > 0) {
+        // Power is on cooldown - provide feedback
+        const newLog = `⏳ ${power.name} is on cooldown (${power.currentCooldown.toFixed(1)}s)`;
+        return {
+          ...prev,
+          combatLog: prev.combatLog.add(newLog),
+        };
+      }
+
+      // Check resource cost (HP or Mana depending on Reckless Fury)
+      if (useHpForMana) {
+        const hpCost = Math.floor(power.manaCost * 0.5);
+        // Need at least hpCost + 1 HP to use power (can't kill yourself)
+        if (prev.player.currentStats.health <= hpCost) {
+          const newLog = `❌ Not enough HP for ${power.name} (need ${hpCost + 1} HP)`;
+          return {
+            ...prev,
+            combatLog: prev.combatLog.add(newLog),
+          };
+        }
+      } else {
+        // Normal mana check
+        if (prev.player.currentStats.mana < power.manaCost) {
+          const newLog = `❌ Not enough mana for ${power.name} (${prev.player.currentStats.mana}/${power.manaCost})`;
+          return {
+            ...prev,
+            combatLog: prev.combatLog.add(newLog),
+          };
+        }
       }
 
       const player = { ...prev.player };
@@ -87,8 +117,14 @@ export function usePowerActions(context: PowerActivationContext) {
         }
       }
 
-      // Use mana
-      player.currentStats.mana -= power.manaCost;
+      // Deduct resource cost (HP or Mana depending on Reckless Fury)
+      if (useHpForMana) {
+        const hpCost = Math.floor(power.manaCost * 0.5);
+        player.currentStats.health -= hpCost;
+        logs.push(`💔 Reckless Fury: Paid ${hpCost} HP for ${power.name}`);
+      } else {
+        player.currentStats.mana -= power.manaCost;
+      }
 
       // Set cooldown - subtract one tick worth immediately so the countdown starts right away
       // This prevents the visual "pause" before the cooldown bar starts moving
@@ -451,7 +487,7 @@ export function usePowerActions(context: PowerActivationContext) {
         currentEnemy: enemy,
       };
     });
-  }, [setState, setLastCombatEvent, scheduleCombatEvent, enemyDeathProcessedRef, processTrigger]);
+  }, [setState, setLastCombatEvent, scheduleCombatEvent, enemyDeathProcessedRef, processTrigger, hasAbility]);
 
   return {
     usePower,

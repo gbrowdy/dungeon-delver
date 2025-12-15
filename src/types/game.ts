@@ -29,7 +29,7 @@ export interface ActiveBuff {
   name: string;
   stat: 'power' | 'armor' | 'speed' | 'fortune';
   multiplier: number; // e.g., 1.5 for +50%
-  remainingTurns: number;
+  remainingTurns: number; // Legacy name - now stores seconds (time-based), not turns
   icon: string;
 }
 
@@ -199,6 +199,12 @@ export interface Player {
   isDying?: boolean; // True when health <= 0, awaiting death animation
   path: PlayerPath | null; // null until level 2
   pendingAbilityChoice: boolean; // true when level-up needs ability selection
+  enemyAttackCounter?: number; // Counter for Uncanny Dodge ability
+  usedCombatAbilities?: string[]; // Abilities that have been used this combat (reset on combat end)
+  usedFloorAbilities?: string[]; // Abilities that have been used this floor (reset on floor change)
+  shield?: number; // Current shield amount (absorbs damage before HP)
+  shieldMaxDuration?: number; // Max duration in seconds (for display)
+  shieldRemainingDuration?: number; // Remaining duration in seconds
 }
 
 export interface GameState {

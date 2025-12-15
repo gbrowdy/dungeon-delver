@@ -260,4 +260,92 @@ export function useCombatTimers(
 
     return () => clearInterval(interval);
   }, [enabled, setState]);
+
+  // Shield duration tick-down - expires shields over time
+  // Also ticks down buff durations (time-based, not turn-based)
+  useEffect(() => {
+    if (!enabled) return;
+
+    const SHIELD_TICK_INTERVAL = COMBAT_BALANCE.COOLDOWN_TICK_INTERVAL; // 100ms
+
+    const interval = setInterval(() => {
+      setState((prev: GameState) => {
+        if (!prev.player || prev.isPaused) return prev;
+
+        const player = prev.player;
+        const logs: string[] = [];
+        let needsUpdate = false;
+
+        // Calculate tick amount in seconds
+        const tickSeconds = (SHIELD_TICK_INTERVAL / 1000) * prev.combatSpeed;
+
+        const updatedPlayer = deepClonePlayer(player);
+
+        // Validate shield state consistency
+        const hasShield = player.shield && player.shield > 0;
+        const hasDuration = player.shieldRemainingDuration && player.shieldRemainingDuration > 0;
+        if (hasShield !== hasDuration) {
+          console.warn('[useCombatTimers] Inconsistent shield state:', {
+            shield: player.shield,
+            duration: player.shieldRemainingDuration
+          });
+          // Normalize state: if shield exists without duration, clear it
+          if (hasShield && !hasDuration) {
+            updatedPlayer.shield = 0;
+            logs.push('🛡️ Shield cleared (no duration)');
+            needsUpdate = true;
+          }
+        }
+
+        // Tick down shield duration
+        if (player.shieldRemainingDuration && player.shieldRemainingDuration > 0) {
+          updatedPlayer.shieldRemainingDuration -= tickSeconds;
+          needsUpdate = true;
+
+          if (updatedPlayer.shieldRemainingDuration <= 0) {
+            updatedPlayer.shield = 0;
+            updatedPlayer.shieldRemainingDuration = 0;
+            logs.push('🛡️ Shield expired');
+          }
+        }
+
+        // Tick down buff durations (time-based, not turn-based)
+        // NOTE: ActiveBuff.remainingTurns is a legacy field name - it now stores seconds, not turns.
+        // Renaming would require changes across 12+ files. The name is kept for backwards compatibility.
+        if (player.activeBuffs && player.activeBuffs.length > 0) {
+          const expiredBuffs: string[] = [];
+
+          updatedPlayer.activeBuffs = player.activeBuffs.map(buff => {
+            const newRemaining = buff.remainingTurns - tickSeconds;
+            if (newRemaining <= 0) {
+              expiredBuffs.push(buff.name);
+            }
+            return { ...buff, remainingTurns: newRemaining };
+          }).filter(buff => buff.remainingTurns > 0);
+
+          // Always update when buffs are ticking (so UI shows countdown)
+          needsUpdate = true;
+
+          if (expiredBuffs.length > 0) {
+            expiredBuffs.forEach(buffName => {
+              logs.push(`⏰ ${buffName} buff expired`);
+            });
+          }
+        }
+
+        // Only update if something changed
+        if (!needsUpdate) return prev;
+
+        // Add logs to combat log
+        logs.forEach(log => prev.combatLog.add(log));
+
+        return {
+          ...prev,
+          player: updatedPlayer,
+        };
+      });
+    }, SHIELD_TICK_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [enabled, setState]);
 }

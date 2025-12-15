@@ -87,11 +87,8 @@ export function processTurnStartEffects(
     return { ...effect, remainingTurns: effect.remainingTurns - 1 };
   }).filter((effect: StatusEffect) => effect.remainingTurns > 0);
 
-  // Tick down buff durations
-  updatedPlayer.activeBuffs = updatedPlayer.activeBuffs.map((buff: ActiveBuff) => ({
-    ...buff,
-    remainingTurns: buff.remainingTurns - 1,
-  })).filter((buff: ActiveBuff) => buff.remainingTurns > 0);
+  // NOTE: Buff durations are now ticked time-based in useCombatTimers.ts (not turn-based)
+  // Active buffs are still applied to stats below via calculateStats()
 
   // Trigger turn_start item effects
   updatedPlayer.equippedItems.forEach((item: Item) => {
@@ -338,6 +335,53 @@ export function getEffectiveEnemyStat(
   });
 
   return Math.floor(baseValue * multiplier);
+}
+
+/**
+ * Result of applying shield absorption
+ */
+export interface ShieldAbsorptionResult {
+  remainingDamage: number;
+  shieldAbsorbed: number;
+  shieldBroken: boolean;
+  newShieldValue: number;
+  newShieldDuration: number;
+}
+
+/**
+ * Apply shield absorption to incoming damage.
+ * Shield absorbs damage before HP, and breaks when depleted.
+ *
+ * @param player - Current player state (with shield properties)
+ * @param incomingDamage - Amount of damage to absorb
+ * @returns Shield absorption result with remaining damage and updated shield state
+ */
+export function applyShieldAbsorption(
+  player: Player,
+  incomingDamage: number
+): ShieldAbsorptionResult {
+  if (!player.shield || player.shield <= 0) {
+    return {
+      remainingDamage: incomingDamage,
+      shieldAbsorbed: 0,
+      shieldBroken: false,
+      newShieldValue: 0,
+      newShieldDuration: player.shieldRemainingDuration ?? 0,
+    };
+  }
+
+  const shieldAbsorbed = Math.min(player.shield, incomingDamage);
+  const newShieldValue = player.shield - shieldAbsorbed;
+  const remainingDamage = incomingDamage - shieldAbsorbed;
+  const shieldBroken = newShieldValue <= 0;
+
+  return {
+    remainingDamage,
+    shieldAbsorbed,
+    shieldBroken,
+    newShieldValue: shieldBroken ? 0 : newShieldValue,
+    newShieldDuration: shieldBroken ? 0 : (player.shieldRemainingDuration ?? 0),
+  };
 }
 
 /**

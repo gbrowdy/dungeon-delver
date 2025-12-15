@@ -80,7 +80,11 @@ export function usePathAbilities() {
       ...ROGUE_PATHS,
       ...PALADIN_PATHS,
     ];
-    return allPaths.find(p => p.id === pathId) || null;
+    const found = allPaths.find(p => p.id === pathId);
+    if (!found) {
+      console.warn(`[usePathAbilities] Path not found: "${pathId}". Available paths: ${allPaths.map(p => p.id).join(', ')}`);
+    }
+    return found || null;
   }, []);
 
   /**
@@ -122,8 +126,10 @@ export function usePathAbilities() {
       case 'combo_count': {
         return player.comboCount >= condition.value;
       }
-      default:
+      default: {
+        console.error(`[usePathAbilities] Unknown condition type: "${(condition as PathAbilityCondition).type}". Condition will be treated as not met.`);
         return false;
+      }
     }
   }, []);
 
@@ -134,12 +140,25 @@ export function usePathAbilities() {
     if (!player.path) return [];
 
     const pathDef = getPathById(player.path.pathId);
-    if (!pathDef) return [];
+    if (!pathDef) {
+      console.error(`[usePathAbilities] Cannot get abilities: path "${player.path.pathId}" not found`);
+      return [];
+    }
 
     // Filter abilities that the player has chosen
-    return pathDef.abilities.filter(ability =>
+    const abilities = pathDef.abilities.filter(ability =>
       player.path!.abilities.includes(ability.id)
     );
+
+    // Warn if player has abilities that don't exist in path definition
+    const orphanedAbilities = player.path.abilities.filter(
+      id => !pathDef.abilities.some(a => a.id === id)
+    );
+    if (orphanedAbilities.length > 0) {
+      console.warn(`[usePathAbilities] Player has abilities not in path definition: ${orphanedAbilities.join(', ')}`);
+    }
+
+    return abilities;
   }, [getPathById]);
 
   /**
@@ -390,7 +409,11 @@ export function usePathAbilities() {
 
         // Process shield
         if (effect.shield) {
-          // Shield would need to be implemented in the combat system
+          updatedPlayer.shield = (updatedPlayer.shield || 0) + effect.shield;
+          // Use max of current and new duration to prevent shorter shields from reducing duration
+          const newDuration = effect.duration || 5;
+          updatedPlayer.shieldRemainingDuration = Math.max(updatedPlayer.shieldRemainingDuration || 0, newDuration);
+          updatedPlayer.shieldMaxDuration = Math.max(updatedPlayer.shieldMaxDuration || 0, newDuration);
           logs.push(`🛡️ ${ability.name}: Gained ${effect.shield} shield`);
         }
       });
@@ -470,12 +493,46 @@ export function usePathAbilities() {
     };
   }, [getActiveAbilities]);
 
+  /**
+   * Get status immunities from player's path abilities
+   * Returns an array of status effect types the player is immune to
+   */
+  const getStatusImmunities = useCallback((player: Player): StatusEffect['type'][] => {
+    const immunities: StatusEffect['type'][] = [];
+
+    if (hasAbility(player, 'immovable_object')) {
+      immunities.push('stun', 'slow');
+    }
+
+    return immunities;
+  }, [hasAbility]);
+
+  /**
+   * Get passive enemy debuffs from player's path abilities
+   * Returns debuffs that should be applied to enemies when combat starts
+   */
+  const getPassiveEnemyDebuffs = useCallback((player: Player): { stat: 'speed' | 'power' | 'armor', percentReduction: number, sourceName: string }[] => {
+    const debuffs: { stat: 'speed' | 'power' | 'armor', percentReduction: number, sourceName: string }[] = [];
+
+    if (hasAbility(player, 'intimidating_presence')) {
+      debuffs.push({
+        stat: 'speed',
+        percentReduction: 0.10, // 10% slower
+        sourceName: 'Intimidating Presence',
+      });
+    }
+
+    return debuffs;
+  }, [hasAbility]);
+
   return {
     getPassiveStatBonuses,
     processTrigger,
     hasAbility,
     getActiveAbilities,
     getPowerModifiers,
+    getStatusImmunities,
+    getPassiveEnemyDebuffs,
   };
 }
 
@@ -492,7 +549,9 @@ function getStatusIcon(type: 'poison' | 'stun' | 'slow' | 'bleed'): string {
       return '🐌';
     case 'bleed':
       return '🩸';
-    default:
+    default: {
+      console.warn(`[usePathAbilities] Unknown status type: "${type}"`);
       return '❓';
+    }
   }
 }

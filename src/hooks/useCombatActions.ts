@@ -12,6 +12,7 @@ import {
   processEnemyDeath,
   getEffectiveEnemyStat,
   applyTriggerResultToEnemy,
+  applyShieldAbsorption,
 } from '@/hooks/combatActionHelpers';
 import {
   COMBAT_MECHANICS,
@@ -70,7 +71,7 @@ export function useCombatActions({
 }: UseCombatActionsParams) {
 
   // Initialize path abilities hook for processing path ability effects
-  const { processTrigger } = usePathAbilities();
+  const { processTrigger, hasAbility, getStatusImmunities } = usePathAbilities();
 
   /**
    * Hero attack callback - called when hero's attack timer fills
@@ -471,7 +472,24 @@ export function useCombatActions({
                 logs.push(...pathOnBlockResult.logs);
                 applyTriggerResultToEnemy(enemy, pathOnBlockResult);
               }
-              player.currentStats.health -= totalDamage;
+
+              // Shield absorbs damage first
+              const shieldResult = applyShieldAbsorption(player, totalDamage);
+              player.shield = shieldResult.newShieldValue;
+              player.shieldRemainingDuration = shieldResult.newShieldDuration;
+
+              if (shieldResult.shieldAbsorbed > 0) {
+                logs.push(`🛡️ Shield absorbs ${shieldResult.shieldAbsorbed} damage!`);
+              }
+              if (shieldResult.shieldBroken) {
+                logs.push(`💔 Shield broken!`);
+              }
+
+              // Only apply remaining damage to HP
+              if (shieldResult.remainingDamage > 0) {
+                player.currentStats.health -= shieldResult.remainingDamage;
+              }
+
               logs.push(`${ability.icon} ${hits} hits deal ${totalDamage} total damage!`);
               enemyDamage = totalDamage;
             }
@@ -490,13 +508,18 @@ export function useCombatActions({
             break;
           }
           case 'stun': {
-            player.statusEffects.push({
-              id: `stun-${Date.now()}`,
-              type: STATUS_EFFECT_TYPE.STUN,
-              remainingTurns: ability.value,
-              icon: '💫',
-            });
-            logs.push(`💫 You are stunned for ${ability.value} turn(s)!`);
+            const immunities = getStatusImmunities(player);
+            if (immunities.includes('stun')) {
+              logs.push(`🛡️ Immovable Object! You resist the stun!`);
+            } else {
+              player.statusEffects.push({
+                id: `stun-${Date.now()}`,
+                type: STATUS_EFFECT_TYPE.STUN,
+                remainingTurns: ability.value,
+                icon: '💫',
+              });
+              logs.push(`💫 You are stunned for ${ability.value} turn(s)!`);
+            }
             break;
           }
           case 'heal': {
@@ -528,10 +551,28 @@ export function useCombatActions({
       } else {
         // Regular attack
         const playerDodgeChance = getDodgeChance(player.currentStats.fortune);
-        const playerDodged = !enemyCrit && Math.random() < playerDodgeChance;
+        let playerDodged = !enemyCrit && Math.random() < playerDodgeChance;
+
+        // Uncanny Dodge: Every 5th enemy attack is auto-dodged
+        let uncannyDodgeTriggered = false;
+        if (hasAbility(player, 'rogue_duelist_uncanny_dodge')) {
+          // Increment counter
+          player.enemyAttackCounter = (player.enemyAttackCounter || 0) + 1;
+
+          // Check if counter reached 5
+          if (player.enemyAttackCounter >= 5) {
+            playerDodged = true;
+            uncannyDodgeTriggered = true;
+            player.enemyAttackCounter = 0;
+          }
+        }
 
         if (playerDodged) {
-          logs.push(`💨 You dodged ${enemy.name}'s attack!`);
+          if (uncannyDodgeTriggered) {
+            logs.push(`⚔️ Uncanny Dodge! You automatically evade ${enemy.name}'s attack!`);
+          } else {
+            logs.push(`💨 You dodged ${enemy.name}'s attack!`);
+          }
 
           // Process path ability triggers: on_dodge
           const pathOnDodgeResult = processTrigger('on_dodge', {
@@ -569,8 +610,23 @@ export function useCombatActions({
             applyTriggerResultToEnemy(enemy, pathOnBlockResult);
           }
 
-          player.currentStats.health -= enemyDamage;
-          logs.push(`${enemy.name} deals ${enemyDamage} damage to you`);
+          // Shield absorbs damage first
+          const shieldResult = applyShieldAbsorption(player, enemyDamage);
+          player.shield = shieldResult.newShieldValue;
+          player.shieldRemainingDuration = shieldResult.newShieldDuration;
+
+          if (shieldResult.shieldAbsorbed > 0) {
+            logs.push(`🛡️ Shield absorbs ${shieldResult.shieldAbsorbed} damage!`);
+          }
+          if (shieldResult.shieldBroken) {
+            logs.push(`💔 Shield broken!`);
+          }
+
+          // Only apply remaining damage to HP
+          if (shieldResult.remainingDamage > 0) {
+            player.currentStats.health -= shieldResult.remainingDamage;
+            logs.push(`${enemy.name} deals ${shieldResult.remainingDamage} damage to you`);
+          }
 
           // Vampiric modifier: Heal enemy based on damage dealt
           if (enemy.modifiers?.some(m => m.id === 'vampiric')) {
@@ -681,6 +737,55 @@ export function useCombatActions({
       // Check player death - set isDying flag and let animation complete before transition
       // Use ref for atomic check to prevent race conditions from async setState
       if (playerWillDie && !playerDeathProcessedRef.current) {
+        // Check for undying_fury (once per combat)
+        if (hasAbility(player, 'undying_fury')) {
+          const usedCombat = player.usedCombatAbilities || [];
+          if (!usedCombat.includes('undying_fury')) {
+            player.currentStats.health = 1;
+            player.usedCombatAbilities = [...usedCombat, 'undying_fury'];
+            // Apply 50% power and speed buff for 5 seconds
+            player.activeBuffs = player.activeBuffs || [];
+            player.activeBuffs.push({
+              id: `undying_fury_power_${Date.now()}`,
+              name: 'Undying Fury',
+              stat: 'power',
+              multiplier: 1.5,
+              remainingTurns: 5,
+              icon: '🔥',
+            });
+            player.activeBuffs.push({
+              id: `undying_fury_speed_${Date.now()}`,
+              name: 'Undying Fury',
+              stat: 'speed',
+              multiplier: 1.5,
+              remainingTurns: 5,
+              icon: '🔥',
+            });
+            logs.push(`🔥 Undying Fury! You refuse to fall!`);
+            // Continue combat, don't die
+            prev.combatLog.add(logs);
+            return { ...prev, player, currentEnemy: enemy };
+          } else {
+            logs.push(`💀 Undying Fury already used this combat!`);
+          }
+        }
+
+        // Check for immortal_guardian (once per floor)
+        if (hasAbility(player, 'immortal_guardian')) {
+          const usedFloor = player.usedFloorAbilities || [];
+          if (!usedFloor.includes('immortal_guardian')) {
+            const healAmount = Math.floor(player.currentStats.maxHealth * 0.4);
+            player.currentStats.health = healAmount;
+            player.usedFloorAbilities = [...usedFloor, 'immortal_guardian'];
+            logs.push(`🛡️ Immortal Guardian! You are restored to ${healAmount} HP!`);
+            // Continue combat, don't die
+            prev.combatLog.add(logs);
+            return { ...prev, player, currentEnemy: enemy };
+          } else {
+            logs.push(`💀 Immortal Guardian already used this floor!`);
+          }
+        }
+
         // Check for ON_LETHAL_DAMAGE item effects (survival effects like Immortal Plate)
         const lethalResult = processItemEffects({
           trigger: ITEM_EFFECT_TRIGGER.ON_LETHAL_DAMAGE,
@@ -722,7 +827,7 @@ export function useCombatActions({
         currentEnemy: enemy,
       };
     });
-  }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef, processTrigger]);
+  }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef, processTrigger, hasAbility, getStatusImmunities]);
 
   /**
    * Active block - reduces incoming damage but costs mana
