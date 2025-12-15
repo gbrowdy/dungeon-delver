@@ -164,6 +164,27 @@ export function useCombatActions({
       if (onHitResult.statusToApply) {
         enemy.statusEffects = enemy.statusEffects || [];
         enemy.statusEffects.push(onHitResult.statusToApply);
+
+        // Process path ability triggers: on_status_inflict
+        const onStatusInflictResult = processTrigger('on_status_inflict', {
+          player: playerAfterEffects,
+          enemy,
+        });
+        playerAfterEffects = onStatusInflictResult.player;
+        finalDamage += onStatusInflictResult.damageAmount || 0;
+
+        // Apply reflected damage to enemy if any
+        if (onStatusInflictResult.reflectedDamage) {
+          enemy.health -= onStatusInflictResult.reflectedDamage;
+        }
+
+        // Apply results to enemy
+        applyTriggerResultToEnemy(enemy, onStatusInflictResult);
+
+        // Only add logs if there were actual effects
+        if (onStatusInflictResult.logs.length > 0) {
+          logs = [...logs, ...onStatusInflictResult.logs];
+        }
       }
 
       // Apply stat debuffs to enemy if triggered
@@ -204,12 +225,54 @@ export function useCombatActions({
         if (onCritResult.statusToApply) {
           enemy.statusEffects = enemy.statusEffects || [];
           enemy.statusEffects.push(onCritResult.statusToApply);
+
+          // Process path ability triggers: on_status_inflict
+          const onStatusInflictResult = processTrigger('on_status_inflict', {
+            player: playerAfterEffects,
+            enemy,
+          });
+          playerAfterEffects = onStatusInflictResult.player;
+          finalDamage += onStatusInflictResult.damageAmount || 0;
+
+          // Apply reflected damage to enemy if any
+          if (onStatusInflictResult.reflectedDamage) {
+            enemy.health -= onStatusInflictResult.reflectedDamage;
+          }
+
+          // Apply results to enemy
+          applyTriggerResultToEnemy(enemy, onStatusInflictResult);
+
+          // Only add logs if there were actual effects
+          if (onStatusInflictResult.logs.length > 0) {
+            logs = [...logs, ...onStatusInflictResult.logs];
+          }
         }
       }
 
       // Apply damage to enemy
       enemy.health -= finalDamage;
       logs.push(`You deal ${finalDamage} damage to ${enemy.name}`);
+
+      // Increment combo count for attack-based combos (e.g., Holy Avenger)
+      playerAfterEffects.comboCount = (playerAfterEffects.comboCount || 0) + 1;
+
+      // Process path ability triggers: on_combo (for attack-based combos)
+      const onComboResult = processTrigger('on_combo', {
+        player: playerAfterEffects,
+        enemy,
+        damage: finalDamage,
+      });
+      playerAfterEffects = onComboResult.player;
+
+      // Apply combo bonus damage if any (damageAmount is already calculated in usePathAbilities)
+      if (onComboResult.damageAmount && onComboResult.damageAmount > 0) {
+        enemy.health -= onComboResult.damageAmount;
+        finalDamage += onComboResult.damageAmount;
+        logs.push(...onComboResult.logs);
+
+        // Reset combo count after combo triggers
+        playerAfterEffects.comboCount = 0;
+      }
 
       // Thorned modifier: Reflect damage back to player
       if (enemy.modifiers?.some(m => m.id === 'thorned')) {
@@ -543,6 +606,21 @@ export function useCombatActions({
           // Apply reflected damage to enemy if any
           if (pathOnDamagedResult.reflectedDamage) {
             enemy.health -= pathOnDamagedResult.reflectedDamage;
+          }
+
+          // Process path ability triggers: on_low_hp
+          // This fires when HP is low (checked via hp_below condition in usePathAbilities)
+          const pathOnLowHpResult = processTrigger('on_low_hp', {
+            player,
+            enemy,
+            damage: enemyDamage,
+          });
+          player.currentStats = pathOnLowHpResult.player.currentStats;
+          logs.push(...pathOnLowHpResult.logs);
+
+          // Apply reflected damage to enemy if any
+          if (pathOnLowHpResult.reflectedDamage) {
+            enemy.health -= pathOnLowHpResult.reflectedDamage;
           }
         }
       }

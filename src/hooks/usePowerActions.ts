@@ -64,20 +64,28 @@ export function usePowerActions(context: PowerActivationContext) {
       const enemy = { ...prev.currentEnemy };
       const logs: string[] = [];
 
-      // Check for combo bonus
-      let comboMultiplier = 1;
+      // Track different powers used for combo system (e.g., Elemental Convergence)
+      // If this is a different power than the last one used, increment combo count
       if (player.lastPowerUsed && player.lastPowerUsed !== power.id) {
-        // Using a different power than last time = combo!
-        player.comboCount = Math.min(COMBAT_BALANCE.MAX_COMBO_COUNT, player.comboCount + 1);
-        comboMultiplier = 1 + (player.comboCount * COMBAT_BALANCE.COMBO_DAMAGE_BONUS_PER_LEVEL);
-        if (player.comboCount >= 2) {
+        player.comboCount = (player.comboCount || 0) + 1;
+      } else if (!player.lastPowerUsed) {
+        // First power used, initialize combo count
+        player.comboCount = 1;
+      }
+      // If same power, don't increment (but don't reset either)
+
+      player.lastPowerUsed = power.id;
+
+      // Check for vanilla combo bonus (still exists, separate from path abilities)
+      // Combo bonus starts at 2+ different powers: subtract 1 so 2 powers = 1x bonus, 3 powers = 2x bonus, etc.
+      // MAX_COMBO_COUNT - 1 caps the bonus levels (e.g., if max is 5, cap at 4 bonus levels)
+      let comboMultiplier = 1;
+      if (player.comboCount >= 2) {
+        comboMultiplier = 1 + (Math.min(player.comboCount - 1, COMBAT_BALANCE.MAX_COMBO_COUNT - 1) * COMBAT_BALANCE.COMBO_DAMAGE_BONUS_PER_LEVEL);
+        if (comboMultiplier > 1) {
           logs.push(`🔥 ${player.comboCount}x COMBO! (+${Math.floor((comboMultiplier - 1) * 100)}% damage)`);
         }
-      } else {
-        // Same power or first power = reset combo
-        player.comboCount = 0;
       }
-      player.lastPowerUsed = power.id;
 
       // Use mana
       player.currentStats.mana -= power.manaCost;
@@ -183,6 +191,26 @@ export function usePowerActions(context: PowerActivationContext) {
             enemy.health -= baseDamage;
             totalDamage = baseDamage;
             logs.push(`Dealt ${totalDamage} magical damage!`);
+          }
+
+          // Process path ability triggers: on_combo (for power-based combos like Elemental Convergence)
+          // This must happen AFTER base damage is calculated
+          const onComboResult = processTrigger('on_combo', {
+            player,
+            enemy,
+            damage: totalDamage,
+            powerUsed: power.id,
+          });
+          player.currentStats = onComboResult.player.currentStats;
+
+          // Apply combo bonus damage if any
+          if (onComboResult.damageAmount && onComboResult.damageAmount > 0) {
+            enemy.health -= onComboResult.damageAmount;
+            totalDamage += onComboResult.damageAmount;
+            logs.push(...onComboResult.logs);
+
+            // Reset combo count after combo triggers
+            player.comboCount = 0;
           }
 
           const damage = totalDamage;
@@ -312,6 +340,8 @@ export function usePowerActions(context: PowerActivationContext) {
         case 'debuff': {
           // Control powers - apply status effects to enemy
           if (power.category === 'control') {
+            let statusApplied = false;
+
             if (power.id === 'frost-nova') {
               // Deal damage first
               const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
@@ -328,6 +358,7 @@ export function usePowerActions(context: PowerActivationContext) {
                 icon: '❄️',
               });
               logs.push(`❄️ Enemy slowed by 30% for 4 turns!`);
+              statusApplied = true;
             } else if (power.id === 'stunning-blow') {
               // Deal damage first
               const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
@@ -345,8 +376,40 @@ export function usePowerActions(context: PowerActivationContext) {
                   icon: '💫',
                 });
                 logs.push(`💫 Enemy stunned for 2 turns!`);
+                statusApplied = true;
               } else {
                 logs.push(`Stun failed!`);
+              }
+            }
+
+            // Process path ability triggers: on_status_inflict (when status was successfully applied)
+            if (statusApplied) {
+              const onStatusInflictResult = processTrigger('on_status_inflict', {
+                player,
+                enemy,
+              });
+              player.currentStats = onStatusInflictResult.player.currentStats;
+
+              // Apply any heal/damage/mana from on_status_inflict
+              if (onStatusInflictResult.healAmount) {
+                player.currentStats.health = Math.min(
+                  player.currentStats.maxHealth,
+                  player.currentStats.health + onStatusInflictResult.healAmount
+                );
+              }
+              if (onStatusInflictResult.manaRestored) {
+                player.currentStats.mana = Math.min(
+                  player.currentStats.maxMana,
+                  player.currentStats.mana + onStatusInflictResult.manaRestored
+                );
+              }
+
+              // Apply results to enemy
+              applyTriggerResultToEnemy(enemy, onStatusInflictResult);
+
+              // Only add logs if there were actual effects
+              if (onStatusInflictResult.logs.length > 0) {
+                logs.push(...onStatusInflictResult.logs);
               }
             }
           }
