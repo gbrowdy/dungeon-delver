@@ -142,6 +142,17 @@ export interface Item {
   tier?: ShopTier;           // 'starter' | 'class' | 'specialty' | 'legendary'
 }
 
+/**
+ * Stat debuff applied to an enemy from player abilities
+ */
+export interface EnemyStatDebuff {
+  id: string;
+  stat: 'power' | 'armor' | 'speed';
+  percentReduction: number; // e.g., 0.15 = 15% reduction
+  remainingDuration: number; // seconds remaining
+  sourceName: string; // ability name for combat log
+}
+
 export interface Enemy {
   id: string;
   name: string;
@@ -156,6 +167,7 @@ export interface Enemy {
   abilities: EnemyAbility[]; // Enemy special abilities
   intent: EnemyIntent | null; // What enemy will do next turn
   statusEffects: StatusEffect[]; // Active debuffs on enemy
+  statDebuffs?: EnemyStatDebuff[]; // Stat reductions from player abilities
   isShielded?: boolean; // Temporary shield
   shieldTurnsRemaining?: number; // Turns until shield expires
   isEnraged?: boolean; // Enrage buff active

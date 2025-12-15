@@ -304,3 +304,37 @@ export function processEnemyDeath(
     leveledUp,
   };
 }
+
+/**
+ * Calculate effective enemy stat value after applying debuffs.
+ * Debuffs stack multiplicatively (e.g., two 15% reductions = 0.85 * 0.85 = 72.25% of original)
+ *
+ * @param enemy - The enemy to check debuffs on
+ * @param stat - The stat to calculate ('power' | 'armor' | 'speed')
+ * @param baseValue - The base stat value before debuffs
+ * @returns The effective stat value after all debuffs are applied
+ */
+export function getEffectiveEnemyStat(
+  enemy: Enemy,
+  stat: 'power' | 'armor' | 'speed',
+  baseValue: number
+): number {
+  if (!enemy.statDebuffs || enemy.statDebuffs.length === 0) {
+    return baseValue;
+  }
+
+  // Get all debuffs for this stat
+  const relevantDebuffs = enemy.statDebuffs.filter(d => d.stat === stat);
+
+  if (relevantDebuffs.length === 0) {
+    return baseValue;
+  }
+
+  // Calculate total reduction multiplicatively
+  let multiplier = 1;
+  relevantDebuffs.forEach(debuff => {
+    multiplier *= (1 - debuff.percentReduction);
+  });
+
+  return Math.floor(baseValue * multiplier);
+}

@@ -265,6 +265,26 @@ export function CharacterSprite({
           )}
         </div>
       )}
+
+      {/* Enemy stat debuffs - show when enemy has ability debuffs applied */}
+      {!isHero && !isDying && enemy && enemy.statDebuffs && enemy.statDebuffs.length > 0 && (
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex gap-1">
+          {enemy.statDebuffs.map(debuff => {
+            const icon = debuff.stat === 'power' ? '⚔️' : debuff.stat === 'armor' ? '🛡️' : '💨';
+            const percentDisplay = Math.round(debuff.percentReduction * 100);
+            return (
+              <div
+                key={debuff.id}
+                className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-purple-500/50"
+                title={`${debuff.sourceName}: -${percentDisplay}% ${debuff.stat}`}
+              >
+                <span className="text-purple-400">🔻{icon}</span>
+                <span className="text-purple-300">{Math.ceil(debuff.remainingDuration)}s</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

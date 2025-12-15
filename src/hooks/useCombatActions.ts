@@ -10,6 +10,7 @@ import {
   calculateAttackDamage,
   processHitEffects,
   processEnemyDeath,
+  getEffectiveEnemyStat,
 } from '@/hooks/combatActionHelpers';
 import {
   COMBAT_MECHANICS,
@@ -153,6 +154,23 @@ export function useCombatActions({
       if (onHitResult.statusToApply) {
         enemy.statusEffects = enemy.statusEffects || [];
         enemy.statusEffects.push(onHitResult.statusToApply);
+      }
+
+      // Apply stat debuffs to enemy if triggered
+      if (onHitResult.enemyDebuffs && onHitResult.enemyDebuffs.length > 0) {
+        enemy.statDebuffs = enemy.statDebuffs || [];
+        onHitResult.enemyDebuffs.forEach(debuff => {
+          // Check if a debuff for this stat from this source already exists
+          const existingIndex = enemy.statDebuffs!.findIndex(
+            d => d.stat === debuff.stat && d.sourceName === debuff.sourceName
+          );
+          if (existingIndex >= 0) {
+            // Refresh duration instead of stacking
+            enemy.statDebuffs![existingIndex].remainingDuration = debuff.remainingDuration;
+          } else {
+            enemy.statDebuffs!.push(debuff);
+          }
+        });
       }
 
       // Process path ability triggers: on_crit (if crit occurred)
@@ -349,7 +367,8 @@ export function useCombatActions({
         switch (ability.type) {
           case 'multi_hit': {
             const hits = ability.value;
-            const damagePerHit = Math.max(1, Math.floor((enemy.power * COMBAT_BALANCE.MULTI_HIT_DAMAGE_MODIFIER - player.currentStats.armor / 2)));
+            const effectivePower = getEffectiveEnemyStat(enemy, 'power', enemy.power);
+            const damagePerHit = Math.max(1, Math.floor((effectivePower * COMBAT_BALANCE.MULTI_HIT_DAMAGE_MODIFIER - player.currentStats.armor / 2)));
             let totalDamage = 0;
             const playerDodgeChance = getDodgeChance(player.currentStats.fortune);
             for (let i = 0; i < hits; i++) {
@@ -430,7 +449,8 @@ export function useCombatActions({
         if (playerDodged) {
           logs.push(`💨 You dodged ${enemy.name}'s attack!`);
         } else {
-          const enemyBaseDamage = Math.max(1, enemy.power - player.currentStats.armor / 2);
+          const effectiveEnemyPower = getEffectiveEnemyStat(enemy, 'power', enemy.power);
+          const enemyBaseDamage = Math.max(1, effectiveEnemyPower - player.currentStats.armor / 2);
           const enemyDamageVariance = COMBAT_MECHANICS.DAMAGE_VARIANCE_MIN + Math.random() * COMBAT_MECHANICS.DAMAGE_VARIANCE_RANGE;
           enemyDamage = Math.floor(enemyBaseDamage * enemyDamageVariance);
 
