@@ -765,6 +765,8 @@ export function useCombatActions({
             // Continue combat, don't die
             prev.combatLog.add(logs);
             return { ...prev, player, currentEnemy: enemy };
+          } else {
+            logs.push(`💀 Undying Fury already used this combat!`);
           }
         }
 
@@ -779,6 +781,8 @@ export function useCombatActions({
             // Continue combat, don't die
             prev.combatLog.add(logs);
             return { ...prev, player, currentEnemy: enemy };
+          } else {
+            logs.push(`💀 Immortal Guardian already used this floor!`);
           }
         }
 

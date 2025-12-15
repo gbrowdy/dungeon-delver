@@ -80,7 +80,11 @@ export function usePathAbilities() {
       ...ROGUE_PATHS,
       ...PALADIN_PATHS,
     ];
-    return allPaths.find(p => p.id === pathId) || null;
+    const found = allPaths.find(p => p.id === pathId);
+    if (!found) {
+      console.warn(`[usePathAbilities] Path not found: "${pathId}". Available paths: ${allPaths.map(p => p.id).join(', ')}`);
+    }
+    return found || null;
   }, []);
 
   /**
@@ -122,8 +126,10 @@ export function usePathAbilities() {
       case 'combo_count': {
         return player.comboCount >= condition.value;
       }
-      default:
+      default: {
+        console.error(`[usePathAbilities] Unknown condition type: "${(condition as PathAbilityCondition).type}". Condition will be treated as not met.`);
         return false;
+      }
     }
   }, []);
 
@@ -134,12 +140,25 @@ export function usePathAbilities() {
     if (!player.path) return [];
 
     const pathDef = getPathById(player.path.pathId);
-    if (!pathDef) return [];
+    if (!pathDef) {
+      console.error(`[usePathAbilities] Cannot get abilities: path "${player.path.pathId}" not found`);
+      return [];
+    }
 
     // Filter abilities that the player has chosen
-    return pathDef.abilities.filter(ability =>
+    const abilities = pathDef.abilities.filter(ability =>
       player.path!.abilities.includes(ability.id)
     );
+
+    // Warn if player has abilities that don't exist in path definition
+    const orphanedAbilities = player.path.abilities.filter(
+      id => !pathDef.abilities.some(a => a.id === id)
+    );
+    if (orphanedAbilities.length > 0) {
+      console.warn(`[usePathAbilities] Player has abilities not in path definition: ${orphanedAbilities.join(', ')}`);
+    }
+
+    return abilities;
   }, [getPathById]);
 
   /**
@@ -530,7 +549,9 @@ function getStatusIcon(type: 'poison' | 'stun' | 'slow' | 'bleed'): string {
       return '🐌';
     case 'bleed':
       return '🩸';
-    default:
+    default: {
+      console.warn(`[usePathAbilities] Unknown status type: "${type}"`);
       return '❓';
+    }
   }
 }

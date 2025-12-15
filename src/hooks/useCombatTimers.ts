@@ -281,6 +281,22 @@ export function useCombatTimers(
 
         const updatedPlayer = deepClonePlayer(player);
 
+        // Validate shield state consistency
+        const hasShield = player.shield && player.shield > 0;
+        const hasDuration = player.shieldRemainingDuration && player.shieldRemainingDuration > 0;
+        if (hasShield !== hasDuration) {
+          console.warn('[useCombatTimers] Inconsistent shield state:', {
+            shield: player.shield,
+            duration: player.shieldRemainingDuration
+          });
+          // Normalize state: if shield exists without duration, clear it
+          if (hasShield && !hasDuration) {
+            updatedPlayer.shield = 0;
+            logs.push('🛡️ Shield cleared (no duration)');
+            needsUpdate = true;
+          }
+        }
+
         // Tick down shield duration
         if (player.shieldRemainingDuration && player.shieldRemainingDuration > 0) {
           updatedPlayer.shieldRemainingDuration -= tickSeconds;
