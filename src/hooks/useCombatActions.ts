@@ -11,6 +11,7 @@ import {
   processHitEffects,
   processEnemyDeath,
   getEffectiveEnemyStat,
+  applyTriggerResultToEnemy,
 } from '@/hooks/combatActionHelpers';
 import {
   COMBAT_MECHANICS,
@@ -107,37 +108,7 @@ export function useCombatActions({
       });
       Object.assign(updatedPlayer, { currentStats: pathTurnStartResult.player.currentStats });
       logs.push(...pathTurnStartResult.logs);
-
-      // Apply damage to enemy if any (e.g., damage auras)
-      if (pathTurnStartResult.damageAmount) {
-        enemy.health -= pathTurnStartResult.damageAmount;
-      }
-
-      // Apply reflected damage to enemy if any
-      if (pathTurnStartResult.reflectedDamage) {
-        enemy.health -= pathTurnStartResult.reflectedDamage;
-      }
-
-      // Apply status effect to enemy if triggered
-      if (pathTurnStartResult.statusToApply) {
-        enemy.statusEffects = enemy.statusEffects || [];
-        enemy.statusEffects.push(pathTurnStartResult.statusToApply);
-      }
-
-      // Apply stat debuffs to enemy if triggered
-      if (pathTurnStartResult.enemyDebuffs && pathTurnStartResult.enemyDebuffs.length > 0) {
-        enemy.statDebuffs = enemy.statDebuffs || [];
-        pathTurnStartResult.enemyDebuffs.forEach(debuff => {
-          const existingIndex = enemy.statDebuffs!.findIndex(
-            d => d.stat === debuff.stat && d.sourceName === debuff.sourceName
-          );
-          if (existingIndex >= 0) {
-            enemy.statDebuffs![existingIndex].remainingDuration = debuff.remainingDuration;
-          } else {
-            enemy.statDebuffs!.push(debuff);
-          }
-        });
-      }
+      applyTriggerResultToEnemy(enemy, pathTurnStartResult);
 
       // NOTE: Power cooldowns are now time-based, not turn-based
       // They are ticked separately in a dedicated interval
@@ -435,37 +406,7 @@ export function useCombatActions({
                 });
                 player.currentStats = pathOnBlockResult.player.currentStats;
                 logs.push(...pathOnBlockResult.logs);
-
-                // Apply damage to enemy if any (e.g., Retribution)
-                if (pathOnBlockResult.damageAmount) {
-                  enemy.health -= pathOnBlockResult.damageAmount;
-                }
-
-                // Apply reflected damage to enemy if any
-                if (pathOnBlockResult.reflectedDamage) {
-                  enemy.health -= pathOnBlockResult.reflectedDamage;
-                }
-
-                // Apply status effect to enemy if triggered
-                if (pathOnBlockResult.statusToApply) {
-                  enemy.statusEffects = enemy.statusEffects || [];
-                  enemy.statusEffects.push(pathOnBlockResult.statusToApply);
-                }
-
-                // Apply stat debuffs to enemy if triggered
-                if (pathOnBlockResult.enemyDebuffs && pathOnBlockResult.enemyDebuffs.length > 0) {
-                  enemy.statDebuffs = enemy.statDebuffs || [];
-                  pathOnBlockResult.enemyDebuffs.forEach(debuff => {
-                    const existingIndex = enemy.statDebuffs!.findIndex(
-                      d => d.stat === debuff.stat && d.sourceName === debuff.sourceName
-                    );
-                    if (existingIndex >= 0) {
-                      enemy.statDebuffs![existingIndex].remainingDuration = debuff.remainingDuration;
-                    } else {
-                      enemy.statDebuffs!.push(debuff);
-                    }
-                  });
-                }
+                applyTriggerResultToEnemy(enemy, pathOnBlockResult);
               }
               player.currentStats.health -= totalDamage;
               logs.push(`${ability.icon} ${hits} hits deal ${totalDamage} total damage!`);
@@ -537,39 +478,7 @@ export function useCombatActions({
           });
           player.currentStats = pathOnDodgeResult.player.currentStats;
           logs.push(...pathOnDodgeResult.logs);
-
-          // Apply damage to enemy if any (e.g., Riposte counter-attack)
-          if (pathOnDodgeResult.damageAmount) {
-            enemy.health -= pathOnDodgeResult.damageAmount;
-          }
-
-          // Apply reflected damage to enemy if any
-          if (pathOnDodgeResult.reflectedDamage) {
-            enemy.health -= pathOnDodgeResult.reflectedDamage;
-          }
-
-          // Apply status effect to enemy if triggered
-          if (pathOnDodgeResult.statusToApply) {
-            enemy.statusEffects = enemy.statusEffects || [];
-            enemy.statusEffects.push(pathOnDodgeResult.statusToApply);
-          }
-
-          // Apply stat debuffs to enemy if triggered
-          if (pathOnDodgeResult.enemyDebuffs && pathOnDodgeResult.enemyDebuffs.length > 0) {
-            enemy.statDebuffs = enemy.statDebuffs || [];
-            pathOnDodgeResult.enemyDebuffs.forEach(debuff => {
-              // Check if a debuff for this stat from this source already exists
-              const existingIndex = enemy.statDebuffs!.findIndex(
-                d => d.stat === debuff.stat && d.sourceName === debuff.sourceName
-              );
-              if (existingIndex >= 0) {
-                // Refresh duration instead of stacking
-                enemy.statDebuffs![existingIndex].remainingDuration = debuff.remainingDuration;
-              } else {
-                enemy.statDebuffs!.push(debuff);
-              }
-            });
-          }
+          applyTriggerResultToEnemy(enemy, pathOnDodgeResult);
         } else {
           const effectiveEnemyPower = getEffectiveEnemyStat(enemy, 'power', enemy.power);
           const enemyBaseDamage = Math.max(1, effectiveEnemyPower - player.currentStats.armor / 2);
@@ -594,37 +503,7 @@ export function useCombatActions({
             });
             player.currentStats = pathOnBlockResult.player.currentStats;
             logs.push(...pathOnBlockResult.logs);
-
-            // Apply damage to enemy if any (e.g., Retribution)
-            if (pathOnBlockResult.damageAmount) {
-              enemy.health -= pathOnBlockResult.damageAmount;
-            }
-
-            // Apply reflected damage to enemy if any
-            if (pathOnBlockResult.reflectedDamage) {
-              enemy.health -= pathOnBlockResult.reflectedDamage;
-            }
-
-            // Apply status effect to enemy if triggered
-            if (pathOnBlockResult.statusToApply) {
-              enemy.statusEffects = enemy.statusEffects || [];
-              enemy.statusEffects.push(pathOnBlockResult.statusToApply);
-            }
-
-            // Apply stat debuffs to enemy if triggered
-            if (pathOnBlockResult.enemyDebuffs && pathOnBlockResult.enemyDebuffs.length > 0) {
-              enemy.statDebuffs = enemy.statDebuffs || [];
-              pathOnBlockResult.enemyDebuffs.forEach(debuff => {
-                const existingIndex = enemy.statDebuffs!.findIndex(
-                  d => d.stat === debuff.stat && d.sourceName === debuff.sourceName
-                );
-                if (existingIndex >= 0) {
-                  enemy.statDebuffs![existingIndex].remainingDuration = debuff.remainingDuration;
-                } else {
-                  enemy.statDebuffs!.push(debuff);
-                }
-              });
-            }
+            applyTriggerResultToEnemy(enemy, pathOnBlockResult);
           }
 
           player.currentStats.health -= enemyDamage;

@@ -9,6 +9,7 @@ import { generateEventId } from '@/utils/eventId';
 import { getDropQualityBonus } from '@/utils/fortuneUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
+import { applyTriggerResultToEnemy } from '@/hooks/combatActionHelpers';
 
 /**
  * Context for power activation - all state needed to execute a power
@@ -108,37 +109,7 @@ export function usePowerActions(context: PowerActivationContext) {
       });
       player.currentStats = pathOnPowerResult.player.currentStats;
       logs.push(...pathOnPowerResult.logs);
-
-      // Apply damage to enemy if any
-      if (pathOnPowerResult.damageAmount) {
-        enemy.health -= pathOnPowerResult.damageAmount;
-      }
-
-      // Apply reflected damage to enemy if any
-      if (pathOnPowerResult.reflectedDamage) {
-        enemy.health -= pathOnPowerResult.reflectedDamage;
-      }
-
-      // Apply status effect to enemy if triggered
-      if (pathOnPowerResult.statusToApply) {
-        enemy.statusEffects = enemy.statusEffects || [];
-        enemy.statusEffects.push(pathOnPowerResult.statusToApply);
-      }
-
-      // Apply stat debuffs to enemy if triggered
-      if (pathOnPowerResult.enemyDebuffs && pathOnPowerResult.enemyDebuffs.length > 0) {
-        enemy.statDebuffs = enemy.statDebuffs || [];
-        pathOnPowerResult.enemyDebuffs.forEach(debuff => {
-          const existingIndex = enemy.statDebuffs!.findIndex(
-            d => d.stat === debuff.stat && d.sourceName === debuff.sourceName
-          );
-          if (existingIndex >= 0) {
-            enemy.statDebuffs![existingIndex].remainingDuration = debuff.remainingDuration;
-          } else {
-            enemy.statDebuffs!.push(debuff);
-          }
-        });
-      }
+      applyTriggerResultToEnemy(enemy, pathOnPowerResult);
 
       switch (power.effect) {
         case 'damage': {

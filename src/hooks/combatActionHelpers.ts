@@ -1,5 +1,5 @@
 import {
-  Player, Enemy, Item, StatusEffect, ActiveBuff,
+  Player, Enemy, Item, StatusEffect, ActiveBuff, EnemyStatDebuff,
 } from '@/types/game';
 import { calculateStats } from '@/hooks/useCharacterSetup';
 import { calculateRewards, processLevelUp, calculateItemDrop } from '@/hooks/useRewardCalculation';
@@ -14,6 +14,7 @@ import {
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getCritChance, getCritDamage, getDropQualityBonus } from '@/utils/fortuneUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
+import type { TriggerResult } from '@/hooks/usePathAbilities';
 
 /**
  * Result of processing turn-start effects
@@ -337,4 +338,50 @@ export function getEffectiveEnemyStat(
   });
 
   return Math.floor(baseValue * multiplier);
+}
+
+/**
+ * Apply path ability trigger results to an enemy.
+ * Handles damage, reflected damage, status effects, and stat debuffs.
+ * Debuffs with matching stat+source refresh duration instead of stacking.
+ *
+ * @param enemy - The enemy to apply effects to
+ * @param triggerResult - The result from processTrigger()
+ */
+export function applyTriggerResultToEnemy(
+  enemy: Enemy,
+  triggerResult: TriggerResult
+): void {
+  // Apply damage to enemy if any
+  if (triggerResult.damageAmount) {
+    enemy.health -= triggerResult.damageAmount;
+  }
+
+  // Apply reflected damage to enemy if any
+  if (triggerResult.reflectedDamage) {
+    enemy.health -= triggerResult.reflectedDamage;
+  }
+
+  // Apply status effect to enemy if triggered
+  if (triggerResult.statusToApply) {
+    enemy.statusEffects = enemy.statusEffects || [];
+    enemy.statusEffects.push(triggerResult.statusToApply);
+  }
+
+  // Apply stat debuffs to enemy if triggered
+  if (triggerResult.enemyDebuffs && triggerResult.enemyDebuffs.length > 0) {
+    enemy.statDebuffs = enemy.statDebuffs || [];
+    triggerResult.enemyDebuffs.forEach(debuff => {
+      // Check if a debuff for this stat from this source already exists
+      const existingIndex = enemy.statDebuffs!.findIndex(
+        d => d.stat === debuff.stat && d.sourceName === debuff.sourceName
+      );
+      if (existingIndex >= 0) {
+        // Refresh duration instead of stacking
+        enemy.statDebuffs![existingIndex].remainingDuration = debuff.remainingDuration;
+      } else {
+        enemy.statDebuffs!.push(debuff);
+      }
+    });
+  }
 }

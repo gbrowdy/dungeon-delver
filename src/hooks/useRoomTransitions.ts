@@ -7,6 +7,7 @@ import { GAME_PHASE, ITEM_EFFECT_TRIGGER, EFFECT_TYPE, BUFF_STAT } from '@/const
 import { logStateTransition, logCombatEvent, logDeathEvent } from '@/utils/gameLogger';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
+import { applyTriggerResultToEnemy } from '@/hooks/combatActionHelpers';
 
 /**
  * Hook for room transitions and enemy spawning.
@@ -95,32 +96,7 @@ export function useRoomTransitions(
       });
       Object.assign(player, { currentStats: pathCombatStartResult.player.currentStats });
       logs.push(...pathCombatStartResult.logs);
-
-      // Apply damage to enemy if any (e.g., from initial burst abilities)
-      if (pathCombatStartResult.damageAmount) {
-        enemy.health -= pathCombatStartResult.damageAmount;
-      }
-
-      // Apply status effect to enemy if triggered (e.g., Toxic Field poison)
-      if (pathCombatStartResult.statusToApply) {
-        enemy.statusEffects = enemy.statusEffects || [];
-        enemy.statusEffects.push(pathCombatStartResult.statusToApply);
-      }
-
-      // Apply stat debuffs to enemy if triggered (e.g., Arcane Field slow)
-      if (pathCombatStartResult.enemyDebuffs && pathCombatStartResult.enemyDebuffs.length > 0) {
-        enemy.statDebuffs = enemy.statDebuffs || [];
-        pathCombatStartResult.enemyDebuffs.forEach(debuff => {
-          const existingIndex = enemy.statDebuffs!.findIndex(
-            d => d.stat === debuff.stat && d.sourceName === debuff.sourceName
-          );
-          if (existingIndex >= 0) {
-            enemy.statDebuffs![existingIndex].remainingDuration = debuff.remainingDuration;
-          } else {
-            enemy.statDebuffs!.push(debuff);
-          }
-        });
-      }
+      applyTriggerResultToEnemy(enemy, pathCombatStartResult);
 
       // Recalculate stats with buffs
       player.currentStats = calculateStats(player);
