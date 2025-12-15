@@ -87,11 +87,8 @@ export function processTurnStartEffects(
     return { ...effect, remainingTurns: effect.remainingTurns - 1 };
   }).filter((effect: StatusEffect) => effect.remainingTurns > 0);
 
-  // Tick down buff durations
-  updatedPlayer.activeBuffs = updatedPlayer.activeBuffs.map((buff: ActiveBuff) => ({
-    ...buff,
-    remainingTurns: buff.remainingTurns - 1,
-  })).filter((buff: ActiveBuff) => buff.remainingTurns > 0);
+  // NOTE: Buff durations are now ticked time-based in useCombatTimers.ts (not turn-based)
+  // Active buffs are still applied to stats below via calculateStats()
 
   // Trigger turn_start item effects
   updatedPlayer.equippedItems.forEach((item: Item) => {

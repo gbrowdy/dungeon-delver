@@ -262,6 +262,7 @@ export function useCombatTimers(
   }, [enabled, setState]);
 
   // Shield duration tick-down - expires shields over time
+  // Also ticks down buff durations (time-based, not turn-based)
   useEffect(() => {
     if (!enabled) return;
 
@@ -272,23 +273,53 @@ export function useCombatTimers(
         if (!prev.player || prev.isPaused) return prev;
 
         const player = prev.player;
+        const logs: string[] = [];
+        let needsUpdate = false;
 
-        // Check if player has an active shield
-        if (!player.shieldRemainingDuration || player.shieldRemainingDuration <= 0) return prev;
-
-        // Calculate shield duration reduction per tick
-        // COOLDOWN_TICK_INTERVAL is in ms, we want to reduce by (tickInterval/1000) seconds
-        // Also scale with combat speed so shields expire faster at higher speeds
+        // Calculate tick amount in seconds
         const tickSeconds = (SHIELD_TICK_INTERVAL / 1000) * prev.combatSpeed;
 
         const updatedPlayer = deepClonePlayer(player);
-        updatedPlayer.shieldRemainingDuration -= tickSeconds;
 
-        if (updatedPlayer.shieldRemainingDuration <= 0) {
-          updatedPlayer.shield = 0;
-          updatedPlayer.shieldRemainingDuration = 0;
-          prev.combatLog.add('🛡️ Shield expired');
+        // Tick down shield duration
+        if (player.shieldRemainingDuration && player.shieldRemainingDuration > 0) {
+          updatedPlayer.shieldRemainingDuration -= tickSeconds;
+          needsUpdate = true;
+
+          if (updatedPlayer.shieldRemainingDuration <= 0) {
+            updatedPlayer.shield = 0;
+            updatedPlayer.shieldRemainingDuration = 0;
+            logs.push('🛡️ Shield expired');
+          }
         }
+
+        // Tick down buff durations (time-based, not turn-based)
+        if (player.activeBuffs && player.activeBuffs.length > 0) {
+          const expiredBuffs: string[] = [];
+
+          updatedPlayer.activeBuffs = player.activeBuffs.map(buff => {
+            const newRemaining = buff.remainingTurns - tickSeconds;
+            if (newRemaining <= 0) {
+              expiredBuffs.push(buff.name);
+            }
+            return { ...buff, remainingTurns: newRemaining };
+          }).filter(buff => buff.remainingTurns > 0);
+
+          if (expiredBuffs.length > 0) {
+            expiredBuffs.forEach(buffName => {
+              logs.push(`⏰ ${buffName} buff expired`);
+            });
+            needsUpdate = true;
+          } else if (updatedPlayer.activeBuffs.length !== player.activeBuffs.length) {
+            needsUpdate = true;
+          }
+        }
+
+        // Only update if something changed
+        if (!needsUpdate) return prev;
+
+        // Add logs to combat log
+        logs.forEach(log => prev.combatLog.add(log));
 
         return {
           ...prev,
