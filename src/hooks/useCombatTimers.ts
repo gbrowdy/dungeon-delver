@@ -204,4 +204,60 @@ export function useCombatTimers(
 
     return () => clearInterval(interval);
   }, [enabled, setState]);
+
+  // Path ability cooldown ticker - independent of turns
+  // Cooldowns tick down in real-time, scaled by combat speed
+  useEffect(() => {
+    if (!enabled) return;
+
+    const COOLDOWN_TICK_INTERVAL = COMBAT_BALANCE.COOLDOWN_TICK_INTERVAL; // 100ms
+
+    const interval = setInterval(() => {
+      setState((prev: GameState) => {
+        if (!prev.player || !prev.player.path || prev.isPaused) return prev;
+
+        const abilityCooldowns = prev.player.path.abilityCooldowns;
+
+        // Check if any abilities are on cooldown
+        if (!abilityCooldowns || Object.keys(abilityCooldowns).length === 0) return prev;
+
+        const hasCooldowns = Object.values(abilityCooldowns).some(cd => cd > 0);
+        if (!hasCooldowns) return prev;
+
+        // Calculate cooldown reduction per tick
+        // COOLDOWN_TICK_INTERVAL is in ms, we want to reduce by (tickInterval/1000) seconds
+        // Also scale with combat speed so cooldowns recover faster at higher speeds
+        const tickSeconds = (COOLDOWN_TICK_INTERVAL / 1000) * 1.0 * prev.combatSpeed;
+
+        // Update ability cooldowns
+        let anyChanged = false;
+        const updatedCooldowns: Record<string, number> = {};
+        Object.entries(abilityCooldowns).forEach(([abilityId, cooldown]) => {
+          let newCooldown = Math.max(0, cooldown - tickSeconds);
+          // Snap to 0 if very close (prevents floating point issues)
+          if (newCooldown > 0 && newCooldown < 0.05) {
+            newCooldown = 0;
+          }
+          // Track if any meaningful change occurred
+          if (Math.abs(newCooldown - cooldown) >= 0.001) {
+            anyChanged = true;
+          }
+          updatedCooldowns[abilityId] = newCooldown;
+        });
+
+        // Skip setState if no meaningful changes (performance optimization)
+        if (!anyChanged) return prev;
+
+        const updatedPlayer = deepClonePlayer(prev.player);
+        updatedPlayer.path!.abilityCooldowns = updatedCooldowns;
+
+        return {
+          ...prev,
+          player: updatedPlayer,
+        };
+      });
+    }, COOLDOWN_TICK_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [enabled, setState]);
 }

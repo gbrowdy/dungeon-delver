@@ -544,6 +544,21 @@ export function useCombatActions({
           if (pathOnDamagedResult.reflectedDamage) {
             enemy.health -= pathOnDamagedResult.reflectedDamage;
           }
+
+          // Process path ability triggers: on_low_hp
+          // This fires when HP is low (checked via hp_below condition in usePathAbilities)
+          const pathOnLowHpResult = processTrigger('on_low_hp', {
+            player,
+            enemy,
+            damage: enemyDamage,
+          });
+          player.currentStats = pathOnLowHpResult.player.currentStats;
+          logs.push(...pathOnLowHpResult.logs);
+
+          // Apply reflected damage to enemy if any
+          if (pathOnLowHpResult.reflectedDamage) {
+            enemy.health -= pathOnLowHpResult.reflectedDamage;
+          }
         }
       }
 

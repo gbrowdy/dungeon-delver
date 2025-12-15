@@ -101,6 +101,11 @@ export function usePathAbilities() {
         const hpPercent = (player.currentStats.health / player.currentStats.maxHealth) * 100;
         return hpPercent > condition.value;
       }
+      case 'hp_threshold': {
+        // Support for threshold conditions (value is a ratio 0-1)
+        const hpRatio = player.currentStats.health / player.currentStats.maxHealth;
+        return hpRatio <= condition.value;
+      }
       case 'mana_below': {
         const manaPercent = (player.currentStats.mana / player.currentStats.maxMana) * 100;
         return manaPercent < condition.value;
@@ -223,6 +228,25 @@ export function usePathAbilities() {
           if (!conditionMet) return;
         }
 
+        // Check cooldown
+        if (effect.cooldown) {
+          if (!updatedPlayer.path) return;
+
+          // Initialize cooldowns object if needed
+          if (!updatedPlayer.path.abilityCooldowns) {
+            updatedPlayer.path.abilityCooldowns = {};
+          }
+
+          const cooldownRemaining = updatedPlayer.path.abilityCooldowns[ability.id] || 0;
+          if (cooldownRemaining > 0) {
+            // Ability is on cooldown, skip
+            return;
+          }
+
+          // Set cooldown
+          updatedPlayer.path.abilityCooldowns[ability.id] = effect.cooldown;
+        }
+
         // Check proc chance
         if (effect.chance !== undefined && Math.random() > effect.chance) {
           return;
@@ -308,10 +332,10 @@ export function usePathAbilities() {
           }
         }
 
-        // Process enemy-targeted stat modifiers (debuffs)
+        // Process stat modifiers (player buffs and enemy debuffs)
         if (effect.statModifiers) {
           effect.statModifiers.forEach(mod => {
-            // Only process enemy-targeted modifiers here
+            // Process enemy-targeted modifiers (debuffs)
             if (mod.target === 'enemy' && context.enemy) {
               const stat = mod.stat;
               // Only debuff power, armor, or speed
@@ -328,6 +352,29 @@ export function usePathAbilities() {
                   enemyDebuffs.push(debuff);
                   const percentDisplay = Math.round(reduction * 100);
                   logs.push(`🔻 ${ability.name}: Enemy ${stat} reduced by ${percentDisplay}% for ${effect.duration || 5}s`);
+                }
+              }
+            }
+            // Process player-targeted modifiers (buffs)
+            else if (!mod.target || mod.target === 'self') {
+              const stat = mod.stat;
+              // Only buff power, armor, speed, fortune
+              if (stat === 'power' || stat === 'armor' || stat === 'speed' || stat === 'fortune') {
+                const bonus = mod.percentBonus || 0;
+                if (bonus > 0 && effect.duration) {
+                  // Create an active buff
+                  const buff: import('@/types/game').ActiveBuff = {
+                    id: `${ability.id}_${stat}_${Date.now()}_${debuffIdCounter++}`,
+                    name: ability.name,
+                    stat,
+                    multiplier: 1 + bonus,
+                    remainingTurns: effect.duration,
+                    icon: ability.icon || '✨',
+                  };
+                  updatedPlayer.activeBuffs = updatedPlayer.activeBuffs || [];
+                  updatedPlayer.activeBuffs.push(buff);
+                  const percentDisplay = Math.round(bonus * 100);
+                  logs.push(`⬆️ ${ability.name}: ${stat} increased by ${percentDisplay}% for ${effect.duration}s`);
                 }
               }
             }

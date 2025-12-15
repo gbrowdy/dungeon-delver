@@ -50,8 +50,8 @@ export type PathStatType = 'health' | 'maxHealth' | 'power' | 'armor' | 'speed' 
  * Conditional checks for ability activation
  */
 export interface PathAbilityCondition {
-  type: 'hp_below' | 'hp_above' | 'mana_below' | 'mana_above' | 'enemy_hp_below' | 'combo_count';
-  value: number; // Threshold value (percentage for HP/mana, absolute for combo)
+  type: 'hp_below' | 'hp_above' | 'hp_threshold' | 'mana_below' | 'mana_above' | 'enemy_hp_below' | 'combo_count';
+  value: number; // Threshold value (percentage for HP/mana, ratio for hp_threshold, absolute for combo)
 }
 
 /**
@@ -188,6 +188,7 @@ export interface PlayerPath {
   pathId: string;                   // Selected path ID
   subpathId?: string;               // Selected subpath ID (chosen at level 4)
   abilities: string[];              // IDs of chosen abilities (in order of selection)
+  abilityCooldowns?: Record<string, number>; // Remaining cooldown in seconds for each ability
 }
 
 /**
