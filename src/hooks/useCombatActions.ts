@@ -12,6 +12,7 @@ import {
   processEnemyDeath,
   getEffectiveEnemyStat,
   applyTriggerResultToEnemy,
+  applyShieldAbsorption,
 } from '@/hooks/combatActionHelpers';
 import {
   COMBAT_MECHANICS,
@@ -473,26 +474,20 @@ export function useCombatActions({
               }
 
               // Shield absorbs damage first
-              let remainingDamage = totalDamage;
-              if (player.shield && player.shield > 0) {
-                const shieldAbsorbed = Math.min(player.shield, remainingDamage);
-                player.shield -= shieldAbsorbed;
-                remainingDamage -= shieldAbsorbed;
+              const shieldResult = applyShieldAbsorption(player, totalDamage);
+              player.shield = shieldResult.newShieldValue;
+              player.shieldRemainingDuration = shieldResult.newShieldDuration;
 
-                if (shieldAbsorbed > 0) {
-                  logs.push(`🛡️ Shield absorbs ${shieldAbsorbed} damage!`);
-                }
-
-                if (player.shield <= 0) {
-                  player.shield = 0;
-                  player.shieldRemainingDuration = 0;
-                  logs.push(`💔 Shield broken!`);
-                }
+              if (shieldResult.shieldAbsorbed > 0) {
+                logs.push(`🛡️ Shield absorbs ${shieldResult.shieldAbsorbed} damage!`);
+              }
+              if (shieldResult.shieldBroken) {
+                logs.push(`💔 Shield broken!`);
               }
 
               // Only apply remaining damage to HP
-              if (remainingDamage > 0) {
-                player.currentStats.health -= remainingDamage;
+              if (shieldResult.remainingDamage > 0) {
+                player.currentStats.health -= shieldResult.remainingDamage;
               }
 
               logs.push(`${ability.icon} ${hits} hits deal ${totalDamage} total damage!`);
@@ -616,26 +611,21 @@ export function useCombatActions({
           }
 
           // Shield absorbs damage first
-          if (player.shield && player.shield > 0) {
-            const shieldAbsorbed = Math.min(player.shield, enemyDamage);
-            player.shield -= shieldAbsorbed;
-            enemyDamage -= shieldAbsorbed;
+          const shieldResult = applyShieldAbsorption(player, enemyDamage);
+          player.shield = shieldResult.newShieldValue;
+          player.shieldRemainingDuration = shieldResult.newShieldDuration;
 
-            if (shieldAbsorbed > 0) {
-              logs.push(`🛡️ Shield absorbs ${shieldAbsorbed} damage!`);
-            }
-
-            if (player.shield <= 0) {
-              player.shield = 0;
-              player.shieldRemainingDuration = 0;
-              logs.push(`💔 Shield broken!`);
-            }
+          if (shieldResult.shieldAbsorbed > 0) {
+            logs.push(`🛡️ Shield absorbs ${shieldResult.shieldAbsorbed} damage!`);
+          }
+          if (shieldResult.shieldBroken) {
+            logs.push(`💔 Shield broken!`);
           }
 
           // Only apply remaining damage to HP
-          if (enemyDamage > 0) {
-            player.currentStats.health -= enemyDamage;
-            logs.push(`${enemy.name} deals ${enemyDamage} damage to you`);
+          if (shieldResult.remainingDamage > 0) {
+            player.currentStats.health -= shieldResult.remainingDamage;
+            logs.push(`${enemy.name} deals ${shieldResult.remainingDamage} damage to you`);
           }
 
           // Vampiric modifier: Heal enemy based on damage dealt

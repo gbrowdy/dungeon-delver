@@ -391,8 +391,10 @@ export function usePathAbilities() {
         // Process shield
         if (effect.shield) {
           updatedPlayer.shield = (updatedPlayer.shield || 0) + effect.shield;
-          updatedPlayer.shieldRemainingDuration = effect.duration || 5;
-          updatedPlayer.shieldMaxDuration = effect.duration || 5;
+          // Use max of current and new duration to prevent shorter shields from reducing duration
+          const newDuration = effect.duration || 5;
+          updatedPlayer.shieldRemainingDuration = Math.max(updatedPlayer.shieldRemainingDuration || 0, newDuration);
+          updatedPlayer.shieldMaxDuration = Math.max(updatedPlayer.shieldMaxDuration || 0, newDuration);
           logs.push(`🛡️ ${ability.name}: Gained ${effect.shield} shield`);
         }
       });
@@ -476,8 +478,8 @@ export function usePathAbilities() {
    * Get status immunities from player's path abilities
    * Returns an array of status effect types the player is immune to
    */
-  const getStatusImmunities = useCallback((player: Player): string[] => {
-    const immunities: string[] = [];
+  const getStatusImmunities = useCallback((player: Player): StatusEffect['type'][] => {
+    const immunities: StatusEffect['type'][] = [];
 
     if (hasAbility(player, 'immovable_object')) {
       immunities.push('stun', 'slow');

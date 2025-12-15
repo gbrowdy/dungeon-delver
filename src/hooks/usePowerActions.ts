@@ -60,7 +60,12 @@ export function usePowerActions(context: PowerActivationContext) {
       const useHpForMana = hasAbility(prev.player, 'reckless_fury');
 
       if (power.currentCooldown > 0) {
-        return prev;
+        // Power is on cooldown - provide feedback
+        const newLog = `⏳ ${power.name} is on cooldown (${power.currentCooldown.toFixed(1)}s)`;
+        return {
+          ...prev,
+          combatLog: prev.combatLog.add(newLog),
+        };
       }
 
       // Check resource cost (HP or Mana depending on Reckless Fury)
@@ -68,12 +73,20 @@ export function usePowerActions(context: PowerActivationContext) {
         const hpCost = Math.floor(power.manaCost * 0.5);
         // Need at least hpCost + 1 HP to use power (can't kill yourself)
         if (prev.player.currentStats.health <= hpCost) {
-          return prev;
+          const newLog = `❌ Not enough HP for ${power.name} (need ${hpCost + 1} HP)`;
+          return {
+            ...prev,
+            combatLog: prev.combatLog.add(newLog),
+          };
         }
       } else {
         // Normal mana check
         if (prev.player.currentStats.mana < power.manaCost) {
-          return prev;
+          const newLog = `❌ Not enough mana for ${power.name} (${prev.player.currentStats.mana}/${power.manaCost})`;
+          return {
+            ...prev,
+            combatLog: prev.combatLog.add(newLog),
+          };
         }
       }
 

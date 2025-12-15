@@ -47,7 +47,7 @@ export function useRoomTransitions(
               id: `passive_${debuff.stat}_${Date.now()}`,
               stat: debuff.stat,
               percentReduction: debuff.percentReduction,
-              remainingDuration: 999999, // Effectively permanent
+              remainingDuration: COMBAT_BALANCE.PERMANENT_DURATION,
               sourceName: debuff.sourceName,
             });
             const percentDisplay = Math.round(debuff.percentReduction * 100);

@@ -1,4 +1,5 @@
 import type { PathDefinition, PathAbility, SubpathDefinition } from '@/types/paths';
+import { COMBAT_BALANCE } from '@/constants/balance';
 
 /**
  * WARRIOR CLASS PATHS
@@ -280,7 +281,7 @@ const BERSERKER_ABILITIES: PathAbility[] = [
           { stat: 'speed', percentBonus: 0.50 }
         ],
         duration: 5,
-        cooldown: 999999 // Once per combat (very high cooldown)
+        cooldown: COMBAT_BALANCE.PERMANENT_DURATION // Once per combat
       }
     ]
   }
@@ -525,7 +526,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
         trigger: 'on_damaged',
         condition: { type: 'hp_below', value: 1 },
         heal: 40, // 40% of max HP
-        cooldown: 999999 // Once per floor (very high cooldown)
+        cooldown: COMBAT_BALANCE.PERMANENT_DURATION // Once per floor
       }
     ]
   }
