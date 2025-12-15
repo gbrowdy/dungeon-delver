@@ -11,6 +11,7 @@ import {
   processHitEffects,
   processEnemyDeath,
   getEffectiveEnemyStat,
+  applyTriggerResultToEnemy,
 } from '@/hooks/combatActionHelpers';
 import {
   COMBAT_MECHANICS,
@@ -99,6 +100,15 @@ export function useCombatActions({
       const turnStartResult = processTurnStartEffects(player, logs);
       const updatedPlayer = turnStartResult.player;
       logs = turnStartResult.logs;
+
+      // Process path ability triggers: turn_start
+      const pathTurnStartResult = processTrigger('turn_start', {
+        player: updatedPlayer,
+        enemy,
+      });
+      Object.assign(updatedPlayer, { currentStats: pathTurnStartResult.player.currentStats });
+      logs.push(...pathTurnStartResult.logs);
+      applyTriggerResultToEnemy(enemy, pathTurnStartResult);
 
       // NOTE: Power cooldowns are now time-based, not turn-based
       // They are ticked separately in a dedicated interval
@@ -386,6 +396,17 @@ export function useCombatActions({
             if (totalDamage > 0) {
               if (player.isBlocking) {
                 logs.push(`🛡️ Block reduced multi-hit damage!`);
+
+                // Process path ability triggers: on_block
+                const pathOnBlockResult = processTrigger('on_block', {
+                  player,
+                  enemy,
+                  isBlock: true,
+                  damage: totalDamage,
+                });
+                player.currentStats = pathOnBlockResult.player.currentStats;
+                logs.push(...pathOnBlockResult.logs);
+                applyTriggerResultToEnemy(enemy, pathOnBlockResult);
               }
               player.currentStats.health -= totalDamage;
               logs.push(`${ability.icon} ${hits} hits deal ${totalDamage} total damage!`);
@@ -448,6 +469,16 @@ export function useCombatActions({
 
         if (playerDodged) {
           logs.push(`💨 You dodged ${enemy.name}'s attack!`);
+
+          // Process path ability triggers: on_dodge
+          const pathOnDodgeResult = processTrigger('on_dodge', {
+            player,
+            enemy,
+            isDodge: true,
+          });
+          player.currentStats = pathOnDodgeResult.player.currentStats;
+          logs.push(...pathOnDodgeResult.logs);
+          applyTriggerResultToEnemy(enemy, pathOnDodgeResult);
         } else {
           const effectiveEnemyPower = getEffectiveEnemyStat(enemy, 'power', enemy.power);
           const enemyBaseDamage = Math.max(1, effectiveEnemyPower - player.currentStats.armor / 2);
@@ -462,6 +493,17 @@ export function useCombatActions({
           if (player.isBlocking) {
             enemyDamage = Math.floor(enemyDamage * COMBAT_BALANCE.BLOCK_DAMAGE_REDUCTION);
             logs.push(`🛡️ Block! Damage reduced to ${enemyDamage}!`);
+
+            // Process path ability triggers: on_block
+            const pathOnBlockResult = processTrigger('on_block', {
+              player,
+              enemy,
+              isBlock: true,
+              damage: enemyDamage,
+            });
+            player.currentStats = pathOnBlockResult.player.currentStats;
+            logs.push(...pathOnBlockResult.logs);
+            applyTriggerResultToEnemy(enemy, pathOnBlockResult);
           }
 
           player.currentStats.health -= enemyDamage;

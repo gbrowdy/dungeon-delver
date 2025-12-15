@@ -8,6 +8,8 @@ import { COMBAT_EVENT_TYPE, BUFF_STAT, ITEM_EFFECT_TRIGGER } from '@/constants/e
 import { generateEventId } from '@/utils/eventId';
 import { getDropQualityBonus } from '@/utils/fortuneUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
+import { usePathAbilities } from '@/hooks/usePathAbilities';
+import { applyTriggerResultToEnemy } from '@/hooks/combatActionHelpers';
 
 /**
  * Context for power activation - all state needed to execute a power
@@ -39,6 +41,8 @@ export function usePowerActions(context: PowerActivationContext) {
     enemyDeathProcessedRef,
     combatSpeed,
   } = context;
+
+  const { processTrigger } = usePathAbilities();
 
   const usePower = useCallback((powerId: string) => {
     setState((prev: GameState) => {
@@ -96,6 +100,16 @@ export function usePowerActions(context: PowerActivationContext) {
       });
       Object.assign(player, powerCastResult.player);
       logs.push(...powerCastResult.logs);
+
+      // Process path ability triggers: on_power_use
+      const pathOnPowerResult = processTrigger('on_power_use', {
+        player,
+        enemy,
+        powerUsed: power.id,
+      });
+      player.currentStats = pathOnPowerResult.player.currentStats;
+      logs.push(...pathOnPowerResult.logs);
+      applyTriggerResultToEnemy(enemy, pathOnPowerResult);
 
       switch (power.effect) {
         case 'damage': {
@@ -374,7 +388,7 @@ export function usePowerActions(context: PowerActivationContext) {
         currentEnemy: enemy,
       };
     });
-  }, [setState, setLastCombatEvent, scheduleCombatEvent, enemyDeathProcessedRef]);
+  }, [setState, setLastCombatEvent, scheduleCombatEvent, enemyDeathProcessedRef, processTrigger]);
 
   return {
     usePower,
