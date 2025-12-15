@@ -390,7 +390,9 @@ export function usePathAbilities() {
 
         // Process shield
         if (effect.shield) {
-          // Shield would need to be implemented in the combat system
+          updatedPlayer.shield = (updatedPlayer.shield || 0) + effect.shield;
+          updatedPlayer.shieldRemainingDuration = effect.duration || 5;
+          updatedPlayer.shieldMaxDuration = effect.duration || 5;
           logs.push(`🛡️ ${ability.name}: Gained ${effect.shield} shield`);
         }
       });

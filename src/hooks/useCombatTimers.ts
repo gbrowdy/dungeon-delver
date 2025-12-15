@@ -260,4 +260,43 @@ export function useCombatTimers(
 
     return () => clearInterval(interval);
   }, [enabled, setState]);
+
+  // Shield duration tick-down - expires shields over time
+  useEffect(() => {
+    if (!enabled) return;
+
+    const SHIELD_TICK_INTERVAL = COMBAT_BALANCE.COOLDOWN_TICK_INTERVAL; // 100ms
+
+    const interval = setInterval(() => {
+      setState((prev: GameState) => {
+        if (!prev.player || prev.isPaused) return prev;
+
+        const player = prev.player;
+
+        // Check if player has an active shield
+        if (!player.shieldRemainingDuration || player.shieldRemainingDuration <= 0) return prev;
+
+        // Calculate shield duration reduction per tick
+        // COOLDOWN_TICK_INTERVAL is in ms, we want to reduce by (tickInterval/1000) seconds
+        // Also scale with combat speed so shields expire faster at higher speeds
+        const tickSeconds = (SHIELD_TICK_INTERVAL / 1000) * prev.combatSpeed;
+
+        const updatedPlayer = deepClonePlayer(player);
+        updatedPlayer.shieldRemainingDuration -= tickSeconds;
+
+        if (updatedPlayer.shieldRemainingDuration <= 0) {
+          updatedPlayer.shield = 0;
+          updatedPlayer.shieldRemainingDuration = 0;
+          prev.combatLog.add('🛡️ Shield expired');
+        }
+
+        return {
+          ...prev,
+          player: updatedPlayer,
+        };
+      });
+    }, SHIELD_TICK_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [enabled, setState]);
 }

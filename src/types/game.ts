@@ -202,6 +202,9 @@ export interface Player {
   enemyAttackCounter?: number; // Counter for Uncanny Dodge ability
   usedCombatAbilities?: string[]; // Abilities that have been used this combat (reset on combat end)
   usedFloorAbilities?: string[]; // Abilities that have been used this floor (reset on floor change)
+  shield?: number; // Current shield amount (absorbs damage before HP)
+  shieldMaxDuration?: number; // Max duration in seconds (for display)
+  shieldRemainingDuration?: number; // Remaining duration in seconds
 }
 
 export interface GameState {
