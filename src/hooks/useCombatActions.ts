@@ -100,6 +100,45 @@ export function useCombatActions({
       const updatedPlayer = turnStartResult.player;
       logs = turnStartResult.logs;
 
+      // Process path ability triggers: turn_start
+      const pathTurnStartResult = processTrigger('turn_start', {
+        player: updatedPlayer,
+        enemy,
+      });
+      Object.assign(updatedPlayer, { currentStats: pathTurnStartResult.player.currentStats });
+      logs.push(...pathTurnStartResult.logs);
+
+      // Apply damage to enemy if any (e.g., damage auras)
+      if (pathTurnStartResult.damageAmount) {
+        enemy.health -= pathTurnStartResult.damageAmount;
+      }
+
+      // Apply reflected damage to enemy if any
+      if (pathTurnStartResult.reflectedDamage) {
+        enemy.health -= pathTurnStartResult.reflectedDamage;
+      }
+
+      // Apply status effect to enemy if triggered
+      if (pathTurnStartResult.statusToApply) {
+        enemy.statusEffects = enemy.statusEffects || [];
+        enemy.statusEffects.push(pathTurnStartResult.statusToApply);
+      }
+
+      // Apply stat debuffs to enemy if triggered
+      if (pathTurnStartResult.enemyDebuffs && pathTurnStartResult.enemyDebuffs.length > 0) {
+        enemy.statDebuffs = enemy.statDebuffs || [];
+        pathTurnStartResult.enemyDebuffs.forEach(debuff => {
+          const existingIndex = enemy.statDebuffs!.findIndex(
+            d => d.stat === debuff.stat && d.sourceName === debuff.sourceName
+          );
+          if (existingIndex >= 0) {
+            enemy.statDebuffs![existingIndex].remainingDuration = debuff.remainingDuration;
+          } else {
+            enemy.statDebuffs!.push(debuff);
+          }
+        });
+      }
+
       // NOTE: Power cooldowns are now time-based, not turn-based
       // They are ticked separately in a dedicated interval
 
