@@ -6,6 +6,7 @@ import { COMBAT_BALANCE } from '@/constants/balance';
 import { GAME_PHASE, ITEM_EFFECT_TRIGGER, EFFECT_TYPE, BUFF_STAT } from '@/constants/enums';
 import { logStateTransition, logCombatEvent, logDeathEvent } from '@/utils/gameLogger';
 import { processItemEffects } from '@/hooks/useItemEffects';
+import { usePathAbilities } from '@/hooks/usePathAbilities';
 
 /**
  * Hook for room transitions and enemy spawning.
@@ -20,6 +21,9 @@ export function useRoomTransitions(
 ) {
   // Ref to hold nextRoom function for useEffect without dependency issues (Issue 14 fix)
   const nextRoomRef = useRef<(() => void) | null>(null);
+
+  // Initialize path abilities hook
+  const { processTrigger } = usePathAbilities();
 
   const nextRoom = useCallback(() => {
     setState((prev: GameState) => {
@@ -84,6 +88,40 @@ export function useRoomTransitions(
         }
       });
 
+      // Process path ability combat_start triggers
+      const pathCombatStartResult = processTrigger('combat_start', {
+        player,
+        enemy,
+      });
+      Object.assign(player, { currentStats: pathCombatStartResult.player.currentStats });
+      logs.push(...pathCombatStartResult.logs);
+
+      // Apply damage to enemy if any (e.g., from initial burst abilities)
+      if (pathCombatStartResult.damageAmount) {
+        enemy.health -= pathCombatStartResult.damageAmount;
+      }
+
+      // Apply status effect to enemy if triggered (e.g., Toxic Field poison)
+      if (pathCombatStartResult.statusToApply) {
+        enemy.statusEffects = enemy.statusEffects || [];
+        enemy.statusEffects.push(pathCombatStartResult.statusToApply);
+      }
+
+      // Apply stat debuffs to enemy if triggered (e.g., Arcane Field slow)
+      if (pathCombatStartResult.enemyDebuffs && pathCombatStartResult.enemyDebuffs.length > 0) {
+        enemy.statDebuffs = enemy.statDebuffs || [];
+        pathCombatStartResult.enemyDebuffs.forEach(debuff => {
+          const existingIndex = enemy.statDebuffs!.findIndex(
+            d => d.stat === debuff.stat && d.sourceName === debuff.sourceName
+          );
+          if (existingIndex >= 0) {
+            enemy.statDebuffs![existingIndex].remainingDuration = debuff.remainingDuration;
+          } else {
+            enemy.statDebuffs!.push(debuff);
+          }
+        });
+      }
+
       // Recalculate stats with buffs
       player.currentStats = calculateStats(player);
 
@@ -101,7 +139,7 @@ export function useRoomTransitions(
         currentEnemy: enemy,
       };
     });
-  }, [setState]);
+  }, [setState, processTrigger]);
 
   // Keep nextRoomRef updated for useEffect without dependency issues (Issue 14 fix)
   useEffect(() => {
