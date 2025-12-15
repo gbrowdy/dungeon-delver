@@ -11,6 +11,7 @@ import { processLevelUp } from '@/hooks/useRewardCalculation';
 // STAT_UPGRADE imports removed - old upgrade system deprecated
 import { GAME_PHASE, PAUSE_REASON } from '@/constants/enums';
 import { FLOOR_CONFIG } from '@/constants/game';
+import { PATH_PROGRESSION, getExpectedAbilityCount } from '@/constants/paths';
 import { logStateTransition } from '@/utils/gameLogger';
 import { deepClonePlayer } from '@/utils/stateUtils';
 import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
@@ -270,9 +271,8 @@ export function useProgressionActions({
 
       // Check if player needs to choose an ability (level 3+ with path but no pending choice)
       // This handles the case where player died before dismissing level-up popup
-      if (player.path && player.level >= 3 && !player.pendingAbilityChoice) {
-        // Count expected abilities for this level (one per level from 3 onwards)
-        const expectedAbilities = player.level - 2; // Level 3 = 1 ability, Level 4 = 2, etc.
+      if (player.path && player.level >= PATH_PROGRESSION.FIRST_ABILITY_LEVEL && !player.pendingAbilityChoice) {
+        const expectedAbilities = getExpectedAbilityCount(player.level);
         const currentAbilities = player.path.abilities.length;
         if (currentAbilities < expectedAbilities) {
           player.pendingAbilityChoice = true;
