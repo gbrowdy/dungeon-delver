@@ -104,14 +104,15 @@ export function useCombatTimers(
         const enemy = prev.currentEnemy;
 
         // No debuffs to process
-        if (!enemy.statDebuffs || enemy.statDebuffs.length === 0) return prev;
+        const currentDebuffs = enemy.statDebuffs;
+        if (!currentDebuffs || currentDebuffs.length === 0) return prev;
 
         // Skip if dying
         if (enemy.isDying || enemy.health <= 0) return prev;
 
         // Tick down all debuff durations, remove expired ones
         const tickAmount = prev.combatSpeed; // Scale with combat speed
-        const updatedDebuffs = enemy.statDebuffs
+        const updatedDebuffs = currentDebuffs
           .map(debuff => ({
             ...debuff,
             remainingDuration: debuff.remainingDuration - tickAmount,
@@ -119,10 +120,10 @@ export function useCombatTimers(
           .filter(debuff => debuff.remainingDuration > 0);
 
         // Only update if something changed
-        if (updatedDebuffs.length === enemy.statDebuffs.length) {
+        if (updatedDebuffs.length === currentDebuffs.length) {
           // Check if any durations actually changed
           const changed = updatedDebuffs.some((d, i) =>
-            d.remainingDuration !== enemy.statDebuffs![i].remainingDuration
+            d.remainingDuration !== currentDebuffs[i].remainingDuration
           );
           if (!changed) return prev;
         }
@@ -131,7 +132,7 @@ export function useCombatTimers(
         updatedEnemy.statDebuffs = updatedDebuffs;
 
         // Log when debuffs expire
-        const expiredDebuffs = enemy.statDebuffs.filter(
+        const expiredDebuffs = currentDebuffs.filter(
           d => !updatedDebuffs.some(ud => ud.id === d.id)
         );
         expiredDebuffs.forEach(d => {

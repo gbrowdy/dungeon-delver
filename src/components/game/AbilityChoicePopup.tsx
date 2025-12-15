@@ -185,7 +185,7 @@ export function AbilityChoicePopup({
                   <div className="bg-slate-900/50 rounded p-3 border border-slate-700/30">
                     {ability.effects && ability.effects.length > 0 ? (
                       ability.effects.map((effect, index) => (
-                        <AbilityEffectDisplay key={index} effect={effect} />
+                        <AbilityEffectDisplay key={`${effect.trigger}_${index}`} effect={effect} />
                       ))
                     ) : (
                       <span className="pixel-text text-pixel-2xs text-slate-400">
