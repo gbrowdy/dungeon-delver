@@ -70,7 +70,7 @@ export function useCombatActions({
 }: UseCombatActionsParams) {
 
   // Initialize path abilities hook for processing path ability effects
-  const { processTrigger, hasAbility } = usePathAbilities();
+  const { processTrigger, hasAbility, getStatusImmunities } = usePathAbilities();
 
   /**
    * Hero attack callback - called when hero's attack timer fills
@@ -490,13 +490,18 @@ export function useCombatActions({
             break;
           }
           case 'stun': {
-            player.statusEffects.push({
-              id: `stun-${Date.now()}`,
-              type: STATUS_EFFECT_TYPE.STUN,
-              remainingTurns: ability.value,
-              icon: '💫',
-            });
-            logs.push(`💫 You are stunned for ${ability.value} turn(s)!`);
+            const immunities = getStatusImmunities(player);
+            if (immunities.includes('stun')) {
+              logs.push(`🛡️ Immovable Object! You resist the stun!`);
+            } else {
+              player.statusEffects.push({
+                id: `stun-${Date.now()}`,
+                type: STATUS_EFFECT_TYPE.STUN,
+                remainingTurns: ability.value,
+                icon: '💫',
+              });
+              logs.push(`💫 You are stunned for ${ability.value} turn(s)!`);
+            }
             break;
           }
           case 'heal': {
@@ -785,7 +790,7 @@ export function useCombatActions({
         currentEnemy: enemy,
       };
     });
-  }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef, processTrigger, hasAbility]);
+  }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef, processTrigger, hasAbility, getStatusImmunities]);
 
   /**
    * Active block - reduces incoming damage but costs mana

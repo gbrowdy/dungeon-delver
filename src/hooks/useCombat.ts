@@ -3,6 +3,7 @@ import { Player, Enemy, Item, StatusEffect, ActiveBuff, EnemyAbility } from '@/t
 import { calculateEnemyIntent } from '@/data/enemies';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
+import { usePathAbilities } from '@/hooks/usePathAbilities';
 
 /**
  * Combat result from a single combat tick
@@ -25,6 +26,8 @@ export interface CombatTickResult {
  * Separates combat logic from state management.
  */
 export function useCombat() {
+  // Initialize path abilities hook for status immunity checks
+  const { getStatusImmunities } = usePathAbilities();
   /**
    * Calculate damage dealt by attacker to defender
    */
@@ -209,13 +212,18 @@ export function useCombat() {
         break;
       }
       case 'stun': {
-        updatedPlayer.statusEffects.push({
-          id: `stun-${Date.now()}`,
-          type: 'stun',
-          remainingTurns: ability.value,
-          icon: '💫',
-        });
-        logs.push(`💫 You are stunned for ${ability.value} turn(s)!`);
+        const immunities = getStatusImmunities(player);
+        if (immunities.includes('stun')) {
+          logs.push(`🛡️ Immovable Object! You resist the stun!`);
+        } else {
+          updatedPlayer.statusEffects.push({
+            id: `stun-${Date.now()}`,
+            type: 'stun',
+            remainingTurns: ability.value,
+            icon: '💫',
+          });
+          logs.push(`💫 You are stunned for ${ability.value} turn(s)!`);
+        }
         break;
       }
       case 'heal': {
@@ -238,7 +246,7 @@ export function useCombat() {
     }
 
     return { enemy: updatedEnemy, player: updatedPlayer, damage };
-  }, []);
+  }, [getStatusImmunities]);
 
   /**
    * Calculate and update enemy intent for next turn

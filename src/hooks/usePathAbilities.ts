@@ -470,12 +470,27 @@ export function usePathAbilities() {
     };
   }, [getActiveAbilities]);
 
+  /**
+   * Get status immunities from player's path abilities
+   * Returns an array of status effect types the player is immune to
+   */
+  const getStatusImmunities = useCallback((player: Player): string[] => {
+    const immunities: string[] = [];
+
+    if (hasAbility(player, 'immovable_object')) {
+      immunities.push('stun', 'slow');
+    }
+
+    return immunities;
+  }, [hasAbility]);
+
   return {
     getPassiveStatBonuses,
     processTrigger,
     hasAbility,
     getActiveAbilities,
     getPowerModifiers,
+    getStatusImmunities,
   };
 }
 
