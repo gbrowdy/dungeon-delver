@@ -305,13 +305,13 @@ export function useCombatTimers(
             return { ...buff, remainingTurns: newRemaining };
           }).filter(buff => buff.remainingTurns > 0);
 
+          // Always update when buffs are ticking (so UI shows countdown)
+          needsUpdate = true;
+
           if (expiredBuffs.length > 0) {
             expiredBuffs.forEach(buffName => {
               logs.push(`⏰ ${buffName} buff expired`);
             });
-            needsUpdate = true;
-          } else if (updatedPlayer.activeBuffs.length !== player.activeBuffs.length) {
-            needsUpdate = true;
           }
         }
 

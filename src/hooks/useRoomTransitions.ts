@@ -77,6 +77,7 @@ export function useRoomTransitions(
         comboCount: 0,
         lastPowerUsed: null,
         usedCombatAbilities: [], // Reset once-per-combat abilities
+        enemyAttackCounter: 0, // Reset Uncanny Dodge counter
       };
 
       // Add out_of_combat logs
