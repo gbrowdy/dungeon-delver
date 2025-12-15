@@ -12,7 +12,7 @@
  */
 
 import { useCallback } from 'react';
-import { Player, Enemy, Stats, StatusEffect, EnemyStatDebuff } from '@/types/game';
+import { Player, Enemy, Stats, StatusEffect, EnemyStatDebuff, ActiveBuff } from '@/types/game';
 import {
   PathAbility,
   PathAbilityEffect,
@@ -364,7 +364,7 @@ export function usePathAbilities() {
                 const bonus = mod.percentBonus || 0;
                 if (bonus > 0 && effect.duration) {
                   // Create an active buff
-                  const buff: import('@/types/game').ActiveBuff = {
+                  const buff: ActiveBuff = {
                     id: `${ability.id}_${stat}_${Date.now()}_${debuffIdCounter++}`,
                     name: ability.name,
                     stat,

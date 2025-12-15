@@ -169,7 +169,7 @@ export function useCombatTimers(
         // Calculate cooldown reduction per tick
         // COOLDOWN_TICK_INTERVAL is in ms, we want to reduce by (tickInterval/1000) seconds
         // Also scale with combat speed so cooldowns recover faster at higher speeds
-        const tickSeconds = (COOLDOWN_TICK_INTERVAL / 1000) * 1.0 * prev.combatSpeed;
+        const tickSeconds = (COOLDOWN_TICK_INTERVAL / 1000) * prev.combatSpeed;
 
         // Update powers with reduced cooldowns
         let anyChanged = false;
@@ -227,7 +227,7 @@ export function useCombatTimers(
         // Calculate cooldown reduction per tick
         // COOLDOWN_TICK_INTERVAL is in ms, we want to reduce by (tickInterval/1000) seconds
         // Also scale with combat speed so cooldowns recover faster at higher speeds
-        const tickSeconds = (COOLDOWN_TICK_INTERVAL / 1000) * 1.0 * prev.combatSpeed;
+        const tickSeconds = (COOLDOWN_TICK_INTERVAL / 1000) * prev.combatSpeed;
 
         // Update ability cooldowns
         let anyChanged = false;

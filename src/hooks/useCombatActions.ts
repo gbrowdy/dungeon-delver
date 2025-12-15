@@ -266,9 +266,8 @@ export function useCombatActions({
 
       // Apply combo bonus damage if any (damageAmount is already calculated in usePathAbilities)
       if (onComboResult.damageAmount && onComboResult.damageAmount > 0) {
-        const comboBonusDamage = onComboResult.damageAmount;
-        enemy.health -= comboBonusDamage;
-        finalDamage += comboBonusDamage;
+        enemy.health -= onComboResult.damageAmount;
+        finalDamage += onComboResult.damageAmount;
         logs.push(...onComboResult.logs);
 
         // Reset combo count after combo triggers
