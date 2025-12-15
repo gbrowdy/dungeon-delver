@@ -200,6 +200,8 @@ export interface Player {
   path: PlayerPath | null; // null until level 2
   pendingAbilityChoice: boolean; // true when level-up needs ability selection
   enemyAttackCounter?: number; // Counter for Uncanny Dodge ability
+  usedCombatAbilities?: string[]; // Abilities that have been used this combat (reset on combat end)
+  usedFloorAbilities?: string[]; // Abilities that have been used this floor (reset on floor change)
 }
 
 export interface GameState {

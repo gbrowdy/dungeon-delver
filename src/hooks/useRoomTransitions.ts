@@ -57,6 +57,7 @@ export function useRoomTransitions(
         isBlocking: false,
         comboCount: 0,
         lastPowerUsed: null,
+        usedCombatAbilities: [], // Reset once-per-combat abilities
       };
 
       // Add out_of_combat logs

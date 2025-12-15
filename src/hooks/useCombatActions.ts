@@ -699,6 +699,51 @@ export function useCombatActions({
       // Check player death - set isDying flag and let animation complete before transition
       // Use ref for atomic check to prevent race conditions from async setState
       if (playerWillDie && !playerDeathProcessedRef.current) {
+        // Check for undying_fury (once per combat)
+        if (hasAbility(player, 'undying_fury')) {
+          const usedCombat = player.usedCombatAbilities || [];
+          if (!usedCombat.includes('undying_fury')) {
+            player.currentStats.health = 1;
+            player.usedCombatAbilities = [...usedCombat, 'undying_fury'];
+            // Apply 50% power and speed buff for 5 seconds
+            player.activeBuffs = player.activeBuffs || [];
+            player.activeBuffs.push({
+              id: `undying_fury_power_${Date.now()}`,
+              name: 'Undying Fury',
+              stat: 'power',
+              multiplier: 1.5,
+              remainingTurns: 5,
+              icon: '🔥',
+            });
+            player.activeBuffs.push({
+              id: `undying_fury_speed_${Date.now()}`,
+              name: 'Undying Fury',
+              stat: 'speed',
+              multiplier: 1.5,
+              remainingTurns: 5,
+              icon: '🔥',
+            });
+            logs.push(`🔥 Undying Fury! You refuse to fall!`);
+            // Continue combat, don't die
+            prev.combatLog.add(logs);
+            return { ...prev, player, currentEnemy: enemy };
+          }
+        }
+
+        // Check for immortal_guardian (once per floor)
+        if (hasAbility(player, 'immortal_guardian')) {
+          const usedFloor = player.usedFloorAbilities || [];
+          if (!usedFloor.includes('immortal_guardian')) {
+            const healAmount = Math.floor(player.currentStats.maxHealth * 0.4);
+            player.currentStats.health = healAmount;
+            player.usedFloorAbilities = [...usedFloor, 'immortal_guardian'];
+            logs.push(`🛡️ Immortal Guardian! You are restored to ${healAmount} HP!`);
+            // Continue combat, don't die
+            prev.combatLog.add(logs);
+            return { ...prev, player, currentEnemy: enemy };
+          }
+        }
+
         // Check for ON_LETHAL_DAMAGE item effects (survival effects like Immortal Plate)
         const lethalResult = processItemEffects({
           trigger: ITEM_EFFECT_TRIGGER.ON_LETHAL_DAMAGE,

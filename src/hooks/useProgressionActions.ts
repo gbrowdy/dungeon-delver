@@ -195,6 +195,8 @@ export function useProgressionActions({
       };
       // Reset power cooldowns for fresh start on new floor
       player.powers = player.powers.map((p: Power) => ({ ...p, currentCooldown: 0 }));
+      // Reset once-per-floor abilities for new floor
+      player.usedFloorAbilities = [];
 
       const combatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
       combatLog.add(`Entering Floor ${nextFloor}: ${newTheme.name}... Health and Mana restored!`);
@@ -296,6 +298,8 @@ export function useProgressionActions({
       player.comboCount = 0;
       player.lastPowerUsed = null;
       player.isDying = false; // Clear dying state on retry
+      // Reset once-per-floor abilities on retry
+      player.usedFloorAbilities = [];
 
       // Determine which floor to retry
       const floorToRetry = prev.deathFloor ?? prev.currentFloor;
