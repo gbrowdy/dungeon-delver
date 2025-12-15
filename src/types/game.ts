@@ -29,7 +29,7 @@ export interface ActiveBuff {
   name: string;
   stat: 'power' | 'armor' | 'speed' | 'fortune';
   multiplier: number; // e.g., 1.5 for +50%
-  remainingTurns: number;
+  remainingTurns: number; // Legacy name - now stores seconds (time-based), not turns
   icon: string;
 }
 

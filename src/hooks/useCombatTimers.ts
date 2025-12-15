@@ -310,6 +310,8 @@ export function useCombatTimers(
         }
 
         // Tick down buff durations (time-based, not turn-based)
+        // NOTE: ActiveBuff.remainingTurns is a legacy field name - it now stores seconds, not turns.
+        // Renaming would require changes across 12+ files. The name is kept for backwards compatibility.
         if (player.activeBuffs && player.activeBuffs.length > 0) {
           const expiredBuffs: string[] = [];
 
