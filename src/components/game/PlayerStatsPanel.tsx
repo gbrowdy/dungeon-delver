@@ -1,6 +1,6 @@
 import { useCombatPlayer } from '@/contexts/CombatContext';
 import { cn } from '@/lib/utils';
-import { Item, ItemType } from '@/types/game';
+import { Item, ItemType, Player } from '@/types/game';
 import {
   Tooltip,
   TooltipContent,
@@ -11,8 +11,10 @@ import { TouchTooltip } from '@/components/ui/touch-tooltip';
 import { formatItemStatBonus } from '@/utils/itemUtils';
 import { getCritChance, getCritDamage, getDodgeChance } from '@/utils/fortuneUtils';
 import { ReactNode } from 'react';
-import { getPlayerDisplayName } from '@/utils/powerSynergies';
+import { getPlayerDisplayName, getPathName } from '@/utils/powerSynergies';
 import * as Icons from 'lucide-react';
+import { getAbilitiesByIds } from '@/utils/pathUtils';
+import { PathAbility } from '@/types/paths';
 
 /**
  * Get the Lucide icon component for an item.
@@ -67,6 +69,11 @@ export function PlayerStatsPanel() {
         speed={player.currentStats.speed}
         fortune={player.currentStats.fortune}
       />
+
+      {/* Path Abilities Display */}
+      {player.path && player.path.abilities.length > 0 && (
+        <AbilitiesDisplay abilityIds={player.path.abilities} />
+      )}
 
       {/* Gold and XP Progress */}
       <div className="mt-1.5 xs:mt-2 space-y-1">
@@ -400,6 +407,102 @@ function StatItemWithTooltip({ icon, label, value, tooltip }: StatItemWithToolti
               <div className="pixel-text text-pixel-xs text-slate-200">
                 {tooltip}
               </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    </>
+  );
+}
+
+/**
+ * AbilitiesDisplay - Shows the player's selected path abilities.
+ * Compact display with icons and tooltips for ability details.
+ */
+interface AbilitiesDisplayProps {
+  abilityIds: string[];
+}
+
+function AbilitiesDisplay({ abilityIds }: AbilitiesDisplayProps) {
+  const abilities = getAbilitiesByIds(abilityIds);
+
+  if (abilities.length === 0) return null;
+
+  return (
+    <div className="mt-1.5 xs:mt-2">
+      <div className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400 mb-1">
+        Abilities
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {abilities.map((ability) => (
+          <AbilitySlot key={ability.id} ability={ability} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * AbilitySlot - A single ability icon with tooltip showing details.
+ */
+interface AbilitySlotProps {
+  ability: PathAbility;
+}
+
+function AbilitySlot({ ability }: AbilitySlotProps) {
+  const iconName = ability.icon && ability.icon in Icons
+    ? (ability.icon as keyof typeof Icons)
+    : 'Sparkles';
+  const IconComponent = Icons[iconName] as React.ComponentType<{ className?: string }>;
+
+  const tooltipContent = (
+    <>
+      <div className="pixel-text text-pixel-sm font-medium text-amber-200">
+        {ability.name}
+      </div>
+      <div className="pixel-text text-pixel-xs text-slate-300 mt-1">
+        {ability.description}
+      </div>
+      {ability.isCapstone && (
+        <div className="pixel-text text-pixel-xs text-accent mt-1 font-medium">
+          Capstone Ability
+        </div>
+      )}
+    </>
+  );
+
+  const abilityButton = (
+    <div
+      className={cn(
+        'pixel-panel-dark w-7 h-7 sm:w-8 sm:h-8 rounded border-2 flex items-center justify-center',
+        ability.isCapstone
+          ? 'border-amber-500/60 bg-amber-500/10'
+          : 'border-violet-500/40 bg-violet-500/10'
+      )}
+      aria-label={`${ability.name}: ${ability.description}`}
+    >
+      <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-200" aria-hidden="true" />
+    </div>
+  );
+
+  return (
+    <>
+      {/* Mobile: TouchTooltip */}
+      <div className="xs:hidden">
+        <TouchTooltip content={tooltipContent} side="bottom">
+          {abilityButton}
+        </TouchTooltip>
+      </div>
+
+      {/* Desktop: Standard Tooltip */}
+      <div className="hidden xs:block">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {abilityButton}
+            </TooltipTrigger>
+            <TooltipContent side="top" className="pixel-panel max-w-xs">
+              {tooltipContent}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

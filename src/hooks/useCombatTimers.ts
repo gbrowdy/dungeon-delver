@@ -91,6 +91,64 @@ export function useCombatTimers(
     return () => clearInterval(interval);
   }, [enabled, setState]);
 
+  // Enemy stat debuff tick-down - reduces duration every second
+  useEffect(() => {
+    if (!enabled) return;
+
+    const DEBUFF_TICK_INTERVAL = 1000; // 1 second per tick
+
+    const interval = setInterval(() => {
+      setState((prev: GameState) => {
+        if (!prev.currentEnemy || prev.isPaused) return prev;
+
+        const enemy = prev.currentEnemy;
+
+        // No debuffs to process
+        const currentDebuffs = enemy.statDebuffs;
+        if (!currentDebuffs || currentDebuffs.length === 0) return prev;
+
+        // Skip if dying
+        if (enemy.isDying || enemy.health <= 0) return prev;
+
+        // Tick down all debuff durations, remove expired ones
+        const tickAmount = prev.combatSpeed; // Scale with combat speed
+        const updatedDebuffs = currentDebuffs
+          .map(debuff => ({
+            ...debuff,
+            remainingDuration: debuff.remainingDuration - tickAmount,
+          }))
+          .filter(debuff => debuff.remainingDuration > 0);
+
+        // Only update if something changed
+        if (updatedDebuffs.length === currentDebuffs.length) {
+          // Check if any durations actually changed
+          const changed = updatedDebuffs.some((d, i) =>
+            d.remainingDuration !== currentDebuffs[i].remainingDuration
+          );
+          if (!changed) return prev;
+        }
+
+        const updatedEnemy = deepCloneEnemy(enemy);
+        updatedEnemy.statDebuffs = updatedDebuffs;
+
+        // Log when debuffs expire
+        const expiredDebuffs = currentDebuffs.filter(
+          d => !updatedDebuffs.some(ud => ud.id === d.id)
+        );
+        expiredDebuffs.forEach(d => {
+          prev.combatLog.add(`${d.sourceName} effect on enemy expired`);
+        });
+
+        return {
+          ...prev,
+          currentEnemy: updatedEnemy,
+        };
+      });
+    }, DEBUFF_TICK_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [enabled, setState]);
+
   // Time-based power cooldown ticker - independent of turns
   // Cooldowns tick down in real-time at constant speed (cooldownSpeed stat removed)
   useEffect(() => {

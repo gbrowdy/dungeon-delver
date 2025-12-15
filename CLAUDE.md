@@ -41,16 +41,19 @@ src/
 
 ## Architecture
 
-This is a roguelike browser game with auto-combat mechanics.
+This is a roguelike browser game with auto-combat mechanics and a path-based progression system.
 
 ### Game Flow
 
 Phases defined in `GameState.gamePhase`:
 ```
-menu → class-select → combat → floor-complete → combat → ... → defeat
+menu → class-select → path-select (at level 2) → combat → floor-complete → combat → ... → victory/defeat
 ```
 
-On death: `defeat` screen with upgrade options, then retry (same floor) or abandon (restart).
+- At **level 2**: Player chooses a path (active or passive playstyle)
+- At **levels 3+**: Player chooses abilities from their path
+- On death: `defeat` screen, then retry (same floor) or abandon (restart)
+- On Floor 10 boss defeat: `victory` screen
 
 ### State Management
 
@@ -64,9 +67,11 @@ On death: `defeat` screen with upgrade options, then retry (same floor) or aband
 - `useEventQueue` - Animation event scheduling (prevents setTimeout cascades)
 - `useCombatActions` - Hero attack, enemy attack, block actions
 - `usePowerActions` - Power activation and cooldown management
-- `useRewardCalculation` - XP, gold, item drops, level-up processing
+- `useRewardCalculation` - XP, gold, level-up processing
 - `useItemEffects` - Centralized item effect processing
 - `usePauseControl` - Pause/unpause state management
+- `usePathActions` - Path selection, ability choices, subpath selection
+- `usePathAbilities` - Path ability trigger processing
 
 **Combat Context**: `CombatContext.tsx` provides typed access to combat state for UI components:
 ```tsx
@@ -90,7 +95,9 @@ const { player, enemy, combatState, actions } = useCombat();
 | `components/game/Game.tsx` | Phase router |
 | `components/game/BattleArena.tsx` | Battle visualization (220 lines) |
 | `components/game/CombatErrorBoundary.tsx` | Error recovery for combat |
-| `components/game/FloorCompleteScreen.tsx` | Rewards/upgrades UI |
+| `components/game/FloorCompleteScreen.tsx` | Power rewards UI |
+| `components/game/PathSelectionScreen.tsx` | Path choice at level 2 |
+| `components/game/AbilityChoicePopup.tsx` | Ability selection popup |
 
 ### Data Files
 
@@ -100,6 +107,7 @@ const { player, enemy, combatState, actions } = useCombat();
 | `data/enemies.ts` | Enemy generation with tier/ability system |
 | `data/powers.ts` | Unlockable powers with upgrade system |
 | `data/items.ts` | Equipment generation by type/rarity |
+| `data/paths/` | Path definitions per class (warrior.ts, mage.ts, rogue.ts, paladin.ts) |
 
 ### Constants Files
 
@@ -110,6 +118,7 @@ const { player, enemy, combatState, actions } = useCombat();
 | `constants/enums.ts` | Game phases, status effects, rarities |
 | `constants/animation.ts` | Animation timing (30+ values as CSS vars) |
 | `constants/responsive.ts` | Breakpoints, layouts, touch targets |
+| `constants/paths.ts` | Path selection stat bonuses |
 
 ## Combat System
 
@@ -144,19 +153,29 @@ const { player, enemy, combatState, actions } = useCombat();
 ## Progression Systems
 
 ### Leveling
-- Base XP: 150 (scales 1.5x per level)
-- Level-up bonuses: +5 HP, +1 ATK, +0 DEF, +3 Mana
+- Base XP: 100 (scales 1.5x per level)
+- Level-up bonuses: +8 HP, +2 ATK, +5 Mana
 
-### Upgrades (at death screen)
-12 purchasable stat upgrades with scaling costs:
-HP, ATK, DEF, Crit, Dodge, Mana, Speed, HP Regen, MP Regen, Cooldown Speed, Crit Damage, Gold Find
+### Path System
+- **Level 2**: Choose a path (active or passive playstyle)
+- **Levels 3-6**: Choose one of two abilities from your path
+- **Level 4**: Choose a subpath specialization
+- **Level 6**: Unlock capstone ability
+
+Each class has 2 paths:
+- **Warrior**: Berserker (active burst) / Guardian (passive defense)
+- **Mage**: Archmage (spell timing) / Enchanter (auto-magic)
+- **Rogue**: Assassin (active burst) / Shadow (passive procs)
+- **Paladin**: Crusader (active smite) / Templar (passive auras)
 
 ### Items
 - **Types**: Weapon, Armor, Accessory
 - **Rarities**: Common → Uncommon → Rare → Epic → Legendary
 - **Effects**: Rare+ items have special triggers (on_hit, on_crit, on_kill, etc.)
+- **Acquisition**: Shop only (no enemy drops)
 
 ### Powers
+- Earned at floor completion (every 2 floors)
 - Upgradeable to level 3
 - Per level: +25% value, -0.5s cooldown, -10% mana cost
 
@@ -180,6 +199,7 @@ HP, ATK, DEF, Crit, Dodge, Mana, Speed, HP Regen, MP Regen, Cooldown Speed, Crit
 ### Popups
 - `LevelUpPopup.tsx` - Level up notification
 - `ItemDropPopup.tsx` - Item claiming
+- `AbilityChoicePopup.tsx` - Path ability selection
 
 ## Accessibility Features
 

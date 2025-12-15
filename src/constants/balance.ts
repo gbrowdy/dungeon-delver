@@ -42,9 +42,9 @@ export const COMBAT_BALANCE = {
 
 export const REWARD_CONFIG = {
   // XP rewards - reduced for slower leveling
-  BASE_ENEMY_XP: 3,  // Reduced from 5
+  BASE_ENEMY_XP: 5,  // Reduced from 5
   XP_PER_FLOOR: 3,   // Reduced from 5
-  XP_PER_ROOM: 1,    // Reduced from 2
+  XP_PER_ROOM: 2,    // Reduced from 2
   BOSS_XP_MULTIPLIER: 2, // Reduced from 3
 
   // Gold rewards - balanced for early game affordability
@@ -153,8 +153,8 @@ export const ENEMY_ABILITY_CONFIG = {
   FLOOR_FOR_2_ABILITIES: 2, // Reduced from 3
   FLOOR_FOR_3_ABILITIES: 4, // Reduced from 5
 
-  // Early floor ability chance - much higher
-  EARLY_FLOOR_ABILITY_CHANCE: 0.8, // Increased from 0.5 - 80% on floors 1-2
+  // Early floor ability chance - balanced for Floor 1 approachability
+  EARLY_FLOOR_ABILITY_CHANCE: 0.5, // 50% on floors 1-2
 
   // Common ability chances
   COMMON_ABILITY_CHANCE: 0.6,  // Increased from 0.5

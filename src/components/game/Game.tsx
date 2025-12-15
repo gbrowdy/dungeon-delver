@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useGameState } from '@/hooks/useGameState';
 import { MainMenu } from './MainMenu';
 import { ClassSelect } from './ClassSelect';
@@ -14,12 +15,22 @@ export function Game() {
   const { state, shopItems, availablePowers, droppedItem, lastCombatEvent, heroProgress, enemyProgress, isHeroStunned, getAbilityChoices, getPathById, actions } = useGameState();
 
   // Get ability choices for player if they have pending ability choice
-  const abilityChoices = state.player?.pendingAbilityChoice && state.player?.path
-    ? (() => {
-        const pathDef = getPathById(state.player.path.pathId);
-        return pathDef ? getAbilityChoices(state.player, pathDef) : null;
-      })()
-    : null;
+  // Memoize to prevent re-shuffling on every render (which caused flickering)
+  // Only recalculate when pendingAbilityChoice changes or player chooses an ability
+  const abilityChoices = useMemo(() => {
+    if (!state.player?.pendingAbilityChoice || !state.player?.path) {
+      return null;
+    }
+    const pathDef = getPathById(state.player.path.pathId);
+    return pathDef ? getAbilityChoices(state.player, pathDef) : null;
+  }, [
+    state.player?.pendingAbilityChoice,
+    state.player?.path?.pathId,
+    state.player?.path?.abilities.length, // Recalculate when abilities change
+    state.player?.level,
+    getPathById,
+    getAbilityChoices,
+  ]);
 
   switch (state.gamePhase) {
     case 'menu':
@@ -68,9 +79,7 @@ export function Game() {
           <FloorCompleteScreen
             player={state.player}
             floor={state.currentFloor}
-            shopItems={shopItems}
             availablePowers={availablePowers}
-            onClaimItem={actions.claimItem}
             onLearnPower={actions.learnPower}
             onContinue={actions.continueFromFloorComplete}
             onVisitShop={actions.openShop}

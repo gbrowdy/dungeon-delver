@@ -12,7 +12,7 @@
  */
 
 import { useCallback } from 'react';
-import { Player, Enemy, Stats, StatusEffect } from '@/types/game';
+import { Player, Enemy, Stats, StatusEffect, EnemyStatDebuff } from '@/types/game';
 import {
   PathAbility,
   PathAbilityEffect,
@@ -29,6 +29,9 @@ import { WARRIOR_PATHS } from '@/data/paths/warrior';
 import { MAGE_PATHS } from '@/data/paths/mage';
 import { ROGUE_PATHS } from '@/data/paths/rogue';
 import { PALADIN_PATHS } from '@/data/paths/paladin';
+
+// Counter for generating unique debuff IDs (avoids collision when multiple debuffs applied in same millisecond)
+let debuffIdCounter = 0;
 
 /**
  * Context for trigger processing
@@ -53,6 +56,7 @@ export interface TriggerResult {
   damageAmount?: number;              // Bonus damage to deal
   manaRestored?: number;              // Mana to restore
   statusToApply?: StatusEffect;       // Status effect to apply to enemy
+  enemyDebuffs?: EnemyStatDebuff[];   // Stat debuffs to apply to enemy
   preventDeath?: boolean;             // Whether death was prevented
   reflectedDamage?: number;           // Damage to reflect back
   logs: string[];                     // Combat log messages
@@ -205,6 +209,7 @@ export function usePathAbilities() {
     let reflectedDamage = 0;
     const preventDeath = false;
     let statusToApply: StatusEffect | undefined;
+    const enemyDebuffs: EnemyStatDebuff[] = [];
 
     abilities.forEach(ability => {
       // Iterate over all effects for this ability
@@ -303,6 +308,32 @@ export function usePathAbilities() {
           }
         }
 
+        // Process enemy-targeted stat modifiers (debuffs)
+        if (effect.statModifiers) {
+          effect.statModifiers.forEach(mod => {
+            // Only process enemy-targeted modifiers here
+            if (mod.target === 'enemy' && context.enemy) {
+              const stat = mod.stat;
+              // Only debuff power, armor, or speed
+              if (stat === 'power' || stat === 'armor' || stat === 'speed') {
+                const reduction = Math.abs(mod.percentBonus || 0);
+                if (reduction > 0) {
+                  const debuff: EnemyStatDebuff = {
+                    id: `${ability.id}_${stat}_${Date.now()}_${debuffIdCounter++}`,
+                    stat,
+                    percentReduction: reduction,
+                    remainingDuration: effect.duration || 5,
+                    sourceName: ability.name,
+                  };
+                  enemyDebuffs.push(debuff);
+                  const percentDisplay = Math.round(reduction * 100);
+                  logs.push(`🔻 ${ability.name}: Enemy ${stat} reduced by ${percentDisplay}% for ${effect.duration || 5}s`);
+                }
+              }
+            }
+          });
+        }
+
         // Process cleanse
         if (effect.cleanse) {
           updatedPlayer.statusEffects = [];
@@ -339,6 +370,7 @@ export function usePathAbilities() {
       damageAmount,
       manaRestored,
       statusToApply,
+      enemyDebuffs: enemyDebuffs.length > 0 ? enemyDebuffs : undefined,
       preventDeath,
       reflectedDamage,
       logs,

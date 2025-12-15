@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import * as Icons from 'lucide-react';
 import { PixelDivider } from '@/components/ui/PixelDivider';
+import { PATH_SELECTION_BONUSES } from '@/constants/paths';
 
 // Import path data for all classes
 import { WARRIOR_PATHS } from '@/data/paths/warrior';
@@ -41,6 +42,18 @@ const TYPE_COLORS = {
     glow: 'rgba(59, 130, 246, 0.5)',
     bg: 'rgba(59, 130, 246, 0.1)',
   },
+};
+
+// Helper to format stat names for display
+const STAT_DISPLAY_NAMES: Record<string, string> = {
+  power: 'Power',
+  armor: 'Armor',
+  speed: 'Speed',
+  fortune: 'Fortune',
+  maxHealth: 'Max Health',
+  health: 'Health',
+  maxMana: 'Max Mana',
+  mana: 'Mana',
 };
 
 export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelectionScreenProps) {
@@ -245,6 +258,45 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
                         +{path.abilities.length - previewAbilities.length} more abilities
                       </span>
                     </div>
+                  )}
+
+                  {/* Stat Bonuses Section */}
+                  {PATH_SELECTION_BONUSES[path.id] && (
+                    <>
+                      <div className="flex items-center gap-2 pt-3 border-t border-slate-700/50">
+                        <Icons.TrendingUp className="w-4 h-4 text-green-400" aria-hidden="true" />
+                        <span className="pixel-text text-pixel-2xs text-slate-300 uppercase">
+                          Immediate Bonuses
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(PATH_SELECTION_BONUSES[path.id]).map(([stat, value]) => {
+                          // Skip 'health' since it's redundant with maxHealth display
+                          if (stat === 'health' || stat === 'mana') return null;
+
+                          const isPositive = value > 0;
+                          const displayValue = isPositive ? `+${value}` : `${value}`;
+                          const displayName = STAT_DISPLAY_NAMES[stat] || stat;
+
+                          return (
+                            <div
+                              key={stat}
+                              className={cn(
+                                'px-2 py-1 rounded border',
+                                isPositive
+                                  ? 'bg-green-950/30 border-green-700/40 text-green-400'
+                                  : 'bg-red-950/30 border-red-700/40 text-red-400'
+                              )}
+                            >
+                              <span className="pixel-text text-pixel-2xs font-semibold">
+                                {displayValue} {displayName}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
                   )}
                 </CardContent>
 

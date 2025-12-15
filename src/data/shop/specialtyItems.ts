@@ -4,7 +4,7 @@
  * These are rotating specialty items that appear in the shop's "Today's Selection".
  * Each run shows 2-3 randomly selected items from this pool.
  *
- * Price range: 175-275g
+ * Price range: 140-220g
  * All items have tier: 'specialty'
  */
 
@@ -16,7 +16,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'vampiric_dagger',
     name: 'Vampiric Dagger',
     type: 'weapon',
-    price: 200,
+    price: 160,
     stats: {
       power: 3,
     },
@@ -37,7 +37,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'thornmail',
     name: 'Thornmail',
     type: 'armor',
-    price: 225,
+    price: 180,
     stats: {
       armor: 4,
     },
@@ -58,7 +58,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'berserker_axe',
     name: 'Berserker Axe',
     type: 'weapon',
-    price: 200,
+    price: 160,
     stats: {
       power: 5,
     },
@@ -79,7 +79,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'guardian_shield',
     name: 'Guardian Shield',
     type: 'armor',
-    price: 225,
+    price: 180,
     stats: {
       armor: 5,
     },
@@ -100,7 +100,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'speed_boots',
     name: 'Speed Boots',
     type: 'accessory',
-    price: 175,
+    price: 140,
     stats: {
       speed: 15, // ~10% speed increase
     },
@@ -115,7 +115,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'lucky_charm',
     name: 'Lucky Charm',
     type: 'accessory',
-    price: 200,
+    price: 160,
     stats: {
       fortune: 8, // +8% fortune (crit/dodge)
     },
@@ -130,7 +130,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'executioners_blade',
     name: "Executioner's Blade",
     type: 'weapon',
-    price: 250,
+    price: 200,
     stats: {
       power: 4,
     },
@@ -151,7 +151,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'lifeward_amulet',
     name: 'Lifeward Amulet',
     type: 'accessory',
-    price: 225,
+    price: 180,
     stats: {
       health: 15,
       maxHealth: 15,
@@ -173,7 +173,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'arcane_crystal',
     name: 'Arcane Crystal',
     type: 'accessory',
-    price: 200,
+    price: 160,
     stats: {
       mana: 20,
       maxMana: 20,
@@ -194,7 +194,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'spell_efficiency_ring',
     name: 'Ring of Efficiency',
     type: 'accessory',
-    price: 225,
+    price: 180,
     stats: {
       fortune: 3,
     },
@@ -215,7 +215,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'critical_lens',
     name: 'Critical Lens',
     type: 'accessory',
-    price: 250,
+    price: 200,
     stats: {
       fortune: 5,
     },
@@ -235,7 +235,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'chain_lightning_orb',
     name: 'Chain Lightning Orb',
     type: 'weapon',
-    price: 275,
+    price: 220,
     stats: {
       power: 3,
     },
@@ -257,7 +257,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'battle_plate',
     name: 'Battle Plate',
     type: 'armor',
-    price: 250,
+    price: 200,
     stats: {
       power: 2,
       armor: 3,
@@ -272,7 +272,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'assassins_cloak',
     name: "Assassin's Cloak",
     type: 'armor',
-    price: 225,
+    price: 180,
     stats: {
       speed: 10,
       armor: 2,
@@ -293,7 +293,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'gladiator_helm',
     name: 'Gladiator Helm',
     type: 'armor',
-    price: 200,
+    price: 160,
     stats: {
       health: 10,
       maxHealth: 10,
@@ -310,7 +310,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'merchants_signet',
     name: "Merchant's Signet",
     type: 'accessory',
-    price: 175,
+    price: 140,
     stats: {
       fortune: 5,
     },
@@ -331,7 +331,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'momentum_blade',
     name: 'Momentum Blade',
     type: 'weapon',
-    price: 225,
+    price: 180,
     stats: {
       power: 3,
       speed: 5,
@@ -352,7 +352,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'frost_shard',
     name: 'Frost Shard',
     type: 'weapon',
-    price: 200,
+    price: 160,
     stats: {
       power: 2,
     },
@@ -374,7 +374,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'phoenix_feather',
     name: 'Phoenix Feather',
     type: 'accessory',
-    price: 275,
+    price: 220,
     stats: {
       health: 10,
       maxHealth: 10,
@@ -395,7 +395,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'bulwark_gauntlets',
     name: 'Bulwark Gauntlets',
     type: 'armor',
-    price: 250,
+    price: 200,
     stats: {
       armor: 6,
     },
@@ -416,7 +416,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'crusaders_mace',
     name: "Crusader's Mace",
     type: 'weapon',
-    price: 225,
+    price: 180,
     stats: {
       power: 4,
       armor: 2,
@@ -437,7 +437,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'templar_banner',
     name: 'Templar Banner',
     type: 'accessory',
-    price: 200,
+    price: 160,
     stats: {
       health: 15,
       maxHealth: 15,
@@ -460,7 +460,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'stun_baton',
     name: 'Stun Baton',
     type: 'weapon',
-    price: 250,
+    price: 200,
     stats: {
       power: 3,
       speed: 5,
@@ -482,7 +482,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'gravity_orb',
     name: 'Gravity Orb',
     type: 'accessory',
-    price: 225,
+    price: 180,
     stats: {
       fortune: 3,
     },
@@ -504,7 +504,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     id: 'barrier_crystal',
     name: 'Barrier Crystal',
     type: 'accessory',
-    price: 250,
+    price: 200,
     stats: {
       armor: 3,
       maxHealth: 10,

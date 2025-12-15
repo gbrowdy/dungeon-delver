@@ -48,43 +48,55 @@ export function getSynergy(power: PowerWithSynergies, playerPathId: string | nul
 export function getPathName(pathId: string): string {
   // Map path IDs to display names
   const pathNames: Record<string, string> = {
-    'warrior_rage': 'RAGE',
-    'warrior_defense': 'DEFENSE',
-    'mage_fire': 'FIRE',
-    'mage_ice': 'ICE',
-    'rogue_shadow': 'SHADOW',
-    'rogue_precision': 'PRECISION',
-    'paladin_holy': 'HOLY',
-    'paladin_retribution': 'RETRIBUTION',
+    // Main path IDs
+    'berserker': 'Berserker',
+    'guardian': 'Guardian',
+    'archmage': 'Archmage',
+    'enchanter': 'Enchanter',
+    'assassin': 'Assassin',
+    'duelist': 'Duelist',
+    'paladin_crusader': 'Crusader',
+    'paladin_protector': 'Protector',
 
-    // Subpath IDs (if needed)
-    'berserker': 'BERSERKER',
-    'duelist': 'DUELIST',
-    'guardian': 'GUARDIAN',
-    'protector': 'PROTECTOR',
-    'elementalist': 'ELEMENTALIST',
-    'spellblade': 'SPELLBLADE',
-    'assassin': 'ASSASSIN',
-    'gambler': 'GAMBLER',
-    'vampire': 'VAMPIRE',
+    // Warrior subpaths
+    'warlord': 'Warlord',
+    'executioner': 'Executioner',
+    'fortress': 'Fortress',
+    'avenger': 'Avenger',
+
+    // Mage subpaths
+    'elementalist': 'Elementalist',
+    'destroyer': 'Destroyer',
+    'spellweaver': 'Spellweaver',
+    'sage': 'Sage',
+
+    // Rogue subpaths
+    'shadowblade': 'Shadowblade',
+    'nightstalker': 'Nightstalker',
+    'swashbuckler': 'Swashbuckler',
+    'phantom': 'Phantom',
+
+    // Paladin subpaths
+    'templar': 'Templar',
+    'inquisitor': 'Inquisitor',
+    'sentinel': 'Sentinel',
+    'martyr': 'Martyr',
   };
 
-  return pathNames[pathId] ?? pathId.toUpperCase();
+  return pathNames[pathId] ?? pathId;
 }
 
 /**
  * Get display name for a player that includes their path if selected.
  * Returns "PathName ClassName" when path is selected, otherwise just "ClassName".
- * Example: "Rage Warrior", "Fire Mage", or just "Warrior" if no path selected.
+ * Example: "Berserker Warrior", "Archmage Mage", or just "Warrior" if no path selected.
  */
 export function getPlayerDisplayName(player: Player): string {
   const className = CLASS_DATA[player.class].name;
 
   if (player.path) {
     const pathName = getPathName(player.path.pathId);
-    // Convert to title case for nicer display (e.g., "RAGE" -> "Rage")
-    const formattedPathName = pathName.charAt(0) + pathName.slice(1).toLowerCase();
-    return `${formattedPathName} ${className}`;
+    return `${pathName} ${className}`;
   }
 
   return className;

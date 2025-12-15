@@ -4,6 +4,11 @@ import { PixelSlash, PixelSpell, PixelShield } from './BattleEffects';
 import { BATTLE_PHASE } from '@/constants/enums';
 import { cn } from '@/lib/utils';
 import { SpriteStateType, BattlePhaseType } from '@/constants/enums';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 // Shared positioning classes for HP bars above sprites (keeps hero and enemy in sync)
 const HP_BAR_POSITION = "-top-10 xs:-top-12 sm:-top-10";
@@ -263,6 +268,33 @@ export function CharacterSprite({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Enemy stat debuffs - show when enemy has ability debuffs applied */}
+      {!isHero && !isDying && enemy && enemy.statDebuffs && enemy.statDebuffs.length > 0 && (
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex gap-1">
+          {enemy.statDebuffs.map(debuff => {
+            const icon = debuff.stat === 'power' ? '⚔️' : debuff.stat === 'armor' ? '🛡️' : '💨';
+            const percentDisplay = Math.round(debuff.percentReduction * 100);
+            return (
+              <Tooltip key={debuff.id}>
+                <TooltipTrigger asChild>
+                  <div
+                    className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-purple-500/50 cursor-help"
+                    aria-label={`${debuff.sourceName}: -${percentDisplay}% ${debuff.stat}`}
+                  >
+                    <span className="text-purple-400">🔻{icon}</span>
+                    <span className="text-purple-300">{Math.ceil(debuff.remainingDuration)}s</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  <p className="font-semibold">{debuff.sourceName}</p>
+                  <p className="text-muted-foreground">-{percentDisplay}% {debuff.stat}</p>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
         </div>
       )}
     </div>

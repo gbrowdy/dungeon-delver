@@ -11,6 +11,7 @@ import { processLevelUp } from '@/hooks/useRewardCalculation';
 // STAT_UPGRADE imports removed - old upgrade system deprecated
 import { GAME_PHASE, PAUSE_REASON } from '@/constants/enums';
 import { FLOOR_CONFIG } from '@/constants/game';
+import { PATH_PROGRESSION, getExpectedAbilityCount } from '@/constants/paths';
 import { logStateTransition } from '@/utils/gameLogger';
 import { deepClonePlayer } from '@/utils/stateUtils';
 import { CircularBuffer, MAX_COMBAT_LOG_SIZE } from '@/utils/circularBuffer';
@@ -142,9 +143,9 @@ export function useProgressionActions({
           ...prev,
           player: updatedPlayer,
           pendingLevelUp: null,
-          // Keep paused if there's an item drop, otherwise unpause
-          isPaused: !!droppedItem,
-          pauseReason: droppedItem ? PAUSE_REASON.ITEM_DROP : null,
+          // Keep paused while ability choice is pending
+          isPaused: true,
+          pauseReason: PAUSE_REASON.LEVEL_UP,
         };
       }
 
@@ -268,6 +269,16 @@ export function useProgressionActions({
         player = levelUpResult.updatedPlayer;
       }
 
+      // Check if player needs to choose an ability (level 3+ with path but no pending choice)
+      // This handles the case where player died before dismissing level-up popup
+      if (player.path && player.level >= PATH_PROGRESSION.FIRST_ABILITY_LEVEL && !player.pendingAbilityChoice) {
+        const expectedAbilities = getExpectedAbilityCount(player.level);
+        const currentAbilities = player.path.abilities.length;
+        if (currentAbilities < expectedAbilities) {
+          player.pendingAbilityChoice = true;
+        }
+      }
+
       // Recalculate stats to ensure equipment bonuses are applied
       player.currentStats = calculateStats(player);
       // Then restore health/mana to max
@@ -310,6 +321,8 @@ export function useProgressionActions({
         currentFloorTheme: newTheme,
         combatLog,
         gamePhase: GAME_PHASE.COMBAT,
+        // Don't pause - the AbilityChoicePopup will show as a modal dialog
+        // and the player must select before continuing
         isPaused: false,
         pauseReason: null,
         isTransitioning: false,

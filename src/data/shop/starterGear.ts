@@ -21,14 +21,14 @@ interface ShopItem {
 
 /**
  * Starter Gear - Basic equipment available at the start of the game
- * All items cost 50 gold and provide simple stat bonuses
+ * All items cost 45 gold and provide simple stat bonuses
  */
 export const STARTER_GEAR: ShopItem[] = [
   {
     id: 'starter_sword',
     name: 'Basic Sword',
     type: 'weapon',
-    price: 50,
+    price: 45,
     stats: { power: 2 },
     tier: 'starter',
     icon: 'Sword',
@@ -38,7 +38,7 @@ export const STARTER_GEAR: ShopItem[] = [
     id: 'starter_armor',
     name: 'Basic Armor',
     type: 'armor',
-    price: 50,
+    price: 45,
     stats: { armor: 2 },
     tier: 'starter',
     icon: 'Shield',
@@ -48,7 +48,7 @@ export const STARTER_GEAR: ShopItem[] = [
     id: 'starter_ring',
     name: 'Basic Ring',
     type: 'accessory',
-    price: 50,
+    price: 45,
     stats: { maxHealth: 10 },
     tier: 'starter',
     icon: 'CircleDot',

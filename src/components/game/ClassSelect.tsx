@@ -93,12 +93,12 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
           <PixelDivider color="orange" />
 
           <p className="pixel-text text-pixel-xs text-slate-400 tracking-wider">
-            Each hero has unique abilities and playstyles
+            Each hero has unique paths and abilities to master
           </p>
 
           {/* Instructional text for two-step flow (Issue #8) */}
           <p className="pixel-text text-pixel-xs text-slate-500 tracking-wider">
-            Click a hero to view details, then confirm to begin
+            Choose wisely — your path awaits at level 2
           </p>
         </div>
 

@@ -55,12 +55,26 @@ export interface PathAbilityCondition {
 }
 
 /**
+ * Target for stat modifications
+ */
+export type StatModifierTarget = 'self' | 'enemy';
+
+/**
+ * Which aspect of a stat to modify
+ */
+export type StatModifierApplyTo = 'base' | 'regen' | 'max';
+
+/**
  * Stat modification types
  */
 export interface StatModifier {
   stat: PathStatType;
-  flatBonus?: number;      // Flat increase (e.g., +10 power)
-  percentBonus?: number;   // Percentage increase (e.g., 0.15 for +15%)
+  flatBonus?: number;        // Flat increase (e.g., +10 power)
+  percentBonus?: number;     // Percentage increase (e.g., 0.15 for +15%)
+  target?: StatModifierTarget; // Who this affects: 'self' (default) or 'enemy'
+  applyTo?: StatModifierApplyTo; // Which aspect: 'base' (default), 'regen', or 'max'
+  scalingStat?: PathStatType;  // Scale bonus based on another stat
+  scalingRatio?: number;       // Ratio for scaling (e.g., 0.1 = 1% per 10 of scalingStat)
 }
 
 /**

@@ -1,7 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Player, Item, ItemType } from '@/types/game';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
 import { PowerChoice, isPowerUpgrade } from '@/data/powers';
@@ -26,16 +25,16 @@ const RARITY_TEXT: Record<Item['rarity'], string> = {
   legendary: 'text-rarity-legendary',
 };
 
-const TYPE_LABELS: Record<ItemType, string> = {
-  weapon: 'Weapon',
-  armor: 'Armor',
-  accessory: 'Accessory',
-};
-
 const TYPE_ICONS: Record<ItemType, string> = {
   weapon: '⚔️',
   armor: '🛡️',
   accessory: '💍',
+};
+
+const TYPE_LABELS: Record<ItemType, string> = {
+  weapon: 'Weapon',
+  armor: 'Armor',
+  accessory: 'Accessory',
 };
 
 const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
@@ -43,9 +42,7 @@ const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
 interface FloorCompleteScreenProps {
   player: Player;
   floor: number;
-  shopItems: Item[];
   availablePowers: PowerChoice[];
-  onClaimItem: (index: number) => void;
   onLearnPower: (index: number) => void;
   onContinue: () => void;
   onVisitShop: () => void;
@@ -54,17 +51,13 @@ interface FloorCompleteScreenProps {
 export function FloorCompleteScreen({
   player,
   floor,
-  shopItems,
   availablePowers,
-  onClaimItem,
   onLearnPower,
   onContinue,
   onVisitShop,
 }: FloorCompleteScreenProps) {
   const [spriteState, setSpriteState] = useState<'idle' | 'walk'>('walk');
   const [highlightedSlot, setHighlightedSlot] = useState<ItemType | null>(null);
-  const [itemClaimed, setItemClaimed] = useState(false);
-  const [isLoadingRewards, setIsLoadingRewards] = useState(true);
 
   // Victory walk animation
   useEffect(() => {
@@ -73,14 +66,6 @@ export function FloorCompleteScreen({
     }, 1500);
     return () => clearTimeout(timer);
   }, []);
-
-  // Simulate reward generation loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoadingRewards(false);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [floor]);
 
   // Memoize equipped items map for O(1) lookup
   const equippedItemsMap = useMemo(() => {
@@ -91,43 +76,8 @@ export function FloorCompleteScreen({
     return map;
   }, [player.equippedItems]);
 
-  const getEquippedItem = useCallback((type: ItemType): Item | undefined => {
+  const getEquippedItem = (type: ItemType): Item | undefined => {
     return equippedItemsMap.get(type);
-  }, [equippedItemsMap]);
-
-  const compareStats = useCallback((newItem: Item, oldItem: Item | undefined) => {
-    if (!oldItem) return null;
-
-    const comparisons: { stat: string; diff: number }[] = [];
-    const allStats = new Set([
-      ...Object.keys(newItem.statBonus),
-      ...Object.keys(oldItem.statBonus),
-    ]);
-
-    allStats.forEach((stat) => {
-      const newVal = (newItem.statBonus as Record<string, number>)[stat] || 0;
-      const oldVal = (oldItem.statBonus as Record<string, number>)[stat] || 0;
-      const diff = newVal - oldVal;
-      if (diff !== 0) {
-        comparisons.push({ stat, diff });
-      }
-    });
-
-    return comparisons;
-  }, []);
-
-  const handleClaimItem = (index: number) => {
-    const item = shopItems[index];
-    if (!item) return;
-
-    try {
-      onClaimItem(index);
-      setItemClaimed(true);
-      setHighlightedSlot(item.type);
-      setTimeout(() => setHighlightedSlot(null), 800);
-    } catch (error) {
-      console.error('Failed to claim item:', error);
-    }
   };
 
 
@@ -268,113 +218,8 @@ export function FloorCompleteScreen({
             </div>
           </div>
 
-          {/* Center: Item Rewards */}
+          {/* Center: Power Rewards */}
           <div className="space-y-4">
-            <div className="pixel-panel rounded-lg p-4">
-              <h3 className="pixel-text text-pixel-sm text-primary mb-3 flex items-center gap-2">
-                🎁 Choose One Item Reward
-                {itemClaimed && <span className="text-slate-400">(Claimed)</span>}
-              </h3>
-
-              {/* Loading skeleton */}
-              {isLoadingRewards ? (
-                <div className="space-y-2">
-                  {/* Show 3 skeleton placeholders to match typical shop item count */}
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="pixel-panel-dark p-3 rounded border border-slate-700/30">
-                      <div className="flex items-center gap-3">
-                        <Skeleton className="h-8 w-8 rounded" />
-                        <div className="flex-1 space-y-2">
-                          <Skeleton className="h-3 w-24" />
-                          <Skeleton className="h-2 w-36" />
-                        </div>
-                        <Skeleton className="h-6 w-14 rounded" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : shopItems.length > 0 && !itemClaimed ? (
-                <div className="space-y-2">
-                  {shopItems.map((item, index) => {
-                    const currentItem = getEquippedItem(item.type);
-                    const comparison = compareStats(item, currentItem);
-                    const isUpgrade = comparison
-                      ? comparison.reduce((sum, c) => sum + c.diff, 0) > 0
-                      : true;
-
-                    return (
-                      <div
-                        key={item.id}
-                        className={cn(
-                          'pixel-panel-dark p-3 rounded border cursor-pointer transition-all hover:scale-[1.02]',
-                          RARITY_COLORS[item.rarity]
-                        )}
-                        onClick={() => handleClaimItem(index)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{item.icon}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className={cn('pixel-text text-pixel-sm font-medium', RARITY_TEXT[item.rarity])}>
-                              {item.name}
-                            </div>
-                            <div className="pixel-text text-pixel-xs text-slate-400">
-                              {Object.entries(item.statBonus)
-                                .map(([stat, val]) => `+${val} ${stat}`)
-                                .join(', ')}
-                            </div>
-                          </div>
-                          <Button size="sm" className="pixel-button text-pixel-xs h-6 px-2">
-                            {currentItem ? 'Replace' : 'Claim'}
-                          </Button>
-                        </div>
-
-                        {/* Visual stat comparison */}
-                        {currentItem && comparison && comparison.length > 0 && (
-                          <div className="mt-2 pt-2 border-t border-white/10">
-                            <div className="flex items-center gap-2 pixel-text text-pixel-xs mb-1.5">
-                              <span className="text-slate-400">vs {currentItem.icon} {currentItem.name}</span>
-                              {isUpgrade ? (
-                                <span className="text-success ml-auto font-medium">↑ Upgrade</span>
-                              ) : (
-                                <span className="text-health ml-auto font-medium">↓ Downgrade</span>
-                              )}
-                            </div>
-                            <div className="space-y-1">
-                              {comparison.map(({ stat, diff }) => (
-                                <div key={stat} className="flex items-center gap-2 pixel-text text-pixel-xs">
-                                  <span className="w-12 text-slate-400 capitalize truncate">{stat}</span>
-                                  <div className="flex-1 h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                                    <div
-                                      className={cn(
-                                        'h-full rounded-full',
-                                        diff > 0 ? 'bg-success' : 'bg-health'
-                                      )}
-                                      style={{ width: `${Math.min(Math.abs(diff) * 10, 100)}%` }}
-                                    />
-                                  </div>
-                                  <span className={cn('w-8 text-right font-mono', diff > 0 ? 'text-success' : 'text-health')}>
-                                    {diff > 0 ? '+' : ''}{diff}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : !itemClaimed ? (
-                <p className="pixel-text text-pixel-xs text-slate-500 text-center py-4">
-                  No items available
-                </p>
-              ) : (
-                <p className="pixel-text text-pixel-xs text-success text-center py-4">
-                  ✓ Item claimed!
-                </p>
-              )}
-            </div>
-
             {/* Power Choice */}
             {availablePowers.length > 0 && (
               <div className="pixel-panel rounded-lg p-4 border-2 border-primary/30">

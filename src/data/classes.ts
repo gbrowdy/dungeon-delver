@@ -9,7 +9,7 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
     baseStats: {
       health: 60,
       maxHealth: 60,
-      power: 8,
+      power: 9,
       armor: 4,
       speed: 8,
       mana: 40,
@@ -19,12 +19,12 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
     startingPower: {
       id: 'berserker-rage',
       name: 'Berserker Rage',
-      description: 'Enter a fury, dealing 180% damage on next hit',
-      manaCost: 30,    // Increased from 25
+      description: 'Enter a fury, dealing 200% damage on next hit',
+      manaCost: 20,    // Reduced for better early game viability
       cooldown: 4,     // Increased from 3
       currentCooldown: 0,
       effect: 'damage',
-      value: 1.8,      // Reduced from 2.0
+      value: 2.0,      // Buffed for competitive early game damage
       icon: '💢',
     },
   },
