@@ -448,6 +448,48 @@ export function useCombatActions({
 
         if (playerDodged) {
           logs.push(`💨 You dodged ${enemy.name}'s attack!`);
+
+          // Process path ability triggers: on_dodge
+          const pathOnDodgeResult = processTrigger('on_dodge', {
+            player,
+            enemy,
+            isDodge: true,
+          });
+          player.currentStats = pathOnDodgeResult.player.currentStats;
+          logs.push(...pathOnDodgeResult.logs);
+
+          // Apply damage to enemy if any (e.g., Riposte counter-attack)
+          if (pathOnDodgeResult.damageAmount) {
+            enemy.health -= pathOnDodgeResult.damageAmount;
+          }
+
+          // Apply reflected damage to enemy if any
+          if (pathOnDodgeResult.reflectedDamage) {
+            enemy.health -= pathOnDodgeResult.reflectedDamage;
+          }
+
+          // Apply status effect to enemy if triggered
+          if (pathOnDodgeResult.statusToApply) {
+            enemy.statusEffects = enemy.statusEffects || [];
+            enemy.statusEffects.push(pathOnDodgeResult.statusToApply);
+          }
+
+          // Apply stat debuffs to enemy if triggered
+          if (pathOnDodgeResult.enemyDebuffs && pathOnDodgeResult.enemyDebuffs.length > 0) {
+            enemy.statDebuffs = enemy.statDebuffs || [];
+            pathOnDodgeResult.enemyDebuffs.forEach(debuff => {
+              // Check if a debuff for this stat from this source already exists
+              const existingIndex = enemy.statDebuffs!.findIndex(
+                d => d.stat === debuff.stat && d.sourceName === debuff.sourceName
+              );
+              if (existingIndex >= 0) {
+                // Refresh duration instead of stacking
+                enemy.statDebuffs![existingIndex].remainingDuration = debuff.remainingDuration;
+              } else {
+                enemy.statDebuffs!.push(debuff);
+              }
+            });
+          }
         } else {
           const effectiveEnemyPower = getEffectiveEnemyStat(enemy, 'power', enemy.power);
           const enemyBaseDamage = Math.max(1, effectiveEnemyPower - player.currentStats.armor / 2);
