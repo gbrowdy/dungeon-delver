@@ -216,6 +216,29 @@ export function usePathAbilities() {
   }, [getActiveAbilities, checkCondition]);
 
   /**
+   * Get passive damage reduction percentage from all abilities
+   * Returns a decimal (e.g., 0.10 for 10% reduction)
+   */
+  const getPassiveDamageReduction = useCallback((player: Player): number => {
+    const abilities = getActiveAbilities(player);
+    let totalReduction = 0;
+
+    abilities.forEach(ability => {
+      ability.effects.forEach(effect => {
+        // Only process passive effects
+        if (effect.trigger !== 'passive') return;
+
+        // Check for damage_reduction in damageModifier
+        if (effect.damageModifier?.type === 'damage_reduction') {
+          totalReduction += effect.damageModifier.value / 100; // Convert from percentage to decimal
+        }
+      });
+    });
+
+    return Math.min(totalReduction, 0.75); // Cap at 75% reduction
+  }, [getActiveAbilities]);
+
+  /**
    * Process trigger-based abilities
    * Called when a specific trigger occurs during combat
    */
@@ -527,6 +550,7 @@ export function usePathAbilities() {
 
   return {
     getPassiveStatBonuses,
+    getPassiveDamageReduction,
     processTrigger,
     hasAbility,
     getActiveAbilities,

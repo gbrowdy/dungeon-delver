@@ -90,7 +90,7 @@ export interface PowerModifier {
  * Damage conversion/reflection mechanics
  */
 export interface DamageModifier {
-  type: 'reflect' | 'convert_heal' | 'bonus_damage' | 'lifesteal';
+  type: 'reflect' | 'convert_heal' | 'bonus_damage' | 'lifesteal' | 'damage_reduction';
   value: number;           // Percentage or flat amount
   condition?: PathAbilityCondition; // Optional conditional activation
 }

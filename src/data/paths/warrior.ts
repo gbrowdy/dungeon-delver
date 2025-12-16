@@ -360,8 +360,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     effects: [
       {
         trigger: 'passive',
-        // Damage reduction - needs custom implementation
-        damageModifier: { type: 'bonus_damage', value: -0.10 }
+        damageModifier: { type: 'damage_reduction', value: 10 }
       }
     ]
   },
