@@ -71,7 +71,7 @@ export function useCombatActions({
 }: UseCombatActionsParams) {
 
   // Initialize path abilities hook for processing path ability effects
-  const { processTrigger, hasAbility, getStatusImmunities, incrementAbilityCounter, resetAbilityCounter } = usePathAbilities();
+  const { processTrigger, hasAbility, getStatusImmunities, getPassiveDamageReduction, incrementAbilityCounter, resetAbilityCounter } = usePathAbilities();
 
   /**
    * Hero attack callback - called when hero's attack timer fills
@@ -524,6 +524,16 @@ export function useCombatActions({
                 applyTriggerResultToEnemy(enemy, pathOnBlockResult);
               }
 
+              // Apply passive damage reduction from path abilities
+              const damageReduction = getPassiveDamageReduction(player);
+              if (damageReduction > 0) {
+                const reducedAmount = Math.floor(totalDamage * damageReduction);
+                totalDamage = Math.max(1, totalDamage - reducedAmount);
+                if (reducedAmount > 0) {
+                  logs.push(`🛡️ Damage reduced by ${reducedAmount}!`);
+                }
+              }
+
               // Shield absorbs damage first
               const shieldResult = applyShieldAbsorption(player, totalDamage);
               player.shield = shieldResult.newShieldValue;
@@ -687,6 +697,16 @@ export function useCombatActions({
             player.currentStats = pathOnBlockResult.player.currentStats;
             logs.push(...pathOnBlockResult.logs);
             applyTriggerResultToEnemy(enemy, pathOnBlockResult);
+          }
+
+          // Apply passive damage reduction from path abilities
+          const damageReduction = getPassiveDamageReduction(player);
+          if (damageReduction > 0) {
+            const reducedAmount = Math.floor(enemyDamage * damageReduction);
+            enemyDamage = Math.max(1, enemyDamage - reducedAmount);
+            if (reducedAmount > 0) {
+              logs.push(`🛡️ Damage reduced by ${reducedAmount}!`);
+            }
           }
 
           // Shield absorbs damage first
