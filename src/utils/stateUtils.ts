@@ -9,6 +9,7 @@ import type {
   UpgradePurchases,
   EnemyAbility,
   EnemyIntent,
+  EnemyStatDebuff,
 } from '@/types/game';
 
 /**
@@ -141,6 +142,19 @@ function cloneEnemyIntent(intent: EnemyIntent | null): EnemyIntent | null {
 }
 
 /**
+ * Deep clone an array of EnemyStatDebuff objects
+ */
+function cloneEnemyStatDebuffs(debuffs: EnemyStatDebuff[]): EnemyStatDebuff[] {
+  return debuffs.map((debuff) => ({
+    id: debuff.id,
+    stat: debuff.stat,
+    percentReduction: debuff.percentReduction,
+    remainingDuration: debuff.remainingDuration,
+    sourceName: debuff.sourceName,
+  }));
+}
+
+/**
  * Deep clone a Player object with all nested properties
  *
  * This ensures that no references are shared between the original and cloned objects,
@@ -209,11 +223,14 @@ export function deepCloneEnemy(enemy: Enemy): Enemy {
     abilities: cloneEnemyAbilities(enemy.abilities),
     intent: cloneEnemyIntent(enemy.intent),
     statusEffects: cloneStatusEffects(enemy.statusEffects),
+    statDebuffs: enemy.statDebuffs ? cloneEnemyStatDebuffs(enemy.statDebuffs) : undefined,
     isShielded: enemy.isShielded,
     shieldTurnsRemaining: enemy.shieldTurnsRemaining,
     isEnraged: enemy.isEnraged,
     enrageTurnsRemaining: enemy.enrageTurnsRemaining,
     basePower: enemy.basePower,
     isDying: enemy.isDying,
+    isFinalBoss: enemy.isFinalBoss,
+    modifiers: enemy.modifiers ? [...enemy.modifiers] : undefined,
   };
 }
