@@ -68,6 +68,17 @@ export interface EnemyIntent {
   icon: string;
 }
 
+/**
+ * Temporary attack modifier (lasts for N attacks)
+ */
+export interface AttackModifier {
+  id: string;
+  effect: 'guaranteed_crit' | 'bonus_damage' | 'lifesteal';
+  value?: number; // For bonus_damage (multiplier) or lifesteal (percent)
+  remainingAttacks: number;
+  sourceName: string; // For combat log
+}
+
 // Item special effects
 export type ItemEffectTrigger =
   | 'on_hit'
@@ -205,6 +216,8 @@ export interface Player {
   shield?: number; // Current shield amount (absorbs damage before HP)
   shieldMaxDuration?: number; // Max duration in seconds (for display)
   shieldRemainingDuration?: number; // Remaining duration in seconds
+  abilityCounters?: Record<string, number>; // Counters for abilities like blur (consecutive dodges), perfect_form (momentum stacks)
+  attackModifiers?: AttackModifier[]; // Temporary attack effects (shadow_dance, ambush)
 }
 
 export interface GameState {

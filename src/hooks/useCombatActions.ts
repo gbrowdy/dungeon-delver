@@ -71,7 +71,7 @@ export function useCombatActions({
 }: UseCombatActionsParams) {
 
   // Initialize path abilities hook for processing path ability effects
-  const { processTrigger, hasAbility, getStatusImmunities } = usePathAbilities();
+  const { processTrigger, hasAbility, getStatusImmunities, incrementAbilityCounter, resetAbilityCounter } = usePathAbilities();
 
   /**
    * Hero attack callback - called when hero's attack timer fills
@@ -126,6 +126,16 @@ export function useCombatActions({
       }
 
       // === PLAYER ATTACK ===
+      // Check Perfect Form momentum stacks BEFORE attack
+      let perfectFormMultiplier = 1.0;
+      if (hasAbility(updatedPlayer, 'rogue_duelist_perfect_form')) {
+        const momentumStacks = updatedPlayer.abilityCounters?.['perfect_form_momentum'] ?? 0;
+        if (momentumStacks >= 5) {
+          perfectFormMultiplier = 3.0; // 300% damage (3x multiplier)
+          logs.push(`💫 Perfect Form: Maximum momentum unleashed!`);
+        }
+      }
+
       // Calculate attack damage with variance and crit
       const damageResult = calculateAttackDamage(
         updatedPlayer.currentStats,
@@ -144,6 +154,16 @@ export function useCombatActions({
       let playerAfterEffects = hitEffectsResult.player;
       let finalDamage = hitEffectsResult.damage;
       logs = hitEffectsResult.logs;
+
+      // Apply Perfect Form damage multiplier and reset stacks
+      if (perfectFormMultiplier > 1.0) {
+        const bonusDamage = Math.floor(finalDamage * (perfectFormMultiplier - 1.0));
+        finalDamage += bonusDamage;
+        logs.push(`⚡ Perfect Form bonus: +${bonusDamage} damage!`);
+        // Reset momentum stacks after use
+        const resetPlayer = resetAbilityCounter(playerAfterEffects, 'perfect_form_momentum');
+        Object.assign(playerAfterEffects, resetPlayer);
+      }
 
       // Process path ability triggers: on_hit
       const onHitResult = processTrigger('on_hit', {
@@ -488,6 +508,12 @@ export function useCombatActions({
               // Only apply remaining damage to HP
               if (shieldResult.remainingDamage > 0) {
                 player.currentStats.health -= shieldResult.remainingDamage;
+
+                // Reset blur counter on damage taken (breaks consecutive dodge streak)
+                if (hasAbility(player, 'rogue_duelist_blur')) {
+                  const resetPlayer = resetAbilityCounter(player, 'blur_dodges');
+                  Object.assign(player, resetPlayer);
+                }
               }
 
               logs.push(`${ability.icon} ${hits} hits deal ${totalDamage} total damage!`);
@@ -583,6 +609,28 @@ export function useCombatActions({
           player.currentStats = pathOnDodgeResult.player.currentStats;
           logs.push(...pathOnDodgeResult.logs);
           applyTriggerResultToEnemy(enemy, pathOnDodgeResult);
+
+          // Blur: Track consecutive dodges for shield
+          if (hasAbility(player, 'rogue_duelist_blur')) {
+            const { player: updatedPlayer, newValue } = incrementAbilityCounter(player, 'blur_dodges', 3);
+            Object.assign(player, updatedPlayer);
+
+            if (newValue >= 3) {
+              player.shield = (player.shield || 0) + 20;
+              player.shieldRemainingDuration = 5;
+              player.shieldMaxDuration = 5;
+              const resetPlayer = resetAbilityCounter(player, 'blur_dodges');
+              Object.assign(player, resetPlayer);
+              logs.push(`✨ Blur: Shield granted after 3 consecutive dodges!`);
+            }
+          }
+
+          // Perfect Form: Build momentum stacks on dodge
+          if (hasAbility(player, 'rogue_duelist_perfect_form')) {
+            const { player: updatedPlayer, newValue } = incrementAbilityCounter(player, 'perfect_form_momentum', 5);
+            Object.assign(player, updatedPlayer);
+            logs.push(`⚡ Perfect Form: Momentum stack ${newValue}/5`);
+          }
         } else {
           const effectiveEnemyPower = getEffectiveEnemyStat(enemy, 'power', enemy.power);
           const enemyBaseDamage = Math.max(1, effectiveEnemyPower - player.currentStats.armor / 2);
@@ -626,6 +674,12 @@ export function useCombatActions({
           if (shieldResult.remainingDamage > 0) {
             player.currentStats.health -= shieldResult.remainingDamage;
             logs.push(`${enemy.name} deals ${shieldResult.remainingDamage} damage to you`);
+
+            // Reset blur counter on damage taken (breaks consecutive dodge streak)
+            if (hasAbility(player, 'rogue_duelist_blur')) {
+              const resetPlayer = resetAbilityCounter(player, 'blur_dodges');
+              Object.assign(player, resetPlayer);
+            }
           }
 
           // Vampiric modifier: Heal enemy based on damage dealt

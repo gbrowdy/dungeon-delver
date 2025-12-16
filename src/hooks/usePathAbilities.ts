@@ -12,7 +12,7 @@
  */
 
 import { useCallback } from 'react';
-import { Player, Enemy, Stats, StatusEffect, EnemyStatDebuff, ActiveBuff } from '@/types/game';
+import { Player, Enemy, Stats, StatusEffect, EnemyStatDebuff, ActiveBuff, AttackModifier } from '@/types/game';
 import {
   PathAbility,
   PathAbilityEffect,
@@ -109,6 +109,24 @@ export function usePathAbilities() {
     return {
       ...player,
       abilityCounters: Object.keys(newCounters).length > 0 ? newCounters : undefined,
+    };
+  }, []);
+
+  /**
+   * Add an attack modifier to the player
+   */
+  const addAttackModifier = useCallback((
+    player: Player,
+    modifier: Omit<AttackModifier, 'id'>
+  ): Player => {
+    const newModifier: AttackModifier = {
+      ...modifier,
+      id: `${modifier.sourceName}_${Date.now()}`,
+    };
+
+    return {
+      ...player,
+      attackModifiers: [...(player.attackModifiers || []), newModifier],
     };
   }, []);
 
@@ -655,6 +673,7 @@ export function usePathAbilities() {
     getAbilityCounter,
     incrementAbilityCounter,
     resetAbilityCounter,
+    addAttackModifier,
   };
 }
 
