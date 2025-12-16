@@ -126,6 +126,10 @@ export function usePathAbilities() {
       case 'combo_count': {
         return player.comboCount >= condition.value;
       }
+      case 'enemy_has_status': {
+        if (!enemy) return false;
+        return (enemy.statusEffects?.length ?? 0) > 0;
+      }
       default: {
         console.error(`[usePathAbilities] Unknown condition type: "${(condition as PathAbilityCondition).type}". Condition will be treated as not met.`);
         return false;
