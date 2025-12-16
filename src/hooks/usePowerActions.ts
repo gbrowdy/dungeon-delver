@@ -42,7 +42,7 @@ export function usePowerActions(context: PowerActivationContext) {
     combatSpeed,
   } = context;
 
-  const { processTrigger, hasAbility } = usePathAbilities();
+  const { processTrigger, hasAbility, addAttackModifier } = usePathAbilities();
 
   const usePower = useCallback((powerId: string) => {
     setState((prev: GameState) => {
@@ -154,6 +154,17 @@ export function usePowerActions(context: PowerActivationContext) {
       player.currentStats = pathOnPowerResult.player.currentStats;
       logs.push(...pathOnPowerResult.logs);
       applyTriggerResultToEnemy(enemy, pathOnPowerResult);
+
+      // Shadow Dance: Next 3 attacks after using a power are guaranteed critical hits
+      if (hasAbility(player, 'rogue_assassin_shadow_dance')) {
+        const updatedPlayer = addAttackModifier(player, {
+          effect: 'guaranteed_crit',
+          remainingAttacks: 3,
+          sourceName: 'Shadow Dance',
+        });
+        Object.assign(player, updatedPlayer);
+        logs.push(`🗡️ Shadow Dance: Next 3 attacks will be guaranteed critical hits!`);
+      }
 
       switch (power.effect) {
         case 'damage': {
@@ -487,7 +498,7 @@ export function usePowerActions(context: PowerActivationContext) {
         currentEnemy: enemy,
       };
     });
-  }, [setState, setLastCombatEvent, scheduleCombatEvent, enemyDeathProcessedRef, processTrigger, hasAbility]);
+  }, [setState, setLastCombatEvent, scheduleCombatEvent, enemyDeathProcessedRef, processTrigger, hasAbility, addAttackModifier]);
 
   return {
     usePower,

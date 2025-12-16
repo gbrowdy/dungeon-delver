@@ -126,6 +126,12 @@ export function useCombatActions({
       }
 
       // === PLAYER ATTACK ===
+      // Check for guaranteed crit from attack modifiers
+      let forceCrit = false;
+      if (updatedPlayer.attackModifiers?.some(m => m.effect === 'guaranteed_crit' && m.remainingAttacks > 0)) {
+        forceCrit = true;
+      }
+
       // Check Perfect Form momentum stacks BEFORE attack
       let perfectFormMultiplier = 1.0;
       if (hasAbility(updatedPlayer, 'rogue_duelist_perfect_form')) {
@@ -137,11 +143,25 @@ export function useCombatActions({
       }
 
       // Calculate attack damage with variance and crit
-      const damageResult = calculateAttackDamage(
+      let damageResult = calculateAttackDamage(
         updatedPlayer.currentStats,
         enemy.armor,
         enemy.isShielded || false
       );
+
+      // Override crit if forced by attack modifier
+      if (forceCrit && !damageResult.isCrit) {
+        // Recalculate with guaranteed crit
+        const baseDamage = Math.max(1, updatedPlayer.currentStats.power - enemy.armor / 2);
+        const damageVariance = COMBAT_MECHANICS.DAMAGE_VARIANCE_MIN + Math.random() * COMBAT_MECHANICS.DAMAGE_VARIANCE_RANGE;
+        const critDamage = Math.floor(baseDamage * damageVariance * COMBAT_MECHANICS.CRIT_MULTIPLIER);
+        damageResult = {
+          damage: critDamage,
+          isCrit: true,
+          logs: ['💥 Guaranteed Critical Hit!'],
+        };
+      }
+
       logs = [...logs, ...damageResult.logs];
 
       // Process hit effects (on-hit and on-crit item effects)
@@ -302,6 +322,17 @@ export function useCombatActions({
         logs.push(`🌵 Thorns reflect ${reflectDamage} damage back to you!`);
       }
 
+      // Decrement attack modifiers
+      if (playerAfterEffects.attackModifiers && playerAfterEffects.attackModifiers.length > 0) {
+        playerAfterEffects.attackModifiers = playerAfterEffects.attackModifiers
+          .map(m => ({ ...m, remainingAttacks: m.remainingAttacks - 1 }))
+          .filter(m => m.remainingAttacks > 0);
+
+        if (playerAfterEffects.attackModifiers.length === 0) {
+          playerAfterEffects.attackModifiers = undefined;
+        }
+      }
+
       // Emit player attack event immediately
       const playerAttackEvent: import('@/hooks/useBattleAnimation').PlayerAttackEvent = {
         type: COMBAT_EVENT_TYPE.PLAYER_ATTACK,
@@ -390,7 +421,7 @@ export function useCombatActions({
         currentEnemy: enemy,
       };
     });
-  }, [setState, setLastCombatEvent, setDroppedItem, scheduleCombatEvent, combatSpeed, enemyDeathProcessedRef, processTrigger]);
+  }, [setState, setLastCombatEvent, setDroppedItem, scheduleCombatEvent, combatSpeed, enemyDeathProcessedRef, processTrigger, hasAbility, resetAbilityCounter]);
 
   /**
    * Enemy attack callback - called when enemy's attack timer fills
@@ -881,7 +912,7 @@ export function useCombatActions({
         currentEnemy: enemy,
       };
     });
-  }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef, processTrigger, hasAbility, getStatusImmunities]);
+  }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef, processTrigger, hasAbility, getStatusImmunities, getPassiveDamageReduction, incrementAbilityCounter, resetAbilityCounter]);
 
   /**
    * Active block - reduces incoming damage but costs mana
