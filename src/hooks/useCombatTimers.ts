@@ -3,6 +3,7 @@ import { GameState, Power } from '@/types/game';
 import { COMBAT_BALANCE } from '@/constants/balance';
 import { COMBAT_MECHANICS } from '@/constants/game';
 import { deepCloneEnemy, deepClonePlayer } from '@/utils/stateUtils';
+import { usePathAbilities } from './usePathAbilities';
 
 /**
  * Hook for managing time-based combat effects: power cooldowns, enemy regen, and MP regen.
@@ -14,6 +15,8 @@ export function useCombatTimers(
   setState: React.Dispatch<React.SetStateAction<GameState>>,
   enabled: boolean
 ) {
+  const { getRegenModifiers } = usePathAbilities();
+
   // MP regeneration - base regen that makes powers usable
   // Ticks every second, scaled by combat speed
   useEffect(() => {
@@ -50,6 +53,56 @@ export function useCombatTimers(
 
     return () => clearInterval(interval);
   }, [enabled, setState]);
+
+  // HP regeneration - includes class-based regen and path ability bonuses
+  // Ticks every second, scaled by combat speed
+  useEffect(() => {
+    if (!enabled) return;
+
+    const HP_REGEN_INTERVAL = 1000; // 1 second per tick
+
+    const interval = setInterval(() => {
+      setState((prev: GameState) => {
+        if (!prev.player || prev.isPaused) return prev;
+
+        const { player } = prev;
+        const { health, maxHealth } = player.currentStats;
+
+        // Don't regen if already at max
+        if (health >= maxHealth) return prev;
+
+        // Get base HP regen from class (e.g., Paladin has +0.5)
+        const baseHpRegen = player.hpRegen || 0;
+
+        // Get bonus HP regen from path abilities
+        const regenMods = getRegenModifiers(player);
+        const bonusHpRegen = regenMods.hpRegen;
+
+        // Total HP regen per second
+        const totalHpRegenPerSecond = baseHpRegen + bonusHpRegen;
+
+        // Skip if no regen
+        if (totalHpRegenPerSecond <= 0) return prev;
+
+        // Scale by combat speed
+        const regenAmount = totalHpRegenPerSecond * prev.combatSpeed;
+        const newHealth = Math.min(maxHealth, health + regenAmount);
+
+        // Skip if no change
+        if (newHealth === health) return prev;
+
+        const updatedPlayer = deepClonePlayer(player);
+        updatedPlayer.currentStats.health = newHealth;
+
+        return {
+          ...prev,
+          player: updatedPlayer,
+        };
+      });
+    }, HP_REGEN_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [enabled, setState, getRegenModifiers]);
 
   // Enemy regenerating modifier - heals 2% HP per tick (every 500ms)
   useEffect(() => {
