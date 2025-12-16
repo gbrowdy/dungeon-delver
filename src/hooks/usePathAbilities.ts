@@ -589,11 +589,16 @@ export function usePathAbilities() {
 
   /**
    * Get HP and mana regen bonuses from path abilities
-   * Returns flat bonuses to add to base regen rates
+   * Returns flat bonuses and percent multipliers for regen rates
    */
-  const getRegenModifiers = useCallback((player: Player): { hpRegen: number; manaRegen: number } => {
+  const getRegenModifiers = useCallback((player: Player): {
+    hpRegen: number;
+    hpRegenPercent: number;
+    manaRegen: number;
+  } => {
     const abilities = getActiveAbilities(player);
     let hpRegen = 0;
+    let hpRegenPercent = 0; // Percentage bonus (e.g., 1.0 = +100%)
     let manaRegen = 0;
 
     abilities.forEach(ability => {
@@ -611,7 +616,8 @@ export function usePathAbilities() {
 
             if (mod.stat === 'health') {
               if (mod.flatBonus) hpRegen += mod.flatBonus;
-              // Support scaling regen (e.g., regen based on missing HP)
+              if (mod.percentBonus) hpRegenPercent += mod.percentBonus;
+              // Support scaling regen (e.g., regen based on armor)
               if (mod.scalingStat && mod.scalingRatio) {
                 const sourceValue = player.currentStats[mod.scalingStat] || 0;
                 hpRegen += Math.floor(sourceValue * mod.scalingRatio);
@@ -625,7 +631,7 @@ export function usePathAbilities() {
       });
     });
 
-    return { hpRegen, manaRegen };
+    return { hpRegen, hpRegenPercent, manaRegen };
   }, [getActiveAbilities, checkCondition]);
 
   /**

@@ -36,7 +36,7 @@ export function HealthBar({
       <div className="flex justify-between text-pixel-sm">
         <span className="text-muted-foreground">{label}</span>
         {showValues && (
-          <span className="font-mono text-foreground">{current}/{max}</span>
+          <span className="font-mono text-foreground">{Math.floor(current)}/{max}</span>
         )}
       </div>
       <div className={cn('h-3 rounded-full overflow-hidden', bgColors[variant])}>

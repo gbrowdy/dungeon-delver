@@ -218,6 +218,7 @@ export interface Player {
   shieldRemainingDuration?: number; // Remaining duration in seconds
   abilityCounters?: Record<string, number>; // Counters for abilities like blur (consecutive dodges), perfect_form (momentum stacks)
   attackModifiers?: AttackModifier[]; // Temporary attack effects (shadow_dance, ambush)
+  hpRegen?: number; // Base HP regen per second from class (e.g., Paladin has 0.5)
 }
 
 export interface GameState {
@@ -248,4 +249,5 @@ export interface ClassData {
   baseStats: Stats;
   startingPower: Power;
   icon: string;
+  hpRegen?: number; // Base HP regen per second (e.g., Paladin has 0.5)
 }

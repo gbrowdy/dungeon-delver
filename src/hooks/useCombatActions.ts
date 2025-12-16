@@ -74,6 +74,13 @@ export function useCombatActions({
   const { processTrigger, hasAbility, getStatusImmunities, getPassiveDamageReduction, incrementAbilityCounter, resetAbilityCounter } = usePathAbilities();
 
   /**
+   * Safely add logs to combat log, handling undefined combatLog during error recovery
+   */
+  const safeAddLogs = (state: GameState, logs: string | string[]): void => {
+    state.combatLog?.add(logs);
+  };
+
+  /**
    * Hero attack callback - called when hero's attack timer fills
    *
    * Handles:
@@ -117,7 +124,7 @@ export function useCombatActions({
       // If stunned, skip attack and return
       if (turnStartResult.isStunned) {
         logs.push(`💫 You are stunned and cannot act!`);
-        prev.combatLog.add(logs);
+        safeAddLogs(prev,logs);
         return {
           ...prev,
           player: updatedPlayer,
@@ -400,7 +407,7 @@ export function useCombatActions({
           logPauseChange(true, PAUSE_REASON.ITEM_DROP, 'enemy_defeated_item_drop');
         }
 
-        prev.combatLog.add(deathResult.logs);
+        safeAddLogs(prev,deathResult.logs);
         return {
           ...prev,
           player: deathResult.player,
@@ -414,7 +421,7 @@ export function useCombatActions({
         };
       }
 
-      prev.combatLog.add(logs);
+      safeAddLogs(prev,logs);
       return {
         ...prev,
         player: playerAfterEffects,
@@ -868,7 +875,7 @@ export function useCombatActions({
             });
             logs.push(`🔥 Undying Fury! You refuse to fall!`);
             // Continue combat, don't die
-            prev.combatLog.add(logs);
+            safeAddLogs(prev,logs);
             return { ...prev, player, currentEnemy: enemy };
           } else {
             logs.push(`💀 Undying Fury already used this combat!`);
@@ -884,7 +891,7 @@ export function useCombatActions({
             player.usedFloorAbilities = [...usedFloor, 'immortal_guardian'];
             logs.push(`🛡️ Immortal Guardian! You are restored to ${healAmount} HP!`);
             // Continue combat, don't die
-            prev.combatLog.add(logs);
+            safeAddLogs(prev,logs);
             return { ...prev, player, currentEnemy: enemy };
           } else {
             logs.push(`💀 Immortal Guardian already used this floor!`);
@@ -904,7 +911,7 @@ export function useCombatActions({
           logs.push(...lethalResult.logs);
 
           // Don't mark as dying, player survived
-          prev.combatLog.add(logs);
+          safeAddLogs(prev,logs);
           return {
             ...prev,
             player: lethalResult.player,
@@ -917,7 +924,7 @@ export function useCombatActions({
         player.isDying = true;
         logs.push(`💀 You have been defeated...`);
 
-        prev.combatLog.add(logs);
+        safeAddLogs(prev,logs);
         return {
           ...prev,
           player,
@@ -925,7 +932,7 @@ export function useCombatActions({
         };
       }
 
-      prev.combatLog.add(logs);
+      safeAddLogs(prev,logs);
       return {
         ...prev,
         player,
@@ -957,7 +964,7 @@ export function useCombatActions({
         },
       };
 
-      prev.combatLog.add('🛡️ Bracing for impact!');
+      safeAddLogs(prev,'🛡️ Bracing for impact!');
       return {
         ...prev,
         player,

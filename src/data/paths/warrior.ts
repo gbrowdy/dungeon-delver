@@ -345,7 +345,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     effects: [
       {
         trigger: 'passive',
-        heal: 1.0 // Per second heal
+        statModifiers: [{ stat: 'health', flatBonus: 1.0, applyTo: 'regen' }]
       }
     ]
   },

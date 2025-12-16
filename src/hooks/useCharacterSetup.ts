@@ -97,6 +97,7 @@ export function useCharacterSetup(
       shield: 0, // Current shield amount
       shieldMaxDuration: 0, // Max shield duration in seconds
       shieldRemainingDuration: 0, // Remaining shield duration in seconds
+      hpRegen: classData.hpRegen, // Base HP regen from class (e.g., Paladin has 0.5)
     };
 
     logStateTransition(GAME_PHASE.CLASS_SELECT, GAME_PHASE.COMBAT, `select_class:${characterClass}`);

@@ -10,6 +10,7 @@ import { getDropQualityBonus } from '@/utils/fortuneUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
 import { applyTriggerResultToEnemy } from '@/hooks/combatActionHelpers';
+import { processLevelUp } from '@/hooks/useRewardCalculation';
 
 /**
  * Context for power activation - all state needed to execute a power
@@ -42,7 +43,7 @@ export function usePowerActions(context: PowerActivationContext) {
     combatSpeed,
   } = context;
 
-  const { processTrigger, hasAbility, addAttackModifier } = usePathAbilities();
+  const { processTrigger, hasAbility, addAttackModifier, getPowerModifiers } = usePathAbilities();
 
   const usePower = useCallback((powerId: string) => {
     setState((prev: GameState) => {
@@ -59,34 +60,32 @@ export function usePowerActions(context: PowerActivationContext) {
       // Check if player has Reckless Fury - uses HP instead of mana
       const useHpForMana = hasAbility(prev.player, 'reckless_fury');
 
+      // Get power modifiers from path abilities (e.g., Efficient Casting reduces mana cost)
+      const powerMods = getPowerModifiers(prev.player);
+      const effectiveManaCost = Math.max(1, Math.floor(power.manaCost * (1 - powerMods.costReduction)));
+
       if (power.currentCooldown > 0) {
         // Power is on cooldown - provide feedback
         const newLog = `⏳ ${power.name} is on cooldown (${power.currentCooldown.toFixed(1)}s)`;
-        return {
-          ...prev,
-          combatLog: prev.combatLog.add(newLog),
-        };
+        prev.combatLog?.add(newLog);
+        return prev;
       }
 
       // Check resource cost (HP or Mana depending on Reckless Fury)
       if (useHpForMana) {
-        const hpCost = Math.floor(power.manaCost * 0.5);
+        const hpCost = Math.floor(effectiveManaCost * 0.5);
         // Need at least hpCost + 1 HP to use power (can't kill yourself)
         if (prev.player.currentStats.health <= hpCost) {
           const newLog = `❌ Not enough HP for ${power.name} (need ${hpCost + 1} HP)`;
-          return {
-            ...prev,
-            combatLog: prev.combatLog.add(newLog),
-          };
+          prev.combatLog?.add(newLog);
+          return prev;
         }
       } else {
         // Normal mana check
-        if (prev.player.currentStats.mana < power.manaCost) {
-          const newLog = `❌ Not enough mana for ${power.name} (${prev.player.currentStats.mana}/${power.manaCost})`;
-          return {
-            ...prev,
-            combatLog: prev.combatLog.add(newLog),
-          };
+        if (prev.player.currentStats.mana < effectiveManaCost) {
+          const newLog = `❌ Not enough mana for ${power.name} (${prev.player.currentStats.mana}/${effectiveManaCost})`;
+          prev.combatLog?.add(newLog);
+          return prev;
         }
       }
 
@@ -119,11 +118,15 @@ export function usePowerActions(context: PowerActivationContext) {
 
       // Deduct resource cost (HP or Mana depending on Reckless Fury)
       if (useHpForMana) {
-        const hpCost = Math.floor(power.manaCost * 0.5);
+        const hpCost = Math.floor(effectiveManaCost * 0.5);
         player.currentStats.health -= hpCost;
         logs.push(`💔 Reckless Fury: Paid ${hpCost} HP for ${power.name}`);
       } else {
-        player.currentStats.mana -= power.manaCost;
+        player.currentStats.mana -= effectiveManaCost;
+        // Log mana cost reduction if applicable
+        if (powerMods.costReduction > 0) {
+          logs.push(`✨ Efficient Casting: ${power.manaCost} → ${effectiveManaCost} mana`);
+        }
       }
 
       // Set cooldown - subtract one tick worth immediately so the countdown starts right away
@@ -168,7 +171,9 @@ export function usePowerActions(context: PowerActivationContext) {
 
       switch (power.effect) {
         case 'damage': {
-          let baseDamage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
+          // Apply power bonus from path abilities (e.g., Lethal Momentum gives +50% power damage)
+          const powerBonusMultiplier = 1 + powerMods.powerBonus;
+          let baseDamage = Math.floor(player.currentStats.power * power.value * comboMultiplier * powerBonusMultiplier);
 
           // Apply power damage multiplier from items (e.g., Archmage's Staff)
           if (powerCastResult.powerDamageMultiplier) {
@@ -480,10 +485,18 @@ export function usePowerActions(context: PowerActivationContext) {
         const bonusText = dropQualityBonus > 0 ? ` (+${Math.floor(dropQualityBonus * 100)}% fortune bonus)` : '';
         logs.push(`${enemy.name} defeated! +${enemy.experienceReward} XP, +${bonusGold} gold${bonusText}`);
 
+        // Process level-ups (handles multiple level-ups if enough XP)
+        const levelUpResult = processLevelUp(player);
+        player.experience = levelUpResult.updatedPlayer.experience;
+        player.level = levelUpResult.updatedPlayer.level;
+        player.experienceToNext = levelUpResult.updatedPlayer.experienceToNext;
+        player.baseStats = levelUpResult.updatedPlayer.baseStats;
+        logs.push(...levelUpResult.levelUpLogs);
+
         player.currentStats = calculateStats(player);
 
         // Keep enemy in state with isDying flag - animation system will remove it
-        prev.combatLog.add(logs);
+        prev.combatLog?.add(logs);
         return {
           ...prev,
           player,
@@ -491,14 +504,14 @@ export function usePowerActions(context: PowerActivationContext) {
         };
       }
 
-      prev.combatLog.add(logs);
+      prev.combatLog?.add(logs);
       return {
         ...prev,
         player,
         currentEnemy: enemy,
       };
     });
-  }, [setState, setLastCombatEvent, scheduleCombatEvent, enemyDeathProcessedRef, processTrigger, hasAbility, addAttackModifier]);
+  }, [setState, setLastCombatEvent, scheduleCombatEvent, enemyDeathProcessedRef, processTrigger, hasAbility, addAttackModifier, getPowerModifiers]);
 
   return {
     usePower,

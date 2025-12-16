@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { useCombat } from '@/contexts/CombatContext';
 import { PowerButton } from './PowerButton';
 import { COMBAT_BALANCE } from '@/constants/balance';
+import { usePathAbilities } from '@/hooks/usePathAbilities';
 import {
   Tooltip,
   TooltipContent,
@@ -17,6 +18,12 @@ import {
 export function PowersPanel() {
   const { player, combatState, actions } = useCombat();
   const { canUsePowers } = combatState;
+  const { getPowerModifiers } = usePathAbilities();
+
+  // Calculate effective mana costs with path ability reductions
+  const powerMods = getPowerModifiers(player);
+  const getEffectiveManaCost = (baseCost: number) =>
+    Math.max(1, Math.floor(baseCost * (1 - powerMods.costReduction)));
 
   return (
     <div className="pixel-panel rounded-lg p-2 sm:p-3">
@@ -42,6 +49,7 @@ export function PowersPanel() {
             key={power.id}
             power={power}
             currentMana={player.currentStats.mana}
+            effectiveManaCost={getEffectiveManaCost(power.manaCost)}
             onUse={() => actions.usePower(power.id)}
             disabled={!canUsePowers}
             playerPathId={player.path?.pathId ?? null}

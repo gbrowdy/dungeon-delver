@@ -140,7 +140,7 @@ export function useRoomTransitions(
         logs.push(`⚠️ ${enemy.name} knows: ${abilityNames}`);
       }
 
-      prev.combatLog.add(logs);
+      prev.combatLog?.add(logs);
       return {
         ...prev,
         player,

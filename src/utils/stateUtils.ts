@@ -171,6 +171,17 @@ export function deepClonePlayer(player: Player): Player {
     isDying: player.isDying,
     path: player.path,
     pendingAbilityChoice: player.pendingAbilityChoice,
+    // Path ability tracking fields
+    enemyAttackCounter: player.enemyAttackCounter,
+    usedCombatAbilities: player.usedCombatAbilities ? [...player.usedCombatAbilities] : [],
+    usedFloorAbilities: player.usedFloorAbilities ? [...player.usedFloorAbilities] : [],
+    shield: player.shield,
+    shieldMaxDuration: player.shieldMaxDuration,
+    shieldRemainingDuration: player.shieldRemainingDuration,
+    abilityCounters: player.abilityCounters ? { ...player.abilityCounters } : undefined,
+    attackModifiers: player.attackModifiers ? [...player.attackModifiers] : undefined,
+    // Class-based HP regen (e.g., Paladin has 0.5)
+    hpRegen: player.hpRegen,
   };
 }
 

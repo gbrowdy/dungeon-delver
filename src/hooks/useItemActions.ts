@@ -50,7 +50,7 @@ export function useItemActions({
       };
       player.currentStats = calculateStats(player);
 
-      prev.combatLog.add(`Bought ${item.name} for ${price} gold!`);
+      prev.combatLog?.add(`Bought ${item.name} for ${price} gold!`);
       return {
         ...prev,
         player,
@@ -74,7 +74,7 @@ export function useItemActions({
           return p;
         });
 
-        prev.combatLog.add(`Upgraded ${selectedChoice.powerName} to level ${selectedChoice.newLevel}!`);
+        prev.combatLog?.add(`Upgraded ${selectedChoice.powerName} to level ${selectedChoice.newLevel}!`);
         return {
           ...prev,
           player: {
@@ -86,7 +86,7 @@ export function useItemActions({
       } else {
         // It's a new power - add it to the list
         const newPower: Power = { ...selectedChoice, upgradeLevel: 1 };
-        prev.combatLog.add(`Learned new power: ${selectedChoice.name}!`);
+        prev.combatLog?.add(`Learned new power: ${selectedChoice.name}!`);
         return {
           ...prev,
           player: {
@@ -119,7 +119,7 @@ export function useItemActions({
         ? `Replaced ${replacedItem.name} with ${item.name}!`
         : `Claimed ${item.name}!`;
 
-      prev.combatLog.add(message);
+      prev.combatLog?.add(message);
       return {
         ...prev,
         player,
@@ -149,7 +149,7 @@ export function useItemActions({
         ? `Equipped ${droppedItem.name}, replacing ${replacedItem.name}!`
         : `Equipped ${droppedItem.name}!`;
 
-      prev.combatLog.add(message);
+      prev.combatLog?.add(message);
       return {
         ...prev,
         player,

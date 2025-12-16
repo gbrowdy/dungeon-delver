@@ -15,7 +15,7 @@ export function useCombatTimers(
   setState: React.Dispatch<React.SetStateAction<GameState>>,
   enabled: boolean
 ) {
-  const { getRegenModifiers } = usePathAbilities();
+  const { getRegenModifiers, getPowerModifiers } = usePathAbilities();
 
   // MP regeneration - base regen that makes powers usable
   // Ticks every second, scaled by combat speed
@@ -76,10 +76,12 @@ export function useCombatTimers(
 
         // Get bonus HP regen from path abilities
         const regenMods = getRegenModifiers(player);
-        const bonusHpRegen = regenMods.hpRegen;
+        const flatBonusHpRegen = regenMods.hpRegen;
+        const percentBonusHpRegen = regenMods.hpRegenPercent; // e.g., 1.0 = +100%
 
-        // Total HP regen per second
-        const totalHpRegenPerSecond = baseHpRegen + bonusHpRegen;
+        // Total HP regen per second: (base + flat) * (1 + percent)
+        const baseAndFlat = baseHpRegen + flatBonusHpRegen;
+        const totalHpRegenPerSecond = baseAndFlat * (1 + percentBonusHpRegen);
 
         // Skip if no regen
         if (totalHpRegenPerSecond <= 0) return prev;
@@ -132,7 +134,7 @@ export function useCombatTimers(
         const updatedEnemy = deepCloneEnemy(enemy);
         updatedEnemy.health = newHealth;
 
-        prev.combatLog.add(`💚 ${enemy.name} regenerates ${regenAmount} HP!`);
+        prev.combatLog?.add(`💚 ${enemy.name} regenerates ${regenAmount} HP!`);
 
         return {
           ...prev,
@@ -189,7 +191,7 @@ export function useCombatTimers(
           d => !updatedDebuffs.some(ud => ud.id === d.id)
         );
         expiredDebuffs.forEach(d => {
-          prev.combatLog.add(`${d.sourceName} effect on enemy expired`);
+          prev.combatLog?.add(`${d.sourceName} effect on enemy expired`);
         });
 
         return {
@@ -222,7 +224,12 @@ export function useCombatTimers(
         // Calculate cooldown reduction per tick
         // COOLDOWN_TICK_INTERVAL is in ms, we want to reduce by (tickInterval/1000) seconds
         // Also scale with combat speed so cooldowns recover faster at higher speeds
-        const tickSeconds = (COOLDOWN_TICK_INTERVAL / 1000) * prev.combatSpeed;
+        const baseTickSeconds = (COOLDOWN_TICK_INTERVAL / 1000) * prev.combatSpeed;
+
+        // Apply cooldown recovery bonus from path abilities (e.g., Quickcast gives 20% faster recovery)
+        const powerMods = getPowerModifiers(prev.player);
+        const cooldownMultiplier = 1 + powerMods.cooldownReduction; // e.g., 0.2 = 20% faster = 1.2x tick rate
+        const tickSeconds = baseTickSeconds * cooldownMultiplier;
 
         // Update powers with reduced cooldowns
         let anyChanged = false;
@@ -256,7 +263,7 @@ export function useCombatTimers(
     }, COOLDOWN_TICK_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [enabled, setState]);
+  }, [enabled, setState, getPowerModifiers]);
 
   // Path ability cooldown ticker - independent of turns
   // Cooldowns tick down in real-time, scaled by combat speed
@@ -390,7 +397,7 @@ export function useCombatTimers(
         if (!needsUpdate) return prev;
 
         // Add logs to combat log
-        logs.forEach(log => prev.combatLog.add(log));
+        logs.forEach(log => prev.combatLog?.add(log));
 
         return {
           ...prev,
