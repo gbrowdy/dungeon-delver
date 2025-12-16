@@ -227,11 +227,11 @@ describe('useShopState', () => {
       result.current.initializeShop('warrior', null, 1, 12345);
     });
 
-    const starterItem = result.current.shopState.starterGear[0]; // 50g
+    const starterItem = result.current.shopState.starterGear[0]; // 45g
 
     expect(result.current.canAfford(starterItem.id, 100)).toBe(true);
-    expect(result.current.canAfford(starterItem.id, 50)).toBe(true);
-    expect(result.current.canAfford(starterItem.id, 49)).toBe(false);
+    expect(result.current.canAfford(starterItem.id, 45)).toBe(true);
+    expect(result.current.canAfford(starterItem.id, 44)).toBe(false);
   });
 
   it('should get items for display based on floor', () => {
