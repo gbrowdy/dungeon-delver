@@ -215,14 +215,14 @@ const DUELIST_PATH: PathDefinition = {
     {
       id: 'rogue_duelist_riposte',
       name: 'Riposte',
-      description: 'When you dodge an attack, immediately counter-attack for 150% damage. This counter cannot miss.',
+      description: 'When you dodge an attack, immediately counter-attack for 150% of your power stat. This counter cannot miss.',
       icon: 'Swords',
       levelRequired: 3,
       subpath: 'swashbuckler',
       effects: [
         {
           trigger: 'on_dodge',
-          damage: 150,
+          damageModifier: { type: 'bonus_damage', value: 1.5 },
           chance: 1.0
         }
       ]
