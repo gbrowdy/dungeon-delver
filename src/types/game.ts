@@ -226,7 +226,13 @@ export interface Player {
   shield?: number; // Current shield amount (absorbs damage before HP)
   shieldMaxDuration?: number; // Max duration in seconds (for display)
   shieldRemainingDuration?: number; // Remaining duration in seconds
-  abilityCounters?: Record<string, number>; // Counters for abilities like blur (consecutive dodges), perfect_form (momentum stacks)
+  /**
+   * Counters for ability-specific tracking.
+   * Known keys:
+   * - 'blur_dodges': Consecutive dodges for Blur shield (max 3)
+   * - 'perfect_form_momentum': Momentum stacks for Perfect Form damage (max 5)
+   */
+  abilityCounters?: Record<string, number>;
   attackModifiers?: AttackModifier[]; // Temporary attack effects (shadow_dance, ambush)
   hpRegen?: number; // Base HP regen per second from class (e.g., Paladin has 0.5)
 }
