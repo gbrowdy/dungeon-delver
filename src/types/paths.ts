@@ -48,11 +48,17 @@ export type PathStatType = 'health' | 'maxHealth' | 'power' | 'armor' | 'speed' 
 
 /**
  * Conditional checks for ability activation
+ * Uses discriminated union to ensure correct fields per condition type
  */
-export interface PathAbilityCondition {
-  type: 'hp_below' | 'hp_above' | 'hp_threshold' | 'mana_below' | 'mana_above' | 'enemy_hp_below' | 'combo_count' | 'enemy_has_status';
-  value: number; // Threshold value (percentage for HP/mana, ratio for hp_threshold, absolute for combo)
-}
+export type PathAbilityCondition =
+  | { type: 'hp_below'; value: number }
+  | { type: 'hp_above'; value: number }
+  | { type: 'hp_threshold'; value: number }
+  | { type: 'mana_below'; value: number }
+  | { type: 'mana_above'; value: number }
+  | { type: 'enemy_hp_below'; value: number }
+  | { type: 'combo_count'; value: number }
+  | { type: 'enemy_has_status'; status: string };
 
 /**
  * Target for stat modifications
