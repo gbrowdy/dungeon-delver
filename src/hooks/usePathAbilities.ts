@@ -30,8 +30,13 @@ import { MAGE_PATHS } from '@/data/paths/mage';
 import { ROGUE_PATHS } from '@/data/paths/rogue';
 import { PALADIN_PATHS } from '@/data/paths/paladin';
 
-// Counter for generating unique debuff IDs (avoids collision when multiple debuffs applied in same millisecond)
-let debuffIdCounter = 0;
+/**
+ * Generate a unique ID for debuffs/buffs without module-level state.
+ * Uses timestamp + random string to avoid collisions.
+ */
+function generateUniqueId(prefix: string): string {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
 
 /**
  * Context for trigger processing
@@ -457,7 +462,7 @@ export function usePathAbilities() {
                 const reduction = Math.abs(mod.percentBonus || 0);
                 if (reduction > 0) {
                   const debuff: EnemyStatDebuff = {
-                    id: `${ability.id}_${stat}_${Date.now()}_${debuffIdCounter++}`,
+                    id: generateUniqueId(`${ability.id}_${stat}`),
                     stat,
                     percentReduction: reduction,
                     remainingDuration: effect.duration || 5,
@@ -478,7 +483,7 @@ export function usePathAbilities() {
                 if (bonus > 0 && effect.duration) {
                   // Create an active buff
                   const buff: ActiveBuff = {
-                    id: `${ability.id}_${stat}_${Date.now()}_${debuffIdCounter++}`,
+                    id: generateUniqueId(`${ability.id}_${stat}`),
                     name: ability.name,
                     stat,
                     multiplier: 1 + bonus,
