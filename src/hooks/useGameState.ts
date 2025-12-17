@@ -446,6 +446,7 @@ export function useGameState() {
     if (state.currentEnemy && !state.currentEnemy.isDying) {
       enemyDeathProcessedRef.current = null;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally depend only on enemy ID, not entire enemy object
   }, [state.currentEnemy?.id]);
 
   // Cleanup all combat timeouts on unmount

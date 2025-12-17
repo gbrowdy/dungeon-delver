@@ -334,12 +334,16 @@ For complex multi-file tasks, use the **Conductor-Swarm** pattern. The **Conduct
 
 **Trigger phrases**: "conductor-swarm", "work through tasks", "execute task document", "fan out agents", "parallel task execution"
 
+### Why Worktrees?
+
+**CRITICAL**: All agents share the same shell and git state. Running `git checkout branch-a` in one agent, then `git checkout branch-b` in another causes Agent 1's commits to go to branch-b. **Git worktrees solve this** by giving each parallel task its own isolated directory with independent checkout.
+
 ### Roles
 
 | Role | Responsibilities |
 |------|------------------|
-| **Conductor** (root agent) | Creates ALL branches, assigns tasks, reviews/merges work, updates task document in real-time |
-| **Swarm Agent** (subagent) | Verifies branch checkout FIRST, executes ONE assigned task, commits to assigned branch, reports completion. **NEVER creates or merges branches.** |
+| **Conductor** (root agent) | Creates feature branch, creates worktrees for parallel tasks, assigns tasks with worktree paths, merges work, cleans up worktrees |
+| **Swarm Agent** (subagent) | Works ONLY in assigned worktree directory, commits to the worktree's branch, reports completion. **NEVER creates branches or worktrees.** |
 
 ### 1. Create Task Document
 
@@ -352,10 +356,10 @@ Create `tasks/<TASK_NAME>_TASKS.md` with the following structure:
 <!-- IMPORTANT: Specify how tasks should be executed -->
 
 ## Wave 1: [Wave Name] (PARALLEL|SEQUENTIAL)
-| Task ID | File | Description | Status | Est. Time | Depends On |
-|---------|------|-------------|--------|-----------|------------|
-| **1.1** | `path/to/file.ts` | What needs to be done | [ ] | 30m | - |
-| **1.2** | `path/to/other.ts` | What needs to be done | [ ] | 45m | 1.1 (if sequential) |
+| Task ID | File | Description | Status | Worktree |
+|---------|------|-------------|--------|----------|
+| **1.1** | `path/to/file.ts` | What needs to be done | [ ] | |
+| **1.2** | `path/to/other.ts` | What needs to be done | [ ] | |
 
 **Acceptance Criteria:**
 - [ ] Criterion 1
@@ -367,117 +371,117 @@ Create `tasks/<TASK_NAME>_TASKS.md` with the following structure:
 
 #### Task Document Checklist
 
-When creating a task document, always include:
-
-- [ ] **Execution mode per wave** - Explicitly state PARALLEL or SEQUENTIAL for each wave
-- [ ] **Dependencies** - List which tasks depend on others (use "Depends On" column)
-- [ ] **Task IDs** - Unique identifiers for each task (e.g., C1-W, H1, M2)
+- [ ] **Execution mode per wave** - Explicitly state PARALLEL or SEQUENTIAL
+- [ ] **Task IDs** - Unique identifiers (e.g., 1.1, 1.2, 2.1)
 - [ ] **File paths** - Exact files to modify
-- [ ] **Clear descriptions** - What needs to be done (not just the problem)
+- [ ] **Clear descriptions** - What needs to be done
 - [ ] **Status column** - `[ ]` not started, `[~]` in progress, `[x]` completed
-- [ ] **Time estimates** - Realistic estimates per task
-- [ ] **Acceptance criteria per wave** - How to verify the wave is complete
-- [ ] **Wave groupings** - Group related tasks that can/must run together
+- [ ] **Worktree column** - Conductor fills in worktree path when created
 
-### 2. Branch Management (CONDUCTOR ONLY)
-
-**CRITICAL: The Conductor creates ALL branches. Swarm agents NEVER create branches.**
+### 2. Setup (CONDUCTOR ONLY)
 
 ```bash
-# Step 1: Conductor creates feature branch
+# Step 1: Create or checkout feature branch
 git checkout -b <type>/<feature-name>
-
-# Step 2: Conductor creates sub-branches for EACH task BEFORE launching agents
-git checkout <type>/<feature-name>  # Ensure on feature branch
-git checkout -b <feature>/<task-id>  # Create task branch
-# Example:
-git checkout fix/typescript-path-schema
-git checkout -b fix/ts-warrior-paths
-git checkout fix/typescript-path-schema  # Return to feature branch
-git checkout -b fix/ts-mage-paths
-# etc.
-
-# Step 3: Return to feature branch before launching agents
+# or if it exists:
 git checkout <type>/<feature-name>
+
+# Step 2: For PARALLEL tasks, create worktrees BEFORE launching agents
+# Worktrees go in parent directory to avoid nesting issues
+git worktree add ../rogue-task-1.1 -b <feature>/task-1.1
+git worktree add ../rogue-task-1.2 -b <feature>/task-1.2
+# Example:
+git worktree add ../rogue-fix-warrior -b fix/warrior-paths
+git worktree add ../rogue-fix-mage -b fix/mage-paths
 ```
 
-**Why Conductor creates branches:**
-- Ensures clean branching from the correct base (feature branch HEAD)
-- Prevents merge conflicts from agents branching off wrong commits
-- Maintains clear ownership and traceability
-- Agents can immediately start working without git setup
+**Worktree naming convention**: `../rogue-<short-task-name>`
 
 ### 3. Execute Tasks
 
 #### For PARALLEL Waves:
-1. Conductor creates all sub-branches for the wave FIRST
-2. Conductor launches multiple swarm agents simultaneously (one per task)
-3. Each agent prompt MUST include branch verification instructions:
+1. Conductor creates all worktrees for the wave FIRST
+2. Conductor updates task document with worktree paths
+3. Conductor launches multiple swarm agents simultaneously
+4. **Each agent prompt MUST include:**
    ```
-   FIRST: Run `git checkout <branch> && git branch --show-current` and CONFIRM you are on branch `<branch>` before making ANY file changes. If checkout fails, STOP and report the error.
+   WORKDIR: /Users/gilbrowdy/rogue-task-1.1
+
+   You MUST work in the directory above. Before ANY file operations:
+   1. Run: cd /Users/gilbrowdy/rogue-task-1.1 && pwd
+   2. Verify the output matches the WORKDIR
+   3. ALL file paths must be relative to or absolute within this directory
+   4. Commit your changes when done (the branch is already set up)
    ```
-4. Agents verify branch, work independently, commit to their assigned branch
-5. Conductor monitors progress and updates task document status to `[~]`
+5. Agents work in isolation, commit to their worktree's branch
+6. Conductor monitors progress and updates task document status
 
 #### For SEQUENTIAL Waves:
-1. Conductor creates sub-branch for first task only
-2. Conductor launches ONE agent for first task
-3. Wait for completion, review, and merge into feature branch
-4. Conductor updates task document status to `[x]`
-5. Conductor creates next sub-branch (now includes previous merged work)
-6. Repeat until wave complete
+Sequential tasks don't need worktrees - work directly in main repo:
+1. Conductor works on task OR launches one agent at a time
+2. Complete task, commit to feature branch
+3. Update task document, move to next task
 
-**Default behavior:** If execution mode is NOT specified in task document, **assume SEQUENTIAL** to prevent conflicts.
+**Default behavior:** If execution mode is NOT specified, **assume SEQUENTIAL**.
 
-### 4. Review and Merge (CONDUCTOR ONLY)
+### 4. Merge and Cleanup (CONDUCTOR ONLY)
 
-As each agent completes:
+As each parallel agent completes:
 
-1. **Review the work** - Check code quality and acceptance criteria
+1. **Review the work** in the worktree directory
 2. **Merge into feature branch:**
    ```bash
-   git checkout <type>/<feature-name>
-   git merge <feature>/<task-id>
+   # From main repo directory
+   cd /Users/gilbrowdy/rogue
+   git merge <feature>/task-1.1
    ```
-3. **Update task document immediately:**
-   - Change status from `[~]` to `[x]`
-   - Check off acceptance criteria
-   - Note any issues or follow-ups
-4. **Delete merged branch** (optional):
+3. **Update task document** - Change status `[~]` → `[x]`
+4. **Remove worktree after merge:**
    ```bash
-   git branch -d <feature>/<task-id>
+   git worktree remove ../rogue-task-1.1
+   # Branch can be deleted too:
+   git branch -d <feature>/task-1.1
    ```
 
 ### 5. Real-Time Document Updates
 
-**The Conductor MUST update the task document as work progresses:**
-
 | Event | Document Update |
 |-------|-----------------|
-| Branch created for task | Note branch name in task row |
+| Worktree created | Fill in Worktree column with path |
 | Agent launched | Status: `[ ]` → `[~]` |
 | Agent completes | Review work before updating |
 | Work merged | Status: `[~]` → `[x]` |
-| Issue found during review | Add note under task or create new task |
-| Wave complete | Check acceptance criteria, add completion timestamp |
-| Blocker encountered | Add BLOCKER note, may need to pause other tasks |
+| Worktree removed | Clear Worktree column or mark "merged" |
 
 ### 6. Finalize
 
 After all waves complete:
-1. Run full validation: `npm run build && npm run lint && npx vitest run`
-2. Update task document with final status and completion timestamp
-3. Open PR from feature branch to main
-4. Reference task document in PR description
+1. Verify all worktrees removed: `git worktree list`
+2. Run full validation: `npm run build && npm run lint && npx vitest run`
+3. Update task document with completion timestamp
+4. Open PR from feature branch to main
+
+### 7. Cleanup Commands
+
+```bash
+# List all worktrees
+git worktree list
+
+# Remove a specific worktree
+git worktree remove ../rogue-task-name
+
+# Remove all task worktrees (if needed)
+git worktree list | grep "rogue-" | awk '{print $1}' | xargs -I {} git worktree remove {}
+
+# Prune stale worktree references
+git worktree prune
+```
 
 ### Guidelines Summary
 
-1. **Conductor owns ALL branches** - Swarm agents NEVER create branches
-2. **Clean base required** - Each sub-branch must branch from current feature branch HEAD
-3. **Respect execution mode** - Only parallelize when explicitly marked PARALLEL
-4. **Sequential by default** - When execution mode is not specified, run tasks one at a time
-5. **One task per agent** - Clear ownership and focused commits
-6. **Real-time updates** - Conductor updates task document immediately after each merge
-7. **Review before merge** - Conductor validates work meets acceptance criteria before merging
-8. **Strict priority order** - Always start with highest priority tasks first
-9. **Branch verification required** - Agents MUST verify branch checkout before any file changes
+1. **Worktrees for parallel work** - Each parallel task gets its own worktree directory
+2. **Conductor owns setup/teardown** - Agents NEVER create worktrees or branches
+3. **Absolute paths in prompts** - Always give agents the full worktree path
+4. **Sequential = no worktree** - Only parallel tasks need isolation
+5. **Merge then remove** - Clean up worktrees immediately after merging
+6. **Verify with `git worktree list`** - Ensure no orphaned worktrees remain

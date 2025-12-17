@@ -28,18 +28,19 @@ export class CircularBuffer<T> {
    * If adding items would exceed capacity, oldest items are removed.
    *
    * @param items - Single item or array of items to add
+   * @returns this - Returns the buffer for chaining
    */
-  add(items: T | T[]): void {
+  add(items: T | T[]): this {
     const itemsArray = Array.isArray(items) ? items : [items];
 
     if (itemsArray.length === 0) {
-      return;
+      return this;
     }
 
     // If adding more items than capacity, only keep the last N items
     if (itemsArray.length >= this.capacity) {
       this.buffer = itemsArray.slice(-this.capacity);
-      return;
+      return this;
     }
 
     // Add items to buffer
@@ -50,6 +51,8 @@ export class CircularBuffer<T> {
       const overflow = this.buffer.length - this.capacity;
       this.buffer = this.buffer.slice(overflow);
     }
+
+    return this;
   }
 
   /**

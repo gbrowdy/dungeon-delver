@@ -89,6 +89,18 @@ describe('stateUtils', () => {
         lastPowerUsed: null,
         // upgradePurchases removed - old upgrade system deprecated
         isDying: false,
+        // New path ability fields
+        abilityCounters: {},
+        attackModifiers: [],
+        hpRegen: 0,
+        path: null,
+        pendingAbilityChoice: false,
+        shield: 0,
+        shieldMaxDuration: 0,
+        shieldRemainingDuration: 0,
+        usedCombatAbilities: [],
+        usedFloorAbilities: [],
+        enemyAttackCounter: 0,
       };
 
       const clonedPlayer = deepClonePlayer(originalPlayer);
@@ -146,6 +158,18 @@ describe('stateUtils', () => {
         lastPowerUsed: null,
         // upgradePurchases removed
         isDying: false,
+        // New path ability fields
+        abilityCounters: {},
+        attackModifiers: [],
+        hpRegen: 0,
+        path: null,
+        pendingAbilityChoice: false,
+        shield: 0,
+        shieldMaxDuration: 0,
+        shieldRemainingDuration: 0,
+        usedCombatAbilities: [],
+        usedFloorAbilities: [],
+        enemyAttackCounter: 0,
       };
 
       const clonedPlayer = deepClonePlayer(originalPlayer);
@@ -194,6 +218,18 @@ describe('stateUtils', () => {
         lastPowerUsed: null,
         // upgradePurchases removed
         isDying: false,
+        // New path ability fields
+        abilityCounters: {},
+        attackModifiers: [],
+        hpRegen: 0,
+        path: null,
+        pendingAbilityChoice: false,
+        shield: 0,
+        shieldMaxDuration: 0,
+        shieldRemainingDuration: 0,
+        usedCombatAbilities: [],
+        usedFloorAbilities: [],
+        enemyAttackCounter: 0,
       };
 
       const clonedPlayer = deepClonePlayer(originalPlayer);
@@ -259,6 +295,18 @@ describe('stateUtils', () => {
         lastPowerUsed: null,
         // upgradePurchases removed
         isDying: false,
+        // New path ability fields
+        abilityCounters: {},
+        attackModifiers: [],
+        hpRegen: 0,
+        path: null,
+        pendingAbilityChoice: false,
+        shield: 0,
+        shieldMaxDuration: 0,
+        shieldRemainingDuration: 0,
+        usedCombatAbilities: [],
+        usedFloorAbilities: [],
+        enemyAttackCounter: 0,
       };
 
       const clonedPlayer = deepClonePlayer(originalPlayer);
@@ -311,6 +359,18 @@ describe('stateUtils', () => {
         lastPowerUsed: null,
         // upgradePurchases removed
         isDying: false,
+        // New path ability fields
+        abilityCounters: {},
+        attackModifiers: [],
+        hpRegen: 0,
+        path: null,
+        pendingAbilityChoice: false,
+        shield: 0,
+        shieldMaxDuration: 0,
+        shieldRemainingDuration: 0,
+        usedCombatAbilities: [],
+        usedFloorAbilities: [],
+        enemyAttackCounter: 0,
       };
 
       const clonedPlayer = deepClonePlayer(originalPlayer);
@@ -369,6 +429,18 @@ describe('stateUtils', () => {
         lastPowerUsed: null,
         // upgradePurchases removed
         isDying: false,
+        // New path ability fields
+        abilityCounters: {},
+        attackModifiers: [],
+        hpRegen: 0,
+        path: null,
+        pendingAbilityChoice: false,
+        shield: 0,
+        shieldMaxDuration: 0,
+        shieldRemainingDuration: 0,
+        usedCombatAbilities: [],
+        usedFloorAbilities: [],
+        enemyAttackCounter: 0,
       };
 
       const clonedPlayer = deepClonePlayer(originalPlayer);
@@ -390,6 +462,105 @@ describe('stateUtils', () => {
     // it('should create independent copies of upgradePurchases object', () => {
     //   ... test code removed ...
     // });
+
+    it('should create independent copies of path ability fields (abilityCounters, attackModifiers, hpRegen)', () => {
+      const originalPlayer: Player = {
+        name: 'TestHero',
+        class: 'rogue',
+        level: 5,
+        experience: 500,
+        experienceToNext: 750,
+        gold: 100,
+        baseStats: {
+          health: 50, maxHealth: 50, power: 10, armor: 5, speed: 15,
+          mana: 30, maxMana: 30, fortune: 5,
+        },
+        currentStats: {
+          health: 45, maxHealth: 50, power: 10, armor: 5, speed: 15,
+          mana: 25, maxMana: 30, fortune: 5,
+        },
+        powers: [],
+        inventory: [],
+        equippedItems: [],
+        activeBuffs: [],
+        statusEffects: [],
+        isBlocking: false,
+        comboCount: 0,
+        lastPowerUsed: null,
+        isDying: false,
+        // Path ability fields with populated data
+        abilityCounters: {
+          blur_consecutive_dodges: 3,
+          perfect_form_momentum: 5,
+        },
+        attackModifiers: [
+          { id: 'mod-1', effect: 'guaranteed_crit', remainingAttacks: 1, sourceName: 'Shadow Strike' },
+          { id: 'mod-2', effect: 'bonus_damage', value: 25, remainingAttacks: 2, sourceName: 'Power Buff' },
+          { id: 'mod-3', effect: 'lifesteal', value: 0.3, remainingAttacks: 1, sourceName: 'Vampiric Touch' },
+        ],
+        hpRegen: 2.5,
+        path: null,
+        pendingAbilityChoice: false,
+        shield: 15,
+        shieldMaxDuration: 5000,
+        shieldRemainingDuration: 3000,
+        usedCombatAbilities: ['shadow_step', 'blur'],
+        usedFloorAbilities: ['immortal_guardian'],
+        enemyAttackCounter: 7,
+      };
+
+      const clonedPlayer = deepClonePlayer(originalPlayer);
+
+      // Verify initial equality
+      expect(clonedPlayer).toEqual(originalPlayer);
+      expect(clonedPlayer).not.toBe(originalPlayer);
+
+      // Modify clone's abilityCounters
+      clonedPlayer.abilityCounters.blur_consecutive_dodges = 999;
+      clonedPlayer.abilityCounters.new_counter = 10;
+
+      // Verify original abilityCounters unchanged
+      expect(originalPlayer.abilityCounters.blur_consecutive_dodges).toBe(3);
+      expect(originalPlayer.abilityCounters).not.toHaveProperty('new_counter');
+      expect(clonedPlayer.abilityCounters).not.toBe(originalPlayer.abilityCounters);
+
+      // Modify clone's attackModifiers
+      clonedPlayer.attackModifiers![0]!.remainingAttacks = 999;
+      clonedPlayer.attackModifiers!.push({
+        id: 'mod-new',
+        effect: 'guaranteed_crit',
+        remainingAttacks: 5,
+        sourceName: 'New Buff',
+      });
+
+      // Verify original attackModifiers unchanged
+      expect(originalPlayer.attackModifiers).toHaveLength(3);
+      expect(originalPlayer.attackModifiers![0]!.remainingAttacks).toBe(1);
+      expect(clonedPlayer.attackModifiers).not.toBe(originalPlayer.attackModifiers);
+      expect(clonedPlayer.attackModifiers![0]).not.toBe(originalPlayer.attackModifiers![0]);
+
+      // Modify clone's hpRegen
+      clonedPlayer.hpRegen = 100;
+      expect(originalPlayer.hpRegen).toBe(2.5);
+
+      // Modify clone's shield fields
+      clonedPlayer.shield = 0;
+      clonedPlayer.shieldRemainingDuration = 0;
+      expect(originalPlayer.shield).toBe(15);
+      expect(originalPlayer.shieldRemainingDuration).toBe(3000);
+
+      // Modify clone's ability tracking arrays
+      clonedPlayer.usedCombatAbilities.push('new_ability');
+      clonedPlayer.usedFloorAbilities.push('another_ability');
+      expect(originalPlayer.usedCombatAbilities).toHaveLength(2);
+      expect(originalPlayer.usedFloorAbilities).toHaveLength(1);
+      expect(clonedPlayer.usedCombatAbilities).not.toBe(originalPlayer.usedCombatAbilities);
+      expect(clonedPlayer.usedFloorAbilities).not.toBe(originalPlayer.usedFloorAbilities);
+
+      // Modify clone's enemyAttackCounter
+      clonedPlayer.enemyAttackCounter = 999;
+      expect(originalPlayer.enemyAttackCounter).toBe(7);
+    });
   });
 
   describe('deepCloneEnemy', () => {

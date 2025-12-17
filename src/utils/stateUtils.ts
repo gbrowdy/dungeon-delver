@@ -9,6 +9,8 @@ import type {
   UpgradePurchases,
   EnemyAbility,
   EnemyIntent,
+  EnemyStatDebuff,
+  AttackModifier,
 } from '@/types/game';
 
 /**
@@ -141,6 +143,32 @@ function cloneEnemyIntent(intent: EnemyIntent | null): EnemyIntent | null {
 }
 
 /**
+ * Deep clone an array of EnemyStatDebuff objects
+ */
+function cloneEnemyStatDebuffs(debuffs: EnemyStatDebuff[]): EnemyStatDebuff[] {
+  return debuffs.map((debuff) => ({
+    id: debuff.id,
+    stat: debuff.stat,
+    percentReduction: debuff.percentReduction,
+    remainingDuration: debuff.remainingDuration,
+    sourceName: debuff.sourceName,
+  }));
+}
+
+/**
+ * Deep clone an array of AttackModifier objects
+ */
+function cloneAttackModifiers(modifiers: AttackModifier[]): AttackModifier[] {
+  return modifiers.map((mod) => ({
+    id: mod.id,
+    effect: mod.effect,
+    value: mod.value,
+    remainingAttacks: mod.remainingAttacks,
+    sourceName: mod.sourceName,
+  }));
+}
+
+/**
  * Deep clone a Player object with all nested properties
  *
  * This ensures that no references are shared between the original and cloned objects,
@@ -171,6 +199,17 @@ export function deepClonePlayer(player: Player): Player {
     isDying: player.isDying,
     path: player.path,
     pendingAbilityChoice: player.pendingAbilityChoice,
+    // Path ability tracking fields
+    enemyAttackCounter: player.enemyAttackCounter,
+    usedCombatAbilities: player.usedCombatAbilities ? [...player.usedCombatAbilities] : [],
+    usedFloorAbilities: player.usedFloorAbilities ? [...player.usedFloorAbilities] : [],
+    shield: player.shield,
+    shieldMaxDuration: player.shieldMaxDuration,
+    shieldRemainingDuration: player.shieldRemainingDuration,
+    abilityCounters: player.abilityCounters ? { ...player.abilityCounters } : undefined,
+    attackModifiers: player.attackModifiers ? cloneAttackModifiers(player.attackModifiers) : undefined,
+    // Class-based HP regen (e.g., Paladin has 0.5)
+    hpRegen: player.hpRegen,
   };
 }
 
@@ -198,11 +237,14 @@ export function deepCloneEnemy(enemy: Enemy): Enemy {
     abilities: cloneEnemyAbilities(enemy.abilities),
     intent: cloneEnemyIntent(enemy.intent),
     statusEffects: cloneStatusEffects(enemy.statusEffects),
+    statDebuffs: enemy.statDebuffs ? cloneEnemyStatDebuffs(enemy.statDebuffs) : undefined,
     isShielded: enemy.isShielded,
     shieldTurnsRemaining: enemy.shieldTurnsRemaining,
     isEnraged: enemy.isEnraged,
     enrageTurnsRemaining: enemy.enrageTurnsRemaining,
     basePower: enemy.basePower,
     isDying: enemy.isDying,
+    isFinalBoss: enemy.isFinalBoss,
+    modifiers: enemy.modifiers ? [...enemy.modifiers] : undefined,
   };
 }

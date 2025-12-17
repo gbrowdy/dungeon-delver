@@ -32,6 +32,7 @@ import {
 import { logPauseChange } from '@/utils/gameLogger';
 import { generateEventId } from '@/utils/eventId';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
@@ -71,7 +72,8 @@ export function useCombatActions({
 }: UseCombatActionsParams) {
 
   // Initialize path abilities hook for processing path ability effects
-  const { processTrigger, hasAbility, getStatusImmunities } = usePathAbilities();
+  const { processTrigger, hasAbility, getStatusImmunities, getPassiveDamageReduction, incrementAbilityCounter, resetAbilityCounter } = usePathAbilities();
+
 
   /**
    * Hero attack callback - called when hero's attack timer fills
@@ -117,7 +119,7 @@ export function useCombatActions({
       // If stunned, skip attack and return
       if (turnStartResult.isStunned) {
         logs.push(`💫 You are stunned and cannot act!`);
-        prev.combatLog.add(logs);
+        safeCombatLogAdd(prev.combatLog, logs, 'performHeroAttack:stunned');
         return {
           ...prev,
           player: updatedPlayer,
@@ -126,12 +128,42 @@ export function useCombatActions({
       }
 
       // === PLAYER ATTACK ===
+      // Check for guaranteed crit from attack modifiers
+      let forceCrit = false;
+      if (updatedPlayer.attackModifiers?.some(m => m.effect === 'guaranteed_crit' && m.remainingAttacks > 0)) {
+        forceCrit = true;
+      }
+
+      // Check Perfect Form momentum stacks BEFORE attack
+      let perfectFormMultiplier = 1.0;
+      if (hasAbility(updatedPlayer, 'rogue_duelist_perfect_form')) {
+        const momentumStacks = updatedPlayer.abilityCounters?.['perfect_form_momentum'] ?? 0;
+        if (momentumStacks >= 5) {
+          perfectFormMultiplier = 3.0; // 300% damage (3x multiplier)
+          logs.push(`💫 Perfect Form: Maximum momentum unleashed!`);
+        }
+      }
+
       // Calculate attack damage with variance and crit
-      const damageResult = calculateAttackDamage(
+      let damageResult = calculateAttackDamage(
         updatedPlayer.currentStats,
         enemy.armor,
         enemy.isShielded || false
       );
+
+      // Override crit if forced by attack modifier
+      if (forceCrit && !damageResult.isCrit) {
+        // Recalculate with guaranteed crit
+        const baseDamage = Math.max(1, updatedPlayer.currentStats.power - enemy.armor / 2);
+        const damageVariance = COMBAT_MECHANICS.DAMAGE_VARIANCE_MIN + Math.random() * COMBAT_MECHANICS.DAMAGE_VARIANCE_RANGE;
+        const critDamage = Math.floor(baseDamage * damageVariance * COMBAT_MECHANICS.CRIT_MULTIPLIER);
+        damageResult = {
+          damage: critDamage,
+          isCrit: true,
+          logs: ['💥 Guaranteed Critical Hit!'],
+        };
+      }
+
       logs = [...logs, ...damageResult.logs];
 
       // Process hit effects (on-hit and on-crit item effects)
@@ -144,6 +176,15 @@ export function useCombatActions({
       let playerAfterEffects = hitEffectsResult.player;
       let finalDamage = hitEffectsResult.damage;
       logs = hitEffectsResult.logs;
+
+      // Apply Perfect Form damage multiplier and reset stacks
+      if (perfectFormMultiplier > 1.0) {
+        const bonusDamage = Math.floor(finalDamage * (perfectFormMultiplier - 1.0));
+        finalDamage += bonusDamage;
+        logs.push(`⚡ Perfect Form bonus: +${bonusDamage} damage!`);
+        // Reset momentum stacks after use
+        playerAfterEffects = resetAbilityCounter(playerAfterEffects, 'perfect_form_momentum');
+      }
 
       // Process path ability triggers: on_hit
       const onHitResult = processTrigger('on_hit', {
@@ -282,6 +323,17 @@ export function useCombatActions({
         logs.push(`🌵 Thorns reflect ${reflectDamage} damage back to you!`);
       }
 
+      // Decrement attack modifiers
+      if (playerAfterEffects.attackModifiers && playerAfterEffects.attackModifiers.length > 0) {
+        playerAfterEffects.attackModifiers = playerAfterEffects.attackModifiers
+          .map(m => ({ ...m, remainingAttacks: m.remainingAttacks - 1 }))
+          .filter(m => m.remainingAttacks > 0);
+
+        if (playerAfterEffects.attackModifiers.length === 0) {
+          playerAfterEffects.attackModifiers = undefined;
+        }
+      }
+
       // Emit player attack event immediately
       const playerAttackEvent: import('@/hooks/useBattleAnimation').PlayerAttackEvent = {
         type: COMBAT_EVENT_TYPE.PLAYER_ATTACK,
@@ -349,7 +401,7 @@ export function useCombatActions({
           logPauseChange(true, PAUSE_REASON.ITEM_DROP, 'enemy_defeated_item_drop');
         }
 
-        prev.combatLog.add(deathResult.logs);
+        safeCombatLogAdd(prev.combatLog, deathResult.logs, 'performHeroAttack:enemyDeath');
         return {
           ...prev,
           player: deathResult.player,
@@ -363,14 +415,14 @@ export function useCombatActions({
         };
       }
 
-      prev.combatLog.add(logs);
+      safeCombatLogAdd(prev.combatLog, logs, 'performHeroAttack:complete');
       return {
         ...prev,
         player: playerAfterEffects,
         currentEnemy: enemy,
       };
     });
-  }, [setState, setLastCombatEvent, setDroppedItem, scheduleCombatEvent, combatSpeed, enemyDeathProcessedRef, processTrigger]);
+  }, [setState, setLastCombatEvent, setDroppedItem, scheduleCombatEvent, combatSpeed, enemyDeathProcessedRef, processTrigger, hasAbility, resetAbilityCounter]);
 
   /**
    * Enemy attack callback - called when enemy's attack timer fills
@@ -391,7 +443,7 @@ export function useCombatActions({
       // Skip if enemy is dying or player is dying
       if (prev.currentEnemy.isDying || prev.player.isDying) return prev;
 
-      const player = deepClonePlayer(prev.player);
+      let player = deepClonePlayer(prev.player);
       const enemy = deepCloneEnemy(prev.currentEnemy);
       const logs: string[] = [];
 
@@ -473,6 +525,16 @@ export function useCombatActions({
                 applyTriggerResultToEnemy(enemy, pathOnBlockResult);
               }
 
+              // Apply passive damage reduction from path abilities
+              const damageReduction = getPassiveDamageReduction(player);
+              if (damageReduction > 0) {
+                const reducedAmount = Math.floor(totalDamage * damageReduction);
+                totalDamage = Math.max(1, totalDamage - reducedAmount);
+                if (reducedAmount > 0) {
+                  logs.push(`🛡️ Damage reduced by ${reducedAmount}!`);
+                }
+              }
+
               // Shield absorbs damage first
               const shieldResult = applyShieldAbsorption(player, totalDamage);
               player.shield = shieldResult.newShieldValue;
@@ -488,6 +550,11 @@ export function useCombatActions({
               // Only apply remaining damage to HP
               if (shieldResult.remainingDamage > 0) {
                 player.currentStats.health -= shieldResult.remainingDamage;
+
+                // Reset blur counter on damage taken (breaks consecutive dodge streak)
+                if (hasAbility(player, 'rogue_duelist_blur')) {
+                  player = resetAbilityCounter(player, 'blur_dodges');
+                }
               }
 
               logs.push(`${ability.icon} ${hits} hits deal ${totalDamage} total damage!`);
@@ -583,6 +650,27 @@ export function useCombatActions({
           player.currentStats = pathOnDodgeResult.player.currentStats;
           logs.push(...pathOnDodgeResult.logs);
           applyTriggerResultToEnemy(enemy, pathOnDodgeResult);
+
+          // Blur: Track consecutive dodges for shield
+          if (hasAbility(player, 'rogue_duelist_blur')) {
+            const { player: updatedPlayer, newValue } = incrementAbilityCounter(player, 'blur_dodges', 3);
+            player = updatedPlayer;
+
+            if (newValue >= 3) {
+              player.shield = (player.shield || 0) + 20;
+              player.shieldRemainingDuration = 5;
+              player.shieldMaxDuration = 5;
+              player = resetAbilityCounter(player, 'blur_dodges');
+              logs.push(`✨ Blur: Shield granted after 3 consecutive dodges!`);
+            }
+          }
+
+          // Perfect Form: Build momentum stacks on dodge
+          if (hasAbility(player, 'rogue_duelist_perfect_form')) {
+            const { player: updatedPlayer, newValue } = incrementAbilityCounter(player, 'perfect_form_momentum', 5);
+            player = updatedPlayer;
+            logs.push(`⚡ Perfect Form: Momentum stack ${newValue}/5`);
+          }
         } else {
           const effectiveEnemyPower = getEffectiveEnemyStat(enemy, 'power', enemy.power);
           const enemyBaseDamage = Math.max(1, effectiveEnemyPower - player.currentStats.armor / 2);
@@ -610,6 +698,16 @@ export function useCombatActions({
             applyTriggerResultToEnemy(enemy, pathOnBlockResult);
           }
 
+          // Apply passive damage reduction from path abilities
+          const damageReduction = getPassiveDamageReduction(player);
+          if (damageReduction > 0) {
+            const reducedAmount = Math.floor(enemyDamage * damageReduction);
+            enemyDamage = Math.max(1, enemyDamage - reducedAmount);
+            if (reducedAmount > 0) {
+              logs.push(`🛡️ Damage reduced by ${reducedAmount}!`);
+            }
+          }
+
           // Shield absorbs damage first
           const shieldResult = applyShieldAbsorption(player, enemyDamage);
           player.shield = shieldResult.newShieldValue;
@@ -626,6 +724,11 @@ export function useCombatActions({
           if (shieldResult.remainingDamage > 0) {
             player.currentStats.health -= shieldResult.remainingDamage;
             logs.push(`${enemy.name} deals ${shieldResult.remainingDamage} damage to you`);
+
+            // Reset blur counter on damage taken (breaks consecutive dodge streak)
+            if (hasAbility(player, 'rogue_duelist_blur')) {
+              player = resetAbilityCounter(player, 'blur_dodges');
+            }
           }
 
           // Vampiric modifier: Heal enemy based on damage dealt
@@ -763,7 +866,7 @@ export function useCombatActions({
             });
             logs.push(`🔥 Undying Fury! You refuse to fall!`);
             // Continue combat, don't die
-            prev.combatLog.add(logs);
+            safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:undyingFury');
             return { ...prev, player, currentEnemy: enemy };
           } else {
             logs.push(`💀 Undying Fury already used this combat!`);
@@ -779,7 +882,7 @@ export function useCombatActions({
             player.usedFloorAbilities = [...usedFloor, 'immortal_guardian'];
             logs.push(`🛡️ Immortal Guardian! You are restored to ${healAmount} HP!`);
             // Continue combat, don't die
-            prev.combatLog.add(logs);
+            safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:immortalGuardian');
             return { ...prev, player, currentEnemy: enemy };
           } else {
             logs.push(`💀 Immortal Guardian already used this floor!`);
@@ -799,7 +902,7 @@ export function useCombatActions({
           logs.push(...lethalResult.logs);
 
           // Don't mark as dying, player survived
-          prev.combatLog.add(logs);
+          safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:survivalEffect');
           return {
             ...prev,
             player: lethalResult.player,
@@ -812,7 +915,7 @@ export function useCombatActions({
         player.isDying = true;
         logs.push(`💀 You have been defeated...`);
 
-        prev.combatLog.add(logs);
+        safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:playerDeath');
         return {
           ...prev,
           player,
@@ -820,14 +923,14 @@ export function useCombatActions({
         };
       }
 
-      prev.combatLog.add(logs);
+      safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:complete');
       return {
         ...prev,
         player,
         currentEnemy: enemy,
       };
     });
-  }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef, processTrigger, hasAbility, getStatusImmunities]);
+  }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef, processTrigger, hasAbility, getStatusImmunities, getPassiveDamageReduction, incrementAbilityCounter, resetAbilityCounter]);
 
   /**
    * Active block - reduces incoming damage but costs mana
@@ -852,7 +955,7 @@ export function useCombatActions({
         },
       };
 
-      prev.combatLog.add('🛡️ Bracing for impact!');
+      safeCombatLogAdd(prev.combatLog, '🛡️ Bracing for impact!', 'activateBlock');
       return {
         ...prev,
         player,

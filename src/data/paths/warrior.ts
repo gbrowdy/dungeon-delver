@@ -345,7 +345,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     effects: [
       {
         trigger: 'passive',
-        heal: 1.0 // Per second heal
+        statModifiers: [{ stat: 'health', flatBonus: 1.0, applyTo: 'regen' }]
       }
     ]
   },
@@ -360,8 +360,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     effects: [
       {
         trigger: 'passive',
-        // Damage reduction - needs custom implementation
-        damageModifier: { type: 'bonus_damage', value: -0.10 }
+        damageModifier: { type: 'damage_reduction', value: 10 }
       }
     ]
   },
@@ -498,7 +497,7 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
   {
     id: 'retribution',
     name: 'Retribution',
-    description: 'When you block, your next attack is a guaranteed critical hit',
+    description: 'When you block, your next attack deals 150% bonus damage and is a guaranteed critical hit',
     icon: 'Zap',
     levelRequired: 5,
     isCapstone: false,
@@ -506,8 +505,8 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
     effects: [
       {
         trigger: 'on_block',
-        // Guaranteed crit - needs custom implementation
-        damage: 100 // Placeholder for guaranteed crit boost
+        statModifiers: [{ stat: 'power', percentBonus: 1.5 }],
+        duration: 1 // Next attack only
       }
     ]
   },

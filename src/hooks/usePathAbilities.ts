@@ -12,7 +12,7 @@
  */
 
 import { useCallback } from 'react';
-import { Player, Enemy, Stats, StatusEffect, EnemyStatDebuff, ActiveBuff } from '@/types/game';
+import { Player, Enemy, Stats, StatusEffect, EnemyStatDebuff, ActiveBuff, AttackModifier } from '@/types/game';
 import {
   PathAbility,
   PathAbilityEffect,
@@ -30,8 +30,13 @@ import { MAGE_PATHS } from '@/data/paths/mage';
 import { ROGUE_PATHS } from '@/data/paths/rogue';
 import { PALADIN_PATHS } from '@/data/paths/paladin';
 
-// Counter for generating unique debuff IDs (avoids collision when multiple debuffs applied in same millisecond)
-let debuffIdCounter = 0;
+/**
+ * Generate a unique ID for debuffs/buffs without module-level state.
+ * Uses timestamp + random string to avoid collisions.
+ */
+function generateUniqueId(prefix: string): string {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
 
 /**
  * Context for trigger processing
@@ -70,6 +75,66 @@ export interface TriggerResult {
  * @returns Object with methods to process path abilities and retrieve active bonuses
  */
 export function usePathAbilities() {
+  /**
+   * Get an ability counter value
+   */
+  const getAbilityCounter = useCallback((player: Player, counterId: string): number => {
+    return player.abilityCounters?.[counterId] ?? 0;
+  }, []);
+
+  /**
+   * Increment an ability counter and return the new value
+   * Returns updated player with incremented counter
+   */
+  const incrementAbilityCounter = useCallback((player: Player, counterId: string, maxValue?: number): { player: Player; newValue: number } => {
+    const currentValue = player.abilityCounters?.[counterId] ?? 0;
+    const newValue = maxValue ? Math.min(currentValue + 1, maxValue) : currentValue + 1;
+
+    return {
+      player: {
+        ...player,
+        abilityCounters: {
+          ...player.abilityCounters,
+          [counterId]: newValue,
+        },
+      },
+      newValue,
+    };
+  }, []);
+
+  /**
+   * Reset an ability counter to 0
+   */
+  const resetAbilityCounter = useCallback((player: Player, counterId: string): Player => {
+    if (!player.abilityCounters?.[counterId]) return player;
+
+    const newCounters = { ...player.abilityCounters };
+    delete newCounters[counterId];
+
+    return {
+      ...player,
+      abilityCounters: Object.keys(newCounters).length > 0 ? newCounters : undefined,
+    };
+  }, []);
+
+  /**
+   * Add an attack modifier to the player
+   */
+  const addAttackModifier = useCallback((
+    player: Player,
+    modifier: Omit<AttackModifier, 'id'>
+  ): Player => {
+    const newModifier: AttackModifier = {
+      ...modifier,
+      id: `${modifier.sourceName}_${Date.now()}`,
+    };
+
+    return {
+      ...player,
+      attackModifiers: [...(player.attackModifiers || []), newModifier],
+    };
+  }, []);
+
   /**
    * Get a specific path definition by ID
    */
@@ -125,6 +190,10 @@ export function usePathAbilities() {
       }
       case 'combo_count': {
         return player.comboCount >= condition.value;
+      }
+      case 'enemy_has_status': {
+        if (!enemy) return false;
+        return (enemy.statusEffects?.length ?? 0) > 0;
       }
       default: {
         console.error(`[usePathAbilities] Unknown condition type: "${(condition as PathAbilityCondition).type}". Condition will be treated as not met.`);
@@ -207,6 +276,13 @@ export function usePathAbilities() {
               const percentValue = baseValue * mod.percentBonus;
               bonuses[stat] = (bonuses[stat] || 0) + percentValue;
             }
+
+            // Apply scaling bonus (e.g., scalingStat: 'maxHealth', scalingRatio: 0.001 means +1 armor per 1000 max HP)
+            if (mod.scalingStat && mod.scalingRatio) {
+              const sourceValue = player.currentStats[mod.scalingStat] || player.baseStats[mod.scalingStat] || 0;
+              const scaledValue = Math.floor(sourceValue * mod.scalingRatio);
+              bonuses[stat] = (bonuses[stat] || 0) + scaledValue;
+            }
           });
         }
       });
@@ -214,6 +290,29 @@ export function usePathAbilities() {
 
     return bonuses;
   }, [getActiveAbilities, checkCondition]);
+
+  /**
+   * Get passive damage reduction percentage from all abilities
+   * Returns a decimal (e.g., 0.10 for 10% reduction)
+   */
+  const getPassiveDamageReduction = useCallback((player: Player): number => {
+    const abilities = getActiveAbilities(player);
+    let totalReduction = 0;
+
+    abilities.forEach(ability => {
+      ability.effects.forEach(effect => {
+        // Only process passive effects
+        if (effect.trigger !== 'passive') return;
+
+        // Check for damage_reduction in damageModifier
+        if (effect.damageModifier?.type === 'damage_reduction') {
+          totalReduction += effect.damageModifier.value / 100; // Convert from percentage to decimal
+        }
+      });
+    });
+
+    return Math.min(totalReduction, 0.75); // Cap at 75% reduction
+  }, [getActiveAbilities]);
 
   /**
    * Process trigger-based abilities
@@ -363,7 +462,7 @@ export function usePathAbilities() {
                 const reduction = Math.abs(mod.percentBonus || 0);
                 if (reduction > 0) {
                   const debuff: EnemyStatDebuff = {
-                    id: `${ability.id}_${stat}_${Date.now()}_${debuffIdCounter++}`,
+                    id: generateUniqueId(`${ability.id}_${stat}`),
                     stat,
                     percentReduction: reduction,
                     remainingDuration: effect.duration || 5,
@@ -384,7 +483,7 @@ export function usePathAbilities() {
                 if (bonus > 0 && effect.duration) {
                   // Create an active buff
                   const buff: ActiveBuff = {
-                    id: `${ability.id}_${stat}_${Date.now()}_${debuffIdCounter++}`,
+                    id: generateUniqueId(`${ability.id}_${stat}`),
                     name: ability.name,
                     stat,
                     multiplier: 1 + bonus,
@@ -494,6 +593,53 @@ export function usePathAbilities() {
   }, [getActiveAbilities]);
 
   /**
+   * Get HP and mana regen bonuses from path abilities
+   * Returns flat bonuses and percent multipliers for regen rates
+   */
+  const getRegenModifiers = useCallback((player: Player): {
+    hpRegen: number;
+    hpRegenPercent: number;
+    manaRegen: number;
+  } => {
+    const abilities = getActiveAbilities(player);
+    let hpRegen = 0;
+    let hpRegenPercent = 0; // Percentage bonus (e.g., 1.0 = +100%)
+    let manaRegen = 0;
+
+    abilities.forEach(ability => {
+      ability.effects.forEach(effect => {
+        if (effect.trigger !== 'passive' && effect.trigger !== 'conditional') return;
+
+        // Check condition if conditional
+        if (effect.trigger === 'conditional' && effect.condition) {
+          if (!checkCondition(effect.condition, { player })) return;
+        }
+
+        if (effect.statModifiers) {
+          effect.statModifiers.forEach(mod => {
+            if (mod.applyTo !== 'regen') return;
+
+            if (mod.stat === 'health') {
+              if (mod.flatBonus) hpRegen += mod.flatBonus;
+              if (mod.percentBonus) hpRegenPercent += mod.percentBonus;
+              // Support scaling regen (e.g., regen based on armor)
+              if (mod.scalingStat && mod.scalingRatio) {
+                const sourceValue = player.currentStats[mod.scalingStat] || 0;
+                hpRegen += Math.floor(sourceValue * mod.scalingRatio);
+              }
+            }
+            if (mod.stat === 'mana') {
+              if (mod.flatBonus) manaRegen += mod.flatBonus;
+            }
+          });
+        }
+      });
+    });
+
+    return { hpRegen, hpRegenPercent, manaRegen };
+  }, [getActiveAbilities, checkCondition]);
+
+  /**
    * Get status immunities from player's path abilities
    * Returns an array of status effect types the player is immune to
    */
@@ -527,12 +673,18 @@ export function usePathAbilities() {
 
   return {
     getPassiveStatBonuses,
+    getPassiveDamageReduction,
     processTrigger,
     hasAbility,
     getActiveAbilities,
     getPowerModifiers,
+    getRegenModifiers,
     getStatusImmunities,
     getPassiveEnemyDebuffs,
+    getAbilityCounter,
+    incrementAbilityCounter,
+    resetAbilityCounter,
+    addAttackModifier,
   };
 }
 

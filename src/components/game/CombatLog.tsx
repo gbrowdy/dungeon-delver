@@ -85,7 +85,11 @@ function formatLogEntry(log: string): LogEntry {
  */
 export function CombatLog({ logs }: CombatLogProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const logsArray = logs.toArray();
+  // Defensive check: logs might be undefined during error recovery
+  if (!logs) {
+    console.error('[CombatLog] logs prop is undefined - this indicates state corruption during combat');
+  }
+  const logsArray = logs?.toArray() ?? [];
 
   useEffect(() => {
     // Scroll within the container only, don't use scrollIntoView which can jump the page

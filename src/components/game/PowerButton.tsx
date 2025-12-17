@@ -14,6 +14,7 @@ import { Star } from 'lucide-react';
  *
  * @property power - The power/ability configuration containing icon, name, cooldown, mana cost
  * @property currentMana - Player's current mana for affordability check
+ * @property effectiveManaCost - Actual mana cost after path ability reductions (optional, defaults to power.manaCost)
  * @property onUse - Callback fired when the power button is clicked
  * @property disabled - Whether the button is disabled (e.g., combat paused, not in combat phase)
  * @property playerPathId - Player's current path ID for synergy checking
@@ -23,6 +24,8 @@ interface PowerButtonProps {
   power: Power;
   /** Player's current mana points for affordability check */
   currentMana: number;
+  /** Effective mana cost after path ability reductions */
+  effectiveManaCost?: number;
   /** Callback when power button is clicked */
   onUse: () => void;
   /** Whether the button is disabled (combat paused, etc.) */
@@ -63,8 +66,12 @@ function getPowerDescription(power: Power): string {
  * - Insufficient mana
  * - Explicitly disabled via prop (combat paused, etc.)
  */
-export function PowerButton({ power, currentMana, onUse, disabled, playerPathId }: PowerButtonProps) {
-  const canUse = power.currentCooldown <= 0 && currentMana >= power.manaCost && !disabled;
+export function PowerButton({ power, currentMana, effectiveManaCost, onUse, disabled, playerPathId }: PowerButtonProps) {
+  // Use effective mana cost if provided, otherwise fall back to base cost
+  const manaCost = effectiveManaCost ?? power.manaCost;
+  const hasReduction = effectiveManaCost !== undefined && effectiveManaCost < power.manaCost;
+
+  const canUse = power.currentCooldown <= 0 && currentMana >= manaCost && !disabled;
   const isOnCooldown = power.currentCooldown > 0;
   const cooldownProgress = isOnCooldown ? (power.currentCooldown / power.cooldown) * 100 : 0;
 
@@ -76,9 +83,9 @@ export function PowerButton({ power, currentMana, onUse, disabled, playerPathId 
   // Build accessible status description
   const statusDescription = isOnCooldown
     ? `On cooldown: ${Math.ceil(power.currentCooldown)} seconds remaining`
-    : currentMana < power.manaCost
-    ? `Insufficient mana: need ${power.manaCost}, have ${Math.floor(currentMana)}`
-    : `Ready. Costs ${power.manaCost} mana.`;
+    : currentMana < manaCost
+    ? `Insufficient mana: need ${manaCost}, have ${Math.floor(currentMana)}`
+    : `Ready. Costs ${manaCost} mana.`;
 
   return (
     <TooltipProvider>
@@ -112,15 +119,19 @@ export function PowerButton({ power, currentMana, onUse, disabled, playerPathId 
             )}
             <span className={cn("text-lg xs:text-xl sm:text-2xl relative z-10", isOnCooldown && "opacity-50")} aria-hidden="true">{power.icon}</span>
             <span className={cn("pixel-text text-pixel-2xs font-medium relative z-10 text-slate-200 truncate max-w-full", isOnCooldown && "opacity-50")}>{power.name}</span>
-            <span className={cn("pixel-text text-pixel-2xs relative z-10", isOnCooldown ? "text-slate-400" : "text-mana")} aria-hidden="true">
-              {isOnCooldown ? `${Math.ceil(power.currentCooldown)}s` : `${power.manaCost} MP`}
+            <span className={cn("pixel-text text-pixel-2xs relative z-10", isOnCooldown ? "text-slate-400" : hasReduction ? "text-emerald-400" : "text-mana")} aria-hidden="true">
+              {isOnCooldown ? `${Math.ceil(power.currentCooldown)}s` : `${manaCost} MP`}
             </span>
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" className="pixel-panel max-w-xs">
           <p className="pixel-text text-pixel-xs font-medium">{getPowerDescription(power)}</p>
-          <p className="pixel-text text-pixel-2xs text-mana mt-1">
-            {power.manaCost} MP · {power.cooldown}s cooldown
+          <p className={cn("pixel-text text-pixel-2xs mt-1", hasReduction ? "text-emerald-400" : "text-mana")}>
+            {hasReduction ? (
+              <><span className="line-through text-slate-500">{power.manaCost}</span> {manaCost} MP</>
+            ) : (
+              <>{manaCost} MP</>
+            )} · {power.cooldown}s cooldown
           </p>
           {synergy && (
             <div className="mt-2 pt-2 border-t border-amber-500/30">

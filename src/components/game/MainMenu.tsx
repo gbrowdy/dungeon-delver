@@ -96,7 +96,7 @@ export function MainMenu({ onStart }: MainMenuProps) {
       </div>
 
       {/* CSS for pixel art effects */}
-      <style jsx>{`
+      <style>{`
         /* Pixel art torch */
         .pixel-torch {
           position: absolute;

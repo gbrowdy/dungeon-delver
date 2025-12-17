@@ -23,6 +23,7 @@ export function Game() {
     }
     const pathDef = getPathById(state.player.path.pathId);
     return pathDef ? getAbilityChoices(state.player, pathDef) : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally omit state.player to avoid recalculating on every player state change
   }, [
     state.player?.pendingAbilityChoice,
     state.player?.path?.pathId,

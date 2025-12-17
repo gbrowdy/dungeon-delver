@@ -313,14 +313,17 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
   {
     id: 'spellweaver_efficient_automation',
     name: 'Efficient Automation',
-    description: 'Auto-cast powers cost 50% less mana.',
+    description: 'Powers cost 30% less mana and have 20% faster cooldown recovery.',
     icon: 'Zap',
     levelRequired: 5,
     subpath: 'spellweaver',
     effects: [
       {
-        trigger: 'conditional',
-        powerModifiers: [{ type: 'cost_reduction', value: 0.5 }],
+        trigger: 'passive',
+        powerModifiers: [
+          { type: 'cost_reduction', value: 0.3 },
+          { type: 'cooldown_reduction', value: 0.2 }
+        ],
       },
     ],
   },
@@ -350,8 +353,8 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     subpath: 'sage',
     effects: [
       {
-        trigger: 'conditional',
-        condition: { type: 'enemy_hp_below', value: 1.0 },
+        trigger: 'turn_start',
+        condition: { type: 'enemy_has_status', value: 1 },
         manaRestore: 1,
       },
     ],

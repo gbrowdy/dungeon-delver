@@ -94,6 +94,7 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       maxMana: 60,
       fortune: 5,
     },
+    hpRegen: 0.5, // Paladin's innate HP regeneration
     startingPower: {
       id: 'divine-heal',
       name: 'Divine Heal',

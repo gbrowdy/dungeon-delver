@@ -68,6 +68,27 @@ export interface EnemyIntent {
   icon: string;
 }
 
+/**
+ * Base fields shared by all attack modifier types
+ */
+interface AttackModifierBase {
+  id: string;
+  remainingAttacks: number;
+  sourceName: string; // For combat log
+}
+
+/**
+ * Temporary attack modifier (lasts for N attacks)
+ * Uses discriminated union for type safety:
+ * - guaranteed_crit: No value needed
+ * - bonus_damage: Requires value (damage multiplier)
+ * - lifesteal: Requires value (heal percentage)
+ */
+export type AttackModifier =
+  | (AttackModifierBase & { effect: 'guaranteed_crit' })
+  | (AttackModifierBase & { effect: 'bonus_damage'; value: number })
+  | (AttackModifierBase & { effect: 'lifesteal'; value: number });
+
 // Item special effects
 export type ItemEffectTrigger =
   | 'on_hit'
@@ -205,6 +226,15 @@ export interface Player {
   shield?: number; // Current shield amount (absorbs damage before HP)
   shieldMaxDuration?: number; // Max duration in seconds (for display)
   shieldRemainingDuration?: number; // Remaining duration in seconds
+  /**
+   * Counters for ability-specific tracking.
+   * Known keys:
+   * - 'blur_dodges': Consecutive dodges for Blur shield (max 3)
+   * - 'perfect_form_momentum': Momentum stacks for Perfect Form damage (max 5)
+   */
+  abilityCounters?: Record<string, number>;
+  attackModifiers?: AttackModifier[]; // Temporary attack effects (shadow_dance, ambush)
+  hpRegen?: number; // Base HP regen per second from class (e.g., Paladin has 0.5)
 }
 
 export interface GameState {
@@ -235,4 +265,5 @@ export interface ClassData {
   baseStats: Stats;
   startingPower: Power;
   icon: string;
+  hpRegen?: number; // Base HP regen per second (e.g., Paladin has 0.5)
 }

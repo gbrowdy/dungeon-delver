@@ -24,7 +24,7 @@ export function useRoomTransitions(
   const nextRoomRef = useRef<(() => void) | null>(null);
 
   // Initialize path abilities hook
-  const { processTrigger, getPassiveEnemyDebuffs } = usePathAbilities();
+  const { processTrigger, getPassiveEnemyDebuffs, hasAbility, addAttackModifier } = usePathAbilities();
 
   const nextRoom = useCallback(() => {
     setState((prev: GameState) => {
@@ -78,6 +78,7 @@ export function useRoomTransitions(
         lastPowerUsed: null,
         usedCombatAbilities: [], // Reset once-per-combat abilities
         enemyAttackCounter: 0, // Reset Uncanny Dodge counter
+        abilityCounters: undefined, // Reset all ability counters
       };
 
       // Add out_of_combat logs
@@ -119,6 +120,17 @@ export function useRoomTransitions(
       logs.push(...pathCombatStartResult.logs);
       applyTriggerResultToEnemy(enemy, pathCombatStartResult);
 
+      // Ambush: First attack against each enemy is a guaranteed critical hit
+      if (hasAbility(player, 'rogue_assassin_ambush')) {
+        const updatedPlayer = addAttackModifier(player, {
+          effect: 'guaranteed_crit',
+          remainingAttacks: 1,
+          sourceName: 'Ambush',
+        });
+        Object.assign(player, updatedPlayer);
+        logs.push(`🗡️ Ambush: First attack will be a guaranteed critical hit!`);
+      }
+
       // Recalculate stats with buffs
       player.currentStats = calculateStats(player);
 
@@ -128,7 +140,7 @@ export function useRoomTransitions(
         logs.push(`⚠️ ${enemy.name} knows: ${abilityNames}`);
       }
 
-      prev.combatLog.add(logs);
+      prev.combatLog?.add(logs);
       return {
         ...prev,
         player,
@@ -136,7 +148,7 @@ export function useRoomTransitions(
         currentEnemy: enemy,
       };
     });
-  }, [setState, processTrigger, getPassiveEnemyDebuffs]);
+  }, [setState, processTrigger, getPassiveEnemyDebuffs, hasAbility, addAttackModifier]);
 
   // Keep nextRoomRef updated for useEffect without dependency issues (Issue 14 fix)
   useEffect(() => {
