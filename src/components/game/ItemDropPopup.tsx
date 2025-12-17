@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { Item, Player } from '@/types/game';
+import { Item, Player, ItemType } from '@/types/game';
 import { cn } from '@/lib/utils';
+import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
 
 const RARITY_COLORS: Record<Item['rarity'], string> = {
   common: 'border-rarity-common bg-rarity-common/10',
@@ -17,6 +18,13 @@ const RARITY_TEXT: Record<Item['rarity'], string> = {
   epic: 'text-rarity-epic',
   legendary: 'text-rarity-legendary',
 };
+
+/**
+ * Convert item type to PixelIcon type
+ */
+function getItemIconType(itemType: ItemType): IconType {
+  return `item-${itemType}` as IconType;
+}
 
 interface ItemDropPopupProps {
   item: Item;
@@ -66,7 +74,9 @@ export function ItemDropPopup({ item, player, onEquip, onDismiss }: ItemDropPopu
       >
         {/* Header */}
         <div className="text-center mb-4">
-          <div className="text-4xl mb-2">{item.icon}</div>
+          <div className="flex justify-center mb-2">
+            <PixelIcon type={getItemIconType(item.type)} size={48} />
+          </div>
           <h2 className={cn('pixel-text text-pixel-sm font-bold', RARITY_TEXT[item.rarity])}>
             {item.name}
           </h2>
@@ -94,7 +104,9 @@ export function ItemDropPopup({ item, player, onEquip, onDismiss }: ItemDropPopu
         {currentItem && comparison && (
           <div className="pixel-panel-dark rounded-lg p-3 mb-4">
             <div className="flex items-center gap-2 pixel-text text-pixel-xs mb-2">
-              <span className="text-slate-400">vs {currentItem.icon} {currentItem.name}</span>
+              <span className="text-slate-400 flex items-center gap-1">
+                vs <PixelIcon type={getItemIconType(currentItem.type)} size={16} /> {currentItem.name}
+              </span>
             </div>
             <div className="space-y-1">
               {comparison.map(({ stat, diff }) => (
