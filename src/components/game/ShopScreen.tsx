@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import * as Icons from 'lucide-react';
 import { PixelDivider } from '@/components/ui/PixelDivider';
+import { PixelIcon } from '@/components/ui/PixelIcon';
 import {
   canEnhance,
   getEnhancementCost,
@@ -480,7 +481,7 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
 
           {/* Gold display */}
           <div className="flex items-center justify-center gap-2">
-            <Icons.Coins className="w-5 h-5 text-amber-400" />
+            <PixelIcon type="stat-gold" size={24} />
             <span className="pixel-text text-pixel-base text-amber-400">
               {player.gold} Gold
             </span>

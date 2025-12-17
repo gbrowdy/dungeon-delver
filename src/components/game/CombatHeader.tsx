@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { Pause, Play, Keyboard } from 'lucide-react';
+import { Keyboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PixelIcon } from '@/components/ui/PixelIcon';
 import { useCombat } from '@/contexts/CombatContext';
 import { KEYBOARD_SHORTCUTS } from '@/hooks/useGameKeyboard';
 import { CombatSpeed } from '@/types/game';
@@ -73,7 +74,7 @@ export function CombatHeader() {
               isPaused && "bg-warning/20"
             )}
           >
-            {isPaused ? <Play className="h-3 w-3 sm:h-4 sm:w-4" /> : <Pause className="h-3 w-3 sm:h-4 sm:w-4" />}
+            <PixelIcon type={isPaused ? "ui-play" : "ui-pause"} size={16} />
           </Button>
 
           {/* Keyboard shortcuts help - only on desktop (useless on touch) */}
@@ -126,6 +127,12 @@ interface SpeedControlsProps {
 }
 
 function SpeedControls({ currentSpeed, onSetSpeed }: SpeedControlsProps) {
+  const speedIcons: Record<CombatSpeed, 'ui-speed_1x' | 'ui-speed_2x' | 'ui-speed_3x'> = {
+    1: 'ui-speed_1x',
+    2: 'ui-speed_2x',
+    3: 'ui-speed_3x',
+  };
+
   return (
     <div
       className="flex items-center gap-0.5 pixel-panel-dark rounded p-0.5"
@@ -138,7 +145,7 @@ function SpeedControls({ currentSpeed, onSetSpeed }: SpeedControlsProps) {
           variant={currentSpeed === speed ? "default" : "ghost"}
           size="sm"
           className={cn(
-            "pixel-text text-pixel-2xs xs:text-pixel-xs h-6 xs:h-7 sm:h-8 px-1.5 xs:px-2 sm:px-3 focus-visible:ring-0 focus-visible:ring-offset-0",
+            "pixel-text text-pixel-2xs xs:text-pixel-xs h-6 xs:h-7 sm:h-8 px-1.5 xs:px-2 sm:px-3 focus-visible:ring-0 focus-visible:ring-offset-0 flex items-center gap-1",
             currentSpeed === speed && "bg-primary text-primary-foreground"
           )}
           onClick={(e) => {
@@ -148,7 +155,8 @@ function SpeedControls({ currentSpeed, onSetSpeed }: SpeedControlsProps) {
           aria-label={`Set combat speed to ${speed}x`}
           aria-pressed={currentSpeed === speed}
         >
-          {speed}x
+          <PixelIcon type={speedIcons[speed]} size={16} className="hidden sm:inline-block" />
+          <span>{speed}x</span>
         </Button>
       ))}
     </div>
