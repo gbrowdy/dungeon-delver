@@ -15,6 +15,8 @@ import { getPlayerDisplayName, getPathName } from '@/utils/powerSynergies';
 import * as Icons from 'lucide-react';
 import { getAbilitiesByIds } from '@/utils/pathUtils';
 import { PathAbility } from '@/types/paths';
+import { PixelIcon } from '@/components/ui/PixelIcon';
+import { STAT_ICONS, CLASS_ICONS, ITEM_ICONS, UI_ICONS } from '@/constants/icons';
 
 /**
  * Get the Lucide icon component for an item.
@@ -36,10 +38,10 @@ const TYPE_LABELS: Record<ItemType, string> = {
   accessory: 'Accessory',
 };
 
-const TYPE_ICONS: Record<ItemType, string> = {
-  weapon: '⚔️',
-  armor: '🛡️',
-  accessory: '💍',
+const TYPE_ICON_TYPES: Record<ItemType, string> = {
+  weapon: ITEM_ICONS.WEAPON,
+  armor: ITEM_ICONS.ARMOR,
+  accessory: ITEM_ICONS.ACCESSORY,
 };
 
 /**
@@ -79,7 +81,10 @@ export function PlayerStatsPanel() {
       <div className="mt-1.5 xs:mt-2 space-y-1">
         <div className="flex items-center gap-1 pixel-text text-pixel-2xs xs:text-pixel-xs">
           <span className="text-slate-400">Gold:</span>
-          <span className="text-gold font-bold">{player.gold}💰</span>
+          <span className="text-gold font-bold flex items-center gap-0.5">
+            {player.gold}
+            <PixelIcon type={STAT_ICONS.GOLD as any} size={16} />
+          </span>
         </div>
         <XPProgressBar
           current={player.experience}
@@ -100,9 +105,11 @@ interface PlayerInfoProps {
 }
 
 function PlayerInfo({ name, playerClass, level }: PlayerInfoProps) {
+  const classIconType = getClassIconType(playerClass);
+
   return (
     <div className="flex items-center gap-1 xs:gap-2">
-      <span className="text-lg xs:text-xl sm:text-2xl" aria-hidden="true">{getClassIcon(playerClass)}</span>
+      <PixelIcon type={classIconType as any} size={32} className="w-5 h-5 xs:w-6 xs:h-6 sm:w-8 sm:h-8" />
       <div>
         <div className="pixel-text text-pixel-xs xs:text-pixel-sm sm:text-pixel-base text-amber-200 font-bold">{name}</div>
         <div className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">Level {level}</div>
@@ -112,16 +119,16 @@ function PlayerInfo({ name, playerClass, level }: PlayerInfoProps) {
 }
 
 /**
- * Returns the emoji icon for a player class.
+ * Returns the icon type for a player class.
  */
-function getClassIcon(playerClass: string): string {
+function getClassIconType(playerClass: string): string {
   const icons: Record<string, string> = {
-    warrior: '⚔️',
-    mage: '🔮',
-    rogue: '🗡️',
-    paladin: '🛡️',
+    warrior: CLASS_ICONS.WARRIOR,
+    mage: CLASS_ICONS.MAGE,
+    rogue: CLASS_ICONS.ROGUE,
+    paladin: CLASS_ICONS.PALADIN,
   };
-  return icons[playerClass] || '👤';
+  return icons[playerClass] || CLASS_ICONS.WARRIOR;
 }
 
 /**
@@ -187,7 +194,7 @@ function EmptyEquipmentSlot({ type }: EmptyEquipmentSlotProps) {
       className="pixel-panel-dark w-8 h-8 sm:w-10 sm:h-10 rounded border-2 border-dashed border-slate-600/50 flex items-center justify-center opacity-50"
       aria-label={`Empty ${TYPE_LABELS[type]} slot`}
     >
-      <span className="text-base text-slate-500" aria-hidden="true">{TYPE_ICONS[type]}</span>
+      <PixelIcon type={TYPE_ICON_TYPES[type] as any} size={16} className="text-slate-500 opacity-50" />
     </div>
   );
 
@@ -260,8 +267,8 @@ function EquipmentSlot({ item }: EquipmentSlotProps) {
         return <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />;
       })()}
       {itemHasEffect && (
-        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-accent rounded-full border border-background flex items-center justify-center text-[6px]" aria-hidden="true">
-          ✨
+        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border border-background flex items-center justify-center" aria-hidden="true">
+          <PixelIcon type={UI_ICONS.SPARKLE as any} size={16} className="w-2 h-2" />
         </span>
       )}
     </button>
@@ -328,25 +335,25 @@ function StatsGrid({
   return (
     <div className="mt-1.5 grid grid-cols-4 gap-1">
       <StatItemWithTooltip
-        icon="⚔️"
+        iconType={STAT_ICONS.POWER as any}
         label="PWR"
         value={power}
         tooltip="Power - determines attack damage"
       />
       <StatItemWithTooltip
-        icon="🛡️"
+        iconType={STAT_ICONS.ARMOR as any}
         label="ARM"
         value={armor}
         tooltip="Armor - reduces incoming damage"
       />
       <StatItemWithTooltip
-        icon="💨"
+        iconType={STAT_ICONS.SPEED as any}
         label="SPD"
         value={speed}
         tooltip="Speed - affects attack rate"
       />
       <StatItemWithTooltip
-        icon="✨"
+        iconType={STAT_ICONS.FORTUNE as any}
         label="FOR"
         value={fortune}
         tooltip={
@@ -365,16 +372,16 @@ function StatsGrid({
  * StatItemWithTooltip - A single stat display with icon, label, value, and tooltip in pixel style.
  */
 interface StatItemWithTooltipProps {
-  icon: string;
+  iconType: string;
   label: string;
   value: string | number;
   tooltip: ReactNode;
 }
 
-function StatItemWithTooltip({ icon, label, value, tooltip }: StatItemWithTooltipProps) {
+function StatItemWithTooltip({ iconType, label, value, tooltip }: StatItemWithTooltipProps) {
   const content = (
     <div className="pixel-panel-dark flex flex-col items-center text-center rounded p-1 xs:p-1.5 sm:p-2">
-      <span className="text-pixel-xs xs:text-pixel-sm" aria-hidden="true">{icon}</span>
+      <PixelIcon type={iconType as any} size={16} className="mb-0.5" />
       <span className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">{label}</span>
       <span className="pixel-text text-pixel-2xs xs:text-pixel-xs sm:text-pixel-sm font-medium text-slate-200">{value}</span>
     </div>
