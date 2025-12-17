@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
 import { Trophy, Star, Crown, Sparkles } from 'lucide-react';
+import { PixelIcon } from '@/components/ui/PixelIcon';
 import { getPlayerDisplayName } from '@/utils/powerSynergies';
 import { FLOOR_CONFIG } from '@/constants/game';
 
@@ -139,7 +140,7 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
             <div className="pixel-panel-dark rounded p-3">
               <div className="pixel-text text-pixel-2xs sm:text-pixel-xs text-slate-400 mb-1">Total Gold</div>
               <div className="pixel-text text-pixel-xs sm:text-pixel-sm text-amber-400 font-bold flex items-center gap-1">
-                <span>💰</span> {player.gold}
+                <PixelIcon type="stat-gold" size={16} /> {player.gold}
               </div>
             </div>
 

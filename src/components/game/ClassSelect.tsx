@@ -3,6 +3,7 @@ import { CharacterClass } from '@/types/game';
 import { CLASS_DATA } from '@/data/classes';
 import { Button } from '@/components/ui/button';
 import { PixelDivider } from '@/components/ui/PixelDivider';
+import { PixelIcon } from '@/components/ui/PixelIcon';
 
 interface ClassSelectProps {
   onSelect: (characterClass: CharacterClass) => void;
@@ -275,9 +276,9 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
             <div className="flex flex-col md:flex-row gap-4 md:gap-6">
               <div className="flex-1 space-y-3 min-w-0">
                 <div className="flex items-start gap-3">
-                  <span className="text-4xl sm:text-5xl flex-shrink-0 opacity-30" aria-hidden="true">
-                    ❓
-                  </span>
+                  <div className="flex-shrink-0 opacity-30" aria-hidden="true">
+                    <PixelIcon type="ui-question" size={48} />
+                  </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="pixel-text text-pixel-base uppercase text-slate-500">
                       Select a Hero
@@ -303,7 +304,9 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
               <div className="md:w-64 min-w-0 flex-shrink-0">
                 <div className="pixel-power-box h-full opacity-50" style={{ borderColor: 'rgba(100, 100, 120, 0.3)' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xl sm:text-2xl opacity-30" aria-hidden="true">✨</span>
+                    <div className="opacity-30" aria-hidden="true">
+                      <PixelIcon type="ui-sparkle" size={24} />
+                    </div>
                     <span className="pixel-text text-pixel-sm uppercase text-slate-500">
                       Starting Power
                     </span>

@@ -3,6 +3,7 @@ import { Player } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
+import { PixelIcon } from '@/components/ui/PixelIcon';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,13 +57,13 @@ export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitS
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3 sm:gap-4">
-            <span className="text-4xl sm:text-5xl">💀</span>
+            <PixelIcon type="ui-skull" size={48} />
             <h1 className="pixel-title text-lg sm:text-xl md:text-2xl font-bold tracking-wider uppercase">
               <span className="pixel-glow-red bg-gradient-to-r from-red-300 via-red-400 to-orange-400 bg-clip-text text-transparent">
                 DEFEATED
               </span>
             </h1>
-            <span className="text-4xl sm:text-5xl">💀</span>
+            <PixelIcon type="ui-skull" size={48} />
           </div>
 
           <p className="pixel-text text-pixel-xs sm:text-pixel-sm text-slate-400 tracking-wider">
@@ -71,7 +72,7 @@ export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitS
 
           {/* Gold display */}
           <div className="flex items-center justify-center gap-2 sm:gap-3">
-            <span className="text-2xl sm:text-3xl">💰</span>
+            <PixelIcon type="stat-gold" size={32} />
             <span className="pixel-text text-pixel-base sm:text-pixel-lg text-amber-400 font-bold">
               Gold: {player.gold}
             </span>
@@ -102,10 +103,11 @@ export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitS
                 'pixel-button text-pixel-sm px-8 sm:px-12 py-3 sm:py-4',
                 'transition-all duration-150 uppercase font-bold',
                 'bg-amber-600 hover:bg-amber-500 border-b-4 border-amber-800 hover:border-amber-700',
-                'active:border-b-2 active:translate-y-[2px]'
+                'active:border-b-2 active:translate-y-[2px]',
+                'flex items-center gap-2'
               )}
             >
-              <span className="text-xl mr-2">⚒️</span>
+              <PixelIcon type="ui-hammer" size={24} />
               Visit Shop
             </Button>
           </div>
