@@ -10,6 +10,7 @@ import type {
   EnemyAbility,
   EnemyIntent,
   EnemyStatDebuff,
+  AttackModifier,
 } from '@/types/game';
 
 /**
@@ -155,6 +156,19 @@ function cloneEnemyStatDebuffs(debuffs: EnemyStatDebuff[]): EnemyStatDebuff[] {
 }
 
 /**
+ * Deep clone an array of AttackModifier objects
+ */
+function cloneAttackModifiers(modifiers: AttackModifier[]): AttackModifier[] {
+  return modifiers.map((mod) => ({
+    id: mod.id,
+    effect: mod.effect,
+    value: mod.value,
+    remainingAttacks: mod.remainingAttacks,
+    sourceName: mod.sourceName,
+  }));
+}
+
+/**
  * Deep clone a Player object with all nested properties
  *
  * This ensures that no references are shared between the original and cloned objects,
@@ -193,7 +207,7 @@ export function deepClonePlayer(player: Player): Player {
     shieldMaxDuration: player.shieldMaxDuration,
     shieldRemainingDuration: player.shieldRemainingDuration,
     abilityCounters: player.abilityCounters ? { ...player.abilityCounters } : undefined,
-    attackModifiers: player.attackModifiers ? [...player.attackModifiers] : undefined,
+    attackModifiers: player.attackModifiers ? cloneAttackModifiers(player.attackModifiers) : undefined,
     // Class-based HP regen (e.g., Paladin has 0.5)
     hpRegen: player.hpRegen,
   };
