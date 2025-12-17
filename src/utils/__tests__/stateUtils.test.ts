@@ -89,6 +89,18 @@ describe('stateUtils', () => {
         lastPowerUsed: null,
         // upgradePurchases removed - old upgrade system deprecated
         isDying: false,
+        // New path ability fields
+        abilityCounters: {},
+        attackModifiers: [],
+        hpRegen: 0,
+        path: null,
+        pendingAbilityChoice: false,
+        shield: 0,
+        shieldMaxDuration: 0,
+        shieldRemainingDuration: 0,
+        usedCombatAbilities: [],
+        usedFloorAbilities: [],
+        enemyAttackCounter: 0,
       };
 
       const clonedPlayer = deepClonePlayer(originalPlayer);
@@ -146,6 +158,18 @@ describe('stateUtils', () => {
         lastPowerUsed: null,
         // upgradePurchases removed
         isDying: false,
+        // New path ability fields
+        abilityCounters: {},
+        attackModifiers: [],
+        hpRegen: 0,
+        path: null,
+        pendingAbilityChoice: false,
+        shield: 0,
+        shieldMaxDuration: 0,
+        shieldRemainingDuration: 0,
+        usedCombatAbilities: [],
+        usedFloorAbilities: [],
+        enemyAttackCounter: 0,
       };
 
       const clonedPlayer = deepClonePlayer(originalPlayer);
@@ -194,6 +218,18 @@ describe('stateUtils', () => {
         lastPowerUsed: null,
         // upgradePurchases removed
         isDying: false,
+        // New path ability fields
+        abilityCounters: {},
+        attackModifiers: [],
+        hpRegen: 0,
+        path: null,
+        pendingAbilityChoice: false,
+        shield: 0,
+        shieldMaxDuration: 0,
+        shieldRemainingDuration: 0,
+        usedCombatAbilities: [],
+        usedFloorAbilities: [],
+        enemyAttackCounter: 0,
       };
 
       const clonedPlayer = deepClonePlayer(originalPlayer);
@@ -259,6 +295,18 @@ describe('stateUtils', () => {
         lastPowerUsed: null,
         // upgradePurchases removed
         isDying: false,
+        // New path ability fields
+        abilityCounters: {},
+        attackModifiers: [],
+        hpRegen: 0,
+        path: null,
+        pendingAbilityChoice: false,
+        shield: 0,
+        shieldMaxDuration: 0,
+        shieldRemainingDuration: 0,
+        usedCombatAbilities: [],
+        usedFloorAbilities: [],
+        enemyAttackCounter: 0,
       };
 
       const clonedPlayer = deepClonePlayer(originalPlayer);
@@ -311,6 +359,18 @@ describe('stateUtils', () => {
         lastPowerUsed: null,
         // upgradePurchases removed
         isDying: false,
+        // New path ability fields
+        abilityCounters: {},
+        attackModifiers: [],
+        hpRegen: 0,
+        path: null,
+        pendingAbilityChoice: false,
+        shield: 0,
+        shieldMaxDuration: 0,
+        shieldRemainingDuration: 0,
+        usedCombatAbilities: [],
+        usedFloorAbilities: [],
+        enemyAttackCounter: 0,
       };
 
       const clonedPlayer = deepClonePlayer(originalPlayer);
@@ -369,6 +429,18 @@ describe('stateUtils', () => {
         lastPowerUsed: null,
         // upgradePurchases removed
         isDying: false,
+        // New path ability fields
+        abilityCounters: {},
+        attackModifiers: [],
+        hpRegen: 0,
+        path: null,
+        pendingAbilityChoice: false,
+        shield: 0,
+        shieldMaxDuration: 0,
+        shieldRemainingDuration: 0,
+        usedCombatAbilities: [],
+        usedFloorAbilities: [],
+        enemyAttackCounter: 0,
       };
 
       const clonedPlayer = deepClonePlayer(originalPlayer);
