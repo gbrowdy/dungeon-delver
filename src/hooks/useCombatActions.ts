@@ -183,8 +183,7 @@ export function useCombatActions({
         finalDamage += bonusDamage;
         logs.push(`⚡ Perfect Form bonus: +${bonusDamage} damage!`);
         // Reset momentum stacks after use
-        const resetPlayer = resetAbilityCounter(playerAfterEffects, 'perfect_form_momentum');
-        Object.assign(playerAfterEffects, resetPlayer);
+        playerAfterEffects = resetAbilityCounter(playerAfterEffects, 'perfect_form_momentum');
       }
 
       // Process path ability triggers: on_hit
@@ -444,7 +443,7 @@ export function useCombatActions({
       // Skip if enemy is dying or player is dying
       if (prev.currentEnemy.isDying || prev.player.isDying) return prev;
 
-      const player = deepClonePlayer(prev.player);
+      let player = deepClonePlayer(prev.player);
       const enemy = deepCloneEnemy(prev.currentEnemy);
       const logs: string[] = [];
 
@@ -554,8 +553,7 @@ export function useCombatActions({
 
                 // Reset blur counter on damage taken (breaks consecutive dodge streak)
                 if (hasAbility(player, 'rogue_duelist_blur')) {
-                  const resetPlayer = resetAbilityCounter(player, 'blur_dodges');
-                  Object.assign(player, resetPlayer);
+                  player = resetAbilityCounter(player, 'blur_dodges');
                 }
               }
 
@@ -656,14 +654,13 @@ export function useCombatActions({
           // Blur: Track consecutive dodges for shield
           if (hasAbility(player, 'rogue_duelist_blur')) {
             const { player: updatedPlayer, newValue } = incrementAbilityCounter(player, 'blur_dodges', 3);
-            Object.assign(player, updatedPlayer);
+            player = updatedPlayer;
 
             if (newValue >= 3) {
               player.shield = (player.shield || 0) + 20;
               player.shieldRemainingDuration = 5;
               player.shieldMaxDuration = 5;
-              const resetPlayer = resetAbilityCounter(player, 'blur_dodges');
-              Object.assign(player, resetPlayer);
+              player = resetAbilityCounter(player, 'blur_dodges');
               logs.push(`✨ Blur: Shield granted after 3 consecutive dodges!`);
             }
           }
@@ -671,7 +668,7 @@ export function useCombatActions({
           // Perfect Form: Build momentum stacks on dodge
           if (hasAbility(player, 'rogue_duelist_perfect_form')) {
             const { player: updatedPlayer, newValue } = incrementAbilityCounter(player, 'perfect_form_momentum', 5);
-            Object.assign(player, updatedPlayer);
+            player = updatedPlayer;
             logs.push(`⚡ Perfect Form: Momentum stack ${newValue}/5`);
           }
         } else {
@@ -730,8 +727,7 @@ export function useCombatActions({
 
             // Reset blur counter on damage taken (breaks consecutive dodge streak)
             if (hasAbility(player, 'rogue_duelist_blur')) {
-              const resetPlayer = resetAbilityCounter(player, 'blur_dodges');
-              Object.assign(player, resetPlayer);
+              player = resetAbilityCounter(player, 'blur_dodges');
             }
           }
 
