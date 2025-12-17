@@ -69,15 +69,25 @@ export interface EnemyIntent {
 }
 
 /**
- * Temporary attack modifier (lasts for N attacks)
+ * Base fields shared by all attack modifier types
  */
-export interface AttackModifier {
+interface AttackModifierBase {
   id: string;
-  effect: 'guaranteed_crit' | 'bonus_damage' | 'lifesteal';
-  value?: number; // For bonus_damage (multiplier) or lifesteal (percent)
   remainingAttacks: number;
   sourceName: string; // For combat log
 }
+
+/**
+ * Temporary attack modifier (lasts for N attacks)
+ * Uses discriminated union for type safety:
+ * - guaranteed_crit: No value needed
+ * - bonus_damage: Requires value (damage multiplier)
+ * - lifesteal: Requires value (heal percentage)
+ */
+export type AttackModifier =
+  | (AttackModifierBase & { effect: 'guaranteed_crit' })
+  | (AttackModifierBase & { effect: 'bonus_damage'; value: number })
+  | (AttackModifierBase & { effect: 'lifesteal'; value: number });
 
 // Item special effects
 export type ItemEffectTrigger =
