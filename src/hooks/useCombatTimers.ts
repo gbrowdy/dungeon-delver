@@ -3,6 +3,7 @@ import { GameState, Power } from '@/types/game';
 import { COMBAT_BALANCE } from '@/constants/balance';
 import { COMBAT_MECHANICS } from '@/constants/game';
 import { deepCloneEnemy, deepClonePlayer } from '@/utils/stateUtils';
+import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { usePathAbilities } from './usePathAbilities';
 
 /**
@@ -134,7 +135,7 @@ export function useCombatTimers(
         const updatedEnemy = deepCloneEnemy(enemy);
         updatedEnemy.health = newHealth;
 
-        prev.combatLog?.add(`💚 ${enemy.name} regenerates ${regenAmount} HP!`);
+        safeCombatLogAdd(prev.combatLog, `💚 ${enemy.name} regenerates ${regenAmount} HP!`, 'useCombatTimers:enemyRegen');
 
         return {
           ...prev,
@@ -191,7 +192,7 @@ export function useCombatTimers(
           d => !updatedDebuffs.some(ud => ud.id === d.id)
         );
         expiredDebuffs.forEach(d => {
-          prev.combatLog?.add(`${d.sourceName} effect on enemy expired`);
+          safeCombatLogAdd(prev.combatLog, `${d.sourceName} effect on enemy expired`, 'useCombatTimers:debuffExpired');
         });
 
         return {
@@ -397,7 +398,7 @@ export function useCombatTimers(
         if (!needsUpdate) return prev;
 
         // Add logs to combat log
-        logs.forEach(log => prev.combatLog?.add(log));
+        logs.forEach(log => safeCombatLogAdd(prev.combatLog, log, 'useCombatTimers:shieldTick'));
 
         return {
           ...prev,

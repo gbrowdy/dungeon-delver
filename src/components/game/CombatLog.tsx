@@ -86,6 +86,9 @@ function formatLogEntry(log: string): LogEntry {
 export function CombatLog({ logs }: CombatLogProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   // Defensive check: logs might be undefined during error recovery
+  if (!logs) {
+    console.error('[CombatLog] logs prop is undefined - this indicates state corruption during combat');
+  }
   const logsArray = logs?.toArray() ?? [];
 
   useEffect(() => {

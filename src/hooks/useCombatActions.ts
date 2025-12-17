@@ -32,6 +32,7 @@ import {
 import { logPauseChange } from '@/utils/gameLogger';
 import { generateEventId } from '@/utils/eventId';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
@@ -73,12 +74,6 @@ export function useCombatActions({
   // Initialize path abilities hook for processing path ability effects
   const { processTrigger, hasAbility, getStatusImmunities, getPassiveDamageReduction, incrementAbilityCounter, resetAbilityCounter } = usePathAbilities();
 
-  /**
-   * Safely add logs to combat log, handling undefined combatLog during error recovery
-   */
-  const safeAddLogs = (state: GameState, logs: string | string[]): void => {
-    state.combatLog?.add(logs);
-  };
 
   /**
    * Hero attack callback - called when hero's attack timer fills
@@ -124,7 +119,7 @@ export function useCombatActions({
       // If stunned, skip attack and return
       if (turnStartResult.isStunned) {
         logs.push(`💫 You are stunned and cannot act!`);
-        safeAddLogs(prev,logs);
+        safeCombatLogAdd(prev.combatLog, logs, 'performHeroAttack:stunned');
         return {
           ...prev,
           player: updatedPlayer,
@@ -407,7 +402,7 @@ export function useCombatActions({
           logPauseChange(true, PAUSE_REASON.ITEM_DROP, 'enemy_defeated_item_drop');
         }
 
-        safeAddLogs(prev,deathResult.logs);
+        safeCombatLogAdd(prev.combatLog, deathResult.logs, 'performHeroAttack:enemyDeath');
         return {
           ...prev,
           player: deathResult.player,
@@ -421,7 +416,7 @@ export function useCombatActions({
         };
       }
 
-      safeAddLogs(prev,logs);
+      safeCombatLogAdd(prev.combatLog, logs, 'performHeroAttack:complete');
       return {
         ...prev,
         player: playerAfterEffects,
@@ -875,7 +870,7 @@ export function useCombatActions({
             });
             logs.push(`🔥 Undying Fury! You refuse to fall!`);
             // Continue combat, don't die
-            safeAddLogs(prev,logs);
+            safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:undyingFury');
             return { ...prev, player, currentEnemy: enemy };
           } else {
             logs.push(`💀 Undying Fury already used this combat!`);
@@ -891,7 +886,7 @@ export function useCombatActions({
             player.usedFloorAbilities = [...usedFloor, 'immortal_guardian'];
             logs.push(`🛡️ Immortal Guardian! You are restored to ${healAmount} HP!`);
             // Continue combat, don't die
-            safeAddLogs(prev,logs);
+            safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:immortalGuardian');
             return { ...prev, player, currentEnemy: enemy };
           } else {
             logs.push(`💀 Immortal Guardian already used this floor!`);
@@ -911,7 +906,7 @@ export function useCombatActions({
           logs.push(...lethalResult.logs);
 
           // Don't mark as dying, player survived
-          safeAddLogs(prev,logs);
+          safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:survivalEffect');
           return {
             ...prev,
             player: lethalResult.player,
@@ -924,7 +919,7 @@ export function useCombatActions({
         player.isDying = true;
         logs.push(`💀 You have been defeated...`);
 
-        safeAddLogs(prev,logs);
+        safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:playerDeath');
         return {
           ...prev,
           player,
@@ -932,7 +927,7 @@ export function useCombatActions({
         };
       }
 
-      safeAddLogs(prev,logs);
+      safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:complete');
       return {
         ...prev,
         player,
@@ -964,7 +959,7 @@ export function useCombatActions({
         },
       };
 
-      safeAddLogs(prev,'🛡️ Bracing for impact!');
+      safeCombatLogAdd(prev.combatLog, '🛡️ Bracing for impact!', 'activateBlock');
       return {
         ...prev,
         player,

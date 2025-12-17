@@ -7,6 +7,7 @@ import { COMBAT_EVENT_DELAYS } from '@/constants/balance';
 import { COMBAT_EVENT_TYPE, BUFF_STAT, ITEM_EFFECT_TRIGGER } from '@/constants/enums';
 import { generateEventId } from '@/utils/eventId';
 import { getDropQualityBonus } from '@/utils/fortuneUtils';
+import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
 import { applyTriggerResultToEnemy } from '@/hooks/combatActionHelpers';
@@ -67,7 +68,7 @@ export function usePowerActions(context: PowerActivationContext) {
       if (power.currentCooldown > 0) {
         // Power is on cooldown - provide feedback
         const newLog = `⏳ ${power.name} is on cooldown (${power.currentCooldown.toFixed(1)}s)`;
-        prev.combatLog?.add(newLog);
+        safeCombatLogAdd(prev.combatLog, newLog, 'usePower:onCooldown');
         return prev;
       }
 
@@ -77,14 +78,14 @@ export function usePowerActions(context: PowerActivationContext) {
         // Need at least hpCost + 1 HP to use power (can't kill yourself)
         if (prev.player.currentStats.health <= hpCost) {
           const newLog = `❌ Not enough HP for ${power.name} (need ${hpCost + 1} HP)`;
-          prev.combatLog?.add(newLog);
+          safeCombatLogAdd(prev.combatLog, newLog, 'usePower:notEnoughHP');
           return prev;
         }
       } else {
         // Normal mana check
         if (prev.player.currentStats.mana < effectiveManaCost) {
           const newLog = `❌ Not enough mana for ${power.name} (${prev.player.currentStats.mana}/${effectiveManaCost})`;
-          prev.combatLog?.add(newLog);
+          safeCombatLogAdd(prev.combatLog, newLog, 'usePower:notEnoughMana');
           return prev;
         }
       }
@@ -496,7 +497,7 @@ export function usePowerActions(context: PowerActivationContext) {
         player.currentStats = calculateStats(player);
 
         // Keep enemy in state with isDying flag - animation system will remove it
-        prev.combatLog?.add(logs);
+        safeCombatLogAdd(prev.combatLog, logs, 'usePower:enemyDeath');
         return {
           ...prev,
           player,
@@ -504,7 +505,7 @@ export function usePowerActions(context: PowerActivationContext) {
         };
       }
 
-      prev.combatLog?.add(logs);
+      safeCombatLogAdd(prev.combatLog, logs, 'usePower:complete');
       return {
         ...prev,
         player,
