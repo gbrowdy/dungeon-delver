@@ -177,6 +177,12 @@ const ICON_DEFINITIONS = {
   'ui/hammer': { size: 24, pattern: 'hammer', colors: ['silver', 'silverDark'] },
   'ui/question': { size: 24, pattern: 'question', colors: ['blue', 'blueDark'] },
   'ui/sparkle': { size: 24, pattern: 'sparkle', colors: ['yellow', 'orange'] },
+
+  // Class Icons (48x48)
+  'class/warrior': { size: 48, pattern: 'sword', colors: ['red', 'redDark'] },
+  'class/mage': { size: 48, pattern: 'staff', colors: ['purple', 'purpleDark'] },
+  'class/rogue': { size: 48, pattern: 'daggers', colors: ['green', 'greenDark'] },
+  'class/paladin': { size: 48, pattern: 'cross', colors: ['gold', 'goldDark'] },
 };
 
 /**
@@ -257,6 +263,13 @@ function createPixelPattern(size, pattern, colorNames) {
       // Hammer shape
       fillRect(center - 1, Math.floor(size * 0.5), 2, Math.floor(size * 0.45), secondary);
       fillRect(Math.floor(size * 0.2), Math.floor(size * 0.2), Math.floor(size * 0.6), Math.floor(size * 0.25), primary);
+      break;
+
+    case 'staff':
+      // Staff/wand shape
+      fillRect(center - 1, Math.floor(size * 0.15), 2, Math.floor(size * 0.7), secondary);
+      fillRect(center - 3, Math.floor(size * 0.1), 6, 3, primary);
+      fillRect(center - 2, Math.floor(size * 0.05), 4, 2, primary);
       break;
 
     case 'star':
