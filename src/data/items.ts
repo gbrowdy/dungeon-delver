@@ -8,22 +8,22 @@ import {
 
 const ITEM_TEMPLATES: Record<ItemType, { name: string; stat: keyof Stats; icon: string }[]> = {
   weapon: [
-    { name: 'Sword', stat: 'power', icon: '⚔️' },
-    { name: 'Axe', stat: 'power', icon: '🪓' },
-    { name: 'Staff', stat: 'power', icon: '🪄' },
-    { name: 'Dagger', stat: 'fortune', icon: '🗡️' },
+    { name: 'Sword', stat: 'power', icon: 'item-sword' },
+    { name: 'Axe', stat: 'power', icon: 'item-axe' },
+    { name: 'Staff', stat: 'power', icon: 'item-staff' },
+    { name: 'Dagger', stat: 'fortune', icon: 'item-dagger' },
   ],
   armor: [
-    { name: 'Plate Armor', stat: 'armor', icon: '🛡️' },
-    { name: 'Chainmail', stat: 'armor', icon: '🦺' },
-    { name: 'Leather Armor', stat: 'speed', icon: '🧥' },
-    { name: 'Robe', stat: 'maxMana', icon: '👘' },
+    { name: 'Plate Armor', stat: 'armor', icon: 'item-plate_armor' },
+    { name: 'Chainmail', stat: 'armor', icon: 'item-chainmail' },
+    { name: 'Leather Armor', stat: 'speed', icon: 'item-leather_armor' },
+    { name: 'Robe', stat: 'maxMana', icon: 'item-robe' },
   ],
   accessory: [
-    { name: 'Ring', stat: 'fortune', icon: '💍' },
-    { name: 'Amulet', stat: 'maxHealth', icon: '📿' },
-    { name: 'Belt', stat: 'armor', icon: '🎗️' },
-    { name: 'Boots', stat: 'speed', icon: '👢' },
+    { name: 'Ring', stat: 'fortune', icon: 'item-ring' },
+    { name: 'Amulet', stat: 'maxHealth', icon: 'item-amulet' },
+    { name: 'Belt', stat: 'armor', icon: 'item-belt' },
+    { name: 'Boots', stat: 'speed', icon: 'item-boots' },
   ],
 };
 

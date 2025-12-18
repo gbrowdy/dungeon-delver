@@ -31,6 +31,22 @@ export const POWER_ICONS = {
   HEAL: 'power-heal',
   SHIELD: 'power-shield',
   STRIKE: 'power-strike',
+  CRUSHING_BLOW: 'power-crushing_blow',
+  POWER_STRIKE: 'power-power_strike',
+  FAN_OF_KNIVES: 'power-fan_of_knives',
+  FLURRY: 'power-flurry',
+  AMBUSH: 'power-ambush',
+  COUP_DE_GRACE: 'power-coup_de_grace',
+  FROST_NOVA: 'power-frost_nova',
+  STUNNING_BLOW: 'power-stunning_blow',
+  BATTLE_CRY: 'power-battle_cry',
+  INNER_FOCUS: 'power-inner_focus',
+  RECKLESS_SWING: 'power-reckless_swing',
+  BLOOD_PACT: 'power-blood_pact',
+  DIVINE_HEAL: 'power-divine_heal',
+  REGENERATION: 'power-regeneration',
+  EARTHQUAKE: 'power-earthquake',
+  VAMPIRIC_TOUCH: 'power-vampiric_touch',
 } as const;
 
 // Enemy ability icons
@@ -47,10 +63,26 @@ export const ABILITY_ICONS = {
 
 // Item type icons
 export const ITEM_ICONS = {
+  // Base types
   WEAPON: 'item-weapon',
   ARMOR: 'item-armor',
   ACCESSORY: 'item-accessory',
   POTION: 'item-potion',
+  // Weapon variants
+  SWORD: 'item-sword',
+  AXE: 'item-axe',
+  STAFF: 'item-staff',
+  DAGGER: 'item-dagger',
+  // Armor variants
+  PLATE_ARMOR: 'item-plate_armor',
+  CHAINMAIL: 'item-chainmail',
+  LEATHER_ARMOR: 'item-leather_armor',
+  ROBE: 'item-robe',
+  // Accessory variants
+  RING: 'item-ring',
+  AMULET: 'item-amulet',
+  BELT: 'item-belt',
+  BOOTS: 'item-boots',
 } as const;
 
 // UI control icons
