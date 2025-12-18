@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Player, Enemy } from '@/types/game';
-import { EffectsLayer, ScreenShake } from './BattleEffects';
+import { EffectsLayer, ScreenShake, BossDeathEffect } from './BattleEffects';
 import { useBattleAnimation, CombatEvent } from '@/hooks/useBattleAnimation';
 import { cn } from '@/lib/utils';
 import { BattlePhaseType } from '@/constants/enums';
@@ -159,6 +159,11 @@ export function BattleArena({
                 turnProgress={enemyProgress}
                 intent={displayEnemy.intent}
               />
+
+              {/* Boss death effect - only for boss enemies when dying */}
+              {displayEnemy.isBoss && displayEnemy.isDying && (
+                <BossDeathEffect onComplete={onEnemyDeathAnimationComplete} />
+              )}
 
               {/* Enemy intent display - mobile only (desktop handled in CharacterSprite) */}
               {displayEnemy.intent && (

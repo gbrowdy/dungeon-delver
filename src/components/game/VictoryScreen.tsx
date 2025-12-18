@@ -41,11 +41,12 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
         <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[300px] bg-yellow-500/10 rounded-full blur-[100px]" />
       </div>
 
-      {/* Celebration stars scattered in background */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* Celebration stars, confetti, and fireworks in background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        {/* Twinkling stars */}
         {[...Array(12)].map((_, i) => (
           <div
-            key={i}
+            key={`star-${i}`}
             className="pixel-star-gold"
             style={{
               top: `${10 + (i * 7) % 80}%`,
@@ -53,6 +54,85 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
               animationDelay: `${i * 0.2}s`,
             }}
           />
+        ))}
+
+        {/* Falling confetti */}
+        {[...Array(25)].map((_, i) => {
+          const colors = ['#fbbf24', '#ef4444', '#3b82f6', '#22c55e', '#a855f7'];
+          const color = colors[i % colors.length];
+          const startX = (i * 15) % 100;
+          const duration = 2 + (i % 3) * 0.5;
+          const delay = (i % 5) * 0.2;
+          const rotation = (i * 137) % 720; // Golden angle for distribution
+
+          return (
+            <div
+              key={`confetti-${i}`}
+              className="absolute w-2 h-2 animate-confetti"
+              style={{
+                left: `${startX}%`,
+                top: '-20px',
+                backgroundColor: color,
+                '--confetti-start': '-20px',
+                '--confetti-end': '100vh',
+                '--confetti-rot': `${rotation}deg`,
+                '--confetti-duration': `${duration}s`,
+                animationDelay: `${delay}s`,
+                animationIterationCount: 'infinite',
+              } as React.CSSProperties}
+            />
+          );
+        })}
+
+        {/* Firework bursts at different positions */}
+        {[
+          { x: 20, y: 30, delay: 0.3 },
+          { x: 70, y: 25, delay: 0.6 },
+          { x: 50, y: 40, delay: 0.9 },
+        ].map((fw, fwIdx) => (
+          <div
+            key={`firework-${fwIdx}`}
+            className="absolute"
+            style={{
+              left: `${fw.x}%`,
+              top: `${fw.y}%`,
+            }}
+          >
+            {/* Firework center burst */}
+            <div
+              className="absolute w-8 h-8 rounded-full bg-amber-400/60 animate-firework"
+              style={{
+                left: '50%',
+                top: '50%',
+                animationDelay: `${fw.delay}s`,
+                animationIterationCount: 'infinite',
+                animationDuration: '2s',
+              }}
+            />
+
+            {/* Radiating particles */}
+            {[...Array(10)].map((_, pIdx) => {
+              const angle = (pIdx * 360) / 10;
+              const distance = 50 + (pIdx % 3) * 10;
+
+              return (
+                <div
+                  key={`particle-${fwIdx}-${pIdx}`}
+                  className="absolute w-1 h-1 bg-yellow-400 rounded-full animate-firework-trail"
+                  style={{
+                    left: '50%',
+                    top: '50%',
+                    '--trail-distance': `${distance}px`,
+                    transform: `translate(-50%, -50%) rotate(${angle}deg)`,
+                    transformOrigin: 'center',
+                    animationDelay: `${fw.delay}s`,
+                    animationIterationCount: 'infinite',
+                    animationDuration: '2s',
+                  } as React.CSSProperties}
+                />
+              );
+            })}
+          </div>
         ))}
       </div>
 
@@ -297,7 +377,10 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
         @media (prefers-reduced-motion: reduce) {
           .pixel-star-gold,
           .animate-spin-slow,
-          .animate-bounce-slow {
+          .animate-bounce-slow,
+          .animate-confetti,
+          .animate-firework,
+          .animate-firework-trail {
             animation: none;
           }
         }

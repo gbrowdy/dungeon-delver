@@ -1027,6 +1027,275 @@ All colors MUST be HSL.
   animation: spin-slow 4s linear infinite;
 }
 
+/* ================================
+   HIT IMPACT EFFECTS (Wave 5)
+   ================================ */
+
+/* Normal hit impact - starburst */
+@keyframes impact {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+.animate-impact { animation: impact 0.4s ease-out forwards; }
+
+/* Critical hit impact - larger, more dramatic */
+@keyframes impact-crit {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.4) rotate(15deg);
+  }
+  50% {
+    transform: scale(1.2) rotate(-10deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.6) rotate(0deg);
+  }
+}
+.animate-impact-crit { animation: impact-crit 0.6s ease-out forwards; }
+
+/* Ray extension animation for starburst */
+@keyframes ray-extend {
+  0% {
+    stroke-dasharray: 0 50;
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dasharray: 50 0;
+    opacity: 0;
+  }
+}
+.animate-ray-extend { animation: ray-extend 0.35s ease-out forwards; }
+
+/* Center burst fade */
+@keyframes burst-fade {
+  0% {
+    opacity: 0;
+    r: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.animate-burst-fade { animation: burst-fade 0.4s ease-out forwards; }
+
+/* Critical hit particles */
+@keyframes crit-particle {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(0, 0) scale(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translate(calc(var(--particle-x) * 0.3), calc(var(--particle-y) * 0.3)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(var(--particle-x), var(--particle-y)) scale(0.5);
+  }
+}
+.animate-crit-particle { animation: crit-particle 0.5s ease-out forwards; }
+
+/* ================================
+   LEVEL UP BURST EFFECT (Wave 5)
+   ================================ */
+
+/* Radial burst rays */
+@keyframes levelup-rays {
+  0% {
+    opacity: 0;
+    transform: rotate(0deg) scale(0);
+  }
+  30% {
+    opacity: 1;
+    transform: rotate(15deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(45deg) scale(1.5);
+  }
+}
+.animate-levelup-rays { animation: levelup-rays 1s ease-out forwards; }
+
+/* Rising sparkles */
+@keyframes levelup-sparkle {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.3);
+  }
+}
+.animate-levelup-sparkle { animation: levelup-sparkle 0.8s ease-out forwards; }
+
+/* Expanding ring */
+@keyframes levelup-ring {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2);
+  }
+}
+.animate-levelup-ring { animation: levelup-ring 0.7s ease-out forwards; }
+
+/* ================================
+   BOSS DEATH ANIMATION (Wave 5)
+   ================================ */
+
+/* Multi-phase explosion */
+@keyframes boss-explode-1 {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+.animate-boss-explode-1 { animation: boss-explode-1 0.3s ease-out forwards; }
+
+@keyframes boss-explode-2 {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(45deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(2) rotate(90deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(135deg);
+  }
+}
+.animate-boss-explode-2 { animation: boss-explode-2 0.4s ease-out forwards; }
+
+@keyframes boss-explode-final {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(2.5);
+  }
+  60% {
+    opacity: 0.8;
+    transform: scale(2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(3);
+  }
+}
+.animate-boss-explode-final { animation: boss-explode-final 0.8s ease-out forwards; }
+
+/* Flying debris particles */
+@keyframes boss-debris {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--debris-x, 50px), var(--debris-y, -30px)) rotate(var(--debris-rot, 360deg));
+  }
+}
+.animate-boss-debris { animation: boss-debris 0.8s ease-out forwards; }
+
+/* Screen white flash for boss */
+@keyframes boss-flash {
+  0% { opacity: 0; }
+  20% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+.animate-boss-flash { animation: boss-flash 0.5s ease-out forwards; }
+
+/* ================================
+   VICTORY CELEBRATION (Wave 5)
+   ================================ */
+
+/* Confetti falling */
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translateY(var(--confetti-start, -20px)) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(var(--confetti-end, 100px)) rotate(var(--confetti-rot, 720deg));
+  }
+}
+.animate-confetti { animation: confetti-fall var(--confetti-duration, 2s) ease-in forwards; }
+
+/* Victory firework burst */
+@keyframes firework-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+}
+.animate-firework { animation: firework-burst 0.8s ease-out forwards; }
+
+/* Firework trails */
+@keyframes firework-trail {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(var(--trail-distance, -50px));
+  }
+}
+.animate-firework-trail { animation: firework-trail 0.5s ease-out forwards; }
+
 /* Reduced motion support for pixel art animations */
 @media (prefers-reduced-motion: reduce) {
   .pixel-torch-flame,
@@ -1034,7 +1303,23 @@ All colors MUST be HSL.
   .pixel-star-gold,
   .pixel-border-pulse,
   .animate-bounce-slow,
-  .animate-spin-slow {
+  .animate-spin-slow,
+  .animate-impact,
+  .animate-impact-crit,
+  .animate-ray-extend,
+  .animate-burst-fade,
+  .animate-crit-particle,
+  .animate-levelup-rays,
+  .animate-levelup-sparkle,
+  .animate-levelup-ring,
+  .animate-boss-explode-1,
+  .animate-boss-explode-2,
+  .animate-boss-explode-final,
+  .animate-boss-debris,
+  .animate-boss-flash,
+  .animate-confetti,
+  .animate-firework,
+  .animate-firework-trail {
     animation: none;
   }
 }
