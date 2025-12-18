@@ -1,114 +1,24 @@
-/**
- * Icon type definitions for the PixelIcon component
- *
- * Icons are organized by category (stat, status, power, item, ability, ui, class)
- * and stored in /public/assets/icons/{category}/{name}.png
- */
+#!/usr/bin/env python3
+"""
+Add PATH_ABILITY_ICONS section to constants/icons.ts
+"""
 
-// Stat icons
-export const STAT_ICONS = {
-  HEALTH: 'stat-health',
-  MANA: 'stat-mana',
-  POWER: 'stat-power',
-  ARMOR: 'stat-armor',
-  SPEED: 'stat-speed',
-  FORTUNE: 'stat-fortune',
-  GOLD: 'stat-gold',
-} as const;
+from pathlib import Path
 
-// Status effect icons
-export const STATUS_ICONS = {
-  POISON: 'status-poison',
-  STUN: 'status-stun',
-  SLOW: 'status-slow',
-  BLEED: 'status-bleed',
-  REGENERATION: 'status-regeneration',
-} as const;
+def update_icons_constants():
+    filepath = Path('/Users/gilbrowdy/rogue-wave4-data/src/constants/icons.ts')
 
-// Power/ability icons
-export const POWER_ICONS = {
-  FIREBALL: 'power-fireball',
-  HEAL: 'power-heal',
-  SHIELD: 'power-shield',
-  STRIKE: 'power-strike',
-  CRUSHING_BLOW: 'power-crushing_blow',
-  POWER_STRIKE: 'power-power_strike',
-  FAN_OF_KNIVES: 'power-fan_of_knives',
-  FLURRY: 'power-flurry',
-  AMBUSH: 'power-ambush',
-  COUP_DE_GRACE: 'power-coup_de_grace',
-  FROST_NOVA: 'power-frost_nova',
-  STUNNING_BLOW: 'power-stunning_blow',
-  BATTLE_CRY: 'power-battle_cry',
-  INNER_FOCUS: 'power-inner_focus',
-  RECKLESS_SWING: 'power-reckless_swing',
-  BLOOD_PACT: 'power-blood_pact',
-  DIVINE_HEAL: 'power-divine_heal',
-  REGENERATION: 'power-regeneration',
-  EARTHQUAKE: 'power-earthquake',
-  VAMPIRIC_TOUCH: 'power-vampiric_touch',
-} as const;
+    with open(filepath, 'r', encoding='utf-8') as f:
+        content = f.read()
 
-// Enemy ability icons
-export const ABILITY_ICONS = {
-  ATTACK: 'ability-attack',
-  MULTI_HIT: 'ability-multi_hit',
-  POISON: 'ability-poison',
-  STUN: 'ability-stun',
-  HEAL: 'ability-heal',
-  ENRAGE: 'ability-enrage',
-  SHIELD: 'ability-shield',
-  TRIPLE_STRIKE: 'ability-triple_strike',
-} as const;
+    # Find the insertion point (before the ALL_ICONS export)
+    insertion_marker = "// Export all icon constants"
 
-// Item type icons
-export const ITEM_ICONS = {
-  // Base types
-  WEAPON: 'item-weapon',
-  ARMOR: 'item-armor',
-  ACCESSORY: 'item-accessory',
-  POTION: 'item-potion',
-  // Weapon variants
-  SWORD: 'item-sword',
-  AXE: 'item-axe',
-  STAFF: 'item-staff',
-  DAGGER: 'item-dagger',
-  // Armor variants
-  PLATE_ARMOR: 'item-plate_armor',
-  CHAINMAIL: 'item-chainmail',
-  LEATHER_ARMOR: 'item-leather_armor',
-  ROBE: 'item-robe',
-  // Accessory variants
-  RING: 'item-ring',
-  AMULET: 'item-amulet',
-  BELT: 'item-belt',
-  BOOTS: 'item-boots',
-} as const;
+    if "PATH_ABILITY_ICONS" in content:
+        print("⚠ PATH_ABILITY_ICONS already exists in icons.ts")
+        return False
 
-// UI control icons
-export const UI_ICONS = {
-  PAUSE: 'ui-pause',
-  PLAY: 'ui-play',
-  SPEED_1X: 'ui-speed_1x',
-  SPEED_2X: 'ui-speed_2x',
-  SPEED_3X: 'ui-speed_3x',
-  TROPHY: 'ui-trophy',
-  STAR: 'ui-star',
-  SKULL: 'ui-skull',
-  HAMMER: 'ui-hammer',
-  QUESTION: 'ui-question',
-  SPARKLE: 'ui-sparkle',
-} as const;
-
-// Class icons
-export const CLASS_ICONS = {
-  WARRIOR: 'class-warrior',
-  MAGE: 'class-mage',
-  ROGUE: 'class-rogue',
-  PALADIN: 'class-paladin',
-} as const;
-
-
+    path_ability_icons_section = '''
 // Path ability icons by class
 export const PATH_ABILITY_ICONS = {
   // Warrior - Berserker path
@@ -120,10 +30,13 @@ export const PATH_ABILITY_ICONS = {
   WARRIOR_RECKLESS_FURY: 'ability-paths-warrior-reckless_fury',
   WARRIOR_BATTLE_TRANCE: 'ability-paths-warrior-battle_trance',
   WARRIOR_UNDYING_FURY: 'ability-paths-warrior-undying_fury',
+
+  // Warrior - Berserker subpaths
   WARRIOR_WARLORD: 'ability-paths-warrior-warlord',
   WARRIOR_INTIMIDATING_PRESENCE: 'ability-paths-warrior-intimidating_presence',
   WARRIOR_WARLORD_COMMAND: 'ability-paths-warrior-warlord_command',
   WARRIOR_CRUSHING_BLOWS: 'ability-paths-warrior-crushing_blows',
+
   WARRIOR_EXECUTIONER: 'ability-paths-warrior-executioner',
   WARRIOR_EXECUTIONERS_STRIKE: 'ability-paths-warrior-executioners_strike',
   WARRIOR_KILLING_SPREE: 'ability-paths-warrior-killing_spree',
@@ -138,10 +51,13 @@ export const PATH_ABILITY_ICONS = {
   WARRIOR_LAST_STAND: 'ability-paths-warrior-last_stand',
   WARRIOR_ENDURANCE: 'ability-paths-warrior-endurance',
   WARRIOR_IMMORTAL_GUARDIAN: 'ability-paths-warrior-immortal_guardian',
+
+  // Warrior - Guardian subpaths
   WARRIOR_FORTRESS: 'ability-paths-warrior-fortress',
   WARRIOR_FORTRESS_STANCE: 'ability-paths-warrior-fortress_stance',
   WARRIOR_IMMOVABLE_OBJECT: 'ability-paths-warrior-immovable_object',
   WARRIOR_HEALING_AURA: 'ability-paths-warrior-healing_aura',
+
   WARRIOR_AVENGER: 'ability-paths-warrior-avenger',
   WARRIOR_THORNS: 'ability-paths-warrior-thorns',
   WARRIOR_VENGEFUL_STRIKE: 'ability-paths-warrior-vengeful_strike',
@@ -153,11 +69,14 @@ export const PATH_ABILITY_ICONS = {
   MAGE_ARCHMAGE_MANA_EFFICIENCY: 'ability-paths-mage-archmage_mana_efficiency',
   MAGE_ARCHMAGE_COOLDOWN_MASTERY: 'ability-paths-mage-archmage_cooldown_mastery',
   MAGE_ARCHMAGE_SPELL_CRIT: 'ability-paths-mage-archmage_spell_crit',
+
+  // Mage - Archmage subpaths
   MAGE_ELEMENTALIST: 'ability-paths-mage-elementalist',
   MAGE_ELEMENTALIST_FIRE_MASTERY: 'ability-paths-mage-elementalist_fire_mastery',
   MAGE_ELEMENTALIST_ICE_MASTERY: 'ability-paths-mage-elementalist_ice_mastery',
   MAGE_ELEMENTALIST_LIGHTNING_MASTERY: 'ability-paths-mage-elementalist_lightning_mastery',
   MAGE_ELEMENTALIST_ELEMENTAL_CONVERGENCE: 'ability-paths-mage-elementalist_elemental_convergence',
+
   MAGE_DESTROYER: 'ability-paths-mage-destroyer',
   MAGE_DESTROYER_OVERWHELMING_POWER: 'ability-paths-mage-destroyer_overwhelming_power',
   MAGE_DESTROYER_SPELL_SURGE: 'ability-paths-mage-destroyer_spell_surge',
@@ -170,11 +89,14 @@ export const PATH_ABILITY_ICONS = {
   MAGE_ENCHANTER_MANA_REGEN: 'ability-paths-mage-enchanter_mana_regen',
   MAGE_ENCHANTER_DAMAGE_AURA: 'ability-paths-mage-enchanter_damage_aura',
   MAGE_ENCHANTER_DOT_AMPLIFY: 'ability-paths-mage-enchanter_dot_amplify',
+
+  // Mage - Enchanter subpaths
   MAGE_SPELLWEAVER: 'ability-paths-mage-spellweaver',
   MAGE_SPELLWEAVER_AUTO_CAST: 'ability-paths-mage-spellweaver_auto_cast',
   MAGE_SPELLWEAVER_CHAIN_CAST: 'ability-paths-mage-spellweaver_chain_cast',
   MAGE_SPELLWEAVER_EFFICIENT_AUTOMATION: 'ability-paths-mage-spellweaver_efficient_automation',
   MAGE_SPELLWEAVER_ARCANE_ASSEMBLY: 'ability-paths-mage-spellweaver_arcane_assembly',
+
   MAGE_SAGE: 'ability-paths-mage-sage',
   MAGE_SAGE_WISDOM_AURA: 'ability-paths-mage-sage_wisdom_aura',
   MAGE_SAGE_TOXIC_FIELD: 'ability-paths-mage-sage_toxic_field',
@@ -183,8 +105,6 @@ export const PATH_ABILITY_ICONS = {
 
   // Rogue - Assassin path
   ROGUE_ASSASSIN: 'ability-paths-rogue-assassin',
-  ROGUE_SHADOWBLADE: 'ability-paths-rogue-shadowblade',
-  ROGUE_NIGHTSTALKER: 'ability-paths-rogue-nightstalker',
   ROGUE_ASSASSIN_VITAL_STRIKE: 'ability-paths-rogue-rogue_assassin_vital_strike',
   ROGUE_ASSASSIN_AMBUSH: 'ability-paths-rogue-rogue_assassin_ambush',
   ROGUE_ASSASSIN_PRECISION: 'ability-paths-rogue-rogue_assassin_precision',
@@ -194,10 +114,12 @@ export const PATH_ABILITY_ICONS = {
   ROGUE_ASSASSIN_SHADOW_DANCE: 'ability-paths-rogue-rogue_assassin_shadow_dance',
   ROGUE_ASSASSIN_DEATH_MARK: 'ability-paths-rogue-rogue_assassin_death_mark',
 
+  // Rogue - Assassin subpaths
+  ROGUE_SHADOWBLADE: 'ability-paths-rogue-shadowblade',
+  ROGUE_NIGHTSTALKER: 'ability-paths-rogue-nightstalker',
+
   // Rogue - Duelist path
   ROGUE_DUELIST: 'ability-paths-rogue-duelist',
-  ROGUE_SWASHBUCKLER: 'ability-paths-rogue-swashbuckler',
-  ROGUE_PHANTOM: 'ability-paths-rogue-phantom',
   ROGUE_DUELIST_RIPOSTE: 'ability-paths-rogue-rogue_duelist_riposte',
   ROGUE_DUELIST_EN_GARDE: 'ability-paths-rogue-rogue_duelist_en_garde',
   ROGUE_DUELIST_BLADE_DANCER: 'ability-paths-rogue-rogue_duelist_blade_dancer',
@@ -207,10 +129,12 @@ export const PATH_ABILITY_ICONS = {
   ROGUE_DUELIST_PERFECT_FORM: 'ability-paths-rogue-rogue_duelist_perfect_form',
   ROGUE_DUELIST_SHADOWSTEP: 'ability-paths-rogue-rogue_duelist_shadowstep',
 
+  // Rogue - Duelist subpaths
+  ROGUE_SWASHBUCKLER: 'ability-paths-rogue-swashbuckler',
+  ROGUE_PHANTOM: 'ability-paths-rogue-phantom',
+
   // Paladin - Crusader path
   PALADIN_CRUSADER: 'ability-paths-paladin-paladin_crusader',
-  PALADIN_TEMPLAR: 'ability-paths-paladin-templar',
-  PALADIN_INQUISITOR: 'ability-paths-paladin-inquisitor',
   PALADIN_HOLY_STRIKE: 'ability-paths-paladin-holy_strike',
   PALADIN_RIGHTEOUS_FURY: 'ability-paths-paladin-righteous_fury',
   PALADIN_SMITE_THE_WICKED: 'ability-paths-paladin-smite_the_wicked',
@@ -220,10 +144,12 @@ export const PATH_ABILITY_ICONS = {
   PALADIN_CRUSADER_HOLY_AVENGER: 'ability-paths-paladin-crusader_holy_avenger',
   PALADIN_CRUSADER_DIVINE_WRATH: 'ability-paths-paladin-crusader_divine_wrath',
 
+  // Paladin - Crusader subpaths
+  PALADIN_TEMPLAR: 'ability-paths-paladin-templar',
+  PALADIN_INQUISITOR: 'ability-paths-paladin-inquisitor',
+
   // Paladin - Protector path
   PALADIN_PROTECTOR: 'ability-paths-paladin-paladin_protector',
-  PALADIN_SENTINEL: 'ability-paths-paladin-sentinel',
-  PALADIN_MARTYR: 'ability-paths-paladin-martyr',
   PALADIN_BLESSED_RECOVERY: 'ability-paths-paladin-blessed_recovery',
   PALADIN_HEALING_WARD: 'ability-paths-paladin-healing_ward',
   PALADIN_SHIELD_OF_RENEWAL: 'ability-paths-paladin-shield_of_renewal',
@@ -232,10 +158,29 @@ export const PATH_ABILITY_ICONS = {
   PALADIN_LAST_STAND: 'ability-paths-paladin-last_stand',
   PALADIN_PROTECTOR_ETERNAL_GUARDIAN: 'ability-paths-paladin-protector_eternal_guardian',
   PALADIN_PROTECTOR_UNBREAKABLE_WILL: 'ability-paths-paladin-protector_unbreakable_will',
+
+  // Paladin - Protector subpaths
+  PALADIN_SENTINEL: 'ability-paths-paladin-sentinel',
+  PALADIN_MARTYR: 'ability-paths-paladin-martyr',
 } as const;
 
-// Export all icon constants
-export const ALL_ICONS = {
+'''
+
+    # Insert the new section before the ALL_ICONS export
+    content = content.replace(insertion_marker, path_ability_icons_section + insertion_marker)
+
+    # Update the ALL_ICONS export to include PATH_ABILITY_ICONS
+    old_export = """export const ALL_ICONS = {
+  ...STAT_ICONS,
+  ...STATUS_ICONS,
+  ...POWER_ICONS,
+  ...ABILITY_ICONS,
+  ...ITEM_ICONS,
+  ...UI_ICONS,
+  ...CLASS_ICONS,
+} as const;"""
+
+    new_export = """export const ALL_ICONS = {
   ...STAT_ICONS,
   ...STATUS_ICONS,
   ...POWER_ICONS,
@@ -244,4 +189,15 @@ export const ALL_ICONS = {
   ...UI_ICONS,
   ...CLASS_ICONS,
   ...PATH_ABILITY_ICONS,
-} as const;
+} as const;"""
+
+    content = content.replace(old_export, new_export)
+
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(content)
+
+    print(f"✓ Updated {filepath}")
+    return True
+
+if __name__ == '__main__':
+    update_icons_constants()
