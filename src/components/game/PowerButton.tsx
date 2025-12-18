@@ -8,6 +8,16 @@ import {
 } from '@/components/ui/tooltip';
 import { PowerWithSynergies, hasSynergy, getSynergy, getPathName } from '@/utils/powerSynergies';
 import { Star } from 'lucide-react';
+import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
+
+/**
+ * Convert power ID to PixelIcon type
+ * e.g., "crushing-blow" -> "power-crushing_blow"
+ */
+function getPowerIconType(powerId: string): IconType {
+  const iconName = powerId.replace(/-/g, '_');
+  return `power-${iconName}` as IconType;
+}
 
 /**
  * Props for the PowerButton component.
@@ -117,7 +127,9 @@ export function PowerButton({ power, currentMana, effectiveManaCost, onUse, disa
                 aria-hidden="true"
               />
             )}
-            <span className={cn("text-lg xs:text-xl sm:text-2xl relative z-10", isOnCooldown && "opacity-50")} aria-hidden="true">{power.icon}</span>
+            <div className={cn("relative z-10", isOnCooldown && "opacity-50")} aria-hidden="true">
+              <PixelIcon type={getPowerIconType(power.id)} size={32} />
+            </div>
             <span className={cn("pixel-text text-pixel-2xs font-medium relative z-10 text-slate-200 truncate max-w-full", isOnCooldown && "opacity-50")}>{power.name}</span>
             <span className={cn("pixel-text text-pixel-2xs relative z-10", isOnCooldown ? "text-slate-400" : hasReduction ? "text-emerald-400" : "text-mana")} aria-hidden="true">
               {isOnCooldown ? `${Math.ceil(power.currentCooldown)}s` : `${manaCost} MP`}

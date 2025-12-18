@@ -10,6 +10,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { PixelIcon } from '@/components/ui/PixelIcon';
+import { STATUS_ICONS } from '@/constants/icons';
 
 /**
  * PowersPanel - Displays mana bar, block button, power buttons, and combo indicator.
@@ -164,7 +166,7 @@ function ComboIndicator({ count }: ComboIndicatorProps) {
       role="status"
       aria-live="polite"
     >
-      <span className="text-sm" aria-hidden="true">🔥</span>
+      <PixelIcon type="ui-sparkle" size={16} className="text-warning" aria-hidden="true" />
       <span>{count}x Combo Active (+{bonusDamage}% damage)</span>
     </div>
   );
