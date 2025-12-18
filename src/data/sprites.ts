@@ -4,6 +4,12 @@
 
 export type SpriteType =
   | 'warrior' | 'mage' | 'rogue' | 'paladin'
+  // Path variants
+  | 'berserker' | 'guardian'           // Warrior paths
+  | 'archmage' | 'enchanter'           // Mage paths
+  | 'assassin' | 'duelist'             // Rogue paths
+  | 'paladin_crusader' | 'paladin_protector'  // Paladin paths
+  // Enemies
   | 'goblin' | 'skeleton' | 'slime' | 'rat' | 'spider' | 'imp' | 'zombie'
   | 'orc' | 'dark-elf' | 'werewolf' | 'ghost' | 'harpy' | 'minotaur'
   | 'vampire' | 'demon' | 'golem' | 'lich' | 'hydra'
@@ -186,6 +192,173 @@ const paladinIdle: SpriteFrame = [
   // Armored legs with gold trim
   [6, 9, C.silverDark], [7, 9, C.silver], [8, 9, C.silverDark],
   [5, 10, C.goldDark], [6, 10, C.silver], [7, 10, C.silver], [8, 10, C.silver], [9, 10, C.goldDark],
+  [5, 11, C.goldDark], [6, 11, C.gold], [8, 11, C.gold], [9, 11, C.goldDark],
+];
+
+// ============================================================================
+// PATH VARIANT SPRITES - Visual variants for each class path
+// ============================================================================
+
+// Berserker Warrior - Aggressive stance, red accents, exposed arms, battle axe
+const berserkerIdle: SpriteFrame = [
+  // Spiked helmet with red crest
+  [6, 0, C.redDark], [7, 0, C.red], [8, 0, C.redDark],
+  [5, 1, C.silverDark], [6, 1, C.silver], [7, 1, C.red], [8, 1, C.silver], [9, 1, C.silverDark],
+  [5, 2, C.silverDark], [6, 2, C.black], [7, 2, C.skin], [8, 2, C.black], [9, 2, C.silverDark],
+  // Scarred face
+  [6, 3, C.skin], [7, 3, C.redDark], [8, 3, C.skin],
+  [6, 4, C.skin], [7, 4, C.skin], [8, 4, C.skin],
+  // Bare muscular arms, red war paint
+  [3, 5, C.skin], [4, 5, C.skin], [5, 5, C.redDark], [6, 5, C.red], [7, 5, C.black], [8, 5, C.red], [9, 5, C.redDark], [10, 5, C.skin], [11, 5, C.skin],
+  [3, 6, C.skin], [4, 6, C.redDark], [5, 6, C.red], [6, 6, C.redDark], [7, 6, C.black], [8, 6, C.redDark], [9, 6, C.red], [10, 6, C.redDark], [11, 6, C.silverDark], [12, 6, C.silver],
+  [4, 7, C.redDark], [5, 7, C.red], [6, 7, C.red], [7, 7, C.black], [8, 7, C.red], [9, 7, C.red], [10, 7, C.silverDark],
+  // Belt with skull buckle
+  [5, 8, C.brownDark], [6, 8, C.brown], [7, 8, C.bone], [8, 8, C.brown], [9, 8, C.brownDark],
+  [5, 9, C.brownDark], [6, 9, C.brown], [7, 9, C.brown], [8, 9, C.brown], [9, 9, C.brownDark],
+  [5, 10, C.brownDark], [6, 10, C.brown], [8, 10, C.brown], [9, 10, C.brownDark],
+  [5, 11, C.brownDark], [9, 11, C.brownDark],
+];
+
+// Guardian Warrior - Tower shield, heavy closed helm, defensive stance
+const guardianIdle: SpriteFrame = [
+  // Closed great helm
+  [6, 0, C.silverDark], [7, 0, C.silver], [8, 0, C.silverDark],
+  [5, 1, C.silverDark], [6, 1, C.silver], [7, 1, C.silver], [8, 1, C.silver], [9, 1, C.silverDark],
+  [5, 2, C.silver], [6, 2, C.black], [7, 2, C.silverDark], [8, 2, C.black], [9, 2, C.silver],
+  [5, 3, C.silverDark], [6, 3, C.silver], [7, 3, C.black], [8, 3, C.silver], [9, 3, C.silverDark],
+  [6, 4, C.silverDark], [7, 4, C.silver], [8, 4, C.silverDark],
+  // Massive tower shield on left, heavy armor
+  [1, 5, C.silverDark], [2, 5, C.silver], [3, 5, C.silver], [4, 5, C.silverDark], [5, 5, C.silver], [6, 5, C.silverDark], [7, 5, C.silver], [8, 5, C.silverDark], [9, 5, C.silver], [10, 5, C.silverDark],
+  [1, 6, C.silver], [2, 6, C.gold], [3, 6, C.silver], [4, 6, C.silverDark], [5, 6, C.silver], [6, 6, C.silver], [7, 6, C.gold], [8, 6, C.silver], [9, 6, C.silver], [10, 6, C.silverDark],
+  [1, 7, C.silver], [2, 7, C.silver], [3, 7, C.silver], [4, 7, C.silverDark], [5, 7, C.silverDark], [6, 7, C.silver], [7, 7, C.silver], [8, 7, C.silver], [9, 7, C.silverDark],
+  [2, 8, C.silver], [3, 8, C.silverDark], [5, 8, C.brownDark], [6, 8, C.brown], [7, 8, C.gold], [8, 8, C.brown], [9, 8, C.brownDark],
+  // Heavy armored legs
+  [5, 9, C.silverDark], [6, 9, C.silver], [7, 9, C.silver], [8, 9, C.silver], [9, 9, C.silverDark],
+  [5, 10, C.silver], [6, 10, C.silverDark], [7, 10, C.silver], [8, 10, C.silverDark], [9, 10, C.silver],
+  [5, 11, C.silverDark], [6, 11, C.silver], [8, 11, C.silver], [9, 11, C.silverDark],
+];
+
+// Archmage Mage - Tall wizard hat, glowing runes, ornate robes
+const archmageIdle: SpriteFrame = [
+  // Tall pointed wizard hat with star
+  [7, 0, C.purpleDark],
+  [6, 1, C.purpleDark], [7, 1, C.gold], [8, 1, C.purpleDark],
+  [5, 2, C.purpleDark], [6, 2, C.purple], [7, 2, C.purple], [8, 2, C.purple], [9, 2, C.purpleDark],
+  [5, 3, C.purple], [6, 3, C.blue], [7, 3, C.skin], [8, 3, C.blue], [9, 3, C.purple],
+  // Face with glowing eyes
+  [6, 4, C.skin], [7, 4, C.skin], [8, 4, C.skin],
+  [5, 5, C.purpleDark], [6, 5, C.purple], [7, 5, C.skin], [8, 5, C.purple], [9, 5, C.purpleDark],
+  // Ornate robes with glowing runes, large crystal staff
+  [4, 6, C.skin], [5, 6, C.purpleDark], [6, 6, C.gold], [7, 6, C.purple], [8, 6, C.gold], [9, 6, C.purpleDark], [10, 6, C.brownDark], [11, 6, C.blue], [12, 6, C.blueDark],
+  [4, 7, C.purpleDark], [5, 7, C.purple], [6, 7, C.purple], [7, 7, C.gold], [8, 7, C.purple], [9, 7, C.purple], [10, 7, C.purpleDark], [11, 7, C.brown], [12, 7, C.blue],
+  // Wide flowing robe with arcane symbols
+  [3, 8, C.purpleDark], [4, 8, C.purple], [5, 8, C.gold], [6, 8, C.purple], [7, 8, C.purple], [8, 8, C.gold], [9, 8, C.purple], [10, 8, C.purpleDark], [12, 8, C.blueDark],
+  [4, 9, C.purpleDark], [5, 9, C.purple], [6, 9, C.purple], [7, 9, C.purple], [8, 9, C.purple], [9, 9, C.purpleDark],
+  [5, 10, C.purpleDark], [6, 10, C.purple], [7, 10, C.purple], [8, 10, C.purple], [9, 10, C.purpleDark],
+  [6, 11, C.purpleDark], [7, 11, C.purpleDark], [8, 11, C.purpleDark],
+];
+
+// Enchanter Mage - Soft colors, magical sparkles, flowing energy
+const enchanterIdle: SpriteFrame = [
+  // Soft hood with gentle glow
+  [7, 0, C.blueDark],
+  [6, 1, C.blueDark], [7, 1, C.blue], [8, 1, C.blueDark],
+  [5, 2, C.blueDark], [6, 2, C.blue], [7, 2, C.blue], [8, 2, C.blue], [9, 2, C.blueDark],
+  [5, 3, C.blue], [6, 3, C.white], [7, 3, C.skin], [8, 3, C.white], [9, 3, C.blue],
+  // Gentle face
+  [6, 4, C.skin], [7, 4, C.skin], [8, 4, C.skin],
+  [5, 5, C.blueDark], [6, 5, C.blue], [7, 5, C.skin], [8, 5, C.blue], [9, 5, C.blueDark],
+  // Flowing robes with magical sparkles
+  [3, 5, C.white], [11, 5, C.white], // Sparkles
+  [4, 6, C.skin], [5, 6, C.blueDark], [6, 6, C.blue], [7, 6, C.purple], [8, 6, C.blue], [9, 6, C.blueDark], [10, 6, C.brownDark], [11, 6, C.brown],
+  [2, 6, C.white], [12, 7, C.white], // Sparkles
+  [4, 7, C.blueDark], [5, 7, C.blue], [6, 7, C.blue], [7, 7, C.purple], [8, 7, C.blue], [9, 7, C.blue], [10, 7, C.blueDark], [11, 7, C.brown], [12, 7, C.purple],
+  // Wide gentle robe
+  [3, 8, C.blueDark], [4, 8, C.blue], [5, 8, C.blue], [6, 8, C.blue], [7, 8, C.blue], [8, 8, C.blue], [9, 8, C.blue], [10, 8, C.blueDark], [12, 8, C.purpleDark],
+  [4, 9, C.blueDark], [5, 9, C.blue], [6, 9, C.blue], [7, 9, C.blue], [8, 9, C.blue], [9, 9, C.blueDark],
+  [4, 10, C.white], [10, 10, C.white], // Sparkles at feet
+  [5, 10, C.blueDark], [6, 10, C.blue], [7, 10, C.blue], [8, 10, C.blue], [9, 10, C.blueDark],
+  [6, 11, C.blueDark], [7, 11, C.blueDark], [8, 11, C.blueDark],
+];
+
+// Assassin Rogue - All black, deep hood, twin daggers, predatory stance
+const assassinIdle: SpriteFrame = [
+  // Deep shadow hood
+  [6, 0, C.black], [7, 0, C.black], [8, 0, C.black],
+  [5, 1, C.black], [6, 1, C.black], [7, 1, C.black], [8, 1, C.black], [9, 1, C.black],
+  [5, 2, C.black], [6, 2, C.black], [7, 2, C.black], [8, 2, C.black], [9, 2, C.black],
+  [5, 3, C.black], [6, 3, C.redDark], [7, 3, C.grayDark], [8, 3, C.redDark], [9, 3, C.black],
+  // Only eyes visible, masked
+  [6, 4, C.black], [7, 4, C.black], [8, 4, C.black],
+  [5, 5, C.black], [6, 5, C.black], [7, 5, C.black], [8, 5, C.black], [9, 5, C.black],
+  // Twin blood-stained daggers, all-black garb
+  [2, 6, C.silver], [3, 6, C.redDark], [4, 6, C.black], [5, 6, C.black], [6, 6, C.black], [7, 6, C.black], [8, 6, C.black], [9, 6, C.black], [10, 6, C.black], [11, 6, C.redDark], [12, 6, C.silver],
+  [3, 7, C.silver], [4, 7, C.black], [5, 7, C.black], [6, 7, C.black], [7, 7, C.black], [8, 7, C.black], [9, 7, C.black], [10, 7, C.black], [11, 7, C.silver],
+  // Shadow cloak
+  [2, 8, C.black], [4, 8, C.black], [5, 8, C.black], [6, 8, C.black], [7, 8, C.black], [8, 8, C.black], [9, 8, C.black], [10, 8, C.black], [12, 8, C.black],
+  [3, 9, C.black], [5, 9, C.black], [6, 9, C.black], [8, 9, C.black], [9, 9, C.black], [11, 9, C.black],
+  [5, 10, C.black], [6, 10, C.black], [8, 10, C.black], [9, 10, C.black],
+  [5, 11, C.black], [9, 11, C.black],
+];
+
+// Duelist Rogue - Light leather, elegant stance, rapier extended
+const duelistIdle: SpriteFrame = [
+  // Feathered cap
+  [6, 0, C.brown], [7, 0, C.brown], [8, 0, C.brown], [9, 0, C.white],
+  [5, 1, C.brownDark], [6, 1, C.brown], [7, 1, C.brown], [8, 1, C.brown], [9, 1, C.brownDark],
+  [5, 2, C.brown], [6, 2, C.black], [7, 2, C.skin], [8, 2, C.black], [9, 2, C.brown],
+  // Confident smirk
+  [6, 3, C.skin], [7, 3, C.skin], [8, 3, C.skin],
+  [6, 4, C.skin], [7, 4, C.skin], [8, 4, C.skin],
+  // Light leather vest, one arm extended with rapier
+  [5, 5, C.brownDark], [6, 5, C.brown], [7, 5, C.white], [8, 5, C.brown], [9, 5, C.brownDark], [10, 5, C.skin],
+  [4, 6, C.skin], [5, 6, C.brownDark], [6, 6, C.brown], [7, 6, C.brown], [8, 6, C.brown], [9, 6, C.brownDark], [10, 6, C.skin], [11, 6, C.silverDark], [12, 6, C.silver], [13, 6, C.silver],
+  [4, 7, C.brownDark], [5, 7, C.brown], [6, 7, C.brown], [7, 7, C.brown], [8, 7, C.brown], [9, 7, C.brownDark],
+  // Tight pants, fencing boots
+  [5, 8, C.grayDark], [6, 8, C.gray], [7, 8, C.gray], [8, 8, C.gray], [9, 8, C.grayDark],
+  [5, 9, C.gray], [6, 9, C.grayDark], [8, 9, C.grayDark], [9, 9, C.gray],
+  [5, 10, C.brownDark], [6, 10, C.brown], [8, 10, C.brown], [9, 10, C.brownDark],
+  [5, 11, C.brownDark], [9, 11, C.brownDark],
+];
+
+// Crusader Paladin - Flaming sword, aggressive stance, red/gold holy warrior
+const paladinCrusaderIdle: SpriteFrame = [
+  // Helmet with sun crest
+  [6, 0, C.orange], [7, 0, C.gold], [8, 0, C.orange],
+  [5, 1, C.goldDark], [6, 1, C.gold], [7, 1, C.gold], [8, 1, C.gold], [9, 1, C.goldDark],
+  [5, 2, C.silverDark], [6, 2, C.silver], [7, 2, C.silver], [8, 2, C.silver], [9, 2, C.silverDark],
+  [5, 3, C.silverDark], [6, 3, C.black], [7, 3, C.skin], [8, 3, C.black], [9, 3, C.silverDark],
+  // Determined face
+  [6, 4, C.skin], [7, 4, C.skin], [8, 4, C.skin],
+  // Gold/red armor, flaming sword extended
+  [4, 5, C.gold], [5, 5, C.goldDark], [6, 5, C.silver], [7, 5, C.gold], [8, 5, C.silver], [9, 5, C.goldDark], [10, 5, C.skin],
+  [4, 6, C.goldDark], [5, 6, C.gold], [6, 6, C.silverDark], [7, 6, C.gold], [8, 6, C.silverDark], [9, 6, C.gold], [10, 6, C.brown], [11, 6, C.orange], [12, 6, C.red],
+  [4, 7, C.red], [5, 7, C.goldDark], [6, 7, C.silver], [7, 7, C.gold], [8, 7, C.silver], [9, 7, C.goldDark], [10, 7, C.brownDark], [11, 7, C.red], [12, 7, C.orange],
+  [5, 8, C.goldDark], [6, 8, C.silver], [7, 8, C.silver], [8, 8, C.silver], [9, 8, C.goldDark],
+  // Armored legs
+  [5, 9, C.silverDark], [6, 9, C.silver], [7, 9, C.gold], [8, 9, C.silver], [9, 9, C.silverDark],
+  [5, 10, C.gold], [6, 10, C.silverDark], [7, 10, C.silver], [8, 10, C.silverDark], [9, 10, C.gold],
+  [5, 11, C.goldDark], [6, 11, C.gold], [8, 11, C.gold], [9, 11, C.goldDark],
+];
+
+// Protector Paladin - Massive golden shield, healing glow, defensive stance
+const paladinProtectorIdle: SpriteFrame = [
+  // Crown-like helmet
+  [5, 0, C.gold], [6, 0, C.goldDark], [7, 0, C.gold], [8, 0, C.goldDark], [9, 0, C.gold],
+  [5, 1, C.silverDark], [6, 1, C.silver], [7, 1, C.gold], [8, 1, C.silver], [9, 1, C.silverDark],
+  [5, 2, C.silver], [6, 2, C.silver], [7, 2, C.silver], [8, 2, C.silver], [9, 2, C.silver],
+  [5, 3, C.silverDark], [6, 3, C.black], [7, 3, C.skin], [8, 3, C.black], [9, 3, C.silverDark],
+  // Serene face
+  [6, 4, C.skin], [7, 4, C.skin], [8, 4, C.skin],
+  // Massive golden shield with holy glow, protective stance
+  [1, 4, C.white], // Holy glow
+  [1, 5, C.goldDark], [2, 5, C.gold], [3, 5, C.gold], [4, 5, C.goldDark], [5, 5, C.silverDark], [6, 5, C.silver], [7, 5, C.gold], [8, 5, C.silver], [9, 5, C.silverDark], [10, 5, C.skin],
+  [0, 6, C.white], [1, 6, C.gold], [2, 6, C.white], [3, 6, C.gold], [4, 6, C.goldDark], [5, 6, C.silver], [6, 6, C.silverDark], [7, 6, C.gold], [8, 6, C.silverDark], [9, 6, C.silver],
+  [1, 7, C.gold], [2, 7, C.gold], [3, 7, C.gold], [4, 7, C.goldDark], [5, 7, C.silverDark], [6, 7, C.silver], [7, 7, C.gold], [8, 7, C.silver], [9, 7, C.silverDark],
+  [2, 8, C.gold], [3, 8, C.goldDark], [5, 8, C.goldDark], [6, 8, C.silver], [7, 8, C.silver], [8, 8, C.silver], [9, 8, C.goldDark],
+  // Heavy armored legs with gold trim
+  [5, 9, C.silverDark], [6, 9, C.silver], [7, 9, C.gold], [8, 9, C.silver], [9, 9, C.silverDark],
+  [5, 10, C.gold], [6, 10, C.silver], [7, 10, C.silver], [8, 10, C.silver], [9, 10, C.gold],
   [5, 11, C.goldDark], [6, 11, C.gold], [8, 11, C.gold], [9, 11, C.goldDark],
 ];
 
@@ -676,6 +849,22 @@ export const SPRITES: Record<string, SpriteDefinition> = {
   mage: buildSpriteDefinition(mageIdle),
   rogue: buildSpriteDefinition(rogueIdle),
   paladin: buildSpriteDefinition(paladinIdle),
+
+  // Path variants - Warrior
+  berserker: buildSpriteDefinition(berserkerIdle),
+  guardian: buildSpriteDefinition(guardianIdle),
+
+  // Path variants - Mage
+  archmage: buildSpriteDefinition(archmageIdle),
+  enchanter: buildSpriteDefinition(enchanterIdle),
+
+  // Path variants - Rogue
+  assassin: buildSpriteDefinition(assassinIdle),
+  duelist: buildSpriteDefinition(duelistIdle),
+
+  // Path variants - Paladin
+  paladin_crusader: buildSpriteDefinition(paladinCrusaderIdle),
+  paladin_protector: buildSpriteDefinition(paladinProtectorIdle),
 
   // Common monsters
   goblin: buildSpriteDefinition(goblinIdle, 12, 10),
