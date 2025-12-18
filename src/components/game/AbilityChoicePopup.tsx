@@ -4,8 +4,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import * as Icons from 'lucide-react';
+import { Check, Crown, Info, ChevronRight } from 'lucide-react';
 import { PixelDivider } from '@/components/ui/PixelDivider';
+import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
 
 interface AbilityChoicePopupProps {
   abilities: [PathAbility, PathAbility];  // Exactly 2 choices
@@ -60,9 +61,6 @@ export function AbilityChoicePopup({
             const isSelected = selectedAbilityId === ability.id;
             const isHovered = hoveredAbilityId === ability.id;
             const isCapstone = ability.isCapstone;
-
-            // Get the icon component dynamically
-            const IconComponent = (Icons as Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties; 'aria-hidden'?: boolean }>>)[ability.icon] || Icons.Sparkles;
 
             // Determine card color based on capstone status
             const cardColors = isCapstone
@@ -122,7 +120,7 @@ export function AbilityChoicePopup({
                         'shadow-lg shadow-amber-500/50'
                       )}
                     >
-                      <Icons.Crown className="w-3 h-3 mr-1" aria-hidden="true" />
+                      <Crown className="w-3 h-3 mr-1" aria-hidden="true" />
                       Capstone
                     </Badge>
                   </div>
@@ -135,7 +133,7 @@ export function AbilityChoicePopup({
                       className="w-6 h-6 rounded-full flex items-center justify-center"
                       style={{ backgroundColor: cardColors.primary }}
                     >
-                      <Icons.Check className="w-4 h-4 text-white" />
+                      <Check className="w-4 h-4 text-white" />
                     </div>
                   </div>
                 )}
@@ -149,10 +147,10 @@ export function AbilityChoicePopup({
                       boxShadow: isSelected || isHovered ? `0 0 20px ${cardColors.glow}` : undefined,
                     }}
                   >
-                    <IconComponent
+                    <PixelIcon
+                      type={ability.icon as IconType}
+                      size={48}
                       className="w-12 h-12"
-                      style={{ color: cardColors.primary }}
-                      aria-hidden="true"
                     />
                   </div>
 
@@ -176,7 +174,7 @@ export function AbilityChoicePopup({
                 {/* Effect details */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 border-t border-slate-700/50 pt-3">
-                    <Icons.Info className="w-4 h-4 text-amber-400 flex-shrink-0" aria-hidden="true" />
+                    <Info className="w-4 h-4 text-amber-400 flex-shrink-0" aria-hidden="true" />
                     <span className="pixel-text text-pixel-2xs text-slate-400 uppercase">
                       Effect Details
                     </span>
@@ -459,7 +457,7 @@ function AbilityEffectDisplay({ effect }: { effect: PathAbilityEffect }) {
     <div className="space-y-1">
       {details.map((detail, index) => (
         <div key={index} className="flex items-start gap-2">
-          <Icons.ChevronRight className="w-3 h-3 text-amber-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
+          <ChevronRight className="w-3 h-3 text-amber-400 flex-shrink-0 mt-0.5" aria-hidden="true" />
           <span className="pixel-text text-pixel-2xs text-slate-300 leading-relaxed">
             {detail}
           </span>
