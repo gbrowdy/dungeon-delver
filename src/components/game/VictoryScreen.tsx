@@ -3,7 +3,6 @@ import { Player } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
-import { Trophy, Star, Crown, Sparkles } from 'lucide-react';
 import { PixelIcon } from '@/components/ui/PixelIcon';
 import { getPlayerDisplayName } from '@/utils/powerSynergies';
 import { FLOOR_CONFIG } from '@/constants/game';
@@ -61,21 +60,21 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3 sm:gap-4 animate-bounce-slow">
-            <Trophy className="w-8 h-8 sm:w-12 sm:h-12 text-amber-400" />
+            <PixelIcon type="ui-trophy" size={48} animated />
             <h1 className="pixel-title text-lg sm:text-xl md:text-2xl font-bold tracking-wider uppercase">
               <span className="pixel-glow-gold bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-300 bg-clip-text text-transparent">
                 VICTORY!
               </span>
             </h1>
-            <Crown className="w-8 h-8 sm:w-12 sm:h-12 text-amber-400" />
+            <PixelIcon type="ui-trophy" size={48} animated />
           </div>
 
           <div className="flex items-center justify-center gap-2">
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 animate-pulse" />
+            <PixelIcon type="ui-sparkle" size={24} animated />
             <p className="pixel-text text-pixel-xs sm:text-pixel-sm text-amber-300 tracking-wider">
               The Final Boss has been defeated!
             </p>
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 animate-pulse" />
+            <PixelIcon type="ui-sparkle" size={24} animated />
           </div>
         </div>
 
@@ -92,10 +91,10 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
 
             {/* Victory effects */}
             <div className="absolute -top-2 -right-2">
-              <Star className="w-6 h-6 text-amber-400 animate-spin-slow" />
+              <PixelIcon type="ui-star" size={24} className="animate-spin-slow" />
             </div>
             <div className="absolute -bottom-2 -left-2">
-              <Star className="w-6 h-6 text-yellow-400 animate-spin-slow" style={{ animationDelay: '0.5s' }} />
+              <PixelIcon type="ui-star" size={24} className="animate-spin-slow" style={{ animationDelay: '0.5s' }} />
             </div>
           </div>
         </div>
@@ -195,10 +194,11 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
               "text-white font-bold shadow-lg",
               "transition-all duration-200",
               "border-2 border-amber-400/50",
-              "pixel-glow-gold"
+              "pixel-glow-gold",
+              "flex items-center justify-center gap-2"
             )}
           >
-            <Sparkles className="w-4 h-4 mr-2" />
+            <PixelIcon type="ui-sparkle" size={16} />
             Start New Run
           </Button>
 

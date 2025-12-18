@@ -3,7 +3,7 @@ import { CharacterClass } from '@/types/game';
 import { CLASS_DATA } from '@/data/classes';
 import { Button } from '@/components/ui/button';
 import { PixelDivider } from '@/components/ui/PixelDivider';
-import { PixelIcon } from '@/components/ui/PixelIcon';
+import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
 
 interface ClassSelectProps {
   onSelect: (characterClass: CharacterClass) => void;
@@ -13,6 +13,14 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
   const [selectedClass, setSelectedClass] = useState<CharacterClass | null>(null);
   const [hoveredClass, setHoveredClass] = useState<CharacterClass | null>(null);
   const classes = Object.entries(CLASS_DATA) as [CharacterClass, typeof CLASS_DATA[CharacterClass]][];
+
+  // Map class IDs to PixelIcon types
+  const classIcons: Record<CharacterClass, IconType> = {
+    warrior: 'class-warrior',
+    mage: 'class-mage',
+    rogue: 'class-rogue',
+    paladin: 'class-paladin',
+  };
 
   // Improved mage color for better contrast (Issue #15)
   const classColors: Record<CharacterClass, { primary: string; glow: string; border: string }> = {
@@ -140,13 +148,13 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
 
                 {/* Class icon */}
                 <div className="text-center mb-2 sm:mb-3">
-                  <span
-                    className="text-4xl sm:text-4xl md:text-5xl block pixel-icon"
+                  <div
+                    className="inline-block"
                     style={{ filter: isSelected || isHovered ? `drop-shadow(0 0 8px ${colors.glow})` : 'none' }}
                     aria-hidden="true"
                   >
-                    {data.icon}
-                  </span>
+                    <PixelIcon type={classIcons[id]} size={48} />
+                  </div>
                 </div>
 
                 {/* Class name */}
@@ -206,13 +214,13 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
               {/* Left: Class info */}
               <div className="flex-1 space-y-3 min-w-0">
                 <div className="flex items-start gap-3">
-                  <span
-                    className="text-4xl sm:text-5xl flex-shrink-0"
+                  <div
+                    className="flex-shrink-0"
                     style={{ filter: `drop-shadow(0 0 12px ${classColors[activeClass].glow})` }}
                     aria-hidden="true"
                   >
-                    {CLASS_DATA[activeClass].icon}
-                  </span>
+                    <PixelIcon type={classIcons[activeClass]} size={48} />
+                  </div>
                   <div className="min-w-0 flex-1">
                     <h3
                       className="pixel-text text-pixel-base uppercase"
