@@ -408,7 +408,7 @@ export function usePowerActions(context: PowerActivationContext) {
                 type: 'slow',
                 value: 0.3, // 30% slow
                 remainingTurns: 4,
-                icon: '❄️',
+                icon: 'status-slow',
               });
               logs.push(`❄️ Enemy slowed by 30% for 4 turns!`);
               statusApplied = true;
@@ -426,7 +426,7 @@ export function usePowerActions(context: PowerActivationContext) {
                   id: `stun-${Date.now()}`,
                   type: 'stun',
                   remainingTurns: 2,
-                  icon: '💫',
+                  icon: 'status-stun',
                 });
                 logs.push(`💫 Enemy stunned for 2 turns!`);
                 statusApplied = true;

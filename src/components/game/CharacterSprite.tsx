@@ -223,7 +223,11 @@ export function CharacterSprite({
           {!isHero && intent && (
             <div className="hidden sm:block absolute -top-9 left-1/2 -translate-x-1/2 bg-black/80 rounded px-1.5 py-0.5 border border-health/50 whitespace-nowrap">
               <div className="flex items-center gap-1 text-xs">
-                <span className="text-base">{intent.icon}</span>
+                {intent.icon && intent.icon.includes('-') ? (
+                  <PixelIcon type={intent.icon as IconType} size={16} />
+                ) : (
+                  <PixelIcon type="ability-attack" size={16} />
+                )}
                 <span className="text-health/90 font-medium text-xs">
                   {intent.type === 'ability' && intent.ability ? intent.ability.name : 'Attack'}
                 </span>
@@ -238,7 +242,11 @@ export function CharacterSprite({
         <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex gap-1">
           {statusEffects.map(effect => (
             <div key={effect.id} className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-accent/50">
-              <span>{effect.icon}</span>
+              {effect.icon && effect.icon.includes('-') ? (
+                <PixelIcon type={effect.icon as IconType} size={16} />
+              ) : (
+                <PixelIcon type={`status-${effect.type}` as IconType} size={16} />
+              )}
               <span className="text-accent/90">{effect.remainingTurns}</span>
             </div>
           ))}
@@ -250,7 +258,11 @@ export function CharacterSprite({
         <div className="absolute -top-22 left-1/2 -translate-x-1/2 flex gap-1">
           {activeBuffs.map(buff => (
             <div key={buff.id} className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-success/50">
-              <span>{buff.icon}</span>
+              {buff.icon && buff.icon.includes('-') ? (
+                <PixelIcon type={buff.icon as IconType} size={16} />
+              ) : (
+                <PixelIcon type={`stat-${buff.stat}` as IconType} size={16} />
+              )}
               <span className="text-success/90">{buff.remainingTurns}</span>
             </div>
           ))}

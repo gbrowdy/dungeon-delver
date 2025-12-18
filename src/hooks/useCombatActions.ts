@@ -569,7 +569,7 @@ export function useCombatActions({
               type: STATUS_EFFECT_TYPE.POISON,
               damage: poisonDamage,
               remainingTurns: COMBAT_BALANCE.DEFAULT_POISON_DURATION,
-              icon: '🐍',
+              icon: 'status-poison',
             });
             logs.push(`☠️ You are poisoned! (${poisonDamage} damage/turn for ${COMBAT_BALANCE.DEFAULT_POISON_DURATION} turns)`);
             break;
@@ -583,7 +583,7 @@ export function useCombatActions({
                 id: `stun-${Date.now()}`,
                 type: STATUS_EFFECT_TYPE.STUN,
                 remainingTurns: ability.value,
-                icon: '💫',
+                icon: 'status-stun',
               });
               logs.push(`💫 You are stunned for ${ability.value} turn(s)!`);
             }
@@ -854,7 +854,7 @@ export function useCombatActions({
               stat: 'power',
               multiplier: 1.5,
               remainingTurns: 5,
-              icon: '🔥',
+              icon: 'stat-power',
             });
             player.activeBuffs.push({
               id: `undying_fury_speed_${Date.now()}`,
@@ -862,7 +862,7 @@ export function useCombatActions({
               stat: 'speed',
               multiplier: 1.5,
               remainingTurns: 5,
-              icon: '🔥',
+              icon: 'stat-speed',
             });
             logs.push(`🔥 Undying Fury! You refuse to fall!`);
             // Continue combat, don't die

@@ -11,11 +11,16 @@ import { Star } from 'lucide-react';
 import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
 
 /**
- * Convert power ID to PixelIcon type
- * e.g., "crushing-blow" -> "power-crushing_blow"
+ * Get the icon type for a power.
+ * Prefers the power's explicit icon property, falls back to generating from ID.
  */
-function getPowerIconType(powerId: string): IconType {
-  const iconName = powerId.replace(/-/g, '_');
+function getPowerIconType(power: Power): IconType {
+  // Use explicit icon if available and is a valid IconType format
+  if (power.icon && power.icon.includes('-')) {
+    return power.icon as IconType;
+  }
+  // Fallback: convert power ID (e.g., "crushing-blow" -> "power-crushing_blow")
+  const iconName = power.id.replace(/-/g, '_');
   return `power-${iconName}` as IconType;
 }
 
@@ -128,7 +133,7 @@ export function PowerButton({ power, currentMana, effectiveManaCost, onUse, disa
               />
             )}
             <div className={cn("relative z-10", isOnCooldown && "opacity-50")} aria-hidden="true">
-              <PixelIcon type={getPowerIconType(power.id)} size={32} />
+              <PixelIcon type={getPowerIconType(power)} size={32} />
             </div>
             <span className={cn("pixel-text text-pixel-2xs font-medium relative z-10 text-slate-200 truncate max-w-full", isOnCooldown && "opacity-50")}>{power.name}</span>
             <span className={cn("pixel-text text-pixel-2xs relative z-10", isOnCooldown ? "text-slate-400" : hasReduction ? "text-emerald-400" : "text-mana")} aria-hidden="true">

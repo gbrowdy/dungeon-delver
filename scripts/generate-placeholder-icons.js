@@ -154,6 +154,21 @@ const ICON_DEFINITIONS = {
   'items/armor': { size: 24, pattern: 'chestplate', colors: ['silver', 'silverDark'] },
   'items/accessory': { size: 24, pattern: 'ring', colors: ['gold', 'goldDark'] },
   'items/potion': { size: 24, pattern: 'flask', colors: ['red', 'redDark'] },
+  // Weapon variants
+  'items/sword': { size: 24, pattern: 'sword', colors: ['silver', 'silverDark'] },
+  'items/axe': { size: 24, pattern: 'hammer', colors: ['silver', 'silverDark'] },
+  'items/staff': { size: 24, pattern: 'staff', colors: ['purple', 'purpleDark'] },
+  'items/dagger': { size: 24, pattern: 'daggers', colors: ['silver', 'green'] },
+  // Armor variants
+  'items/plate_armor': { size: 24, pattern: 'chestplate', colors: ['silver', 'silverDark'] },
+  'items/chainmail': { size: 24, pattern: 'chestplate', colors: ['silverDark', 'silver'] },
+  'items/leather_armor': { size: 24, pattern: 'chestplate', colors: ['brown', 'orange'] },
+  'items/robe': { size: 24, pattern: 'flask', colors: ['purple', 'purpleDark'] },
+  // Accessory variants
+  'items/ring': { size: 24, pattern: 'ring', colors: ['gold', 'goldDark'] },
+  'items/amulet': { size: 24, pattern: 'diamond', colors: ['gold', 'goldDark'] },
+  'items/belt': { size: 24, pattern: 'shield', colors: ['brown', 'orange'] },
+  'items/boots': { size: 24, pattern: 'shield', colors: ['brown', 'silverDark'] },
 
   // Enemy Abilities (16x16)
   'abilities/attack': { size: 16, pattern: 'sword', colors: ['red', 'redDark'] },
@@ -183,6 +198,131 @@ const ICON_DEFINITIONS = {
   'class/mage': { size: 48, pattern: 'staff', colors: ['purple', 'purpleDark'] },
   'class/rogue': { size: 48, pattern: 'daggers', colors: ['green', 'greenDark'] },
   'class/paladin': { size: 48, pattern: 'cross', colors: ['gold', 'goldDark'] },
+
+  // ============================================================================
+  // PATH ABILITY ICONS (24x24)
+  // These are icons for the path selection and ability system
+  // ============================================================================
+
+  // WARRIOR - Berserker Path
+  'abilities/paths-warrior-berserker': { size: 24, pattern: 'flame', colors: ['red', 'redDark'] },
+  'abilities/paths-warrior-blood_rage': { size: 24, pattern: 'droplet', colors: ['red', 'redDark'] },
+  'abilities/paths-warrior-pain_fueled': { size: 24, pattern: 'lightning', colors: ['red', 'orange'] },
+  'abilities/paths-warrior-adrenaline_rush': { size: 24, pattern: 'bolt', colors: ['orange', 'red'] },
+  'abilities/paths-warrior-bloodbath': { size: 24, pattern: 'droplet', colors: ['darkRed', 'red'] },
+  'abilities/paths-warrior-reckless_fury': { size: 24, pattern: 'flame', colors: ['orange', 'red'] },
+  'abilities/paths-warrior-battle_trance': { size: 24, pattern: 'starburst', colors: ['red', 'orange'] },
+  'abilities/paths-warrior-undying_fury': { size: 24, pattern: 'skull', colors: ['red', 'darkRed'] },
+  'abilities/paths-warrior-warlord': { size: 24, pattern: 'horn', colors: ['red', 'gold'] },
+  'abilities/paths-warrior-intimidating_presence': { size: 24, pattern: 'starburst', colors: ['red', 'redDark'] },
+  'abilities/paths-warrior-warlord_command': { size: 24, pattern: 'horn', colors: ['gold', 'red'] },
+  'abilities/paths-warrior-crushing_blows': { size: 24, pattern: 'hammer', colors: ['red', 'redDark'] },
+  'abilities/paths-warrior-executioner': { size: 24, pattern: 'sword', colors: ['darkRed', 'red'] },
+  'abilities/paths-warrior-executioners_strike': { size: 24, pattern: 'crosshair', colors: ['red', 'darkRed'] },
+  'abilities/paths-warrior-killing_spree': { size: 24, pattern: 'daggers', colors: ['red', 'orange'] },
+  'abilities/paths-warrior-mortal_wounds': { size: 24, pattern: 'droplet', colors: ['red', 'redDark'] },
+
+  // WARRIOR - Guardian Path
+  'abilities/paths-warrior-guardian': { size: 24, pattern: 'shield', colors: ['silver', 'silverDark'] },
+  'abilities/paths-warrior-iron_skin': { size: 24, pattern: 'chestplate', colors: ['silver', 'silverDark'] },
+  'abilities/paths-warrior-regeneration': { size: 24, pattern: 'heartplus', colors: ['green', 'greenDark'] },
+  'abilities/paths-warrior-damage_reduction': { size: 24, pattern: 'shield', colors: ['blue', 'blueDark'] },
+  'abilities/paths-warrior-auto_block': { size: 24, pattern: 'shield', colors: ['gold', 'silver'] },
+  'abilities/paths-warrior-last_stand': { size: 24, pattern: 'heart', colors: ['red', 'gold'] },
+  'abilities/paths-warrior-endurance': { size: 24, pattern: 'cross', colors: ['green', 'greenDark'] },
+  'abilities/paths-warrior-immortal_guardian': { size: 24, pattern: 'shield', colors: ['gold', 'goldDark'] },
+  'abilities/paths-warrior-fortress': { size: 24, pattern: 'chestplate', colors: ['silver', 'blue'] },
+  'abilities/paths-warrior-fortress_stance': { size: 24, pattern: 'shield', colors: ['blue', 'silver'] },
+  'abilities/paths-warrior-immovable_object': { size: 24, pattern: 'chestplate', colors: ['silverDark', 'silver'] },
+  'abilities/paths-warrior-healing_aura': { size: 24, pattern: 'heartplus', colors: ['green', 'gold'] },
+  'abilities/paths-warrior-avenger': { size: 24, pattern: 'sword', colors: ['silver', 'red'] },
+  'abilities/paths-warrior-thorns': { size: 24, pattern: 'daggers', colors: ['silver', 'green'] },
+  'abilities/paths-warrior-vengeful_strike': { size: 24, pattern: 'lightning', colors: ['silver', 'red'] },
+  'abilities/paths-warrior-retribution': { size: 24, pattern: 'starburst', colors: ['silver', 'gold'] },
+
+  // MAGE - Archmage Path
+  'abilities/paths-mage-archmage': { size: 24, pattern: 'staff', colors: ['purple', 'purpleDark'] },
+  'abilities/paths-mage-archmage_spell_power': { size: 24, pattern: 'sparkle', colors: ['purple', 'blue'] },
+  'abilities/paths-mage-archmage_mana_efficiency': { size: 24, pattern: 'diamond', colors: ['blue', 'blueDark'] },
+  'abilities/paths-mage-archmage_cooldown_mastery': { size: 24, pattern: 'spiral', colors: ['purple', 'cyan'] },
+  'abilities/paths-mage-archmage_spell_crit': { size: 24, pattern: 'starburst', colors: ['purple', 'gold'] },
+  'abilities/paths-mage-elementalist': { size: 24, pattern: 'flame', colors: ['orange', 'blue'] },
+  'abilities/paths-mage-elementalist_fire_mastery': { size: 24, pattern: 'flame', colors: ['red', 'orange'] },
+  'abilities/paths-mage-elementalist_ice_mastery': { size: 24, pattern: 'snowflake', colors: ['cyan', 'blue'] },
+  'abilities/paths-mage-elementalist_lightning_mastery': { size: 24, pattern: 'lightning', colors: ['yellow', 'blue'] },
+  'abilities/paths-mage-elementalist_elemental_convergence': { size: 24, pattern: 'starburst', colors: ['orange', 'cyan'] },
+  'abilities/paths-mage-destroyer': { size: 24, pattern: 'skull', colors: ['purple', 'red'] },
+  'abilities/paths-mage-destroyer_overwhelming_power': { size: 24, pattern: 'starburst', colors: ['purple', 'red'] },
+  'abilities/paths-mage-destroyer_spell_surge': { size: 24, pattern: 'lightning', colors: ['purple', 'purpleDark'] },
+  'abilities/paths-mage-destroyer_glass_cannon': { size: 24, pattern: 'diamond', colors: ['purple', 'red'] },
+  'abilities/paths-mage-destroyer_apocalypse': { size: 24, pattern: 'flame', colors: ['red', 'purple'] },
+
+  // MAGE - Enchanter Path
+  'abilities/paths-mage-enchanter': { size: 24, pattern: 'sparkle', colors: ['blue', 'purple'] },
+  'abilities/paths-mage-enchanter_passive_power': { size: 24, pattern: 'diamond', colors: ['purple', 'blue'] },
+  'abilities/paths-mage-enchanter_mana_regen': { size: 24, pattern: 'droplet', colors: ['blue', 'cyan'] },
+  'abilities/paths-mage-enchanter_damage_aura': { size: 24, pattern: 'starburst', colors: ['purple', 'red'] },
+  'abilities/paths-mage-enchanter_dot_amplify': { size: 24, pattern: 'droplet', colors: ['poison', 'purple'] },
+  'abilities/paths-mage-spellweaver': { size: 24, pattern: 'spiral', colors: ['purple', 'blue'] },
+  'abilities/paths-mage-spellweaver_auto_cast': { size: 24, pattern: 'lightning', colors: ['blue', 'purple'] },
+  'abilities/paths-mage-spellweaver_chain_cast': { size: 24, pattern: 'daggers', colors: ['purple', 'blue'] },
+  'abilities/paths-mage-spellweaver_efficient_automation': { size: 24, pattern: 'diamond', colors: ['blue', 'blueDark'] },
+  'abilities/paths-mage-spellweaver_arcane_assembly': { size: 24, pattern: 'sparkle', colors: ['purple', 'gold'] },
+  'abilities/paths-mage-sage': { size: 24, pattern: 'star', colors: ['blue', 'gold'] },
+  'abilities/paths-mage-sage_wisdom_aura': { size: 24, pattern: 'sparkle', colors: ['blue', 'gold'] },
+  'abilities/paths-mage-sage_toxic_field': { size: 24, pattern: 'droplet', colors: ['poison', 'poisonDark'] },
+  'abilities/paths-mage-sage_arcane_field': { size: 24, pattern: 'starburst', colors: ['purple', 'blue'] },
+  'abilities/paths-mage-sage_overwhelming_presence': { size: 24, pattern: 'horn', colors: ['blue', 'purple'] },
+
+  // ROGUE - Assassin Path
+  'abilities/paths-rogue-assassin': { size: 24, pattern: 'daggers', colors: ['green', 'greenDark'] },
+  'abilities/paths-rogue-shadowblade': { size: 24, pattern: 'daggers', colors: ['purple', 'green'] },
+  'abilities/paths-rogue-nightstalker': { size: 24, pattern: 'crosshair', colors: ['green', 'purple'] },
+  'abilities/paths-rogue-rogue_assassin_vital_strike': { size: 24, pattern: 'crosshair', colors: ['red', 'green'] },
+  'abilities/paths-rogue-rogue_assassin_ambush': { size: 24, pattern: 'daggers', colors: ['green', 'purple'] },
+  'abilities/paths-rogue-rogue_assassin_precision': { size: 24, pattern: 'crosshair', colors: ['green', 'gold'] },
+  'abilities/paths-rogue-rogue_assassin_ruthless_efficiency': { size: 24, pattern: 'skull', colors: ['green', 'greenDark'] },
+  'abilities/paths-rogue-rogue_assassin_killing_spree': { size: 24, pattern: 'daggers', colors: ['red', 'green'] },
+  'abilities/paths-rogue-rogue_assassin_execute': { size: 24, pattern: 'skull', colors: ['red', 'greenDark'] },
+  'abilities/paths-rogue-rogue_assassin_shadow_dance': { size: 24, pattern: 'spiral', colors: ['purple', 'green'] },
+  'abilities/paths-rogue-rogue_assassin_death_mark': { size: 24, pattern: 'skull', colors: ['red', 'purple'] },
+
+  // ROGUE - Duelist Path
+  'abilities/paths-rogue-duelist': { size: 24, pattern: 'sword', colors: ['green', 'silver'] },
+  'abilities/paths-rogue-swashbuckler': { size: 24, pattern: 'sword', colors: ['gold', 'green'] },
+  'abilities/paths-rogue-phantom': { size: 24, pattern: 'spiral', colors: ['purple', 'greenDark'] },
+  'abilities/paths-rogue-rogue_duelist_riposte': { size: 24, pattern: 'sword', colors: ['silver', 'green'] },
+  'abilities/paths-rogue-rogue_duelist_en_garde': { size: 24, pattern: 'shield', colors: ['green', 'silver'] },
+  'abilities/paths-rogue-rogue_duelist_blade_dancer': { size: 24, pattern: 'daggers', colors: ['green', 'gold'] },
+  'abilities/paths-rogue-rogue_duelist_evasion': { size: 24, pattern: 'bolt', colors: ['green', 'cyan'] },
+  'abilities/paths-rogue-rogue_duelist_uncanny_dodge': { size: 24, pattern: 'spiral', colors: ['green', 'purple'] },
+  'abilities/paths-rogue-rogue_duelist_blur': { size: 24, pattern: 'spiral', colors: ['cyan', 'green'] },
+  'abilities/paths-rogue-rogue_duelist_perfect_form': { size: 24, pattern: 'star', colors: ['gold', 'green'] },
+  'abilities/paths-rogue-rogue_duelist_shadowstep': { size: 24, pattern: 'bolt', colors: ['purple', 'green'] },
+
+  // PALADIN - Crusader Path
+  'abilities/paths-paladin-templar': { size: 24, pattern: 'cross', colors: ['gold', 'red'] },
+  'abilities/paths-paladin-inquisitor': { size: 24, pattern: 'flame', colors: ['gold', 'orange'] },
+  'abilities/paths-paladin-holy_strike': { size: 24, pattern: 'sword', colors: ['gold', 'goldDark'] },
+  'abilities/paths-paladin-righteous_fury': { size: 24, pattern: 'flame', colors: ['gold', 'red'] },
+  'abilities/paths-paladin-smite_the_wicked': { size: 24, pattern: 'lightning', colors: ['gold', 'orange'] },
+  'abilities/paths-paladin-mark_of_judgment': { size: 24, pattern: 'crosshair', colors: ['gold', 'red'] },
+  'abilities/paths-paladin-weakening_light': { size: 24, pattern: 'starburst', colors: ['gold', 'purple'] },
+  'abilities/paths-paladin-divine_condemnation': { size: 24, pattern: 'skull', colors: ['gold', 'red'] },
+  'abilities/paths-paladin-crusader_holy_avenger': { size: 24, pattern: 'sword', colors: ['gold', 'silver'] },
+  'abilities/paths-paladin-crusader_divine_wrath': { size: 24, pattern: 'flame', colors: ['gold', 'goldDark'] },
+
+  // PALADIN - Protector Path
+  'abilities/paths-paladin-sentinel': { size: 24, pattern: 'shield', colors: ['gold', 'silver'] },
+  'abilities/paths-paladin-martyr': { size: 24, pattern: 'cross', colors: ['gold', 'red'] },
+  'abilities/paths-paladin-blessed_recovery': { size: 24, pattern: 'heartplus', colors: ['gold', 'green'] },
+  'abilities/paths-paladin-healing_ward': { size: 24, pattern: 'cross', colors: ['green', 'gold'] },
+  'abilities/paths-paladin-shield_of_renewal': { size: 24, pattern: 'shield', colors: ['green', 'gold'] },
+  'abilities/paths-paladin-enduring_faith': { size: 24, pattern: 'heart', colors: ['gold', 'red'] },
+  'abilities/paths-paladin-armor_of_sacrifice': { size: 24, pattern: 'chestplate', colors: ['gold', 'silver'] },
+  'abilities/paths-paladin-last_stand': { size: 24, pattern: 'shield', colors: ['red', 'gold'] },
+  'abilities/paths-paladin-protector_eternal_guardian': { size: 24, pattern: 'shield', colors: ['gold', 'goldDark'] },
+  'abilities/paths-paladin-protector_unbreakable_will': { size: 24, pattern: 'cross', colors: ['gold', 'silver'] },
 };
 
 /**

@@ -1,5 +1,5 @@
 import { EnemyIntent } from '@/types/game';
-import { PixelIcon } from '@/components/ui/PixelIcon';
+import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
 import { ABILITY_ICONS } from '@/constants/icons';
 
 interface EnemyIntentDisplayProps {
@@ -11,7 +11,12 @@ interface EnemyIntentDisplayProps {
  * Maps emoji icons to ability icon types.
  * Fallback to ATTACK for unknown emojis.
  */
-function getAbilityIconType(emoji: string): string {
+function getAbilityIconType(icon: string): IconType {
+  // If it's already a valid IconType format, return it
+  if (icon && icon.includes('-')) {
+    return icon as IconType;
+  }
+  // Legacy emoji mapping
   const emojiMap: Record<string, string> = {
     '⚔️': ABILITY_ICONS.ATTACK,
     '⚔️⚔️': ABILITY_ICONS.MULTI_HIT,
@@ -22,7 +27,7 @@ function getAbilityIconType(emoji: string): string {
     '😤': ABILITY_ICONS.ENRAGE,
     '🛡️': ABILITY_ICONS.SHIELD,
   };
-  return emojiMap[emoji] || ABILITY_ICONS.ATTACK;
+  return (emojiMap[icon] || ABILITY_ICONS.ATTACK) as IconType;
 }
 
 /**
@@ -44,7 +49,7 @@ export function EnemyIntentDisplay({ intent, isDying }: EnemyIntentDisplayProps)
       aria-label={`Enemy intends to ${intentName}`}
     >
       <div className="flex items-start gap-0.5">
-        <PixelIcon type={iconType as any} size={16} className="flex-shrink-0" />
+        <PixelIcon type={iconType} size={16} className="flex-shrink-0" />
         <span className="text-health/90 font-medium text-pixel-2xs leading-tight">
           {intentName}
         </span>
