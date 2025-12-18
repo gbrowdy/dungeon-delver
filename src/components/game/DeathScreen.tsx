@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Player } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { PixelSprite } from './PixelSprite';
@@ -24,17 +24,7 @@ interface DeathScreenProps {
 }
 
 export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitShop }: DeathScreenProps) {
-  // Start with 'hit' state to show defeated animation, then transition to 'idle'
-  const [spriteState, setSpriteState] = useState<'idle' | 'hit'>('hit');
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
-
-  // Start with hit state, then transition to idle
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSpriteState('idle');
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
@@ -57,13 +47,13 @@ export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitS
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3 sm:gap-4">
-            <PixelIcon type="ui-skull" size={48} />
+            <PixelIcon type="ui-skull" size={48} className="skull-gradient" />
             <h1 className="pixel-title text-lg sm:text-xl md:text-2xl font-bold tracking-wider uppercase">
               <span className="pixel-glow-red bg-gradient-to-r from-red-300 via-red-400 to-orange-400 bg-clip-text text-transparent">
                 DEFEATED
               </span>
             </h1>
-            <PixelIcon type="ui-skull" size={48} />
+            <PixelIcon type="ui-skull" size={48} className="skull-gradient" />
           </div>
 
           <p className="pixel-text text-pixel-xs sm:text-pixel-sm text-slate-400 tracking-wider">
@@ -72,7 +62,7 @@ export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitS
 
           {/* Gold display */}
           <div className="flex items-center justify-center gap-2 sm:gap-3">
-            <PixelIcon type="stat-gold" size={32} />
+            <PixelIcon type="stat-gold" size={32} className="text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.4)]" />
             <span className="pixel-text text-pixel-base sm:text-pixel-lg text-amber-400 font-bold">
               Gold: {player.gold}
             </span>
@@ -83,8 +73,8 @@ export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitS
         <div className="flex justify-center">
           <div className="relative pixel-panel-dark rounded-lg p-4 sm:p-6">
             <PixelSprite
-              type={player.class}
-              state={spriteState}
+              type={player.path?.pathId || player.class}
+              state="idle"
               direction="right"
               scale={5}
               frame={0}
@@ -194,6 +184,12 @@ export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitS
         }
 
         .pixel-glow-red {
+          filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6))
+                  drop-shadow(0 0 20px rgba(239, 68, 68, 0.3));
+        }
+
+        .skull-gradient {
+          color: rgba(15, 23, 42, 0.9);
           filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6))
                   drop-shadow(0 0 20px rgba(239, 68, 68, 0.3));
         }
