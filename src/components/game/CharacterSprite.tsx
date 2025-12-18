@@ -68,8 +68,20 @@ export function CharacterSprite({
   const isDying = enemy?.isDying ?? false;
   const isBoss = enemy?.isBoss ?? false;
 
-  // Determine sprite type
-  const spriteType = isHero ? player!.class : enemy!.name;
+  // Determine sprite type - use path variant if player has selected a path
+  const getSpriteType = (): string => {
+    if (isHero && player) {
+      // If player has a path, use the path-specific sprite
+      if (player.path?.pathId) {
+        return player.path.pathId;
+      }
+      // Otherwise use base class sprite
+      return player.class;
+    }
+    // For enemies, use enemy name
+    return enemy!.name;
+  };
+  const spriteType = getSpriteType();
   const scale = isBoss ? 6 : 5;
 
   // HP calculation
