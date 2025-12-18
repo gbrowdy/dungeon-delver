@@ -1,6 +1,7 @@
 import { Enemy } from '@/types/game';
 import { HealthBar } from './HealthBar';
 import { cn } from '@/lib/utils';
+import { PixelIcon } from '@/components/ui/PixelIcon';
 
 interface EnemyCardProps {
   enemy: Enemy;
@@ -16,7 +17,7 @@ export function EnemyCard({ enemy }: EnemyCardProps) {
     )}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {enemy.isBoss && <span className="text-xl">👑</span>}
+          {enemy.isBoss && <PixelIcon type="ui-star" size={24} className="text-gold" />}
           <h3 className={cn(
             'font-bold',
             enemy.isBoss ? 'text-gold text-pixel-lg' : 'text-foreground'
@@ -25,8 +26,8 @@ export function EnemyCard({ enemy }: EnemyCardProps) {
           </h3>
         </div>
         <div className="flex gap-2 text-pixel-sm text-muted-foreground">
-          <span>⚔️ {enemy.power}</span>
-          <span>🛡️ {enemy.armor}</span>
+          <span className="flex items-center gap-1"><PixelIcon type="stat-power" size={16} /> {enemy.power}</span>
+          <span className="flex items-center gap-1"><PixelIcon type="stat-armor" size={16} /> {enemy.armor}</span>
         </div>
       </div>
       
@@ -40,7 +41,8 @@ export function EnemyCard({ enemy }: EnemyCardProps) {
         'text-center text-6xl py-4 transition-transform',
         healthPercent < 30 && 'animate-pulse'
       )}>
-        {enemy.isBoss ? '🐉' : healthPercent > 70 ? '👹' : healthPercent > 30 ? '😠' : '😵'}
+        {/* Enemy uses CharacterSprite instead - this card is legacy */}
+        <PixelIcon type={enemy.isBoss ? "ui-skull" : "ability-attack"} size={48} />
       </div>
     </div>
   );

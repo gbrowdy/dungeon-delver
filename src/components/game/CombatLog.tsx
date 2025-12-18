@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
 
 import { CircularBuffer } from '@/utils/circularBuffer';
 
@@ -11,7 +12,7 @@ interface CombatLogProps {
 }
 
 interface LogEntry {
-  icon: string;
+  icon: IconType;
   color: string;
   text: string;
 }
@@ -22,61 +23,61 @@ interface LogEntry {
 function formatLogEntry(log: string): LogEntry {
   // Victory/defeat events
   if (log.includes('defeated') || log.includes('slain')) {
-    return { icon: '💀', color: 'text-gold', text: log };
+    return { icon: 'ui-skull', color: 'text-gold', text: log };
   }
 
   // Critical hits
   if (log.includes('Critical hit') || log.includes('critical')) {
-    return { icon: '💥', color: 'text-warning', text: log };
+    return { icon: 'ability-attack', color: 'text-warning', text: log };
   }
 
   // Healing
   if (log.includes('Healed') || log.includes('restored') || log.includes('regenerated')) {
-    return { icon: '💚', color: 'text-success', text: log };
+    return { icon: 'status-regeneration', color: 'text-success', text: log };
   }
 
   // Blocking
   if (log.includes('blocked') || log.includes('Block')) {
-    return { icon: '🛡️', color: 'text-info', text: log };
+    return { icon: 'ability-shield', color: 'text-info', text: log };
   }
 
   // Dodging
   if (log.includes('dodged') || log.includes('missed')) {
-    return { icon: '💨', color: 'text-slate-400', text: log };
+    return { icon: 'stat-speed', color: 'text-slate-400', text: log };
   }
 
   // Player attacks
   if (log.includes('You dealt') || log.includes('You hit') || log.includes('deals')) {
-    return { icon: '⚔️', color: 'text-primary', text: log };
+    return { icon: 'stat-power', color: 'text-primary', text: log };
   }
 
   // Enemy attacks
   if (log.includes('takes') || log.includes('hit you') || log.includes('attacks')) {
-    return { icon: '🔴', color: 'text-health', text: log };
+    return { icon: 'ability-attack', color: 'text-health', text: log };
   }
 
   // Power/spell usage
   if (log.includes('casts') || log.includes('uses') || log.includes('activates')) {
-    return { icon: '✨', color: 'text-accent', text: log };
+    return { icon: 'ui-sparkle', color: 'text-accent', text: log };
   }
 
   // Level up
   if (log.includes('Level') || log.includes('level')) {
-    return { icon: '⬆️', color: 'text-xp', text: log };
+    return { icon: 'ui-star', color: 'text-xp', text: log };
   }
 
   // Buff/debuff
   if (log.includes('buff') || log.includes('enraged') || log.includes('shielded')) {
-    return { icon: '🔮', color: 'text-accent', text: log };
+    return { icon: 'ability-enrage', color: 'text-accent', text: log };
   }
 
   // Status effects
   if (log.includes('poisoned') || log.includes('stunned') || log.includes('frozen')) {
-    return { icon: '☠️', color: 'text-destructive', text: log };
+    return { icon: 'status-poison', color: 'text-destructive', text: log };
   }
 
-  // Default
-  return { icon: '•', color: 'text-slate-400', text: log };
+  // Default - use question mark icon
+  return { icon: 'ui-question', color: 'text-slate-400', text: log };
 }
 
 /**
@@ -119,7 +120,7 @@ export function CombatLog({ logs }: CombatLogProps) {
                 key={i}
                 className="flex items-start gap-1 xs:gap-1.5"
               >
-                <span className="text-pixel-xs xs:text-pixel-sm flex-shrink-0 mt-0.5" aria-hidden="true">{icon}</span>
+                <PixelIcon type={icon} size={16} className="flex-shrink-0 mt-0.5" />
                 <span className={cn('pixel-text text-pixel-2xs xs:text-pixel-xs leading-relaxed', color)}>{text}</span>
               </div>
             );

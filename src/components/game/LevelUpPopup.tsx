@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { LEVEL_UP_BONUSES } from '@/constants/game';
 import { PixelDivider } from '@/components/ui/PixelDivider';
+import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
 
 interface LevelUpPopupProps {
   newLevel: number;
@@ -112,9 +113,9 @@ export function LevelUpPopup({ newLevel, onContinue }: LevelUpPopupProps) {
             Stats Increased
           </h3>
           <div className="grid grid-cols-1 gap-2">
-            <StatGain icon="❤️" label="Max HP" value={`+${LEVEL_UP_BONUSES.MAX_HEALTH}`} />
-            <StatGain icon="⚔️" label="Power" value={`+${LEVEL_UP_BONUSES.POWER}`} />
-            <StatGain icon="💧" label="Max Mana" value={`+${LEVEL_UP_BONUSES.MAX_MANA}`} />
+            <StatGain icon="stat-health" label="Max HP" value={`+${LEVEL_UP_BONUSES.MAX_HEALTH}`} />
+            <StatGain icon="stat-power" label="Power" value={`+${LEVEL_UP_BONUSES.POWER}`} />
+            <StatGain icon="stat-mana" label="Max Mana" value={`+${LEVEL_UP_BONUSES.MAX_MANA}`} />
           </div>
         </div>
 
@@ -130,10 +131,10 @@ export function LevelUpPopup({ newLevel, onContinue }: LevelUpPopupProps) {
   );
 }
 
-function StatGain({ icon, label, value }: { icon: string; label: string; value: string }) {
+function StatGain({ icon, label, value }: { icon: IconType; label: string; value: string }) {
   return (
     <div className="flex items-center gap-2 pixel-panel-dark rounded px-3 py-2 border border-slate-700/50">
-      <span className="text-lg">{icon}</span>
+      <PixelIcon type={icon} size={24} />
       <div className="flex-1">
         <div className="pixel-text text-pixel-xs text-slate-400">{label}</div>
         <div className="pixel-text text-pixel-sm font-bold text-success">{value}</div>

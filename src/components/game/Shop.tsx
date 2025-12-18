@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getItemPrice } from '@/data/items';
 import { cn } from '@/lib/utils';
+import { PixelIcon } from '@/components/ui/PixelIcon';
 
 const TYPE_LABELS: Record<ItemType, string> = {
   weapon: 'Weapon',
@@ -40,7 +41,7 @@ export function Shop({ player, items, availablePower, onBuyItem, onLearnPower, o
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground mb-2">🏪 The Shop</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center justify-center gap-2"><PixelIcon type="ui-hammer" size={32} /> The Shop</h1>
           <p className="text-muted-foreground">Gold: <span className="text-gold font-bold">{player.gold}</span></p>
         </div>
         
@@ -114,7 +115,7 @@ export function Shop({ player, items, availablePower, onBuyItem, onLearnPower, o
                       className="w-full"
                       variant={canBuy ? 'default' : 'outline'}
                     >
-                      Buy for {price} 💰
+                      <span className="flex items-center gap-1">Buy for {price} <PixelIcon type="stat-gold" size={16} /></span>
                     </Button>
                   )}
                 </CardContent>

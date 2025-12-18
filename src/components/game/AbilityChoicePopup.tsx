@@ -39,7 +39,9 @@ export function AbilityChoicePopup({
       >
         <DialogHeader className="p-6 pb-4 border-b border-slate-700/50">
           <div className="text-center space-y-3">
-            <div className="text-4xl mb-2 animate-bounce" aria-hidden="true">⚡</div>
+            <div className="mb-2 animate-bounce" aria-hidden="true">
+              <PixelIcon type="ui-sparkle" size={48} />
+            </div>
             <DialogTitle className="pixel-title text-base sm:text-lg md:text-xl font-bold tracking-wider uppercase">
               <span className="pixel-glow-ability bg-gradient-to-r from-amber-400 via-orange-500 to-amber-600 bg-clip-text text-transparent">
                 Level {playerLevel} - Choose an Ability

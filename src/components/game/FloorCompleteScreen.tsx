@@ -314,13 +314,13 @@ export function FloorCompleteScreen({
                               <p className="pixel-text text-pixel-xs text-slate-400">{choice.description}</p>
                               <div className="flex gap-2 mt-1 pixel-text text-pixel-xs text-slate-500">
                                 <span className="flex items-center gap-1"><PixelIcon type={STAT_ICONS.MANA} size={16} /> {choice.manaCost} MP</span>
-                                <span>⏱️ {choice.cooldown}s CD</span>
+                                <span className="flex items-center gap-1"><PixelIcon type="ui-play" size={16} /> {choice.cooldown}s CD</span>
                               </div>
                               {/* Synergy description */}
                               {synergy && (
                                 <div className="mt-2 pt-2 border-t border-amber-500/20">
                                   <p className="pixel-text text-pixel-2xs text-amber-300 italic">
-                                    ★ {synergy.description}
+                                    <PixelIcon type="ui-star" size={16} className="inline-block mr-1" />{synergy.description}
                                   </p>
                                 </div>
                               )}

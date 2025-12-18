@@ -4,6 +4,7 @@ import { PixelSlash, PixelSpell, PixelShield } from './BattleEffects';
 import { BATTLE_PHASE } from '@/constants/enums';
 import { cn } from '@/lib/utils';
 import { SpriteStateType, BattlePhaseType } from '@/constants/enums';
+import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
 import {
   Tooltip,
   TooltipContent,
@@ -258,7 +259,9 @@ export function CharacterSprite({
 
       {/* Boss crown - enemy only */}
       {!isHero && isBoss && !isDying && (
-        <div className="absolute -top-16 sm:-top-24 left-1/2 -translate-x-1/2 text-xl sm:text-2xl animate-bounce">👑</div>
+        <div className="absolute -top-16 sm:-top-24 left-1/2 -translate-x-1/2 animate-bounce">
+          <PixelIcon type="ui-star" size={32} className="text-gold" />
+        </div>
       )}
 
       {/* Enemy status indicators - enemy only */}
@@ -266,7 +269,7 @@ export function CharacterSprite({
         <div className="absolute top-0 right-0 flex flex-col gap-1">
           {enemy.isShielded && (
             <div className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-info/50">
-              <span>🛡️</span>
+              <PixelIcon type="ability-shield" size={16} />
               {enemy.shieldTurnsRemaining !== undefined && (
                 <span className="text-info/90">{enemy.shieldTurnsRemaining}</span>
               )}
@@ -274,7 +277,7 @@ export function CharacterSprite({
           )}
           {enemy.isEnraged && (
             <div className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-health/50">
-              <span>😤</span>
+              <PixelIcon type="ability-enrage" size={16} />
               {enemy.enrageTurnsRemaining !== undefined && (
                 <span className="text-health/90">{enemy.enrageTurnsRemaining}</span>
               )}
@@ -287,7 +290,7 @@ export function CharacterSprite({
       {!isHero && !isDying && enemy && enemy.statDebuffs && enemy.statDebuffs.length > 0 && (
         <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex gap-1">
           {enemy.statDebuffs.map(debuff => {
-            const icon = debuff.stat === 'power' ? '⚔️' : debuff.stat === 'armor' ? '🛡️' : '💨';
+            const iconType: IconType = debuff.stat === 'power' ? 'stat-power' : debuff.stat === 'armor' ? 'stat-armor' : 'stat-speed';
             const percentDisplay = Math.round(debuff.percentReduction * 100);
             return (
               <Tooltip key={debuff.id}>
@@ -296,7 +299,10 @@ export function CharacterSprite({
                     className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-purple-500/50 cursor-help"
                     aria-label={`${debuff.sourceName}: -${percentDisplay}% ${debuff.stat}`}
                   >
-                    <span className="text-purple-400">🔻{icon}</span>
+                    <span className="text-purple-400 flex items-center">
+                      <span className="text-xs mr-0.5">-</span>
+                      <PixelIcon type={iconType} size={16} />
+                    </span>
                     <span className="text-purple-300">{Math.ceil(debuff.remainingDuration)}s</span>
                   </div>
                 </TooltipTrigger>
