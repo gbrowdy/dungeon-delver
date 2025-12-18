@@ -19,7 +19,8 @@ interface PixelIconProps {
 export function PixelIcon({ type, size = 16, className, animated }: PixelIconProps) {
   const [category, ...rest] = type.split('-');
   const name = rest.join('-');
-  const src = `/assets/icons/${category}/${name}.png`;
+  // Use import.meta.env.BASE_URL to handle deployed base paths (e.g., /dungeon-delver/)
+  const src = `${import.meta.env.BASE_URL}assets/icons/${category}/${name}.png`;
 
   return (
     <img
