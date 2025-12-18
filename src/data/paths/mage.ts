@@ -23,7 +23,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     id: 'archmage_spell_power',
     name: 'Arcane Mastery',
     description: 'Your spells deal 20% increased damage.',
-    icon: 'Sparkles',
+    icon: 'ability-paths-mage-archmage_spell_power',
     levelRequired: 3,
     subpath: null,
     effects: [
@@ -37,7 +37,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     id: 'archmage_mana_efficiency',
     name: 'Efficient Casting',
     description: 'Powers cost 15% less mana.',
-    icon: 'Droplets',
+    icon: 'ability-paths-mage-archmage_mana_efficiency',
     levelRequired: 3,
     subpath: null,
     effects: [
@@ -51,7 +51,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     id: 'archmage_cooldown_mastery',
     name: 'Quickcast',
     description: 'Power cooldowns recover 20% faster.',
-    icon: 'Clock',
+    icon: 'ability-paths-mage-archmage_cooldown_mastery',
     levelRequired: 4,
     subpath: null,
     effects: [
@@ -65,7 +65,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     id: 'archmage_spell_crit',
     name: 'Critical Magic',
     description: 'Powers have a 25% chance to deal double damage.',
-    icon: 'Zap',
+    icon: 'ability-paths-mage-archmage_spell_crit',
     levelRequired: 4,
     subpath: null,
     effects: [
@@ -82,7 +82,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     id: 'elementalist_fire_mastery',
     name: 'Flame Affinity',
     description: 'Fire spells burn enemies for 30% additional damage over 3 seconds.',
-    icon: 'Flame',
+    icon: 'ability-paths-mage-elementalist_fire_mastery',
     levelRequired: 3,
     subpath: 'elementalist',
     effects: [
@@ -101,7 +101,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     id: 'elementalist_ice_mastery',
     name: 'Frost Affinity',
     description: 'Ice spells slow enemies by 30% for 2 seconds.',
-    icon: 'Snowflake',
+    icon: 'ability-paths-mage-elementalist_ice_mastery',
     levelRequired: 4,
     subpath: 'elementalist',
     effects: [
@@ -119,7 +119,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     id: 'elementalist_lightning_mastery',
     name: 'Storm Affinity',
     description: 'Lightning spells chain to deal 40% damage to the enemy again.',
-    icon: 'Zap',
+    icon: 'ability-paths-mage-elementalist_lightning_mastery',
     levelRequired: 5,
     subpath: 'elementalist',
     effects: [
@@ -133,7 +133,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     id: 'elementalist_elemental_convergence',
     name: 'Elemental Convergence',
     description: 'After using 3 different elemental powers, your next power deals 100% bonus damage.',
-    icon: 'Sparkles',
+    icon: 'ability-paths-mage-elementalist_elemental_convergence',
     levelRequired: 6,
     subpath: 'elementalist',
     isCapstone: true,
@@ -151,7 +151,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     id: 'destroyer_overwhelming_power',
     name: 'Overwhelming Power',
     description: 'Powers deal 35% more damage but cost 20% more mana.',
-    icon: 'Flame',
+    icon: 'ability-paths-mage-destroyer_overwhelming_power',
     levelRequired: 3,
     subpath: 'destroyer',
     effects: [
@@ -169,7 +169,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     id: 'destroyer_spell_surge',
     name: 'Spell Surge',
     description: 'Powers have a 15% chance to reset their cooldown.',
-    icon: 'RefreshCw',
+    icon: 'ability-paths-mage-destroyer_spell_surge',
     levelRequired: 4,
     subpath: 'destroyer',
     effects: [
@@ -184,7 +184,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     id: 'destroyer_glass_cannon',
     name: 'Glass Cannon',
     description: 'Your spells deal 50% more damage, but you take 20% more damage.',
-    icon: 'Flame',
+    icon: 'ability-paths-mage-destroyer_glass_cannon',
     levelRequired: 5,
     subpath: 'destroyer',
     effects: [
@@ -202,7 +202,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
     id: 'destroyer_apocalypse',
     name: 'Apocalypse',
     description: 'Every 10 seconds, your next power deals triple damage and costs no mana.',
-    icon: 'Skull',
+    icon: 'ability-paths-mage-destroyer_apocalypse',
     levelRequired: 6,
     subpath: 'destroyer',
     isCapstone: true,
@@ -227,7 +227,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     id: 'enchanter_passive_power',
     name: 'Enchanted Strikes',
     description: 'Your basic attacks deal bonus magic damage equal to 30% of your power.',
-    icon: 'Wand2',
+    icon: 'ability-paths-mage-enchanter_passive_power',
     levelRequired: 3,
     subpath: null,
     effects: [
@@ -241,7 +241,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     id: 'enchanter_mana_regen',
     name: 'Arcane Flow',
     description: 'Regenerate 2 additional mana per second.',
-    icon: 'Droplets',
+    icon: 'ability-paths-mage-enchanter_mana_regen',
     levelRequired: 3,
     subpath: null,
     effects: [
@@ -255,7 +255,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     id: 'enchanter_damage_aura',
     name: 'Arcane Aura',
     description: 'Passively deal 5 magic damage per second to enemies.',
-    icon: 'Sparkles',
+    icon: 'ability-paths-mage-enchanter_damage_aura',
     levelRequired: 4,
     subpath: null,
     effects: [
@@ -269,7 +269,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     id: 'enchanter_dot_amplify',
     name: 'Lingering Magic',
     description: 'Your damage over time effects last 50% longer and deal 25% more damage.',
-    icon: 'Timer',
+    icon: 'ability-paths-mage-enchanter_dot_amplify',
     levelRequired: 4,
     subpath: null,
     effects: [
@@ -285,7 +285,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     id: 'spellweaver_auto_cast',
     name: 'Automated Magic',
     description: 'Your first power automatically casts when off cooldown.',
-    icon: 'Sparkles',
+    icon: 'ability-paths-mage-spellweaver_auto_cast',
     levelRequired: 3,
     subpath: 'spellweaver',
     effects: [
@@ -299,7 +299,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     id: 'spellweaver_chain_cast',
     name: 'Chain Casting',
     description: 'When you manually cast a power, automatically cast another random power if available.',
-    icon: 'Link',
+    icon: 'ability-paths-mage-spellweaver_chain_cast',
     levelRequired: 4,
     subpath: 'spellweaver',
     effects: [
@@ -314,7 +314,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     id: 'spellweaver_efficient_automation',
     name: 'Efficient Automation',
     description: 'Powers cost 30% less mana and have 20% faster cooldown recovery.',
-    icon: 'Zap',
+    icon: 'ability-paths-mage-spellweaver_efficient_automation',
     levelRequired: 5,
     subpath: 'spellweaver',
     effects: [
@@ -331,7 +331,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     id: 'spellweaver_arcane_assembly',
     name: 'Arcane Assembly Line',
     description: 'ALL powers auto-cast when off cooldown. Gain 50% cooldown recovery speed.',
-    icon: 'Factory',
+    icon: 'ability-paths-mage-spellweaver_arcane_assembly',
     levelRequired: 6,
     subpath: 'spellweaver',
     isCapstone: true,
@@ -348,7 +348,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     id: 'sage_wisdom_aura',
     name: 'Aura of Wisdom',
     description: 'Gain 1 mana per second for each enemy status effect active.',
-    icon: 'Brain',
+    icon: 'ability-paths-mage-sage_wisdom_aura',
     levelRequired: 3,
     subpath: 'sage',
     effects: [
@@ -363,7 +363,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     id: 'sage_toxic_field',
     name: 'Toxic Field',
     description: 'Enemies are poisoned for 8 damage per second while in combat.',
-    icon: 'Droplet',
+    icon: 'ability-paths-mage-sage_toxic_field',
     levelRequired: 4,
     subpath: 'sage',
     effects: [
@@ -382,7 +382,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     id: 'sage_arcane_field',
     name: 'Arcane Disruption Field',
     description: 'Enemies attack 20% slower while in combat with you.',
-    icon: 'Shield',
+    icon: 'ability-paths-mage-sage_arcane_field',
     levelRequired: 5,
     subpath: 'sage',
     effects: [
@@ -400,7 +400,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
     id: 'sage_overwhelming_presence',
     name: 'Overwhelming Presence',
     description: 'Your passive auras deal triple damage and apply all status effects (poison, slow, burn).',
-    icon: 'Crown',
+    icon: 'ability-paths-mage-sage_overwhelming_presence',
     levelRequired: 6,
     subpath: 'sage',
     isCapstone: true,
@@ -433,20 +433,20 @@ const ARCHMAGE_PATH: PathDefinition = {
   description: 'Master of spell timing and power. Rewards skilled power usage with devastating magical damage.',
   className: 'Mage',
   type: 'active',
-  icon: 'Sparkles',
+  icon: 'ability-paths-mage-archmage',
   abilities: ARCHMAGE_ABILITIES,
   subpaths: [
     {
       id: 'elementalist',
       name: 'Elementalist',
       description: 'Multi-element mastery with combo effects',
-      icon: 'Flame',
+      icon: 'ability-paths-mage-elementalist',
     },
     {
       id: 'destroyer',
       name: 'Destroyer',
       description: 'Raw spell power and devastating damage',
-      icon: 'Skull',
+      icon: 'ability-paths-mage-destroyer',
     },
   ],
 };
@@ -457,20 +457,20 @@ const ENCHANTER_PATH: PathDefinition = {
   description: 'Magic works for you automatically. Passive auras, auto-casting powers, and damage over time.',
   className: 'Mage',
   type: 'passive',
-  icon: 'Wand2',
+  icon: 'ability-paths-mage-enchanter',
   abilities: ENCHANTER_ABILITIES,
   subpaths: [
     {
       id: 'spellweaver',
       name: 'Spellweaver',
       description: 'Powers auto-cast and chain together',
-      icon: 'Link',
+      icon: 'ability-paths-mage-spellweaver',
     },
     {
       id: 'sage',
       name: 'Sage',
       description: 'Passive auras and damage fields',
-      icon: 'Brain',
+      icon: 'ability-paths-mage-sage',
     },
   ],
 };
