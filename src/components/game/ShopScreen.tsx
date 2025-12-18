@@ -138,7 +138,7 @@ function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy }:
             variant="outline"
             className="pixel-text text-pixel-2xs uppercase border-green-500 text-green-500"
           >
-            <Icons.Check className="w-3 h-3 mr-1" />
+            <Icons.Check className="w-3 h-3 mr-1 text-green-500" />
             Owned
           </Badge>
         )}
@@ -149,7 +149,7 @@ function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy }:
             variant="outline"
             className="pixel-text text-pixel-2xs uppercase border-purple-400 text-purple-400"
           >
-            <Icons.Zap className="w-3 h-3 mr-1" />
+            <Icons.Zap className="w-3 h-3 mr-1 text-purple-400" />
             Synergy
           </Badge>
         )}
@@ -216,7 +216,7 @@ function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy }:
               color: '#ffffff',
             }}
           >
-            <Icons.Coins className="w-3 h-3 mr-1.5" />
+            <Icons.Coins className="w-3 h-3 mr-1.5 text-amber-400" />
             {item.price}g
             {!canAfford && ' - Need More'}
           </Button>
@@ -408,7 +408,7 @@ function EquippedItemCard({ item, slotType, playerGold, onEnhance }: EquippedIte
             }}
           >
             <span className="pixel-text text-pixel-xs text-purple-400 uppercase font-bold flex items-center justify-center gap-1">
-              <Icons.Star className="w-3 h-3" />
+              <Icons.Star className="w-3 h-3 text-purple-400" />
               MAX
             </span>
           </div>
@@ -430,10 +430,10 @@ function EquippedItemCard({ item, slotType, playerGold, onEnhance }: EquippedIte
               color: '#ffffff',
             }}
           >
-            <Icons.TrendingUp className="w-3 h-3 mr-1.5" />
+            <Icons.TrendingUp className="w-3 h-3 mr-1.5 text-emerald-300" />
             Enhance +{item.enhancementLevel + 1}
             <span className="ml-1.5 flex items-center">
-              <Icons.Coins className="w-3 h-3 mr-0.5" />
+              <Icons.Coins className="w-3 h-3 mr-0.5 text-amber-400" />
               {enhancementCost}g
             </span>
             {!canAfford && <span className="ml-1">- Need More</span>}
@@ -481,7 +481,7 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
 
           {/* Gold display */}
           <div className="flex items-center justify-center gap-2">
-            <PixelIcon type="stat-gold" size={24} />
+            <PixelIcon type="stat-gold" size={24} className="text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.4)]" />
             <span className="pixel-text text-pixel-base text-amber-400">
               {player.gold} Gold
             </span>
@@ -591,7 +591,7 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
             <div className="flex-1 h-[2px] bg-gradient-to-r from-amber-700/50 to-transparent" />
             {!legendaryUnlocked && (
               <span className="pixel-text text-pixel-2xs text-slate-500 flex items-center gap-1">
-                <Icons.Lock className="w-3 h-3" />
+                <Icons.Lock className="w-3 h-3 text-slate-500" />
                 Unlocks Floor {SHOP_UNLOCKS.legendary}
               </span>
             )}
@@ -616,7 +616,7 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
                   backgroundColor: 'rgba(0, 0, 0, 0.3)',
                 }}
               >
-                <Icons.Lock className="w-12 h-12 mx-auto mb-3 text-slate-600" />
+                <Icons.Lock className="w-12 h-12 mx-auto mb-3 text-slate-600/70" />
                 <p className="pixel-text text-pixel-xs text-slate-500 uppercase mb-2">
                   Legendary Items Locked
                 </p>

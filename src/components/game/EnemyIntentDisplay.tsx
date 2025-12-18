@@ -1,6 +1,8 @@
 import { EnemyIntent } from '@/types/game';
-import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
+import * as Icons from 'lucide-react';
 import { ABILITY_ICONS } from '@/constants/icons';
+
+type LucideIconName = keyof typeof Icons;
 
 interface EnemyIntentDisplayProps {
   intent: EnemyIntent;
@@ -8,15 +10,11 @@ interface EnemyIntentDisplayProps {
 }
 
 /**
- * Maps emoji icons to ability icon types.
- * Fallback to ATTACK for unknown emojis.
+ * Maps emoji icons to Lucide icon names.
+ * Fallback to Sword for unknown emojis.
  */
-function getAbilityIconType(icon: string): IconType {
-  // If it's already a valid IconType format, return it
-  if (icon && icon.includes('-')) {
-    return icon as IconType;
-  }
-  // Legacy emoji mapping
+function getAbilityIcon(icon: string): React.ComponentType<{ className?: string }> {
+  // Legacy emoji mapping to Lucide icons
   const emojiMap: Record<string, string> = {
     '⚔️': ABILITY_ICONS.ATTACK,
     '⚔️⚔️': ABILITY_ICONS.MULTI_HIT,
@@ -27,7 +25,14 @@ function getAbilityIconType(icon: string): IconType {
     '😤': ABILITY_ICONS.ENRAGE,
     '🛡️': ABILITY_ICONS.SHIELD,
   };
-  return (emojiMap[icon] || ABILITY_ICONS.ATTACK) as IconType;
+
+  const iconName = emojiMap[icon] || ABILITY_ICONS.ATTACK;
+
+  if (iconName in Icons) {
+    return Icons[iconName as LucideIconName] as React.ComponentType<{ className?: string }>;
+  }
+
+  return Icons.Sword as React.ComponentType<{ className?: string }>;
 }
 
 /**
@@ -41,7 +46,7 @@ export function EnemyIntentDisplay({ intent, isDying }: EnemyIntentDisplayProps)
     ? intent.ability.name
     : 'Attack';
 
-  const iconType = getAbilityIconType(intent.icon);
+  const IconComponent = getAbilityIcon(intent.icon);
 
   return (
     <div
@@ -49,7 +54,7 @@ export function EnemyIntentDisplay({ intent, isDying }: EnemyIntentDisplayProps)
       aria-label={`Enemy intends to ${intentName}`}
     >
       <div className="flex items-start gap-0.5">
-        <PixelIcon type={iconType} size={16} className="flex-shrink-0" />
+        <IconComponent className="w-4 h-4 flex-shrink-0" />
         <span className="text-health/90 font-medium text-pixel-2xs leading-tight">
           {intentName}
         </span>

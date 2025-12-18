@@ -1,8 +1,24 @@
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
-
+import * as Icons from 'lucide-react';
 import { CircularBuffer } from '@/utils/circularBuffer';
+
+type LucideIconName = keyof typeof Icons;
+
+// Map log entry types to Lucide icon names
+const LOG_ICONS: Record<string, LucideIconName> = {
+  skull: 'Skull',
+  attack: 'Sword',
+  regeneration: 'HeartPulse',
+  shield: 'Shield',
+  speed: 'Wind',
+  power: 'Zap',
+  sparkle: 'Sparkles',
+  star: 'Star',
+  enrage: 'Flame',
+  poison: 'Skull',
+  question: 'HelpCircle',
+};
 
 /**
  * Props for the CombatLog component.
@@ -12,7 +28,7 @@ interface CombatLogProps {
 }
 
 interface LogEntry {
-  icon: IconType;
+  iconName: LucideIconName;
   color: string;
   text: string;
 }
@@ -23,61 +39,61 @@ interface LogEntry {
 function formatLogEntry(log: string): LogEntry {
   // Victory/defeat events
   if (log.includes('defeated') || log.includes('slain')) {
-    return { icon: 'ui-skull', color: 'text-gold', text: log };
+    return { iconName: LOG_ICONS.skull, color: 'text-gold', text: log };
   }
 
   // Critical hits
   if (log.includes('Critical hit') || log.includes('critical')) {
-    return { icon: 'ability-attack', color: 'text-warning', text: log };
+    return { iconName: LOG_ICONS.attack, color: 'text-warning', text: log };
   }
 
   // Healing
   if (log.includes('Healed') || log.includes('restored') || log.includes('regenerated')) {
-    return { icon: 'status-regeneration', color: 'text-success', text: log };
+    return { iconName: LOG_ICONS.regeneration, color: 'text-success', text: log };
   }
 
   // Blocking
   if (log.includes('blocked') || log.includes('Block')) {
-    return { icon: 'ability-shield', color: 'text-info', text: log };
+    return { iconName: LOG_ICONS.shield, color: 'text-info', text: log };
   }
 
   // Dodging
   if (log.includes('dodged') || log.includes('missed')) {
-    return { icon: 'stat-speed', color: 'text-slate-400', text: log };
+    return { iconName: LOG_ICONS.speed, color: 'text-slate-400', text: log };
   }
 
   // Player attacks
   if (log.includes('You dealt') || log.includes('You hit') || log.includes('deals')) {
-    return { icon: 'stat-power', color: 'text-primary', text: log };
+    return { iconName: LOG_ICONS.power, color: 'text-primary', text: log };
   }
 
   // Enemy attacks
   if (log.includes('takes') || log.includes('hit you') || log.includes('attacks')) {
-    return { icon: 'ability-attack', color: 'text-health', text: log };
+    return { iconName: LOG_ICONS.attack, color: 'text-health', text: log };
   }
 
   // Power/spell usage
   if (log.includes('casts') || log.includes('uses') || log.includes('activates')) {
-    return { icon: 'ui-sparkle', color: 'text-accent', text: log };
+    return { iconName: LOG_ICONS.sparkle, color: 'text-accent', text: log };
   }
 
   // Level up
   if (log.includes('Level') || log.includes('level')) {
-    return { icon: 'ui-star', color: 'text-xp', text: log };
+    return { iconName: LOG_ICONS.star, color: 'text-xp', text: log };
   }
 
   // Buff/debuff
   if (log.includes('buff') || log.includes('enraged') || log.includes('shielded')) {
-    return { icon: 'ability-enrage', color: 'text-accent', text: log };
+    return { iconName: LOG_ICONS.enrage, color: 'text-accent', text: log };
   }
 
   // Status effects
   if (log.includes('poisoned') || log.includes('stunned') || log.includes('frozen')) {
-    return { icon: 'status-poison', color: 'text-destructive', text: log };
+    return { iconName: LOG_ICONS.poison, color: 'text-destructive', text: log };
   }
 
   // Default - use question mark icon
-  return { icon: 'ui-question', color: 'text-slate-400', text: log };
+  return { iconName: LOG_ICONS.question, color: 'text-slate-400', text: log };
 }
 
 /**
@@ -114,13 +130,14 @@ export function CombatLog({ logs }: CombatLogProps) {
       >
         <div className="p-1.5 xs:p-2 space-y-0.5">
           {logsArray.slice(-10).map((log, i) => {
-            const { icon, color, text } = formatLogEntry(log);
+            const { iconName, color, text } = formatLogEntry(log);
+            const IconComponent = Icons[iconName] as React.ComponentType<{ className?: string }>;
             return (
               <div
                 key={i}
                 className="flex items-start gap-1 xs:gap-1.5"
               >
-                <PixelIcon type={icon} size={16} className="flex-shrink-0 mt-0.5" />
+                <IconComponent className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <span className={cn('pixel-text text-pixel-2xs xs:text-pixel-xs leading-relaxed', color)}>{text}</span>
               </div>
             );

@@ -1,6 +1,6 @@
 import { useCombatPlayer } from '@/contexts/CombatContext';
 import { cn } from '@/lib/utils';
-import { Item, ItemType, Player } from '@/types/game';
+import { Item, ItemType } from '@/types/game';
 import {
   Tooltip,
   TooltipContent,
@@ -11,23 +11,34 @@ import { TouchTooltip } from '@/components/ui/touch-tooltip';
 import { formatItemStatBonus } from '@/utils/itemUtils';
 import { getCritChance, getCritDamage, getDodgeChance } from '@/utils/fortuneUtils';
 import { ReactNode } from 'react';
-import { getPlayerDisplayName, getPathName } from '@/utils/powerSynergies';
+import { getPlayerDisplayName } from '@/utils/powerSynergies';
 import * as Icons from 'lucide-react';
 import { getAbilitiesByIds } from '@/utils/pathUtils';
 import { PathAbility } from '@/types/paths';
-import { PixelIcon } from '@/components/ui/PixelIcon';
-import { STAT_ICONS, CLASS_ICONS, ITEM_ICONS, UI_ICONS } from '@/constants/icons';
+import { STAT_ICONS, CLASS_ICONS, ITEM_ICONS, CLASS_COLORS, CharacterClassKey } from '@/constants/icons';
+
+type LucideIconName = keyof typeof Icons;
 
 /**
  * Get the Lucide icon component for an item.
  * Item data stores icon names directly as valid Lucide icon names (e.g., 'Sword', 'Axe', 'Wand2').
  * Falls back to 'Package' if the icon doesn't exist.
  */
-function getItemIcon(iconName: string | undefined): keyof typeof Icons {
+function getItemIcon(iconName: string | undefined): LucideIconName {
   if (iconName && iconName in Icons) {
-    return iconName as keyof typeof Icons;
+    return iconName as LucideIconName;
   }
   return 'Package';
+}
+
+/**
+ * Get icon component from icon name string
+ */
+function getIconComponent(iconName: string): React.ComponentType<{ className?: string }> {
+  if (iconName in Icons) {
+    return Icons[iconName as LucideIconName] as React.ComponentType<{ className?: string }>;
+  }
+  return Icons.HelpCircle as React.ComponentType<{ className?: string }>;
 }
 
 const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
@@ -36,12 +47,6 @@ const TYPE_LABELS: Record<ItemType, string> = {
   weapon: 'Weapon',
   armor: 'Armor',
   accessory: 'Accessory',
-};
-
-const TYPE_ICON_TYPES: Record<ItemType, string> = {
-  weapon: ITEM_ICONS.WEAPON,
-  armor: ITEM_ICONS.ARMOR,
-  accessory: ITEM_ICONS.ACCESSORY,
 };
 
 /**
@@ -83,7 +88,7 @@ export function PlayerStatsPanel() {
           <span className="text-slate-400">Gold:</span>
           <span className="text-gold font-bold flex items-center gap-0.5">
             {player.gold}
-            <PixelIcon type={STAT_ICONS.GOLD as any} size={16} />
+            <Icons.Coins className="w-4 h-4 text-amber-400" />
           </span>
         </div>
         <XPProgressBar
@@ -105,13 +110,21 @@ interface PlayerInfoProps {
 }
 
 function PlayerInfo({ name, playerClass, level }: PlayerInfoProps) {
-  const classIconType = getClassIconType(playerClass);
+  const ClassIcon = getClassIcon(playerClass);
+  const classColor = CLASS_COLORS[playerClass as CharacterClassKey] || CLASS_COLORS.warrior;
 
   return (
     <div className="flex items-center gap-1 xs:gap-2">
-      <PixelIcon type={classIconType as any} size={32} className="w-5 h-5 xs:w-6 xs:h-6 sm:w-8 sm:h-8" />
+      <div style={{ color: classColor.primary }}>
+        <ClassIcon className="w-5 h-5 xs:w-6 xs:h-6 sm:w-8 sm:h-8" />
+      </div>
       <div>
-        <div className="pixel-text text-pixel-xs xs:text-pixel-sm sm:text-pixel-base text-amber-200 font-bold">{name}</div>
+        <div
+          className="pixel-text text-pixel-xs xs:text-pixel-sm sm:text-pixel-base font-bold"
+          style={{ color: classColor.primary }}
+        >
+          {name}
+        </div>
         <div className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">Level {level}</div>
       </div>
     </div>
@@ -119,16 +132,17 @@ function PlayerInfo({ name, playerClass, level }: PlayerInfoProps) {
 }
 
 /**
- * Returns the icon type for a player class.
+ * Returns the icon component for a player class.
  */
-function getClassIconType(playerClass: string): string {
-  const icons: Record<string, string> = {
+function getClassIcon(playerClass: string): React.ComponentType<{ className?: string }> {
+  const iconNames: Record<string, string> = {
     warrior: CLASS_ICONS.WARRIOR,
     mage: CLASS_ICONS.MAGE,
     rogue: CLASS_ICONS.ROGUE,
     paladin: CLASS_ICONS.PALADIN,
   };
-  return icons[playerClass] || CLASS_ICONS.WARRIOR;
+  const iconName = iconNames[playerClass] || CLASS_ICONS.WARRIOR;
+  return getIconComponent(iconName);
 }
 
 /**
@@ -189,12 +203,14 @@ interface EmptyEquipmentSlotProps {
 }
 
 function EmptyEquipmentSlot({ type }: EmptyEquipmentSlotProps) {
+  const SlotIcon = getIconComponent(ITEM_ICONS[type.toUpperCase() as keyof typeof ITEM_ICONS]);
+
   const slotButton = (
     <div
       className="pixel-panel-dark w-8 h-8 sm:w-10 sm:h-10 rounded border-2 border-dashed border-slate-600/50 flex items-center justify-center opacity-50"
       aria-label={`Empty ${TYPE_LABELS[type]} slot`}
     >
-      <PixelIcon type={TYPE_ICON_TYPES[type] as any} size={16} className="text-slate-500 opacity-50" />
+      <SlotIcon className="w-4 h-4 text-slate-500 opacity-50" />
     </div>
   );
 
@@ -268,7 +284,7 @@ function EquipmentSlot({ item }: EquipmentSlotProps) {
       })()}
       {itemHasEffect && (
         <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-accent rounded-full border border-background flex items-center justify-center" aria-hidden="true">
-          <PixelIcon type={UI_ICONS.SPARKLE as any} size={16} className="w-2 h-2" />
+          <Icons.Sparkles className="w-2 h-2" />
         </span>
       )}
     </button>
@@ -335,25 +351,28 @@ function StatsGrid({
   return (
     <div className="mt-1.5 grid grid-cols-4 gap-1">
       <StatItemWithTooltip
-        iconType={STAT_ICONS.POWER as any}
+        iconName={STAT_ICONS.POWER}
         label="PWR"
         value={power}
         tooltip="Power - determines attack damage"
+        iconColor="text-amber-400"
       />
       <StatItemWithTooltip
-        iconType={STAT_ICONS.ARMOR as any}
+        iconName={STAT_ICONS.ARMOR}
         label="ARM"
         value={armor}
         tooltip="Armor - reduces incoming damage"
+        iconColor="text-sky-400"
       />
       <StatItemWithTooltip
-        iconType={STAT_ICONS.SPEED as any}
+        iconName={STAT_ICONS.SPEED}
         label="SPD"
         value={speed}
         tooltip="Speed - affects attack rate"
+        iconColor="text-emerald-400"
       />
       <StatItemWithTooltip
-        iconType={STAT_ICONS.FORTUNE as any}
+        iconName={STAT_ICONS.FORTUNE}
         label="FOR"
         value={fortune}
         tooltip={
@@ -363,6 +382,7 @@ function StatsGrid({
             <div>Crit Dmg: {critDamage}%</div>
           </>
         }
+        iconColor="text-purple-400"
       />
     </div>
   );
@@ -372,16 +392,19 @@ function StatsGrid({
  * StatItemWithTooltip - A single stat display with icon, label, value, and tooltip in pixel style.
  */
 interface StatItemWithTooltipProps {
-  iconType: string;
+  iconName: string;
   label: string;
   value: string | number;
   tooltip: ReactNode;
+  iconColor?: string;
 }
 
-function StatItemWithTooltip({ iconType, label, value, tooltip }: StatItemWithTooltipProps) {
+function StatItemWithTooltip({ iconName, label, value, tooltip, iconColor }: StatItemWithTooltipProps) {
+  const IconComponent = getIconComponent(iconName);
+
   const content = (
     <div className="pixel-panel-dark flex flex-col items-center text-center rounded p-1 xs:p-1.5 sm:p-2">
-      <PixelIcon type={iconType as any} size={16} className="mb-0.5" />
+      <IconComponent className={cn("w-5 h-5 xs:w-6 xs:h-6 mb-0.5", iconColor)} />
       <span className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">{label}</span>
       <span className="pixel-text text-pixel-2xs xs:text-pixel-xs sm:text-pixel-sm font-medium text-slate-200">{value}</span>
     </div>
@@ -458,7 +481,7 @@ interface AbilitySlotProps {
 
 function AbilitySlot({ ability }: AbilitySlotProps) {
   const iconName = ability.icon && ability.icon in Icons
-    ? (ability.icon as keyof typeof Icons)
+    ? (ability.icon as LucideIconName)
     : 'Sparkles';
   const IconComponent = Icons[iconName] as React.ComponentType<{ className?: string }>;
 

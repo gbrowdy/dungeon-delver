@@ -1,247 +1,130 @@
 /**
- * Icon type definitions for the PixelIcon component
+ * Icon mappings using Lucide React icons
  *
- * Icons are organized by category (stat, status, power, item, ability, ui, class)
- * and stored in /public/assets/icons/{category}/{name}.png
+ * Each category maps semantic names to Lucide icon names (strings).
+ * Import the actual icons with: import * as Icons from 'lucide-react'
+ * Then use: Icons[STAT_ICONS.HEALTH] to get the component
  */
 
-// Stat icons
+// Stat icons - mapped to Lucide icon names
 export const STAT_ICONS = {
-  HEALTH: 'stat-health',
-  MANA: 'stat-mana',
-  POWER: 'stat-power',
-  ARMOR: 'stat-armor',
-  SPEED: 'stat-speed',
-  FORTUNE: 'stat-fortune',
-  GOLD: 'stat-gold',
+  HEALTH: 'Heart',
+  MANA: 'Droplet',
+  POWER: 'Zap',
+  ARMOR: 'Shield',
+  SPEED: 'Wind',
+  FORTUNE: 'Sparkles',
+  GOLD: 'Coins',
 } as const;
 
 // Status effect icons
 export const STATUS_ICONS = {
-  POISON: 'status-poison',
-  STUN: 'status-stun',
-  SLOW: 'status-slow',
-  BLEED: 'status-bleed',
-  REGENERATION: 'status-regeneration',
+  POISON: 'Skull',
+  STUN: 'CircleSlash',
+  SLOW: 'Snail',
+  BLEED: 'Droplets',
+  REGENERATION: 'HeartPulse',
 } as const;
 
-// Power/ability icons
+// Power/ability icons - using Lucide names
 export const POWER_ICONS = {
-  FIREBALL: 'power-fireball',
-  HEAL: 'power-heal',
-  SHIELD: 'power-shield',
-  STRIKE: 'power-strike',
-  CRUSHING_BLOW: 'power-crushing_blow',
-  POWER_STRIKE: 'power-power_strike',
-  FAN_OF_KNIVES: 'power-fan_of_knives',
-  FLURRY: 'power-flurry',
-  AMBUSH: 'power-ambush',
-  COUP_DE_GRACE: 'power-coup_de_grace',
-  FROST_NOVA: 'power-frost_nova',
-  STUNNING_BLOW: 'power-stunning_blow',
-  BATTLE_CRY: 'power-battle_cry',
-  INNER_FOCUS: 'power-inner_focus',
-  RECKLESS_SWING: 'power-reckless_swing',
-  BLOOD_PACT: 'power-blood_pact',
-  DIVINE_HEAL: 'power-divine_heal',
-  REGENERATION: 'power-regeneration',
-  EARTHQUAKE: 'power-earthquake',
-  VAMPIRIC_TOUCH: 'power-vampiric_touch',
+  FIREBALL: 'Flame',
+  HEAL: 'Heart',
+  SHIELD: 'Shield',
+  STRIKE: 'Sword',
+  CRUSHING_BLOW: 'Hammer',
+  POWER_STRIKE: 'Swords',
+  FAN_OF_KNIVES: 'Fan',
+  FLURRY: 'Zap',
+  AMBUSH: 'Eye',
+  COUP_DE_GRACE: 'Target',
+  FROST_NOVA: 'Snowflake',
+  STUNNING_BLOW: 'CircleSlash',
+  BATTLE_CRY: 'Megaphone',
+  INNER_FOCUS: 'Focus',
+  RECKLESS_SWING: 'Axe',
+  BLOOD_PACT: 'Droplets',
+  DIVINE_HEAL: 'Cross',
+  REGENERATION: 'HeartPulse',
+  EARTHQUAKE: 'Mountain',
+  VAMPIRIC_TOUCH: 'Hand',
 } as const;
 
 // Enemy ability icons
 export const ABILITY_ICONS = {
-  ATTACK: 'ability-attack',
-  MULTI_HIT: 'ability-multi_hit',
-  POISON: 'ability-poison',
-  STUN: 'ability-stun',
-  HEAL: 'ability-heal',
-  ENRAGE: 'ability-enrage',
-  SHIELD: 'ability-shield',
-  TRIPLE_STRIKE: 'ability-triple_strike',
+  ATTACK: 'Sword',
+  MULTI_HIT: 'Swords',
+  POISON: 'Skull',
+  STUN: 'CircleSlash',
+  HEAL: 'Heart',
+  ENRAGE: 'Flame',
+  SHIELD: 'Shield',
+  TRIPLE_STRIKE: 'Swords',
 } as const;
 
 // Item type icons
 export const ITEM_ICONS = {
   // Base types
-  WEAPON: 'item-weapon',
-  ARMOR: 'item-armor',
-  ACCESSORY: 'item-accessory',
-  POTION: 'item-potion',
+  WEAPON: 'Sword',
+  ARMOR: 'Shield',
+  ACCESSORY: 'Gem',
+  POTION: 'FlaskConical',
   // Weapon variants
-  SWORD: 'item-sword',
-  AXE: 'item-axe',
-  STAFF: 'item-staff',
-  DAGGER: 'item-dagger',
+  SWORD: 'Sword',
+  AXE: 'Axe',
+  STAFF: 'Wand2',
+  DAGGER: 'Scissors',
   // Armor variants
-  PLATE_ARMOR: 'item-plate_armor',
-  CHAINMAIL: 'item-chainmail',
-  LEATHER_ARMOR: 'item-leather_armor',
-  ROBE: 'item-robe',
+  PLATE_ARMOR: 'Shield',
+  CHAINMAIL: 'Link',
+  LEATHER_ARMOR: 'Shirt',
+  ROBE: 'GraduationCap',
   // Accessory variants
-  RING: 'item-ring',
-  AMULET: 'item-amulet',
-  BELT: 'item-belt',
-  BOOTS: 'item-boots',
+  RING: 'CircleDot',
+  AMULET: 'Gem',
+  BELT: 'Minus',
+  BOOTS: 'Footprints',
 } as const;
 
 // UI control icons
 export const UI_ICONS = {
-  PAUSE: 'ui-pause',
-  PLAY: 'ui-play',
-  SPEED_1X: 'ui-speed_1x',
-  SPEED_2X: 'ui-speed_2x',
-  SPEED_3X: 'ui-speed_3x',
-  TROPHY: 'ui-trophy',
-  STAR: 'ui-star',
-  SKULL: 'ui-skull',
-  HAMMER: 'ui-hammer',
-  QUESTION: 'ui-question',
-  SPARKLE: 'ui-sparkle',
+  PAUSE: 'Pause',
+  PLAY: 'Play',
+  SPEED_1X: 'Play',
+  SPEED_2X: 'FastForward',
+  SPEED_3X: 'ChevronsRight',
+  TROPHY: 'Trophy',
+  STAR: 'Star',
+  SKULL: 'Skull',
+  HAMMER: 'Hammer',
+  QUESTION: 'HelpCircle',
+  SPARKLE: 'Sparkles',
 } as const;
 
 // Class icons
 export const CLASS_ICONS = {
-  WARRIOR: 'class-warrior',
-  MAGE: 'class-mage',
-  ROGUE: 'class-rogue',
-  PALADIN: 'class-paladin',
+  WARRIOR: 'Sword',
+  MAGE: 'Wand2',
+  ROGUE: 'VenetianMask',
+  PALADIN: 'Cross',
 } as const;
 
-
-// Path ability icons by class
-export const PATH_ABILITY_ICONS = {
-  // Warrior - Berserker path
-  WARRIOR_BERSERKER: 'ability-paths-warrior-berserker',
-  WARRIOR_BLOOD_RAGE: 'ability-paths-warrior-blood_rage',
-  WARRIOR_PAIN_FUELED: 'ability-paths-warrior-pain_fueled',
-  WARRIOR_ADRENALINE_RUSH: 'ability-paths-warrior-adrenaline_rush',
-  WARRIOR_BLOODBATH: 'ability-paths-warrior-bloodbath',
-  WARRIOR_RECKLESS_FURY: 'ability-paths-warrior-reckless_fury',
-  WARRIOR_BATTLE_TRANCE: 'ability-paths-warrior-battle_trance',
-  WARRIOR_UNDYING_FURY: 'ability-paths-warrior-undying_fury',
-  WARRIOR_WARLORD: 'ability-paths-warrior-warlord',
-  WARRIOR_INTIMIDATING_PRESENCE: 'ability-paths-warrior-intimidating_presence',
-  WARRIOR_WARLORD_COMMAND: 'ability-paths-warrior-warlord_command',
-  WARRIOR_CRUSHING_BLOWS: 'ability-paths-warrior-crushing_blows',
-  WARRIOR_EXECUTIONER: 'ability-paths-warrior-executioner',
-  WARRIOR_EXECUTIONERS_STRIKE: 'ability-paths-warrior-executioners_strike',
-  WARRIOR_KILLING_SPREE: 'ability-paths-warrior-killing_spree',
-  WARRIOR_MORTAL_WOUNDS: 'ability-paths-warrior-mortal_wounds',
-
-  // Warrior - Guardian path
-  WARRIOR_GUARDIAN: 'ability-paths-warrior-guardian',
-  WARRIOR_IRON_SKIN: 'ability-paths-warrior-iron_skin',
-  WARRIOR_REGENERATION: 'ability-paths-warrior-regeneration',
-  WARRIOR_DAMAGE_REDUCTION: 'ability-paths-warrior-damage_reduction',
-  WARRIOR_AUTO_BLOCK: 'ability-paths-warrior-auto_block',
-  WARRIOR_LAST_STAND: 'ability-paths-warrior-last_stand',
-  WARRIOR_ENDURANCE: 'ability-paths-warrior-endurance',
-  WARRIOR_IMMORTAL_GUARDIAN: 'ability-paths-warrior-immortal_guardian',
-  WARRIOR_FORTRESS: 'ability-paths-warrior-fortress',
-  WARRIOR_FORTRESS_STANCE: 'ability-paths-warrior-fortress_stance',
-  WARRIOR_IMMOVABLE_OBJECT: 'ability-paths-warrior-immovable_object',
-  WARRIOR_HEALING_AURA: 'ability-paths-warrior-healing_aura',
-  WARRIOR_AVENGER: 'ability-paths-warrior-avenger',
-  WARRIOR_THORNS: 'ability-paths-warrior-thorns',
-  WARRIOR_VENGEFUL_STRIKE: 'ability-paths-warrior-vengeful_strike',
-  WARRIOR_RETRIBUTION: 'ability-paths-warrior-retribution',
-
-  // Mage - Archmage path
-  MAGE_ARCHMAGE: 'ability-paths-mage-archmage',
-  MAGE_ARCHMAGE_SPELL_POWER: 'ability-paths-mage-archmage_spell_power',
-  MAGE_ARCHMAGE_MANA_EFFICIENCY: 'ability-paths-mage-archmage_mana_efficiency',
-  MAGE_ARCHMAGE_COOLDOWN_MASTERY: 'ability-paths-mage-archmage_cooldown_mastery',
-  MAGE_ARCHMAGE_SPELL_CRIT: 'ability-paths-mage-archmage_spell_crit',
-  MAGE_ELEMENTALIST: 'ability-paths-mage-elementalist',
-  MAGE_ELEMENTALIST_FIRE_MASTERY: 'ability-paths-mage-elementalist_fire_mastery',
-  MAGE_ELEMENTALIST_ICE_MASTERY: 'ability-paths-mage-elementalist_ice_mastery',
-  MAGE_ELEMENTALIST_LIGHTNING_MASTERY: 'ability-paths-mage-elementalist_lightning_mastery',
-  MAGE_ELEMENTALIST_ELEMENTAL_CONVERGENCE: 'ability-paths-mage-elementalist_elemental_convergence',
-  MAGE_DESTROYER: 'ability-paths-mage-destroyer',
-  MAGE_DESTROYER_OVERWHELMING_POWER: 'ability-paths-mage-destroyer_overwhelming_power',
-  MAGE_DESTROYER_SPELL_SURGE: 'ability-paths-mage-destroyer_spell_surge',
-  MAGE_DESTROYER_GLASS_CANNON: 'ability-paths-mage-destroyer_glass_cannon',
-  MAGE_DESTROYER_APOCALYPSE: 'ability-paths-mage-destroyer_apocalypse',
-
-  // Mage - Enchanter path
-  MAGE_ENCHANTER: 'ability-paths-mage-enchanter',
-  MAGE_ENCHANTER_PASSIVE_POWER: 'ability-paths-mage-enchanter_passive_power',
-  MAGE_ENCHANTER_MANA_REGEN: 'ability-paths-mage-enchanter_mana_regen',
-  MAGE_ENCHANTER_DAMAGE_AURA: 'ability-paths-mage-enchanter_damage_aura',
-  MAGE_ENCHANTER_DOT_AMPLIFY: 'ability-paths-mage-enchanter_dot_amplify',
-  MAGE_SPELLWEAVER: 'ability-paths-mage-spellweaver',
-  MAGE_SPELLWEAVER_AUTO_CAST: 'ability-paths-mage-spellweaver_auto_cast',
-  MAGE_SPELLWEAVER_CHAIN_CAST: 'ability-paths-mage-spellweaver_chain_cast',
-  MAGE_SPELLWEAVER_EFFICIENT_AUTOMATION: 'ability-paths-mage-spellweaver_efficient_automation',
-  MAGE_SPELLWEAVER_ARCANE_ASSEMBLY: 'ability-paths-mage-spellweaver_arcane_assembly',
-  MAGE_SAGE: 'ability-paths-mage-sage',
-  MAGE_SAGE_WISDOM_AURA: 'ability-paths-mage-sage_wisdom_aura',
-  MAGE_SAGE_TOXIC_FIELD: 'ability-paths-mage-sage_toxic_field',
-  MAGE_SAGE_ARCANE_FIELD: 'ability-paths-mage-sage_arcane_field',
-  MAGE_SAGE_OVERWHELMING_PRESENCE: 'ability-paths-mage-sage_overwhelming_presence',
-
-  // Rogue - Assassin path
-  ROGUE_ASSASSIN: 'ability-paths-rogue-assassin',
-  ROGUE_SHADOWBLADE: 'ability-paths-rogue-shadowblade',
-  ROGUE_NIGHTSTALKER: 'ability-paths-rogue-nightstalker',
-  ROGUE_ASSASSIN_VITAL_STRIKE: 'ability-paths-rogue-rogue_assassin_vital_strike',
-  ROGUE_ASSASSIN_AMBUSH: 'ability-paths-rogue-rogue_assassin_ambush',
-  ROGUE_ASSASSIN_PRECISION: 'ability-paths-rogue-rogue_assassin_precision',
-  ROGUE_ASSASSIN_RUTHLESS_EFFICIENCY: 'ability-paths-rogue-rogue_assassin_ruthless_efficiency',
-  ROGUE_ASSASSIN_KILLING_SPREE: 'ability-paths-rogue-rogue_assassin_killing_spree',
-  ROGUE_ASSASSIN_EXECUTE: 'ability-paths-rogue-rogue_assassin_execute',
-  ROGUE_ASSASSIN_SHADOW_DANCE: 'ability-paths-rogue-rogue_assassin_shadow_dance',
-  ROGUE_ASSASSIN_DEATH_MARK: 'ability-paths-rogue-rogue_assassin_death_mark',
-
-  // Rogue - Duelist path
-  ROGUE_DUELIST: 'ability-paths-rogue-duelist',
-  ROGUE_SWASHBUCKLER: 'ability-paths-rogue-swashbuckler',
-  ROGUE_PHANTOM: 'ability-paths-rogue-phantom',
-  ROGUE_DUELIST_RIPOSTE: 'ability-paths-rogue-rogue_duelist_riposte',
-  ROGUE_DUELIST_EN_GARDE: 'ability-paths-rogue-rogue_duelist_en_garde',
-  ROGUE_DUELIST_BLADE_DANCER: 'ability-paths-rogue-rogue_duelist_blade_dancer',
-  ROGUE_DUELIST_EVASION: 'ability-paths-rogue-rogue_duelist_evasion',
-  ROGUE_DUELIST_UNCANNY_DODGE: 'ability-paths-rogue-rogue_duelist_uncanny_dodge',
-  ROGUE_DUELIST_BLUR: 'ability-paths-rogue-rogue_duelist_blur',
-  ROGUE_DUELIST_PERFECT_FORM: 'ability-paths-rogue-rogue_duelist_perfect_form',
-  ROGUE_DUELIST_SHADOWSTEP: 'ability-paths-rogue-rogue_duelist_shadowstep',
-
-  // Paladin - Crusader path
-  PALADIN_CRUSADER: 'ability-paths-paladin-paladin_crusader',
-  PALADIN_TEMPLAR: 'ability-paths-paladin-templar',
-  PALADIN_INQUISITOR: 'ability-paths-paladin-inquisitor',
-  PALADIN_HOLY_STRIKE: 'ability-paths-paladin-holy_strike',
-  PALADIN_RIGHTEOUS_FURY: 'ability-paths-paladin-righteous_fury',
-  PALADIN_SMITE_THE_WICKED: 'ability-paths-paladin-smite_the_wicked',
-  PALADIN_MARK_OF_JUDGMENT: 'ability-paths-paladin-mark_of_judgment',
-  PALADIN_WEAKENING_LIGHT: 'ability-paths-paladin-weakening_light',
-  PALADIN_DIVINE_CONDEMNATION: 'ability-paths-paladin-divine_condemnation',
-  PALADIN_CRUSADER_HOLY_AVENGER: 'ability-paths-paladin-crusader_holy_avenger',
-  PALADIN_CRUSADER_DIVINE_WRATH: 'ability-paths-paladin-crusader_divine_wrath',
-
-  // Paladin - Protector path
-  PALADIN_PROTECTOR: 'ability-paths-paladin-paladin_protector',
-  PALADIN_SENTINEL: 'ability-paths-paladin-sentinel',
-  PALADIN_MARTYR: 'ability-paths-paladin-martyr',
-  PALADIN_BLESSED_RECOVERY: 'ability-paths-paladin-blessed_recovery',
-  PALADIN_HEALING_WARD: 'ability-paths-paladin-healing_ward',
-  PALADIN_SHIELD_OF_RENEWAL: 'ability-paths-paladin-shield_of_renewal',
-  PALADIN_ENDURING_FAITH: 'ability-paths-paladin-enduring_faith',
-  PALADIN_ARMOR_OF_SACRIFICE: 'ability-paths-paladin-armor_of_sacrifice',
-  PALADIN_LAST_STAND: 'ability-paths-paladin-last_stand',
-  PALADIN_PROTECTOR_ETERNAL_GUARDIAN: 'ability-paths-paladin-protector_eternal_guardian',
-  PALADIN_PROTECTOR_UNBREAKABLE_WILL: 'ability-paths-paladin-protector_unbreakable_will',
+// Class colors - consistent across all screens
+export const CLASS_COLORS = {
+  warrior: { primary: '#ef4444', glow: 'rgba(239, 68, 68, 0.5)', border: '#dc2626', tailwind: 'text-red-500' },
+  mage: { primary: '#a78bfa', glow: 'rgba(167, 139, 250, 0.5)', border: '#8b5cf6', tailwind: 'text-violet-400' },
+  rogue: { primary: '#22c55e', glow: 'rgba(34, 197, 94, 0.5)', border: '#16a34a', tailwind: 'text-green-500' },
+  paladin: { primary: '#f59e0b', glow: 'rgba(245, 158, 11, 0.5)', border: '#d97706', tailwind: 'text-amber-500' },
 } as const;
 
-// Export all icon constants
-export const ALL_ICONS = {
-  ...STAT_ICONS,
-  ...STATUS_ICONS,
-  ...POWER_ICONS,
-  ...ABILITY_ICONS,
-  ...ITEM_ICONS,
-  ...UI_ICONS,
-  ...CLASS_ICONS,
-  ...PATH_ABILITY_ICONS,
-} as const;
+export type CharacterClassKey = keyof typeof CLASS_COLORS;
+
+// Type for all Lucide icon names used in the app
+export type IconName =
+  | typeof STAT_ICONS[keyof typeof STAT_ICONS]
+  | typeof STATUS_ICONS[keyof typeof STATUS_ICONS]
+  | typeof POWER_ICONS[keyof typeof POWER_ICONS]
+  | typeof ABILITY_ICONS[keyof typeof ABILITY_ICONS]
+  | typeof ITEM_ICONS[keyof typeof ITEM_ICONS]
+  | typeof UI_ICONS[keyof typeof UI_ICONS]
+  | typeof CLASS_ICONS[keyof typeof CLASS_ICONS];

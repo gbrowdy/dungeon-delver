@@ -1,4 +1,4 @@
-import { Shield } from 'lucide-react';
+import { Shield, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCombat } from '@/contexts/CombatContext';
 import { PowerButton } from './PowerButton';
@@ -10,8 +10,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { PixelIcon } from '@/components/ui/PixelIcon';
-import { STATUS_ICONS } from '@/constants/icons';
 
 /**
  * PowersPanel - Displays mana bar, block button, power buttons, and combo indicator.
@@ -166,7 +164,7 @@ function ComboIndicator({ count }: ComboIndicatorProps) {
       role="status"
       aria-live="polite"
     >
-      <PixelIcon type="ui-sparkle" size={16} className="text-warning" aria-hidden="true" />
+      <Sparkles className="w-4 h-4 text-warning" aria-hidden="true" />
       <span>{count}x Combo Active (+{bonusDamage}% damage)</span>
     </div>
   );

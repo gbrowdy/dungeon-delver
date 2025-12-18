@@ -1,7 +1,7 @@
 import { BattlePhaseType } from '@/constants/enums';
 import { BATTLE_PHASE } from '@/constants/enums';
 import { Enemy } from '@/types/game';
-import { PixelIcon } from '@/components/ui/PixelIcon';
+import { Trophy, Skull } from 'lucide-react';
 
 interface BattleOverlayProps {
   isPaused: boolean;
@@ -33,7 +33,7 @@ export function BattleOverlay({
       {isFloorComplete && (
         <div className="absolute inset-0 flex items-center justify-center animate-floor-complete">
           <div className="text-center">
-            <div className="mb-2 animate-bounce"><PixelIcon type="ui-trophy" size={48} /></div>
+            <div className="mb-2 animate-bounce"><Trophy className="w-12 h-12 text-gold mx-auto" /></div>
             <div className="pixel-title text-base sm:text-lg md:text-xl font-bold text-gold animate-pulse pixel-glow-gold">
               FLOOR COMPLETE!
             </div>
@@ -45,7 +45,7 @@ export function BattleOverlay({
       {playerDeathEffect && (
         <div className="absolute inset-0 bg-gradient-to-t from-health/60 via-black/80 to-black/60 flex items-center justify-center animate-fade-in">
           <div className="text-center">
-            <div className="mb-4 animate-pulse"><PixelIcon type="ui-skull" size={48} /></div>
+            <div className="mb-4 animate-pulse"><Skull className="w-12 h-12 text-health mx-auto" /></div>
             <div className="pixel-title text-xl sm:text-2xl md:text-3xl font-bold text-health animate-pulse pixel-glow-red">
               DEFEATED
             </div>

@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Item, Player, ItemType } from '@/types/game';
 import { cn } from '@/lib/utils';
-import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
+import { Sword, Shield, Gem } from 'lucide-react';
 
 const RARITY_COLORS: Record<Item['rarity'], string> = {
   common: 'border-rarity-common bg-rarity-common/10',
@@ -20,10 +20,15 @@ const RARITY_TEXT: Record<Item['rarity'], string> = {
 };
 
 /**
- * Convert item type to PixelIcon type
+ * Get Lucide icon component for item type
  */
-function getItemIconType(itemType: ItemType): IconType {
-  return `item-${itemType}` as IconType;
+function getItemIcon(itemType: ItemType): React.ComponentType<{ className?: string }> {
+  switch (itemType) {
+    case 'weapon': return Sword;
+    case 'armor': return Shield;
+    case 'accessory': return Gem;
+    default: return Sword;
+  }
 }
 
 interface ItemDropPopupProps {
@@ -64,6 +69,9 @@ export function ItemDropPopup({ item, player, onEquip, onDismiss }: ItemDropPopu
     ? comparison.reduce((sum, c) => sum + c.diff, 0) > 0
     : true;
 
+  const ItemIcon = getItemIcon(item.type);
+  const CurrentItemIcon = currentItem ? getItemIcon(currentItem.type) : null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 animate-in fade-in duration-200 p-2 sm:p-4">
       <div
@@ -75,7 +83,7 @@ export function ItemDropPopup({ item, player, onEquip, onDismiss }: ItemDropPopu
         {/* Header */}
         <div className="text-center mb-4">
           <div className="flex justify-center mb-2">
-            <PixelIcon type={getItemIconType(item.type)} size={48} />
+            <ItemIcon className="w-12 h-12" />
           </div>
           <h2 className={cn('pixel-text text-pixel-sm font-bold', RARITY_TEXT[item.rarity])}>
             {item.name}
@@ -101,11 +109,11 @@ export function ItemDropPopup({ item, player, onEquip, onDismiss }: ItemDropPopu
         </div>
 
         {/* Comparison with current */}
-        {currentItem && comparison && (
+        {currentItem && comparison && CurrentItemIcon && (
           <div className="pixel-panel-dark rounded-lg p-3 mb-4">
             <div className="flex items-center gap-2 pixel-text text-pixel-xs mb-2">
               <span className="text-slate-400 flex items-center gap-1">
-                vs <PixelIcon type={getItemIconType(currentItem.type)} size={16} /> {currentItem.name}
+                vs <CurrentItemIcon className="w-4 h-4" /> {currentItem.name}
               </span>
             </div>
             <div className="space-y-1">

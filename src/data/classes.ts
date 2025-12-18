@@ -51,7 +51,7 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       currentCooldown: 0,
       effect: 'damage',
       value: 2.2,      // Reduced from 2.5
-      icon: 'power-frost_nova',
+      icon: 'power-fireball',
     },
   },
   rogue: {

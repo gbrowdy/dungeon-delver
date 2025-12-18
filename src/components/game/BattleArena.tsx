@@ -9,7 +9,19 @@ import { EnemyIntentDisplay } from './EnemyIntentDisplay';
 import { BattleOverlay } from './BattleOverlay';
 import { ScreenReaderAnnouncer } from './ScreenReaderAnnouncer';
 import { getPlayerDisplayName } from '@/utils/powerSynergies';
-import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
+import * as Icons from 'lucide-react';
+import { ABILITY_ICONS } from '@/constants/icons';
+
+type LucideIconName = keyof typeof Icons;
+
+function getAbilityIcon(iconName: string | undefined): React.ComponentType<{ className?: string }> {
+  // Check if the icon name is a valid Lucide icon
+  if (iconName && iconName in Icons) {
+    return Icons[iconName as LucideIconName] as React.ComponentType<{ className?: string }>;
+  }
+  // Default to Sword for attack abilities
+  return Icons.Sword as React.ComponentType<{ className?: string }>;
+}
 
 interface BattleArenaProps {
   player: Player;
@@ -204,20 +216,19 @@ export function BattleArena({
               {/* Enemy abilities */}
               {displayEnemy.abilities.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1 justify-end">
-                  {displayEnemy.abilities.slice(0, 4).map(ability => (
-                    <div
-                      key={ability.id}
-                      className="bg-health/20 border border-health/50 rounded px-1 py-0.5 flex items-center gap-0.5"
-                      title={ability.description}
-                    >
-                      {ability.icon && ability.icon.includes('-') ? (
-                        <PixelIcon type={ability.icon as IconType} size={16} />
-                      ) : (
-                        <PixelIcon type="ability-attack" size={16} />
-                      )}
-                      <span className="pixel-text text-pixel-2xs text-health/90">{ability.name}</span>
-                    </div>
-                  ))}
+                  {displayEnemy.abilities.slice(0, 4).map(ability => {
+                    const AbilityIcon = getAbilityIcon(ABILITY_ICONS[ability.type?.toUpperCase() as keyof typeof ABILITY_ICONS]);
+                    return (
+                      <div
+                        key={ability.id}
+                        className="bg-health/20 border border-health/50 rounded px-1 py-0.5 flex items-center gap-0.5"
+                        title={ability.description}
+                      >
+                        <AbilityIcon className="w-4 h-4" />
+                        <span className="pixel-text text-pixel-2xs text-health/90">{ability.name}</span>
+                      </div>
+                    );
+                  })}
                   {displayEnemy.abilities.length > 4 && (
                     <span className="pixel-text text-pixel-2xs text-slate-500">
                       +{displayEnemy.abilities.length - 4}
