@@ -406,9 +406,16 @@ git worktree add ../rogue-task-1.2 -b <feature>/task-1.2
 # Example:
 git worktree add ../rogue-fix-warrior -b fix/warrior-paths
 git worktree add ../rogue-fix-mage -b fix/mage-paths
+
+# Step 3: IMPORTANT - Verify worktree paths resolve correctly
+# Use realpath to get canonical absolute paths (no double slashes)
+realpath ../rogue-task-1.1
+# Should output: /Users/gilbrowdy/rogue-task-1.1 (single leading slash)
 ```
 
 **Worktree naming convention**: `../rogue-<short-task-name>`
+
+**Path verification**: Before launching agents, always verify worktree paths with `realpath` or `pwd`. Agent tool permissions may fail if paths contain formatting issues (e.g., double slashes `//Users/...`). If agents report permission errors on worktree files, the conductor should complete the work directly.
 
 ### 3. Execute Tasks
 
