@@ -314,7 +314,7 @@ export function useGameState() {
   // Check if hero is stunned - show purple progress bar
   const isHeroStunned = state.player?.statusEffects.some((e: StatusEffect) => e.type === STATUS_EFFECT_TYPE.STUN) ?? false;
 
-  const { heroProgress, enemyProgress } = useCombatLoop({
+  const { heroProgress, enemyProgress, resetHeroProgress } = useCombatLoop({
     onHeroAttack: performHeroAttack,
     onEnemyAttack: performEnemyAttack,
     heroSpeed,
@@ -323,6 +323,22 @@ export function useGameState() {
     enabled: shouldRunCombatLoop,
     combatSpeedMultiplier: state.combatSpeed,
   });
+
+  // Track previous stun status to detect when stun is newly applied
+  const wasStunnedRef = useRef(false);
+
+  // Reset hero attack progress when stun is applied
+  useEffect(() => {
+    const isCurrentlyStunned = isHeroStunned;
+    const wasStunned = wasStunnedRef.current;
+
+    // Stun was just applied - reset hero attack progress
+    if (isCurrentlyStunned && !wasStunned) {
+      resetHeroProgress();
+    }
+
+    wasStunnedRef.current = isCurrentlyStunned;
+  }, [isHeroStunned, resetHeroProgress]);
 
   // Use extracted combat timers hook for HP/MP regen and power cooldowns
   // Uses separate condition so cooldowns continue during room transitions

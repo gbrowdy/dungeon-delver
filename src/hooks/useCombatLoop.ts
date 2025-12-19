@@ -22,6 +22,7 @@ interface CombatLoopReturn {
   heroProgress: number; // 0-1 progress to next hero attack
   enemyProgress: number; // 0-1 progress to next enemy attack
   resetTimers: () => void;
+  resetHeroProgress: () => void; // Reset only hero attack progress (used when stunned)
 }
 
 // Convert speed stat to attack interval with diminishing returns
@@ -158,5 +159,11 @@ export function useCombatLoop({
     enemyAttackFiredAtRef.current = 0;
   }, []);
 
-  return { heroProgress, enemyProgress, resetTimers };
+  // Reset only hero attack progress (used when stunned)
+  const resetHeroProgress = useCallback(() => {
+    heroAccumulatedRef.current = 0;
+    heroAttackFiredAtRef.current = 0;
+  }, []);
+
+  return { heroProgress, enemyProgress, resetTimers, resetHeroProgress };
 }
