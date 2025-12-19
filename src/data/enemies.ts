@@ -228,45 +228,35 @@ function getEnemyAbilities(baseName: string, floor: number, isBoss: boolean): Ab
   }
 
   // Determine how many abilities this enemy gets
-  // Floor-based scaling for better new player experience
+  // Floor-based scaling for better new player experience (see ENEMY_ABILITY_CONFIG.FLOOR_SCALING)
   let numAbilities = 0;
 
   if (isBoss) {
-    // Bosses always get 2-3 abilities
+    // Bosses always get 2-3 abilities based on floor progression
     numAbilities = Math.min(2 + Math.floor(floor / 3), abilityPool.length);
   } else {
-    // Floor-based ability scaling for non-bosses
-    let abilityChance: number;
-    let maxAbilities: number;
+    // Non-boss ability scaling uses config-driven approach
+    const floorConfig = ENEMY_ABILITY_CONFIG.FLOOR_SCALING[floor];
 
-    if (floor === 1) {
-      abilityChance = 0.2;  // 20% chance
-      maxAbilities = 1;
-    } else if (floor === 2) {
-      abilityChance = 0.4;  // 40% chance
-      maxAbilities = 1;
-    } else if (floor === 3) {
-      abilityChance = 0.6;  // 60% chance
-      maxAbilities = 1;
-    } else if (floor === 4) {
-      abilityChance = 0.8;  // 80% chance
-      maxAbilities = 2;
-    } else {
-      // Floor 5+: always has abilities, can have 2-3
-      abilityChance = 1.0;
-      maxAbilities = Math.random() < 0.5 ? 3 : 2;
-    }
-
-    // Roll for whether enemy gets abilities
-    if (Math.random() < abilityChance) {
-      // Determine count (at least 1 if we passed the chance check)
-      numAbilities = Math.min(maxAbilities, abilityPool.length);
-      // On floors where max > 1, add randomness
-      if (maxAbilities > 1) {
-        numAbilities = 1 + Math.floor(Math.random() * maxAbilities);
-        numAbilities = Math.min(numAbilities, abilityPool.length);
+    if (floorConfig) {
+      // Floors 1-4: use scaling table
+      if (Math.random() < floorConfig.chance) {
+        if (floorConfig.maxAbilities <= 1) {
+          numAbilities = 1;
+        } else {
+          // Random count from 1 to maxAbilities
+          numAbilities = 1 + Math.floor(Math.random() * floorConfig.maxAbilities);
+        }
       }
+    } else {
+      // Floor 5+: always has 2-3 abilities
+      const { LATE_FLOOR_MIN_ABILITIES, LATE_FLOOR_MAX_ABILITIES } = ENEMY_ABILITY_CONFIG;
+      const range = LATE_FLOOR_MAX_ABILITIES - LATE_FLOOR_MIN_ABILITIES + 1;
+      numAbilities = LATE_FLOOR_MIN_ABILITIES + Math.floor(Math.random() * range);
     }
+
+    // Cap by available ability pool
+    numAbilities = Math.min(numAbilities, abilityPool.length);
   }
 
   if (numAbilities === 0) {
