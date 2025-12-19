@@ -295,10 +295,8 @@ export function useCombatActions({
       enemy.health -= finalDamage;
       logs.push(`You deal ${finalDamage} damage to ${enemy.name}`);
 
-      // Increment combo count for attack-based combos (e.g., Holy Avenger)
-      playerAfterEffects.comboCount = (playerAfterEffects.comboCount || 0) + 1;
-
-      // Process path ability triggers: on_combo (for attack-based combos)
+      // Process path ability triggers: on_combo (for power-based combos)
+      // Note: comboCount is managed in usePowerActions.ts when powers are used
       const onComboResult = processTrigger('on_combo', {
         player: playerAfterEffects,
         enemy,
