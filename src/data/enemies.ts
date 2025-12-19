@@ -241,12 +241,10 @@ function getEnemyAbilities(baseName: string, floor: number, isBoss: boolean): Ab
     if (floorConfig) {
       // Floors 1-4: use scaling table
       if (Math.random() < floorConfig.chance) {
-        if (floorConfig.maxAbilities <= 1) {
-          numAbilities = 1;
-        } else {
-          // Random count from 1 to maxAbilities
-          numAbilities = 1 + Math.floor(Math.random() * floorConfig.maxAbilities);
-        }
+        // Random count from 1 to maxAbilities (inclusive)
+        // When maxAbilities=1: always 1
+        // When maxAbilities=2: 50% chance of 1, 50% chance of 2
+        numAbilities = 1 + Math.floor(Math.random() * floorConfig.maxAbilities);
       }
     } else {
       // Floor 5+: always has 2-3 abilities
