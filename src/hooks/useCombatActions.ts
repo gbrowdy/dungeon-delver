@@ -563,6 +563,11 @@ export function useCombatActions({
             break;
           }
           case 'poison': {
+            // Blocking negates status effects
+            if (player.isBlocking) {
+              logs.push(`🛡️ Block! Negated the poison!`);
+              break;
+            }
             const poisonDamage = Math.floor(ability.value * (1 + (prev.currentFloor - 1) * COMBAT_BALANCE.POISON_SCALING_PER_FLOOR));
             player.statusEffects.push({
               id: `poison-${Date.now()}`,
@@ -575,6 +580,11 @@ export function useCombatActions({
             break;
           }
           case 'stun': {
+            // Blocking negates status effects
+            if (player.isBlocking) {
+              logs.push(`🛡️ Block! Negated the stun!`);
+              break;
+            }
             const immunities = getStatusImmunities(player);
             if (immunities.includes('stun')) {
               logs.push(`🛡️ Immovable Object! You resist the stun!`);
