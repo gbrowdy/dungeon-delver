@@ -330,11 +330,10 @@ export function useGameState() {
   // Reset hero attack progress when stun is first applied
   // Note: Stun refresh/extension does NOT reset progress again - only the initial application
   useEffect(() => {
-    const isCurrentlyStunned = isHeroStunned;
     const wasStunned = wasStunnedRef.current;
 
     // Stun was just applied (transition from not-stunned to stunned) - reset hero attack progress
-    if (isCurrentlyStunned && !wasStunned) {
+    if (isHeroStunned && !wasStunned) {
       resetHeroProgress();
       // Log to combat log so players understand why their attack was interrupted
       setState((prev: GameState) => {
@@ -344,7 +343,7 @@ export function useGameState() {
       });
     }
 
-    wasStunnedRef.current = isCurrentlyStunned;
+    wasStunnedRef.current = isHeroStunned;
   }, [isHeroStunned, resetHeroProgress]);
 
   // Use extracted combat timers hook for HP/MP regen and power cooldowns
