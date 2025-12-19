@@ -490,6 +490,7 @@ export function useCombatActions({
           a.id === ability.id ? { ...a, currentCooldown: a.cooldown } : a
         );
 
+        // Blocking reduces damage for multi_hit, but completely negates status effects (poison, stun, etc.)
         switch (ability.type) {
           case 'multi_hit': {
             const hits = ability.value;
@@ -563,9 +564,8 @@ export function useCombatActions({
             break;
           }
           case 'poison': {
-            // Blocking negates status effects
             if (player.isBlocking) {
-              logs.push(`🛡️ Block! Negated the poison!`);
+              logs.push(`🛡️ Block! Negated ${ability.name}!`);
               break;
             }
             const poisonDamage = Math.floor(ability.value * (1 + (prev.currentFloor - 1) * COMBAT_BALANCE.POISON_SCALING_PER_FLOOR));
@@ -580,9 +580,8 @@ export function useCombatActions({
             break;
           }
           case 'stun': {
-            // Blocking negates status effects
             if (player.isBlocking) {
-              logs.push(`🛡️ Block! Negated the stun!`);
+              logs.push(`🛡️ Block! Negated ${ability.name}!`);
               break;
             }
             const immunities = getStatusImmunities(player);
