@@ -8,10 +8,9 @@ import {
 } from '@/components/ui/tooltip';
 import { PowerWithSynergies, hasSynergy, getSynergy, getPathName } from '@/utils/powerSynergies';
 import * as Icons from 'lucide-react';
+import { getIcon, type LucideIconName, POWER_ICONS } from '@/lib/icons';
 
-type LucideIconName = keyof typeof Icons;
-
-// Map power icons to Lucide icon names
+// Map power IDs to Lucide icon names (extends POWER_ICONS with kebab-case IDs)
 const POWER_ICON_MAP: Record<string, LucideIconName> = {
   'crushing-blow': 'Hammer',
   'power-strike': 'Swords',
@@ -40,17 +39,17 @@ const POWER_ICON_MAP: Record<string, LucideIconName> = {
 function getPowerIcon(power: Power): React.ComponentType<{ className?: string }> {
   // Check by power ID first
   const iconName = POWER_ICON_MAP[power.id];
-  if (iconName && iconName in Icons) {
-    return Icons[iconName] as React.ComponentType<{ className?: string }>;
+  if (iconName) {
+    return getIcon(iconName, 'Sparkles');
   }
 
   // Check if power.icon is a valid Lucide name directly
-  if (power.icon && power.icon in Icons) {
-    return Icons[power.icon as LucideIconName] as React.ComponentType<{ className?: string }>;
+  if (power.icon) {
+    return getIcon(power.icon, 'Sparkles');
   }
 
   // Default fallback
-  return Icons.Sparkles as React.ComponentType<{ className?: string }>;
+  return getIcon('Sparkles');
 }
 
 /**

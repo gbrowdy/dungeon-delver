@@ -5,21 +5,13 @@ import { BATTLE_PHASE } from '@/constants/enums';
 import { cn } from '@/lib/utils';
 import { SpriteStateType, BattlePhaseType } from '@/constants/enums';
 import * as Icons from 'lucide-react';
-import { STAT_ICONS, STATUS_ICONS, ABILITY_ICONS } from '@/constants/icons';
+import { getIcon, STAT_ICONS, STATUS_ICONS } from '@/lib/icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-
-type LucideIconName = keyof typeof Icons;
-
-function getIconComponent(iconName: string): React.ComponentType<{ className?: string }> {
-  if (iconName in Icons) {
-    return Icons[iconName as LucideIconName] as React.ComponentType<{ className?: string }>;
-  }
-  return Icons.HelpCircle as React.ComponentType<{ className?: string }>;
-}
+import { SpriteType } from '@/data/sprites';
 
 // Shared positioning classes for HP bars above sprites (keeps hero and enemy in sync)
 const HP_BAR_POSITION = "-top-10 xs:-top-12 sm:-top-10";
@@ -80,14 +72,14 @@ export function CharacterSprite({
   const isBoss = enemy?.isBoss ?? false;
 
   // Determine sprite type - use path variant if player has selected a path
-  const getSpriteType = (): string => {
+  const getSpriteType = (): SpriteType | string => {
     if (isHero && player) {
       // If player has a path, use the path-specific sprite
       if (player.path?.pathId) {
         return player.path.pathId;
       }
       // Otherwise use base class sprite
-      return player.class;
+      return player.class as SpriteType;
     }
     // For enemies, use enemy name
     return enemy!.name;
@@ -248,7 +240,7 @@ export function CharacterSprite({
         <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex gap-1">
           {statusEffects.map(effect => {
             const iconName = STATUS_ICONS[effect.type?.toUpperCase() as keyof typeof STATUS_ICONS] || 'Skull';
-            const IconComponent = getIconComponent(iconName);
+            const IconComponent = getIcon(iconName);
             return (
               <div key={effect.id} className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-accent/50">
                 <IconComponent className="w-4 h-4" />
@@ -264,7 +256,7 @@ export function CharacterSprite({
         <div className="absolute -top-22 left-1/2 -translate-x-1/2 flex gap-1">
           {activeBuffs.map(buff => {
             const iconName = STAT_ICONS[buff.stat?.toUpperCase() as keyof typeof STAT_ICONS] || 'Sparkles';
-            const IconComponent = getIconComponent(iconName);
+            const IconComponent = getIcon(iconName);
             return (
               <div key={buff.id} className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-success/50">
                 <IconComponent className="w-4 h-4" />
@@ -309,7 +301,7 @@ export function CharacterSprite({
         <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex gap-1">
           {enemy.statDebuffs.map(debuff => {
             const iconName = debuff.stat === 'power' ? STAT_ICONS.POWER : debuff.stat === 'armor' ? STAT_ICONS.ARMOR : STAT_ICONS.SPEED;
-            const IconComponent = getIconComponent(iconName);
+            const IconComponent = getIcon(iconName);
             const percentDisplay = Math.round(debuff.percentReduction * 100);
             return (
               <Tooltip key={debuff.id}>

@@ -15,31 +15,15 @@ import { getPlayerDisplayName } from '@/utils/powerSynergies';
 import * as Icons from 'lucide-react';
 import { getAbilitiesByIds } from '@/utils/pathUtils';
 import { PathAbility } from '@/types/paths';
-import { STAT_ICONS, CLASS_ICONS, ITEM_ICONS, CLASS_COLORS, CharacterClassKey } from '@/constants/icons';
-
-type LucideIconName = keyof typeof Icons;
-
-/**
- * Get the Lucide icon component for an item.
- * Item data stores icon names directly as valid Lucide icon names (e.g., 'Sword', 'Axe', 'Wand2').
- * Falls back to 'Package' if the icon doesn't exist.
- */
-function getItemIcon(iconName: string | undefined): LucideIconName {
-  if (iconName && iconName in Icons) {
-    return iconName as LucideIconName;
-  }
-  return 'Package';
-}
-
-/**
- * Get icon component from icon name string
- */
-function getIconComponent(iconName: string): React.ComponentType<{ className?: string }> {
-  if (iconName in Icons) {
-    return Icons[iconName as LucideIconName] as React.ComponentType<{ className?: string }>;
-  }
-  return Icons.HelpCircle as React.ComponentType<{ className?: string }>;
-}
+import {
+  getIcon,
+  type LucideIconName,
+  STAT_ICONS,
+  CLASS_ICONS,
+  ITEM_ICONS,
+  CLASS_COLORS,
+  type CharacterClassKey,
+} from '@/lib/icons';
 
 const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
 
@@ -142,7 +126,7 @@ function getClassIcon(playerClass: string): React.ComponentType<{ className?: st
     paladin: CLASS_ICONS.PALADIN,
   };
   const iconName = iconNames[playerClass] || CLASS_ICONS.WARRIOR;
-  return getIconComponent(iconName);
+  return getIcon(iconName);
 }
 
 /**
@@ -203,7 +187,7 @@ interface EmptyEquipmentSlotProps {
 }
 
 function EmptyEquipmentSlot({ type }: EmptyEquipmentSlotProps) {
-  const SlotIcon = getIconComponent(ITEM_ICONS[type.toUpperCase() as keyof typeof ITEM_ICONS]);
+  const SlotIcon = getIcon(ITEM_ICONS[type.toUpperCase() as keyof typeof ITEM_ICONS], 'Package');
 
   const slotButton = (
     <div
@@ -278,8 +262,7 @@ function EquipmentSlot({ item }: EquipmentSlotProps) {
       aria-label={`${item.name}: ${item.rarity} ${item.type}. ${statText}${item.effect ? `. ${item.effect.description}` : ''}`}
     >
       {(() => {
-        const iconName = getItemIcon(item.icon);
-        const IconComponent = Icons[iconName] as React.ComponentType<{ className?: string }>;
+        const IconComponent = getIcon(item.icon, 'Package');
         return <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />;
       })()}
       {itemHasEffect && (
@@ -400,7 +383,7 @@ interface StatItemWithTooltipProps {
 }
 
 function StatItemWithTooltip({ iconName, label, value, tooltip, iconColor }: StatItemWithTooltipProps) {
-  const IconComponent = getIconComponent(iconName);
+  const IconComponent = getIcon(iconName);
 
   const content = (
     <div className="pixel-panel-dark flex flex-col items-center text-center rounded p-1 xs:p-1.5 sm:p-2">

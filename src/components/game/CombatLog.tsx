@@ -1,9 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import * as Icons from 'lucide-react';
 import { CircularBuffer } from '@/utils/circularBuffer';
-
-type LucideIconName = keyof typeof Icons;
+import { getIcon, type LucideIconName } from '@/lib/icons';
 
 // Map log entry types to Lucide icon names
 const LOG_ICONS: Record<string, LucideIconName> = {
@@ -131,7 +129,7 @@ export function CombatLog({ logs }: CombatLogProps) {
         <div className="p-1.5 xs:p-2 space-y-0.5">
           {logsArray.slice(-10).map((log, i) => {
             const { iconName, color, text } = formatLogEntry(log);
-            const IconComponent = Icons[iconName] as React.ComponentType<{ className?: string }>;
+            const IconComponent = getIcon(iconName);
             return (
               <div
                 key={i}

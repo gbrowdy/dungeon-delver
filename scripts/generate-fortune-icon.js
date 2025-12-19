@@ -1,6 +1,10 @@
 import { PNG } from 'pngjs';
 import { writeFileSync, mkdirSync } from 'fs';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Color palette - Gold with green accent
 const COLORS = {
@@ -201,7 +205,7 @@ const centerPixels = [
 });
 
 // Ensure output directory exists
-const outputPath = '/Users/gilbrowdy/rogue/public/assets/icons/stats/fortune.png';
+const outputPath = join(__dirname, '../public/assets/icons/stats/fortune.png');
 mkdirSync(dirname(outputPath), { recursive: true });
 
 // Write PNG file

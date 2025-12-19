@@ -4,11 +4,12 @@
 
 export type SpriteType =
   | 'warrior' | 'mage' | 'rogue' | 'paladin'
-  // Path variants
-  | 'berserker' | 'guardian'           // Warrior paths
-  | 'archmage' | 'enchanter'           // Mage paths
-  | 'assassin' | 'duelist'             // Rogue paths
-  | 'paladin_crusader' | 'paladin_protector'  // Paladin paths
+  // Path variants - names match pathId in path definitions
+  // Note: Paladin paths use prefix to avoid conflicts with generic terms
+  | 'berserker' | 'guardian'                  // Warrior paths
+  | 'archmage' | 'enchanter'                  // Mage paths
+  | 'assassin' | 'duelist'                    // Rogue paths
+  | 'crusader' | 'protector'                  // Paladin paths
   // Enemies
   | 'goblin' | 'skeleton' | 'slime' | 'rat' | 'spider' | 'imp' | 'zombie'
   | 'orc' | 'dark-elf' | 'werewolf' | 'ghost' | 'harpy' | 'minotaur'
@@ -863,6 +864,10 @@ export const SPRITES: Record<string, SpriteDefinition> = {
   duelist: buildSpriteDefinition(duelistIdle),
 
   // Path variants - Paladin
+  // Short names (consistent with other classes)
+  crusader: buildSpriteDefinition(paladinCrusaderIdle),
+  protector: buildSpriteDefinition(paladinProtectorIdle),
+  // Legacy full names (for backwards compatibility with pathId)
   paladin_crusader: buildSpriteDefinition(paladinCrusaderIdle),
   paladin_protector: buildSpriteDefinition(paladinProtectorIdle),
 
@@ -906,8 +911,16 @@ export const SPRITES: Record<string, SpriteDefinition> = {
 export function getSprite(name: string): SpriteDefinition {
   const normalized = name.toLowerCase().replace(/^(fierce|ancient|corrupted|shadow|cursed|vengeful|bloodthirsty)\s+/, '');
   const sprite = SPRITES[normalized];
-  // Default to goblin if not found (goblin is guaranteed to exist)
-  return sprite ?? SPRITES['goblin']!;
+
+  if (!sprite) {
+    // Log warning in development to help catch missing sprite definitions
+    if (import.meta.env.DEV) {
+      console.warn(`[getSprite] Missing sprite definition for "${name}" (normalized: "${normalized}"). Falling back to goblin sprite.`);
+    }
+    return SPRITES['goblin']!;
+  }
+
+  return sprite;
 }
 
 // Convert sprite frame to CSS box-shadow string

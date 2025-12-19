@@ -1,5 +1,10 @@
 import fs from 'fs';
 import { PNG } from 'pngjs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Color palette
 const colors = {
@@ -186,7 +191,8 @@ const motionLines = [
 motionLines.forEach(([x, y, colorName]) => setPixel(x, y, colors[colorName]));
 
 // Write PNG file
-const outputPath = '/Users/gilbrowdy/rogue/public/assets/icons/stats/speed.png';
+const outputPath = join(__dirname, '../public/assets/icons/stats/speed.png');
+fs.mkdirSync(dirname(outputPath), { recursive: true });
 const buffer = PNG.sync.write(png);
 fs.writeFileSync(outputPath, buffer);
 

@@ -1,38 +1,30 @@
 import { EnemyIntent } from '@/types/game';
-import * as Icons from 'lucide-react';
-import { ABILITY_ICONS } from '@/constants/icons';
-
-type LucideIconName = keyof typeof Icons;
+import { getIcon, ABILITY_ICONS } from '@/lib/icons';
 
 interface EnemyIntentDisplayProps {
   intent: EnemyIntent;
   isDying: boolean;
 }
 
+// Legacy emoji mapping to Lucide icon names
+const EMOJI_TO_ICON: Record<string, string> = {
+  '⚔️': ABILITY_ICONS.ATTACK,
+  '⚔️⚔️': ABILITY_ICONS.MULTI_HIT,
+  '⚔️⚔️⚔️': ABILITY_ICONS.TRIPLE_STRIKE,
+  '🐍': ABILITY_ICONS.POISON,
+  '💫': ABILITY_ICONS.STUN,
+  '💚': ABILITY_ICONS.HEAL,
+  '😤': ABILITY_ICONS.ENRAGE,
+  '🛡️': ABILITY_ICONS.SHIELD,
+};
+
 /**
- * Maps emoji icons to Lucide icon names.
+ * Maps emoji icons to Lucide icon components.
  * Fallback to Sword for unknown emojis.
  */
 function getAbilityIcon(icon: string): React.ComponentType<{ className?: string }> {
-  // Legacy emoji mapping to Lucide icons
-  const emojiMap: Record<string, string> = {
-    '⚔️': ABILITY_ICONS.ATTACK,
-    '⚔️⚔️': ABILITY_ICONS.MULTI_HIT,
-    '⚔️⚔️⚔️': ABILITY_ICONS.TRIPLE_STRIKE,
-    '🐍': ABILITY_ICONS.POISON,
-    '💫': ABILITY_ICONS.STUN,
-    '💚': ABILITY_ICONS.HEAL,
-    '😤': ABILITY_ICONS.ENRAGE,
-    '🛡️': ABILITY_ICONS.SHIELD,
-  };
-
-  const iconName = emojiMap[icon] || ABILITY_ICONS.ATTACK;
-
-  if (iconName in Icons) {
-    return Icons[iconName as LucideIconName] as React.ComponentType<{ className?: string }>;
-  }
-
-  return Icons.Sword as React.ComponentType<{ className?: string }>;
+  const iconName = EMOJI_TO_ICON[icon] || ABILITY_ICONS.ATTACK;
+  return getIcon(iconName, 'Sword');
 }
 
 /**

@@ -2,6 +2,10 @@
 
 from PIL import Image
 import sys
+import os
+
+# Get the directory containing this script
+script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Create 16x16 image with transparency
 img = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
@@ -188,6 +192,11 @@ set_pixel(7, 15, OUTLINE)
 set_pixel(8, 15, OUTLINE)
 
 # Save the image
-output_path = sys.argv[1] if len(sys.argv) > 1 else '/Users/gilbrowdy/rogue/public/assets/icons/stats/health.png'
+default_output = os.path.join(script_dir, '../public/assets/icons/stats/health.png')
+output_path = sys.argv[1] if len(sys.argv) > 1 else default_output
+
+# Ensure directory exists
+os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
 img.save(output_path, 'PNG')
 print(f'Created health icon at {output_path}')

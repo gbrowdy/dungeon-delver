@@ -9,19 +9,7 @@ import { EnemyIntentDisplay } from './EnemyIntentDisplay';
 import { BattleOverlay } from './BattleOverlay';
 import { ScreenReaderAnnouncer } from './ScreenReaderAnnouncer';
 import { getPlayerDisplayName } from '@/utils/powerSynergies';
-import * as Icons from 'lucide-react';
-import { ABILITY_ICONS } from '@/constants/icons';
-
-type LucideIconName = keyof typeof Icons;
-
-function getAbilityIcon(iconName: string | undefined): React.ComponentType<{ className?: string }> {
-  // Check if the icon name is a valid Lucide icon
-  if (iconName && iconName in Icons) {
-    return Icons[iconName as LucideIconName] as React.ComponentType<{ className?: string }>;
-  }
-  // Default to Sword for attack abilities
-  return Icons.Sword as React.ComponentType<{ className?: string }>;
-}
+import { getIcon, ABILITY_ICONS } from '@/lib/icons';
 
 interface BattleArenaProps {
   player: Player;
@@ -217,7 +205,7 @@ export function BattleArena({
               {displayEnemy.abilities.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1 justify-end">
                   {displayEnemy.abilities.slice(0, 4).map(ability => {
-                    const AbilityIcon = getAbilityIcon(ABILITY_ICONS[ability.type?.toUpperCase() as keyof typeof ABILITY_ICONS]);
+                    const AbilityIcon = getIcon(ABILITY_ICONS[ability.type?.toUpperCase() as keyof typeof ABILITY_ICONS], 'Sword');
                     return (
                       <div
                         key={ability.id}
