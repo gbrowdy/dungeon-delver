@@ -159,8 +159,7 @@ export function useCombatLoop({
     enemyAttackFiredAtRef.current = 0;
   }, []);
 
-  // Reset only hero attack progress (used when stunned)
-  const resetHeroProgress = useCallback(() => {
+  const resetHeroProgress = useCallback((): void => {
     heroAccumulatedRef.current = 0;
     heroAttackFiredAtRef.current = 0;
   }, []);
