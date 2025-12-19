@@ -228,19 +228,33 @@ function getEnemyAbilities(baseName: string, floor: number, isBoss: boolean): Ab
   }
 
   // Determine how many abilities this enemy gets
+  // Floor-based scaling for better new player experience (see ENEMY_ABILITY_CONFIG.FLOOR_SCALING)
   let numAbilities = 0;
+
   if (isBoss) {
-    // Bosses always get 2-3 abilities
+    // Bosses always get 2-3 abilities based on floor progression
     numAbilities = Math.min(2 + Math.floor(floor / 3), abilityPool.length);
-  } else if (floor >= ENEMY_ABILITY_CONFIG.FLOOR_FOR_3_ABILITIES) {
-    // Late floors: up to 2 abilities
-    numAbilities = Math.min(Math.random() < 0.5 ? 2 : 1, abilityPool.length);
-  } else if (floor >= ENEMY_ABILITY_CONFIG.FLOOR_FOR_2_ABILITIES) {
-    // Mid floors: 1 ability likely
-    numAbilities = Math.random() < 0.7 ? 1 : 0;
   } else {
-    // Early floors: small chance of 1 ability
-    numAbilities = Math.random() < ENEMY_ABILITY_CONFIG.EARLY_FLOOR_ABILITY_CHANCE ? 1 : 0;
+    // Non-boss ability scaling uses config-driven approach
+    const floorConfig = ENEMY_ABILITY_CONFIG.FLOOR_SCALING[floor];
+
+    if (floorConfig) {
+      // Floors 1-4: use scaling table
+      if (Math.random() < floorConfig.chance) {
+        // Random count from 1 to maxAbilities (inclusive)
+        // When maxAbilities=1: always 1
+        // When maxAbilities=2: 50% chance of 1, 50% chance of 2
+        numAbilities = 1 + Math.floor(Math.random() * floorConfig.maxAbilities);
+      }
+    } else {
+      // Floor 5+: always has 2-3 abilities
+      const { LATE_FLOOR_MIN_ABILITIES, LATE_FLOOR_MAX_ABILITIES } = ENEMY_ABILITY_CONFIG;
+      const range = LATE_FLOOR_MAX_ABILITIES - LATE_FLOOR_MIN_ABILITIES + 1;
+      numAbilities = LATE_FLOOR_MIN_ABILITIES + Math.floor(Math.random() * range);
+    }
+
+    // Cap by available ability pool
+    numAbilities = Math.min(numAbilities, abilityPool.length);
   }
 
   if (numAbilities === 0) {

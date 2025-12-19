@@ -152,17 +152,23 @@ export const ITEM_EFFECTS = {
 // === ENEMY ABILITY BALANCE ===
 
 export const ENEMY_ABILITY_CONFIG = {
-  // Ability acquisition thresholds (floor numbers) - earlier multi-ability enemies
-  FLOOR_FOR_2_ABILITIES: 2, // Reduced from 3
-  FLOOR_FOR_3_ABILITIES: 4, // Reduced from 5
+  // Floor-based ability scaling for better new player experience
+  // Each floor defines: chance of enemy having abilities, max abilities possible
+  FLOOR_SCALING: {
+    1: { chance: 0.2, maxAbilities: 1 },  // 20% chance, max 1 ability
+    2: { chance: 0.4, maxAbilities: 1 },  // 40% chance, max 1 ability
+    3: { chance: 0.6, maxAbilities: 1 },  // 60% chance, max 1 ability
+    4: { chance: 0.8, maxAbilities: 2 },  // 80% chance, max 2 abilities
+  } as Record<number, { chance: number; maxAbilities: number }>,
 
-  // Early floor ability chance - balanced for Floor 1 approachability
-  EARLY_FLOOR_ABILITY_CHANCE: 0.5, // 50% on floors 1-2
+  // Floor 5+ configuration (always has abilities)
+  LATE_FLOOR_MIN_ABILITIES: 2,
+  LATE_FLOOR_MAX_ABILITIES: 3,
 
-  // Common ability chances
-  COMMON_ABILITY_CHANCE: 0.6,  // Increased from 0.5
-  MEDIUM_ABILITY_CHANCE: 0.5,  // Increased from 0.4
-  LOW_ABILITY_CHANCE: 0.4,     // Increased from 0.35
+  // Common ability chances (used for specific ability rolls)
+  COMMON_ABILITY_CHANCE: 0.6,
+  MEDIUM_ABILITY_CHANCE: 0.5,
+  LOW_ABILITY_CHANCE: 0.4,
 } as const;
 
 // === POWER BALANCE ===
