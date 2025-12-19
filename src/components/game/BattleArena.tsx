@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Player, Enemy } from '@/types/game';
-import { EffectsLayer, ScreenShake } from './BattleEffects';
+import { EffectsLayer, ScreenShake, BossDeathEffect } from './BattleEffects';
 import { useBattleAnimation, CombatEvent } from '@/hooks/useBattleAnimation';
 import { cn } from '@/lib/utils';
 import { BattlePhaseType } from '@/constants/enums';
@@ -9,6 +9,7 @@ import { EnemyIntentDisplay } from './EnemyIntentDisplay';
 import { BattleOverlay } from './BattleOverlay';
 import { ScreenReaderAnnouncer } from './ScreenReaderAnnouncer';
 import { getPlayerDisplayName } from '@/utils/powerSynergies';
+import { getIcon, ABILITY_ICONS } from '@/lib/icons';
 
 interface BattleArenaProps {
   player: Player;
@@ -160,6 +161,11 @@ export function BattleArena({
                 intent={displayEnemy.intent}
               />
 
+              {/* Boss death effect - only for boss enemies when dying */}
+              {displayEnemy.isBoss && displayEnemy.isDying && (
+                <BossDeathEffect onComplete={onEnemyDeathAnimationComplete} />
+              )}
+
               {/* Enemy intent display - mobile only (desktop handled in CharacterSprite) */}
               {displayEnemy.intent && (
                 <div
@@ -198,16 +204,19 @@ export function BattleArena({
               {/* Enemy abilities */}
               {displayEnemy.abilities.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1 justify-end">
-                  {displayEnemy.abilities.slice(0, 4).map(ability => (
-                    <div
-                      key={ability.id}
-                      className="bg-health/20 border border-health/50 rounded px-1 py-0.5 flex items-center gap-0.5"
-                      title={ability.description}
-                    >
-                      <span className="text-pixel-xs">{ability.icon}</span>
-                      <span className="pixel-text text-pixel-2xs text-health/90">{ability.name}</span>
-                    </div>
-                  ))}
+                  {displayEnemy.abilities.slice(0, 4).map(ability => {
+                    const AbilityIcon = getIcon(ABILITY_ICONS[ability.type?.toUpperCase() as keyof typeof ABILITY_ICONS], 'Sword');
+                    return (
+                      <div
+                        key={ability.id}
+                        className="bg-health/20 border border-health/50 rounded px-1 py-0.5 flex items-center gap-0.5"
+                        title={ability.description}
+                      >
+                        <AbilityIcon className="w-4 h-4" />
+                        <span className="pixel-text text-pixel-2xs text-health/90">{ability.name}</span>
+                      </div>
+                    );
+                  })}
                   {displayEnemy.abilities.length > 4 && (
                     <span className="pixel-text text-pixel-2xs text-slate-500">
                       +{displayEnemy.abilities.length - 4}

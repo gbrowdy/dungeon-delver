@@ -1,4 +1,4 @@
-import { Shield } from 'lucide-react';
+import { Shield, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCombat } from '@/contexts/CombatContext';
 import { PowerButton } from './PowerButton';
@@ -164,7 +164,7 @@ function ComboIndicator({ count }: ComboIndicatorProps) {
       role="status"
       aria-live="polite"
     >
-      <span className="text-sm" aria-hidden="true">🔥</span>
+      <Sparkles className="w-4 h-4 text-warning" aria-hidden="true" />
       <span>{count}x Combo Active (+{bonusDamage}% damage)</span>
     </div>
   );

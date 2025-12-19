@@ -3,6 +3,7 @@ import { HealthBar } from './HealthBar';
 import { StatDisplay } from './StatDisplay';
 import { CLASS_DATA } from '@/data/classes';
 import { getPlayerDisplayName } from '@/utils/powerSynergies';
+import { PixelIcon } from '@/components/ui/PixelIcon';
 
 interface PlayerCardProps {
   player: Player;
@@ -22,7 +23,7 @@ export function PlayerCard({ player }: PlayerCardProps) {
           </div>
         </div>
         <div className="text-right">
-          <p className="text-gold font-bold">💰 {player.gold}</p>
+          <p className="text-gold font-bold flex items-center gap-1"><PixelIcon type="stat-gold" size={16} /> {player.gold}</p>
           <p className="text-pixel-xs text-muted-foreground">{player.equippedItems.length} items</p>
         </div>
       </div>

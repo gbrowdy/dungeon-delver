@@ -34,3 +34,7 @@ playwright-report/
 
 # Task/improvement documents (local only)
 tasks/
+
+# Generated placeholder icons (re-generate with npm run generate:icons)
+public/assets/icons/*.png
+public/assets/icons/**/*.png

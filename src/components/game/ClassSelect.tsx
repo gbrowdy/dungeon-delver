@@ -3,6 +3,8 @@ import { CharacterClass } from '@/types/game';
 import { CLASS_DATA } from '@/data/classes';
 import { Button } from '@/components/ui/button';
 import { PixelDivider } from '@/components/ui/PixelDivider';
+import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
+import { CLASS_COLORS } from '@/constants/icons';
 
 interface ClassSelectProps {
   onSelect: (characterClass: CharacterClass) => void;
@@ -13,13 +15,16 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
   const [hoveredClass, setHoveredClass] = useState<CharacterClass | null>(null);
   const classes = Object.entries(CLASS_DATA) as [CharacterClass, typeof CLASS_DATA[CharacterClass]][];
 
-  // Improved mage color for better contrast (Issue #15)
-  const classColors: Record<CharacterClass, { primary: string; glow: string; border: string }> = {
-    warrior: { primary: '#ef4444', glow: 'rgba(239, 68, 68, 0.5)', border: '#dc2626' },
-    mage: { primary: '#a78bfa', glow: 'rgba(167, 139, 250, 0.5)', border: '#8b5cf6' },
-    rogue: { primary: '#22c55e', glow: 'rgba(34, 197, 94, 0.5)', border: '#16a34a' },
-    paladin: { primary: '#f59e0b', glow: 'rgba(245, 158, 11, 0.5)', border: '#d97706' },
+  // Map class IDs to PixelIcon types
+  const classIcons: Record<CharacterClass, IconType> = {
+    warrior: 'class-warrior',
+    mage: 'class-mage',
+    rogue: 'class-rogue',
+    paladin: 'class-paladin',
   };
+
+  // Use shared class colors from constants
+  const classColors = CLASS_COLORS;
 
   const activeClass = hoveredClass || selectedClass;
 
@@ -139,13 +144,16 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
 
                 {/* Class icon */}
                 <div className="text-center mb-2 sm:mb-3">
-                  <span
-                    className="text-4xl sm:text-4xl md:text-5xl block pixel-icon"
-                    style={{ filter: isSelected || isHovered ? `drop-shadow(0 0 8px ${colors.glow})` : 'none' }}
+                  <div
+                    className="inline-block"
+                    style={{
+                      filter: isSelected || isHovered ? `drop-shadow(0 0 8px ${colors.glow})` : 'none',
+                      color: isSelected || isHovered ? colors.primary : '#94a3b8'
+                    }}
                     aria-hidden="true"
                   >
-                    {data.icon}
-                  </span>
+                    <PixelIcon type={classIcons[id]} size={48} />
+                  </div>
                 </div>
 
                 {/* Class name */}
@@ -192,7 +200,7 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
 
         {/* Class details panel - always present to prevent layout shift */}
         <div
-          className={`pixel-details-panel mt-4 sm:mt-6 p-4 sm:p-6 transition-opacity duration-150 ${
+          className={`pixel-details-panel mt-4 sm:mt-6 p-4 sm:p-6 transition-opacity duration-150 min-h-[200px] sm:min-h-[180px] ${
             activeClass ? 'opacity-100' : 'opacity-40'
           }`}
           role="region"
@@ -205,13 +213,16 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
               {/* Left: Class info */}
               <div className="flex-1 space-y-3 min-w-0">
                 <div className="flex items-start gap-3">
-                  <span
-                    className="text-4xl sm:text-5xl flex-shrink-0"
-                    style={{ filter: `drop-shadow(0 0 12px ${classColors[activeClass].glow})` }}
+                  <div
+                    className="flex-shrink-0"
+                    style={{
+                      filter: `drop-shadow(0 0 12px ${classColors[activeClass].glow})`,
+                      color: classColors[activeClass].primary
+                    }}
                     aria-hidden="true"
                   >
-                    {CLASS_DATA[activeClass].icon}
-                  </span>
+                    <PixelIcon type={classIcons[activeClass]} size={48} />
+                  </div>
                   <div className="min-w-0 flex-1">
                     <h3
                       className="pixel-text text-pixel-base uppercase"
@@ -219,7 +230,7 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
                     >
                       {CLASS_DATA[activeClass].name}
                     </h3>
-                    <p className="pixel-text text-pixel-xs text-slate-400 mt-1 leading-relaxed">
+                    <p className="pixel-text text-pixel-xs text-slate-400 mt-1 leading-relaxed min-h-[2.5rem]">
                       {CLASS_DATA[activeClass].description}
                     </p>
                   </div>
@@ -248,7 +259,9 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
               <div className="md:w-64 min-w-0 flex-shrink-0">
                 <div className="pixel-power-box h-full" style={{ borderColor: classColors[activeClass].border }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xl sm:text-2xl" aria-hidden="true">{CLASS_DATA[activeClass].startingPower.icon}</span>
+                    <div style={{ color: classColors[activeClass].primary }} aria-hidden="true">
+                      <PixelIcon type={CLASS_DATA[activeClass].startingPower.icon as IconType} size={24} />
+                    </div>
                     <span
                       className="pixel-text text-pixel-sm uppercase"
                       style={{ color: classColors[activeClass].primary }}
@@ -256,7 +269,7 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
                       {CLASS_DATA[activeClass].startingPower.name}
                     </span>
                   </div>
-                  <p className="pixel-text text-pixel-2xs text-slate-400 leading-relaxed">
+                  <p className="pixel-text text-pixel-2xs text-slate-400 leading-relaxed min-h-[2rem]">
                     {CLASS_DATA[activeClass].startingPower.description}
                   </p>
                   <div className="flex gap-3 mt-2 pixel-text text-pixel-2xs">
@@ -275,9 +288,9 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
             <div className="flex flex-col md:flex-row gap-4 md:gap-6">
               <div className="flex-1 space-y-3 min-w-0">
                 <div className="flex items-start gap-3">
-                  <span className="text-4xl sm:text-5xl flex-shrink-0 opacity-30" aria-hidden="true">
-                    ❓
-                  </span>
+                  <div className="flex-shrink-0 opacity-30" aria-hidden="true">
+                    <PixelIcon type="ui-question" size={48} />
+                  </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="pixel-text text-pixel-base uppercase text-slate-500">
                       Select a Hero
@@ -303,7 +316,9 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
               <div className="md:w-64 min-w-0 flex-shrink-0">
                 <div className="pixel-power-box h-full opacity-50" style={{ borderColor: 'rgba(100, 100, 120, 0.3)' }}>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xl sm:text-2xl opacity-30" aria-hidden="true">✨</span>
+                    <div className="opacity-30" aria-hidden="true">
+                      <PixelIcon type="ui-sparkle" size={24} />
+                    </div>
                     <span className="pixel-text text-pixel-sm uppercase text-slate-500">
                       Starting Power
                     </span>

@@ -332,6 +332,8 @@ test(hooks): add useItemEffects unit tests
 
 For complex multi-file tasks, use the **Conductor-Swarm** pattern. The **Conductor** (root/main agent) orchestrates **Swarm Agents** (subagents) to execute tasks in parallel or sequentially.
 
+**IMPORTANT**: Always use swarm agents for task document execution, even if all tasks are sequential. This ensures consistent workflow patterns and proper task isolation.
+
 **Trigger phrases**: "conductor-swarm", "work through tasks", "execute task document", "fan out agents", "parallel task execution"
 
 ### Why Worktrees?
@@ -344,6 +346,17 @@ For complex multi-file tasks, use the **Conductor-Swarm** pattern. The **Conduct
 |------|------------------|
 | **Conductor** (root agent) | Creates feature branch, creates worktrees for parallel tasks, assigns tasks with worktree paths, merges work, cleans up worktrees |
 | **Swarm Agent** (subagent) | Works ONLY in assigned worktree directory, commits to the worktree's branch, reports completion. **NEVER creates branches or worktrees.** |
+
+### Launching Swarm Agents
+
+**IMPORTANT**: Use the Task tool with `subagent_type="swarm-agent"` to launch swarm agents. Do NOT use other subagent types (like `general-purpose`, `Explore`, or `Plan`) for conductor-swarm work—the `swarm-agent` type is specifically designed for parallelized task execution with full tool access.
+
+```
+Task tool parameters:
+  subagent_type: "swarm-agent"
+  prompt: <task details with WORKDIR instructions>
+  run_in_background: true  # For parallel execution
+```
 
 ### 1. Create Task Document
 
@@ -393,16 +406,23 @@ git worktree add ../rogue-task-1.2 -b <feature>/task-1.2
 # Example:
 git worktree add ../rogue-fix-warrior -b fix/warrior-paths
 git worktree add ../rogue-fix-mage -b fix/mage-paths
+
+# Step 3: IMPORTANT - Verify worktree paths resolve correctly
+# Use realpath to get canonical absolute paths (no double slashes)
+realpath ../rogue-task-1.1
+# Should output: /Users/gilbrowdy/rogue-task-1.1 (single leading slash)
 ```
 
 **Worktree naming convention**: `../rogue-<short-task-name>`
+
+**Path verification**: Before launching agents, always verify worktree paths with `realpath` or `pwd`. Agent tool permissions may fail if paths contain formatting issues (e.g., double slashes `//Users/...`). If agents report permission errors on worktree files, the conductor should complete the work directly.
 
 ### 3. Execute Tasks
 
 #### For PARALLEL Waves:
 1. Conductor creates all worktrees for the wave FIRST
 2. Conductor updates task document with worktree paths
-3. Conductor launches multiple swarm agents simultaneously
+3. Conductor launches multiple `swarm-agent` subagents simultaneously using the Task tool with `run_in_background: true`
 4. **Each agent prompt MUST include:**
    ```
    WORKDIR: /Users/gilbrowdy/rogue-task-1.1

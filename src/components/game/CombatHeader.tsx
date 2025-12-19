@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Pause, Play, Keyboard } from 'lucide-react';
+import { Keyboard, Pause, Play, FastForward, ChevronsRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCombat } from '@/contexts/CombatContext';
 import { KEYBOARD_SHORTCUTS } from '@/hooks/useGameKeyboard';
@@ -16,7 +16,7 @@ import {
  * Styled with pixel art / 8-bit retro aesthetic.
  */
 export function CombatHeader() {
-  const { gameState, player, actions } = useCombat();
+  const { gameState, actions } = useCombat();
   const { currentFloor, currentRoom, roomsPerFloor, isPaused, combatSpeed, currentEnemy } = gameState;
 
   // Calculate enemies remaining
@@ -73,7 +73,7 @@ export function CombatHeader() {
               isPaused && "bg-warning/20"
             )}
           >
-            {isPaused ? <Play className="h-3 w-3 sm:h-4 sm:w-4" /> : <Pause className="h-3 w-3 sm:h-4 sm:w-4" />}
+            {isPaused ? <Play className="w-4 h-4 text-emerald-400" /> : <Pause className="w-4 h-4 text-slate-300" />}
           </Button>
 
           {/* Keyboard shortcuts help - only on desktop (useless on touch) */}
@@ -126,6 +126,15 @@ interface SpeedControlsProps {
 }
 
 function SpeedControls({ currentSpeed, onSetSpeed }: SpeedControlsProps) {
+  const SpeedIcon = ({ speed, isActive }: { speed: CombatSpeed; isActive: boolean }) => {
+    const colorClass = isActive ? 'text-primary-foreground' : 'text-slate-400';
+    switch (speed) {
+      case 1: return <Play className={`w-3 h-3 ${colorClass}`} />;
+      case 2: return <FastForward className={`w-3 h-3 ${colorClass}`} />;
+      case 3: return <ChevronsRight className={`w-3 h-3 ${colorClass}`} />;
+    }
+  };
+
   return (
     <div
       className="flex items-center gap-0.5 pixel-panel-dark rounded p-0.5"
@@ -138,7 +147,7 @@ function SpeedControls({ currentSpeed, onSetSpeed }: SpeedControlsProps) {
           variant={currentSpeed === speed ? "default" : "ghost"}
           size="sm"
           className={cn(
-            "pixel-text text-pixel-2xs xs:text-pixel-xs h-6 xs:h-7 sm:h-8 px-1.5 xs:px-2 sm:px-3 focus-visible:ring-0 focus-visible:ring-offset-0",
+            "pixel-text text-pixel-2xs xs:text-pixel-xs h-6 xs:h-7 sm:h-8 px-1.5 xs:px-2 sm:px-3 focus-visible:ring-0 focus-visible:ring-offset-0 flex items-center gap-1",
             currentSpeed === speed && "bg-primary text-primary-foreground"
           )}
           onClick={(e) => {
@@ -148,7 +157,8 @@ function SpeedControls({ currentSpeed, onSetSpeed }: SpeedControlsProps) {
           aria-label={`Set combat speed to ${speed}x`}
           aria-pressed={currentSpeed === speed}
         >
-          {speed}x
+          <span className="hidden sm:inline-block"><SpeedIcon speed={speed} isActive={currentSpeed === speed} /></span>
+          <span>{speed}x</span>
         </Button>
       ))}
     </div>
@@ -167,7 +177,7 @@ function KeyboardShortcutsHelp() {
             className="flex items-center justify-center h-8 w-8 text-slate-400"
             aria-label="Keyboard shortcuts"
           >
-            <Keyboard className="h-3 w-3 sm:h-4 sm:w-4" />
+            <Keyboard className="h-3 w-3 sm:h-4 sm:w-4 text-slate-400" />
           </div>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="pixel-panel max-w-xs">

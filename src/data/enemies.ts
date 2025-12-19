@@ -107,7 +107,7 @@ const ENEMY_ABILITIES: Record<string, EnemyAbility> = {
     cooldown: 3,
     currentCooldown: 0,
     chance: 0.5, // 50% chance when off cooldown
-    icon: '⚔️⚔️',
+    icon: 'ability-multi_hit',
     description: 'Attacks twice in quick succession',
   },
   poison_bite: {
@@ -118,7 +118,7 @@ const ENEMY_ABILITIES: Record<string, EnemyAbility> = {
     cooldown: 4,
     currentCooldown: 0,
     chance: 0.45, // 45% chance
-    icon: '🐍',
+    icon: 'ability-poison',
     description: 'Inflicts poison dealing damage over time',
   },
   // Uncommon abilities
@@ -130,7 +130,7 @@ const ENEMY_ABILITIES: Record<string, EnemyAbility> = {
     cooldown: 5,
     currentCooldown: 0,
     chance: 0.35, // 35% chance
-    icon: '💫',
+    icon: 'ability-stun',
     description: 'A heavy blow that stuns the target',
   },
   regenerate: {
@@ -141,7 +141,7 @@ const ENEMY_ABILITIES: Record<string, EnemyAbility> = {
     cooldown: 4,
     currentCooldown: 0,
     chance: 0.5, // 50% chance
-    icon: '💚',
+    icon: 'ability-heal',
     description: 'Recovers health over time',
   },
   // Rare/Boss abilities
@@ -153,7 +153,7 @@ const ENEMY_ABILITIES: Record<string, EnemyAbility> = {
     cooldown: 6,
     currentCooldown: 0,
     chance: 0.4, // 40% chance
-    icon: '😤',
+    icon: 'ability-enrage',
     description: 'Becomes enraged, increasing attack power',
   },
   shield_bash: {
@@ -164,7 +164,7 @@ const ENEMY_ABILITIES: Record<string, EnemyAbility> = {
     cooldown: 5,
     currentCooldown: 0,
     chance: 0.35, // 35% chance
-    icon: '🛡️',
+    icon: 'ability-shield',
     description: 'Raises a shield, reducing incoming damage',
   },
   triple_strike: {
@@ -175,7 +175,7 @@ const ENEMY_ABILITIES: Record<string, EnemyAbility> = {
     cooldown: 5,
     currentCooldown: 0,
     chance: 0.4, // 40% chance
-    icon: '⚔️⚔️⚔️',
+    icon: 'ability-triple_strike',
     description: 'Unleashes three rapid attacks',
   },
 };
@@ -310,7 +310,7 @@ export function calculateEnemyIntent(enemy: Enemy): EnemyIntent {
   return {
     type: 'attack',
     damage: enemy.power,
-    icon: '⚔️',
+    icon: 'ability-attack',
   };
 }
 

@@ -22,7 +22,7 @@ const FINAL_BOSS_ABILITIES: Record<string, EnemyAbility> = {
     cooldown: 4,
     currentCooldown: 0,
     chance: 0.6, // 60% chance
-    icon: '💀⚔️',
+    icon: 'ability-triple_strike',
     description: 'Unleashes a devastating triple strike from the void',
   },
   entropy_wave: {
@@ -33,7 +33,7 @@ const FINAL_BOSS_ABILITIES: Record<string, EnemyAbility> = {
     cooldown: 5,
     currentCooldown: 0,
     chance: 0.45, // 45% chance
-    icon: '🌀',
+    icon: 'ability-poison',
     description: 'A wave of corruption that poisons and weakens',
   },
   eternal_fury: {
@@ -44,7 +44,7 @@ const FINAL_BOSS_ABILITIES: Record<string, EnemyAbility> = {
     cooldown: 6,
     currentCooldown: 0,
     chance: 0.5, // 50% chance
-    icon: '😡',
+    icon: 'ability-enrage',
     description: 'Channels ancient rage, greatly increasing power',
   },
   aegis_of_eternity: {
@@ -55,7 +55,7 @@ const FINAL_BOSS_ABILITIES: Record<string, EnemyAbility> = {
     cooldown: 7,
     currentCooldown: 0,
     chance: 0.4, // 40% chance
-    icon: '🛡️✨',
+    icon: 'ability-shield',
     description: 'Summons an eternal shield, reducing incoming damage',
   },
   restoration: {
@@ -66,7 +66,7 @@ const FINAL_BOSS_ABILITIES: Record<string, EnemyAbility> = {
     cooldown: 8,
     currentCooldown: 1, // Starts on cooldown to prevent first-turn heal
     chance: 0.35, // 35% chance
-    icon: '💜',
+    icon: 'ability-heal',
     description: 'Draws power from the void to regenerate health',
   },
 };
@@ -101,7 +101,7 @@ export function generateFinalBoss(): Enemy {
   const initialIntent: EnemyIntent = {
     type: 'attack',
     damage: basePower,
-    icon: '⚔️',
+    icon: 'ability-attack',
   };
 
   const boss: Enemy = {

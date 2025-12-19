@@ -8,6 +8,8 @@ import { formatItemStatBonus } from '@/utils/itemUtils';
 import { PowerWithSynergies, hasSynergy, getSynergy, getPathName, getPlayerDisplayName } from '@/utils/powerSynergies';
 import { Star } from 'lucide-react';
 import { PixelDivider } from '@/components/ui/PixelDivider';
+import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
+import { STAT_ICONS, ITEM_ICONS, UI_ICONS } from '@/constants/icons';
 
 const RARITY_COLORS: Record<Item['rarity'], string> = {
   common: 'border-rarity-common bg-rarity-common/10 text-rarity-common',
@@ -25,17 +27,26 @@ const RARITY_TEXT: Record<Item['rarity'], string> = {
   legendary: 'text-rarity-legendary',
 };
 
-const TYPE_ICONS: Record<ItemType, string> = {
-  weapon: '⚔️',
-  armor: '🛡️',
-  accessory: '💍',
-};
-
 const TYPE_LABELS: Record<ItemType, string> = {
   weapon: 'Weapon',
   armor: 'Armor',
   accessory: 'Accessory',
 };
+
+/**
+ * Convert item type to PixelIcon type
+ */
+function getItemIconType(itemType: ItemType): IconType {
+  return `item-${itemType}` as IconType;
+}
+
+/**
+ * Convert power ID to PixelIcon type
+ */
+function getPowerIconType(powerId: string): IconType {
+  const iconName = powerId.replace(/-/g, '_');
+  return `power-${iconName}` as IconType;
+}
 
 const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
 
@@ -101,7 +112,9 @@ export function FloorCompleteScreen({
       <div className="relative z-10 max-w-5xl w-full space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="text-5xl sm:text-6xl mb-2">🏆</div>
+          <div className="flex justify-center mb-2">
+            <PixelIcon type={UI_ICONS.TROPHY} size={48} />
+          </div>
           <h1 className="pixel-title text-base sm:text-lg md:text-xl lg:text-2xl font-bold tracking-wider uppercase">
             <span className="pixel-glow-gold bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 bg-clip-text text-transparent">
               Floor {floor} Complete!
@@ -155,15 +168,15 @@ export function FloorCompleteScreen({
 
               {/* Stat Boxes - Core Stats */}
               <div className="grid grid-cols-4 gap-1 w-full">
-                <PixelStatBox icon="⚔️" label="PWR" value={player.currentStats.power} />
-                <PixelStatBox icon="🛡️" label="ARM" value={player.currentStats.armor} />
-                <PixelStatBox icon="💨" label="SPD" value={player.currentStats.speed} />
-                <PixelStatBox icon="✨" label="FOR" value={player.currentStats.fortune} />
+                <PixelStatBox iconType={STAT_ICONS.POWER} label="PWR" value={player.currentStats.power} />
+                <PixelStatBox iconType={STAT_ICONS.ARMOR} label="ARM" value={player.currentStats.armor} />
+                <PixelStatBox iconType={STAT_ICONS.SPEED} label="SPD" value={player.currentStats.speed} />
+                <PixelStatBox iconType={STAT_ICONS.FORTUNE} label="FOR" value={player.currentStats.fortune} />
               </div>
 
               {/* Gold Display */}
               <div className="w-full">
-                <PixelStatBox icon="💰" label="GOLD" value={player.gold} />
+                <PixelStatBox iconType={STAT_ICONS.GOLD} label="GOLD" value={player.gold} />
               </div>
 
               {/* Equipment Slots */}
@@ -184,7 +197,7 @@ export function FloorCompleteScreen({
                             isHighlighted && 'ring-2 ring-primary scale-[1.02]'
                           )}
                         >
-                          <span className="text-sm">{item.icon}</span>
+                          <PixelIcon type={getItemIconType(item.type)} size={16} />
                           <div className="flex-1 min-w-0">
                             <div className={cn('pixel-text text-pixel-xs font-medium truncate', RARITY_TEXT[item.rarity])}>
                               {item.name}
@@ -206,7 +219,7 @@ export function FloorCompleteScreen({
                           isHighlighted && 'ring-2 ring-primary scale-[1.02]'
                         )}
                       >
-                        <span className="text-sm text-slate-500">{TYPE_ICONS[type]}</span>
+                        <PixelIcon type={getItemIconType(type)} size={16} className="opacity-50" />
                         <span className="pixel-text text-pixel-xs text-slate-500">
                           No {TYPE_LABELS[type]}
                         </span>
@@ -224,7 +237,7 @@ export function FloorCompleteScreen({
             {availablePowers.length > 0 && (
               <div className="pixel-panel rounded-lg p-4 border-2 border-primary/30">
                 <h3 className="pixel-text text-pixel-sm text-primary mb-3 flex items-center gap-2">
-                  ✨ Choose a Power!
+                  <PixelIcon type={UI_ICONS.SPARKLE} size={16} /> Choose a Power!
                 </h3>
                 <div className="space-y-2">
                   {availablePowers.map((choice, index) => {
@@ -245,7 +258,7 @@ export function FloorCompleteScreen({
                         >
                           <div className="flex items-center gap-3">
                             <div className="relative">
-                              <span className="text-2xl">{choice.powerIcon}</span>
+                              <PixelIcon type={getPowerIconType(choice.powerId)} size={32} />
                               <span className="absolute -top-1 -right-1 pixel-text text-pixel-xs bg-gold text-black px-1 rounded font-bold">
                                 +{choice.newLevel - 1}
                               </span>
@@ -290,7 +303,7 @@ export function FloorCompleteScreen({
                           )}
 
                           <div className="flex items-center gap-3">
-                            <span className="text-2xl">{choice.icon}</span>
+                            <PixelIcon type={getPowerIconType(choice.id)} size={32} />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <h4 className="pixel-text text-pixel-sm font-bold text-primary">{choice.name}</h4>
@@ -300,14 +313,14 @@ export function FloorCompleteScreen({
                               </div>
                               <p className="pixel-text text-pixel-xs text-slate-400">{choice.description}</p>
                               <div className="flex gap-2 mt-1 pixel-text text-pixel-xs text-slate-500">
-                                <span>💧 {choice.manaCost} MP</span>
-                                <span>⏱️ {choice.cooldown}s CD</span>
+                                <span className="flex items-center gap-1"><PixelIcon type={STAT_ICONS.MANA} size={16} /> {choice.manaCost} MP</span>
+                                <span className="flex items-center gap-1"><PixelIcon type="ui-play" size={16} /> {choice.cooldown}s CD</span>
                               </div>
                               {/* Synergy description */}
                               {synergy && (
                                 <div className="mt-2 pt-2 border-t border-amber-500/20">
                                   <p className="pixel-text text-pixel-2xs text-amber-300 italic">
-                                    ★ {synergy.description}
+                                    <PixelIcon type="ui-star" size={16} className="inline-block mr-1" />{synergy.description}
                                   </p>
                                 </div>
                               )}
@@ -334,7 +347,7 @@ export function FloorCompleteScreen({
           {/* Right: Powers & Gold Display */}
           <div className="pixel-panel rounded-lg p-4">
             <h3 className="pixel-text text-pixel-sm text-gold mb-3 flex items-center gap-2">
-              💰 Gold: {player.gold}
+              <PixelIcon type={STAT_ICONS.GOLD} size={24} /> Gold: {player.gold}
             </h3>
 
             {/* Powers Display */}
@@ -348,7 +361,7 @@ export function FloorCompleteScreen({
                       className="pixel-panel-dark flex items-center gap-1 border border-mana/30 rounded px-2 py-1"
                       title={power.description}
                     >
-                      <span className="text-sm">{power.icon}</span>
+                      <PixelIcon type={getPowerIconType(power.id)} size={16} />
                       <span className="pixel-text text-pixel-xs">{power.name}</span>
                     </div>
                   ))}
@@ -363,9 +376,9 @@ export function FloorCompleteScreen({
           <Button
             onClick={onVisitShop}
             variant="outline"
-            className="pixel-button text-pixel-sm px-6 sm:px-8 py-3 sm:py-4 border-amber-600 hover:bg-amber-900/20 text-amber-400 uppercase"
+            className="pixel-button text-pixel-sm px-6 sm:px-8 py-3 sm:py-4 border-amber-600 hover:bg-amber-900/20 text-amber-400 uppercase flex items-center gap-2"
           >
-            ⚒️ Visit Shop
+            <PixelIcon type={UI_ICONS.HAMMER} size={16} /> Visit Shop
           </Button>
           <Button
             onClick={onContinue}
@@ -421,17 +434,19 @@ function PixelStatBar({
 
 // Pixel art stat box component
 function PixelStatBox({
-  icon,
+  iconType,
   label,
   value,
 }: {
-  icon: string;
+  iconType: IconType;
   label: string;
   value: string | number;
 }) {
   return (
     <div className="pixel-panel-dark rounded p-1.5 text-center">
-      <div className="text-sm">{icon}</div>
+      <div className="flex justify-center">
+        <PixelIcon type={iconType} size={16} />
+      </div>
       <div className="pixel-text text-pixel-xs text-slate-400">{label}</div>
       <div className="pixel-text text-pixel-sm font-bold text-slate-200">{value}</div>
     </div>

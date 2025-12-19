@@ -3,7 +3,7 @@ import { Player } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
-import { Trophy, Star, Crown, Sparkles } from 'lucide-react';
+import { PixelIcon } from '@/components/ui/PixelIcon';
 import { getPlayerDisplayName } from '@/utils/powerSynergies';
 import { FLOOR_CONFIG } from '@/constants/game';
 
@@ -41,11 +41,12 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
         <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[300px] bg-yellow-500/10 rounded-full blur-[100px]" />
       </div>
 
-      {/* Celebration stars scattered in background */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      {/* Celebration stars, confetti, and fireworks in background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        {/* Twinkling stars */}
         {[...Array(12)].map((_, i) => (
           <div
-            key={i}
+            key={`star-${i}`}
             className="pixel-star-gold"
             style={{
               top: `${10 + (i * 7) % 80}%`,
@@ -54,27 +55,106 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
             }}
           />
         ))}
+
+        {/* Falling confetti */}
+        {[...Array(25)].map((_, i) => {
+          const colors = ['#fbbf24', '#ef4444', '#3b82f6', '#22c55e', '#a855f7'];
+          const color = colors[i % colors.length];
+          const startX = (i * 15) % 100;
+          const duration = 2 + (i % 3) * 0.5;
+          const delay = (i % 5) * 0.2;
+          const rotation = (i * 137) % 720; // Golden angle for distribution
+
+          return (
+            <div
+              key={`confetti-${i}`}
+              className="absolute w-2 h-2 animate-confetti"
+              style={{
+                left: `${startX}%`,
+                top: '-20px',
+                backgroundColor: color,
+                '--confetti-start': '-20px',
+                '--confetti-end': '100vh',
+                '--confetti-rot': `${rotation}deg`,
+                '--confetti-duration': `${duration}s`,
+                animationDelay: `${delay}s`,
+                animationIterationCount: 'infinite',
+              } as React.CSSProperties}
+            />
+          );
+        })}
+
+        {/* Firework bursts at different positions */}
+        {[
+          { x: 20, y: 30, delay: 0.3 },
+          { x: 70, y: 25, delay: 0.6 },
+          { x: 50, y: 40, delay: 0.9 },
+        ].map((fw, fwIdx) => (
+          <div
+            key={`firework-${fwIdx}`}
+            className="absolute"
+            style={{
+              left: `${fw.x}%`,
+              top: `${fw.y}%`,
+            }}
+          >
+            {/* Firework center burst */}
+            <div
+              className="absolute w-8 h-8 rounded-full bg-amber-400/60 animate-firework"
+              style={{
+                left: '50%',
+                top: '50%',
+                animationDelay: `${fw.delay}s`,
+                animationIterationCount: 'infinite',
+                animationDuration: '2s',
+              }}
+            />
+
+            {/* Radiating particles */}
+            {[...Array(10)].map((_, pIdx) => {
+              const angle = (pIdx * 360) / 10;
+              const distance = 50 + (pIdx % 3) * 10;
+
+              return (
+                <div
+                  key={`particle-${fwIdx}-${pIdx}`}
+                  className="absolute w-1 h-1 bg-yellow-400 rounded-full animate-firework-trail"
+                  style={{
+                    left: '50%',
+                    top: '50%',
+                    '--trail-distance': `${distance}px`,
+                    transform: `translate(-50%, -50%) rotate(${angle}deg)`,
+                    transformOrigin: 'center',
+                    animationDelay: `${fw.delay}s`,
+                    animationIterationCount: 'infinite',
+                    animationDuration: '2s',
+                  } as React.CSSProperties}
+                />
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       <div className="relative z-10 max-w-3xl w-full space-y-6 sm:space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3 sm:gap-4 animate-bounce-slow">
-            <Trophy className="w-8 h-8 sm:w-12 sm:h-12 text-amber-400" />
+            <PixelIcon type="ui-trophy" size={48} animated />
             <h1 className="pixel-title text-lg sm:text-xl md:text-2xl font-bold tracking-wider uppercase">
               <span className="pixel-glow-gold bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-300 bg-clip-text text-transparent">
                 VICTORY!
               </span>
             </h1>
-            <Crown className="w-8 h-8 sm:w-12 sm:h-12 text-amber-400" />
+            <PixelIcon type="ui-trophy" size={48} animated />
           </div>
 
           <div className="flex items-center justify-center gap-2">
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 animate-pulse" />
+            <PixelIcon type="ui-sparkle" size={24} animated />
             <p className="pixel-text text-pixel-xs sm:text-pixel-sm text-amber-300 tracking-wider">
               The Final Boss has been defeated!
             </p>
-            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 animate-pulse" />
+            <PixelIcon type="ui-sparkle" size={24} animated />
           </div>
         </div>
 
@@ -91,10 +171,10 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
 
             {/* Victory effects */}
             <div className="absolute -top-2 -right-2">
-              <Star className="w-6 h-6 text-amber-400 animate-spin-slow" />
+              <PixelIcon type="ui-star" size={24} className="animate-spin-slow" />
             </div>
             <div className="absolute -bottom-2 -left-2">
-              <Star className="w-6 h-6 text-yellow-400 animate-spin-slow" style={{ animationDelay: '0.5s' }} />
+              <PixelIcon type="ui-star" size={24} className="animate-spin-slow" style={{ animationDelay: '0.5s' }} />
             </div>
           </div>
         </div>
@@ -139,7 +219,7 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
             <div className="pixel-panel-dark rounded p-3">
               <div className="pixel-text text-pixel-2xs sm:text-pixel-xs text-slate-400 mb-1">Total Gold</div>
               <div className="pixel-text text-pixel-xs sm:text-pixel-sm text-amber-400 font-bold flex items-center gap-1">
-                <span>💰</span> {player.gold}
+                <PixelIcon type="stat-gold" size={16} /> {player.gold}
               </div>
             </div>
 
@@ -194,10 +274,11 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
               "text-white font-bold shadow-lg",
               "transition-all duration-200",
               "border-2 border-amber-400/50",
-              "pixel-glow-gold"
+              "pixel-glow-gold",
+              "flex items-center justify-center gap-2"
             )}
           >
-            <Sparkles className="w-4 h-4 mr-2" />
+            <PixelIcon type="ui-sparkle" size={16} />
             Start New Run
           </Button>
 
@@ -296,7 +377,10 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
         @media (prefers-reduced-motion: reduce) {
           .pixel-star-gold,
           .animate-spin-slow,
-          .animate-bounce-slow {
+          .animate-bounce-slow,
+          .animate-confetti,
+          .animate-firework,
+          .animate-firework-trail {
             animation: none;
           }
         }

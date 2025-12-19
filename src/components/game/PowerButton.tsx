@@ -7,7 +7,50 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { PowerWithSynergies, hasSynergy, getSynergy, getPathName } from '@/utils/powerSynergies';
-import { Star } from 'lucide-react';
+import * as Icons from 'lucide-react';
+import { getIcon, type LucideIconName, POWER_ICONS } from '@/lib/icons';
+
+// Map power IDs to Lucide icon names (extends POWER_ICONS with kebab-case IDs)
+const POWER_ICON_MAP: Record<string, LucideIconName> = {
+  'crushing-blow': 'Hammer',
+  'power-strike': 'Swords',
+  'fan-of-knives': 'Fan',
+  'flurry': 'Zap',
+  'ambush': 'Crosshair',
+  'shadow-strike': 'Crosshair',
+  'coup-de-grace': 'Target',
+  'frost-nova': 'Snowflake',
+  'stunning-blow': 'CircleSlash',
+  'battle-cry': 'Megaphone',
+  'inner-focus': 'Focus',
+  'reckless-swing': 'Axe',
+  'blood-pact': 'Droplets',
+  'divine-heal': 'Cross',
+  'regeneration': 'HeartPulse',
+  'earthquake': 'Mountain',
+  'vampiric-touch': 'Hand',
+  'fireball': 'Flame',
+  'berserker-rage': 'Axe',
+};
+
+/**
+ * Get the Lucide icon component for a power.
+ */
+function getPowerIcon(power: Power): React.ComponentType<{ className?: string }> {
+  // Check by power ID first
+  const iconName = POWER_ICON_MAP[power.id];
+  if (iconName) {
+    return getIcon(iconName, 'Sparkles');
+  }
+
+  // Check if power.icon is a valid Lucide name directly
+  if (power.icon) {
+    return getIcon(power.icon, 'Sparkles');
+  }
+
+  // Default fallback
+  return getIcon('Sparkles');
+}
 
 /**
  * Props for the PowerButton component.
@@ -87,6 +130,8 @@ export function PowerButton({ power, currentMana, effectiveManaCost, onUse, disa
     ? `Insufficient mana: need ${manaCost}, have ${Math.floor(currentMana)}`
     : `Ready. Costs ${manaCost} mana.`;
 
+  const PowerIcon = getPowerIcon(power);
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -105,7 +150,7 @@ export function PowerButton({ power, currentMana, effectiveManaCost, onUse, disa
             {/* Synergy indicator badge */}
             {synergizes && (
               <div className="absolute top-1 right-1 z-20">
-                <Star className="h-3 w-3 text-amber-400 fill-amber-400" aria-hidden="true" />
+                <Icons.Star className="h-3 w-3 text-amber-400 fill-amber-400" aria-hidden="true" />
               </div>
             )}
 
@@ -117,7 +162,9 @@ export function PowerButton({ power, currentMana, effectiveManaCost, onUse, disa
                 aria-hidden="true"
               />
             )}
-            <span className={cn("text-lg xs:text-xl sm:text-2xl relative z-10", isOnCooldown && "opacity-50")} aria-hidden="true">{power.icon}</span>
+            <div className={cn("relative z-10", isOnCooldown && "opacity-50")} aria-hidden="true">
+              <PowerIcon className="w-6 h-6 xs:w-7 xs:h-7" />
+            </div>
             <span className={cn("pixel-text text-pixel-2xs font-medium relative z-10 text-slate-200 truncate max-w-full", isOnCooldown && "opacity-50")}>{power.name}</span>
             <span className={cn("pixel-text text-pixel-2xs relative z-10", isOnCooldown ? "text-slate-400" : hasReduction ? "text-emerald-400" : "text-mana")} aria-hidden="true">
               {isOnCooldown ? `${Math.ceil(power.currentCooldown)}s` : `${manaCost} MP`}
@@ -136,7 +183,7 @@ export function PowerButton({ power, currentMana, effectiveManaCost, onUse, disa
           {synergy && (
             <div className="mt-2 pt-2 border-t border-amber-500/30">
               <div className="flex items-center gap-1 mb-1">
-                <Star className="h-3 w-3 text-amber-400 fill-amber-400" />
+                <Icons.Star className="h-3 w-3 text-amber-400 fill-amber-400" />
                 <span className="pixel-text text-pixel-2xs text-amber-400 font-bold uppercase">
                   {getPathName(synergy.pathId)} Synergy
                 </span>

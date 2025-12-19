@@ -4,7 +4,7 @@ import { calculateStats } from '@/hooks/useCharacterSetup';
 import { CombatEvent } from '@/hooks/useBattleAnimation';
 import { COMBAT_BALANCE, POWER_BALANCE } from '@/constants/balance';
 import { COMBAT_EVENT_DELAYS } from '@/constants/balance';
-import { COMBAT_EVENT_TYPE, BUFF_STAT, ITEM_EFFECT_TRIGGER } from '@/constants/enums';
+import { COMBAT_EVENT_TYPE, BUFF_STAT, ITEM_EFFECT_TRIGGER, PAUSE_REASON } from '@/constants/enums';
 import { generateEventId } from '@/utils/eventId';
 import { getDropQualityBonus } from '@/utils/fortuneUtils';
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
@@ -408,7 +408,7 @@ export function usePowerActions(context: PowerActivationContext) {
                 type: 'slow',
                 value: 0.3, // 30% slow
                 remainingTurns: 4,
-                icon: '❄️',
+                icon: 'status-slow',
               });
               logs.push(`❄️ Enemy slowed by 30% for 4 turns!`);
               statusApplied = true;
@@ -426,7 +426,7 @@ export function usePowerActions(context: PowerActivationContext) {
                   id: `stun-${Date.now()}`,
                   type: 'stun',
                   remainingTurns: 2,
-                  icon: '💫',
+                  icon: 'status-stun',
                 });
                 logs.push(`💫 Enemy stunned for 2 turns!`);
                 statusApplied = true;
@@ -496,12 +496,19 @@ export function usePowerActions(context: PowerActivationContext) {
 
         player.currentStats = calculateStats(player);
 
+        // Determine pause reason if level-up occurred
+        const newPauseReason = levelUpResult.leveledUp ? PAUSE_REASON.LEVEL_UP : null;
+
         // Keep enemy in state with isDying flag - animation system will remove it
         safeCombatLogAdd(prev.combatLog, logs, 'usePower:enemyDeath');
         return {
           ...prev,
           player,
           currentEnemy: enemy,
+          // If leveled up, set pending level up and pause (same as regular attack flow)
+          pendingLevelUp: levelUpResult.leveledUp ? player.level : prev.pendingLevelUp,
+          isPaused: newPauseReason !== null,
+          pauseReason: newPauseReason,
         };
       }
 

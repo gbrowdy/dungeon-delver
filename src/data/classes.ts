@@ -5,7 +5,7 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
   warrior: {
     name: 'Warrior',
     description: 'A mighty fighter with high health and strong attacks. Excels in prolonged combat.',
-    icon: '⚔️',
+    icon: 'class-warrior',
     baseStats: {
       health: 60,
       maxHealth: 60,
@@ -25,13 +25,13 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       currentCooldown: 0,
       effect: 'damage',
       value: 2.0,      // Buffed for competitive early game damage
-      icon: '💢',
+      icon: 'power-reckless_swing',
     },
   },
   mage: {
     name: 'Mage',
     description: 'A powerful spellcaster with devastating magical abilities but fragile defenses.',
-    icon: '🔮',
+    icon: 'class-mage',
     baseStats: {
       health: 40,
       maxHealth: 40,
@@ -51,13 +51,13 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       currentCooldown: 0,
       effect: 'damage',
       value: 2.2,      // Reduced from 2.5
-      icon: '🔥',
+      icon: 'power-fireball',
     },
   },
   rogue: {
     name: 'Rogue',
     description: 'A swift assassin with high critical and dodge chance. Strikes fast and deadly.',
-    icon: '🗡️',
+    icon: 'class-rogue',
     baseStats: {
       health: 45,
       maxHealth: 45,
@@ -77,13 +77,13 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       currentCooldown: 0,
       effect: 'damage',
       value: 1.4,      // Reduced from 1.5
-      icon: '🌑',
+      icon: 'power-ambush',
     },
   },
   paladin: {
     name: 'Paladin',
     description: 'A holy knight balancing offense and defense with healing abilities.',
-    icon: '🛡️',
+    icon: 'class-paladin',
     baseStats: {
       health: 55,
       maxHealth: 55,
@@ -104,7 +104,7 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       currentCooldown: 0,
       effect: 'heal',
       value: 0.4,      // Buffed from 0.3 for more impactful healing
-      icon: '✨',
+      icon: 'power-divine_heal',
     },
   },
 };

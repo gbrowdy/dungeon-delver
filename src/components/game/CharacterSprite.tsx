@@ -4,11 +4,14 @@ import { PixelSlash, PixelSpell, PixelShield } from './BattleEffects';
 import { BATTLE_PHASE } from '@/constants/enums';
 import { cn } from '@/lib/utils';
 import { SpriteStateType, BattlePhaseType } from '@/constants/enums';
+import * as Icons from 'lucide-react';
+import { getIcon, STAT_ICONS, STATUS_ICONS } from '@/lib/icons';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { SpriteType } from '@/data/sprites';
 
 // Shared positioning classes for HP bars above sprites (keeps hero and enemy in sync)
 const HP_BAR_POSITION = "-top-10 xs:-top-12 sm:-top-10";
@@ -68,8 +71,20 @@ export function CharacterSprite({
   const isDying = enemy?.isDying ?? false;
   const isBoss = enemy?.isBoss ?? false;
 
-  // Determine sprite type
-  const spriteType = isHero ? player!.class : enemy!.name;
+  // Determine sprite type - use path variant if player has selected a path
+  const getSpriteType = (): SpriteType | string => {
+    if (isHero && player) {
+      // If player has a path, use the path-specific sprite
+      if (player.path?.pathId) {
+        return player.path.pathId;
+      }
+      // Otherwise use base class sprite
+      return player.class as SpriteType;
+    }
+    // For enemies, use enemy name
+    return enemy!.name;
+  };
+  const spriteType = getSpriteType();
   const scale = isBoss ? 6 : 5;
 
   // HP calculation
@@ -210,7 +225,7 @@ export function CharacterSprite({
           {!isHero && intent && (
             <div className="hidden sm:block absolute -top-9 left-1/2 -translate-x-1/2 bg-black/80 rounded px-1.5 py-0.5 border border-health/50 whitespace-nowrap">
               <div className="flex items-center gap-1 text-xs">
-                <span className="text-base">{intent.icon}</span>
+                <Icons.Sword className="w-4 h-4" />
                 <span className="text-health/90 font-medium text-xs">
                   {intent.type === 'ability' && intent.ability ? intent.ability.name : 'Attack'}
                 </span>
@@ -223,30 +238,40 @@ export function CharacterSprite({
       {/* Status effects - hero only */}
       {isHero && statusEffects.length > 0 && (
         <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex gap-1">
-          {statusEffects.map(effect => (
-            <div key={effect.id} className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-accent/50">
-              <span>{effect.icon}</span>
-              <span className="text-accent/90">{effect.remainingTurns}</span>
-            </div>
-          ))}
+          {statusEffects.map(effect => {
+            const iconName = STATUS_ICONS[effect.type?.toUpperCase() as keyof typeof STATUS_ICONS] || 'Skull';
+            const IconComponent = getIcon(iconName);
+            return (
+              <div key={effect.id} className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-accent/50">
+                <IconComponent className="w-4 h-4" />
+                <span className="text-accent/90">{effect.remainingTurns}</span>
+              </div>
+            );
+          })}
         </div>
       )}
 
       {/* Active buffs - hero only */}
       {isHero && activeBuffs.length > 0 && (
         <div className="absolute -top-22 left-1/2 -translate-x-1/2 flex gap-1">
-          {activeBuffs.map(buff => (
-            <div key={buff.id} className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-success/50">
-              <span>{buff.icon}</span>
-              <span className="text-success/90">{buff.remainingTurns}</span>
-            </div>
-          ))}
+          {activeBuffs.map(buff => {
+            const iconName = STAT_ICONS[buff.stat?.toUpperCase() as keyof typeof STAT_ICONS] || 'Sparkles';
+            const IconComponent = getIcon(iconName);
+            return (
+              <div key={buff.id} className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-success/50">
+                <IconComponent className="w-4 h-4" />
+                <span className="text-success/90">{buff.remainingTurns}</span>
+              </div>
+            );
+          })}
         </div>
       )}
 
       {/* Boss crown - enemy only */}
       {!isHero && isBoss && !isDying && (
-        <div className="absolute -top-16 sm:-top-24 left-1/2 -translate-x-1/2 text-xl sm:text-2xl animate-bounce">👑</div>
+        <div className="absolute -top-16 sm:-top-24 left-1/2 -translate-x-1/2 animate-bounce">
+          <Icons.Star className="w-8 h-8 text-gold" />
+        </div>
       )}
 
       {/* Enemy status indicators - enemy only */}
@@ -254,7 +279,7 @@ export function CharacterSprite({
         <div className="absolute top-0 right-0 flex flex-col gap-1">
           {enemy.isShielded && (
             <div className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-info/50">
-              <span>🛡️</span>
+              <Icons.Shield className="w-4 h-4" />
               {enemy.shieldTurnsRemaining !== undefined && (
                 <span className="text-info/90">{enemy.shieldTurnsRemaining}</span>
               )}
@@ -262,7 +287,7 @@ export function CharacterSprite({
           )}
           {enemy.isEnraged && (
             <div className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-health/50">
-              <span>😤</span>
+              <Icons.Flame className="w-4 h-4" />
               {enemy.enrageTurnsRemaining !== undefined && (
                 <span className="text-health/90">{enemy.enrageTurnsRemaining}</span>
               )}
@@ -275,7 +300,8 @@ export function CharacterSprite({
       {!isHero && !isDying && enemy && enemy.statDebuffs && enemy.statDebuffs.length > 0 && (
         <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex gap-1">
           {enemy.statDebuffs.map(debuff => {
-            const icon = debuff.stat === 'power' ? '⚔️' : debuff.stat === 'armor' ? '🛡️' : '💨';
+            const iconName = debuff.stat === 'power' ? STAT_ICONS.POWER : debuff.stat === 'armor' ? STAT_ICONS.ARMOR : STAT_ICONS.SPEED;
+            const IconComponent = getIcon(iconName);
             const percentDisplay = Math.round(debuff.percentReduction * 100);
             return (
               <Tooltip key={debuff.id}>
@@ -284,7 +310,10 @@ export function CharacterSprite({
                     className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-purple-500/50 cursor-help"
                     aria-label={`${debuff.sourceName}: -${percentDisplay}% ${debuff.stat}`}
                   >
-                    <span className="text-purple-400">🔻{icon}</span>
+                    <span className="text-purple-400 flex items-center">
+                      <span className="text-xs mr-0.5">-</span>
+                      <IconComponent className="w-4 h-4" />
+                    </span>
                     <span className="text-purple-300">{Math.ceil(debuff.remainingDuration)}s</span>
                   </div>
                 </TooltipTrigger>

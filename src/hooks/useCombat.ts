@@ -86,7 +86,7 @@ export function useCombat() {
                 stat: 'armor',
                 multiplier: 1 + (item.effect.value / player.baseStats.armor),
                 remainingTurns: 3,
-                icon: '🛡️',
+                icon: 'stat-armor',
               });
               context.logs.push(`${item.icon} Defense boosted!`);
               break;
@@ -206,7 +206,7 @@ export function useCombat() {
           type: 'poison',
           damage: poisonDamage,
           remainingTurns: 3,
-          icon: '🐍',
+          icon: 'status-poison',
         });
         logs.push(`☠️ You are poisoned! (${poisonDamage} damage/turn for 3 turns)`);
         break;
@@ -220,7 +220,7 @@ export function useCombat() {
             id: `stun-${Date.now()}`,
             type: 'stun',
             remainingTurns: ability.value,
-            icon: '💫',
+            icon: 'status-stun',
           });
           logs.push(`💫 You are stunned for ${ability.value} turn(s)!`);
         }

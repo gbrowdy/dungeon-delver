@@ -103,7 +103,7 @@ export function useRoomTransitions(
                 stat: BUFF_STAT.ARMOR,
                 multiplier: 1 + (item.effect.value / player.baseStats.armor),
                 remainingTurns: COMBAT_BALANCE.DEFAULT_BUFF_DURATION,
-                icon: '🛡️',
+                icon: 'stat-armor',
               });
               logs.push(`${item.icon} ${item.name}: Defense boosted!`);
             }

@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import * as Icons from 'lucide-react';
+import { Check, Sparkles, TrendingUp } from 'lucide-react';
 import { PixelDivider } from '@/components/ui/PixelDivider';
+import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
 import { PATH_SELECTION_BONUSES } from '@/constants/paths';
 
 // Import path data for all classes
@@ -118,9 +119,6 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
             const isHovered = hoveredPath === path.id;
             const typeColors = TYPE_COLORS[path.type];
 
-            // Get the icon component dynamically
-            const IconComponent = (Icons as Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>>)[path.icon] || Icons.HelpCircle;
-
             // Get first 3-4 abilities for preview
             const previewAbilities = path.abilities
               .filter(ability => !ability.isCapstone)
@@ -167,10 +165,10 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
                           boxShadow: isSelected || isHovered ? `0 0 20px ${typeColors.glow}` : undefined,
                         }}
                       >
-                        <IconComponent
+                        <PixelIcon
+                          type={path.icon as IconType}
+                          size={32}
                           className="w-8 h-8 sm:w-10 sm:h-10"
-                          style={{ color: typeColors.primary }}
-                          aria-hidden="true"
                         />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -203,7 +201,7 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
                           className="w-6 h-6 rounded-full flex items-center justify-center"
                           style={{ backgroundColor: typeColors.primary }}
                         >
-                          <Icons.Check className="w-4 h-4 text-white" />
+                          <Check className="w-4 h-4 text-white" />
                         </div>
                       </div>
                     )}
@@ -217,7 +215,7 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
                 <CardContent className="space-y-3">
                   {/* Ability preview header */}
                   <div className="flex items-center gap-2 pt-2 border-t border-slate-700/50">
-                    <Icons.Sparkles className="w-4 h-4 text-amber-400" aria-hidden="true" />
+                    <Sparkles className="w-4 h-4 text-amber-400" aria-hidden="true" />
                     <span className="pixel-text text-pixel-2xs text-slate-300 uppercase">
                       Ability Preview
                     </span>
@@ -226,17 +224,15 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
                   {/* Preview abilities list */}
                   <div className="space-y-2">
                     {previewAbilities.map((ability) => {
-                      const AbilityIcon = (Icons as Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>>)[ability.icon] || Icons.Circle;
-
                       return (
                         <div
                           key={ability.id}
                           className="flex items-start gap-2 p-2 rounded bg-slate-900/50 border border-slate-700/30"
                         >
-                          <AbilityIcon
+                          <PixelIcon
+                            type={ability.icon as IconType}
+                            size={16}
                             className="w-4 h-4 flex-shrink-0 mt-0.5"
-                            style={{ color: typeColors.secondary }}
-                            aria-hidden="true"
                           />
                           <div className="min-w-0 flex-1">
                             <div className="pixel-text text-pixel-2xs text-slate-200 font-semibold">
@@ -264,7 +260,7 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
                   {PATH_SELECTION_BONUSES[path.id] && (
                     <>
                       <div className="flex items-center gap-2 pt-3 border-t border-slate-700/50">
-                        <Icons.TrendingUp className="w-4 h-4 text-green-400" aria-hidden="true" />
+                        <TrendingUp className="w-4 h-4 text-green-400" aria-hidden="true" />
                         <span className="pixel-text text-pixel-2xs text-slate-300 uppercase">
                           Immediate Bonuses
                         </span>
