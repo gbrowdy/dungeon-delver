@@ -7,6 +7,7 @@ export const ANIMATION_TIMING = {
   HERO_ATTACK_DURATION: 400,       // Hero swipe animation
   ENEMY_ATTACK_ANTICIPATION: 80,   // Wind-up before enemy attack
   ENEMY_ATTACK_DURATION: 500,      // Enemy swipe animation
+  ENEMY_ABILITY_CAST: 600,         // Non-attack ability casting duration
 
   // Hit reactions
   HIT_STOP: 60,                    // Brief freeze on impact for weight

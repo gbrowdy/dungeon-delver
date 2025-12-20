@@ -804,14 +804,39 @@ export function useCombatActions({
 
       const playerWillDie = player.currentStats.health <= 0;
 
-      const enemyAttackEvent: import('@/hooks/useBattleAnimation').EnemyAttackEvent = {
-        type: COMBAT_EVENT_TYPE.ENEMY_ATTACK,
-        damage: enemyDamage,
-        isCrit: false, // Enemies cannot crit
-        timestamp: Date.now(),
-        id: generateEventId(),
-      };
-      scheduleCombatEvent(enemyAttackEvent, scaledEnemyAttackDelay);
+      // For non-attack abilities, use different event
+      if (enemyIntent?.type === 'ability' && enemyIntent.ability) {
+        const abilityType = enemyIntent.ability.type;
+        if (abilityType === 'heal' || abilityType === 'enrage' || abilityType === 'shield') {
+          const enemyAbilityEvent: import('@/hooks/useBattleAnimation').EnemyAbilityEvent = {
+            type: COMBAT_EVENT_TYPE.ENEMY_ABILITY,
+            abilityType: abilityType,
+            timestamp: Date.now(),
+            id: generateEventId(),
+          };
+          scheduleCombatEvent(enemyAbilityEvent, scaledEnemyAttackDelay);
+        } else {
+          // Regular attack event for multi_hit, poison, stun
+          const enemyAttackEvent: import('@/hooks/useBattleAnimation').EnemyAttackEvent = {
+            type: COMBAT_EVENT_TYPE.ENEMY_ATTACK,
+            damage: enemyDamage,
+            isCrit: false, // Enemies cannot crit
+            timestamp: Date.now(),
+            id: generateEventId(),
+          };
+          scheduleCombatEvent(enemyAttackEvent, scaledEnemyAttackDelay);
+        }
+      } else {
+        // Regular attack
+        const enemyAttackEvent: import('@/hooks/useBattleAnimation').EnemyAttackEvent = {
+          type: COMBAT_EVENT_TYPE.ENEMY_ATTACK,
+          damage: enemyDamage,
+          isCrit: false, // Enemies cannot crit
+          timestamp: Date.now(),
+          id: generateEventId(),
+        };
+        scheduleCombatEvent(enemyAttackEvent, scaledEnemyAttackDelay);
+      }
 
       if (enemyDamage > 0) {
         const playerHitEvent: import('@/hooks/useBattleAnimation').PlayerHitEvent = {

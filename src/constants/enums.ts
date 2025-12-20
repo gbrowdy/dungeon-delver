@@ -125,6 +125,7 @@ export const COMBAT_EVENT_TYPE = {
   PLAYER_ATTACK: 'playerAttack',
   PLAYER_POWER: 'playerPower', // Special ability used
   ENEMY_ATTACK: 'enemyAttack',
+  ENEMY_ABILITY: 'enemyAbility', // Non-attack abilities (heal, enrage, shield)
   PLAYER_HIT: 'playerHit',
   ENEMY_HIT: 'enemyHit',
   ENEMY_DEATH: 'enemyDeath',

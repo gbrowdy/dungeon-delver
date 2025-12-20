@@ -30,6 +30,8 @@ interface CharacterSpriteProps {
   castingPowerId?: string | null;
   isFlashing?: boolean;
   hitStop?: boolean;
+  enemyCasting?: boolean;
+  enemyAuraColor?: 'red' | 'blue' | 'green' | null;
 
   // Progress bars
   turnProgress?: number;
@@ -55,6 +57,8 @@ export function CharacterSprite({
   castingPowerId = null,
   isFlashing = false,
   hitStop = false,
+  enemyCasting = false,
+  enemyAuraColor = null,
   turnProgress = 0,
   isStunned = false,
   statusEffects = [],
@@ -160,6 +164,19 @@ export function CharacterSprite({
             "absolute inset-0 mix-blend-overlay pointer-events-none",
             isHero ? "bg-health/40" : "bg-white/60"
           )} />
+        )}
+
+        {/* Enemy casting aura */}
+        {!isHero && enemyCasting && enemyAuraColor && (
+          <div
+            className={cn(
+              "absolute inset-0 rounded-full animate-pulse pointer-events-none",
+              enemyAuraColor === 'red' && "bg-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.5)]",
+              enemyAuraColor === 'blue' && "bg-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.5)]",
+              enemyAuraColor === 'green' && "bg-green-500/30 shadow-[0_0_20px_rgba(34,197,94,0.5)]",
+            )}
+            style={{ transform: 'scale(1.5)' }}
+          />
         )}
 
         {/* Block/Defense shield effect - hero only */}
