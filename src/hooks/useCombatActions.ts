@@ -493,6 +493,7 @@ export function useCombatActions({
       // Note: Enemies cannot crit - multi-strike serves as the burst damage mechanic
       const enemyIntent = enemy.intent;
       let enemyDamage = 0;
+      let statusEffectNegatedByBlock = false; // Track if blocking negated a status effect
 
       if (enemyIntent?.type === 'ability' && enemyIntent.ability) {
         const ability = enemyIntent.ability;
@@ -506,6 +507,7 @@ export function useCombatActions({
         const statusEffectAbilities: EnemyAbilityType[] = ['poison', 'stun'];
         if (player.isBlocking && statusEffectAbilities.includes(ability.type)) {
           logs.push(`🛡️ Block! Negated ${ability.name}!`);
+          statusEffectNegatedByBlock = true; // Block provided value, should be consumed
           // Skip the switch - status effect is fully negated
         } else switch (ability.type) {
           case 'multi_hit': {
@@ -831,8 +833,34 @@ export function useCombatActions({
         scheduleCombatEvent(playerDodgeEvent, scaledPlayerHitDelay);
       }
 
-      // Reset blocking after enemy has attacked
-      player.isBlocking = false;
+      // Reset blocking if:
+      // 1. Damage was actually dealt to the player
+      // 2. A status effect was negated (block provided value)
+      // Block persists through:
+      // - Non-damaging abilities (heal, enrage, shield)
+      // - Dodged attacks (regular attacks or multi_hit where all hits were dodged)
+      if (enemyDamage > 0 || statusEffectNegatedByBlock) {
+        player.isBlocking = false;
+      } else if (player.isBlocking) {
+        // Block was held - add feedback to combat log
+        if (enemyIntent?.type === 'ability' && enemyIntent.ability) {
+          const ability = enemyIntent.ability;
+          switch (ability.type) {
+            case 'heal':
+            case 'enrage':
+            case 'shield':
+              logs.push(`🛡️ Block held - enemy used ${ability.name}!`);
+              break;
+            case 'multi_hit':
+              // All hits were dodged
+              logs.push(`🛡️ Block held - all hits dodged!`);
+              break;
+          }
+        } else if (enemyDamage === 0 && enemyIntent?.type !== 'ability') {
+          // Player dodged a regular attack
+          logs.push(`🛡️ Block held - you dodged!`);
+        }
+      }
 
       // Berserking modifier: Auto-enrage at 50% HP (instead of default 30%)
       if (enemy.modifiers?.some(m => m.id === 'berserking') && !enemy.isEnraged) {
