@@ -845,15 +845,16 @@ export function useCombatActions({
         // Block was held - add feedback to combat log
         if (enemyIntent?.type === 'ability' && enemyIntent.ability) {
           const ability = enemyIntent.ability;
-          if (ability.type === 'heal') {
-            logs.push(`🛡️ Block held - enemy used ${ability.name}!`);
-          } else if (ability.type === 'enrage') {
-            logs.push(`🛡️ Block held - enemy used ${ability.name}!`);
-          } else if (ability.type === 'shield') {
-            logs.push(`🛡️ Block held - enemy used ${ability.name}!`);
-          } else if (ability.type === 'multi_hit') {
-            // All hits were dodged
-            logs.push(`🛡️ Block held - all hits dodged!`);
+          switch (ability.type) {
+            case 'heal':
+            case 'enrage':
+            case 'shield':
+              logs.push(`🛡️ Block held - enemy used ${ability.name}!`);
+              break;
+            case 'multi_hit':
+              // All hits were dodged
+              logs.push(`🛡️ Block held - all hits dodged!`);
+              break;
           }
         } else if (enemyDamage === 0 && enemyIntent?.type !== 'ability') {
           // Player dodged a regular attack
