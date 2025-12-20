@@ -490,9 +490,9 @@ export function useCombatActions({
       }
 
       // === ENEMY ATTACK ===
+      // Note: Enemies cannot crit - multi-strike serves as the burst damage mechanic
       const enemyIntent = enemy.intent;
       let enemyDamage = 0;
-      const enemyCrit = Math.random() * 100 < COMBAT_MECHANICS.ENEMY_BASE_CRIT_CHANCE;
 
       if (enemyIntent?.type === 'ability' && enemyIntent.ability) {
         const ability = enemyIntent.ability;
@@ -635,7 +635,7 @@ export function useCombatActions({
       } else {
         // Regular attack
         const playerDodgeChance = getDodgeChance(player.currentStats.fortune);
-        let playerDodged = !enemyCrit && Math.random() < playerDodgeChance;
+        let playerDodged = Math.random() < playerDodgeChance;
 
         // Uncanny Dodge: Every 5th enemy attack is auto-dodged
         let uncannyDodgeTriggered = false;
@@ -693,11 +693,6 @@ export function useCombatActions({
           const enemyBaseDamage = Math.max(1, effectiveEnemyPower - player.currentStats.armor / 2);
           const enemyDamageVariance = COMBAT_MECHANICS.DAMAGE_VARIANCE_MIN + Math.random() * COMBAT_MECHANICS.DAMAGE_VARIANCE_RANGE;
           enemyDamage = Math.floor(enemyBaseDamage * enemyDamageVariance);
-
-          if (enemyCrit) {
-            enemyDamage *= 2;
-            logs.push(`💥 ${enemy.name} lands a critical hit!`);
-          }
 
           if (player.isBlocking) {
             enemyDamage = Math.floor(enemyDamage * COMBAT_BALANCE.BLOCK_DAMAGE_REDUCTION);
@@ -810,7 +805,7 @@ export function useCombatActions({
       const enemyAttackEvent: import('@/hooks/useBattleAnimation').EnemyAttackEvent = {
         type: COMBAT_EVENT_TYPE.ENEMY_ATTACK,
         damage: enemyDamage,
-        isCrit: enemyCrit,
+        isCrit: false, // Enemies cannot crit
         timestamp: Date.now(),
         id: generateEventId(),
       };
@@ -820,7 +815,7 @@ export function useCombatActions({
         const playerHitEvent: import('@/hooks/useBattleAnimation').PlayerHitEvent = {
           type: COMBAT_EVENT_TYPE.PLAYER_HIT,
           damage: enemyDamage,
-          isCrit: enemyCrit,
+          isCrit: false, // Enemies cannot crit
           timestamp: Date.now(),
           id: generateEventId(),
           targetDied: playerWillDie,
