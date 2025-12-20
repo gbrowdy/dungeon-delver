@@ -492,7 +492,7 @@ export function useCombatActions({
       // === ENEMY ATTACK ===
       const enemyIntent = enemy.intent;
       let enemyDamage = 0;
-      const enemyCrit = Math.random() * 100 < COMBAT_MECHANICS.ENEMY_BASE_CRIT_CHANCE;
+      const enemyCrit = false; // Enemies cannot crit - multi-strike serves as burst damage
 
       if (enemyIntent?.type === 'ability' && enemyIntent.ability) {
         const ability = enemyIntent.ability;
@@ -635,7 +635,7 @@ export function useCombatActions({
       } else {
         // Regular attack
         const playerDodgeChance = getDodgeChance(player.currentStats.fortune);
-        let playerDodged = !enemyCrit && Math.random() < playerDodgeChance;
+        let playerDodged = Math.random() < playerDodgeChance;
 
         // Uncanny Dodge: Every 5th enemy attack is auto-dodged
         let uncannyDodgeTriggered = false;
@@ -694,10 +694,7 @@ export function useCombatActions({
           const enemyDamageVariance = COMBAT_MECHANICS.DAMAGE_VARIANCE_MIN + Math.random() * COMBAT_MECHANICS.DAMAGE_VARIANCE_RANGE;
           enemyDamage = Math.floor(enemyBaseDamage * enemyDamageVariance);
 
-          if (enemyCrit) {
-            enemyDamage *= 2;
-            logs.push(`💥 ${enemy.name} lands a critical hit!`);
-          }
+          // Enemies cannot crit - removed to prevent unfair damage spikes
 
           if (player.isBlocking) {
             enemyDamage = Math.floor(enemyDamage * COMBAT_BALANCE.BLOCK_DAMAGE_REDUCTION);
