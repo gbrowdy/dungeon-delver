@@ -678,7 +678,7 @@ export function usePathAbilities() {
 
   /**
    * Check if the player's current path has the combo mechanic.
-   * Only active paths have combos - passive paths do not.
+   * Active paths have combos (rewards timing/skill), passive paths do not.
    */
   const hasComboMechanic = useCallback((player: Player): boolean => {
     if (!player.path) return false;
@@ -686,7 +686,7 @@ export function usePathAbilities() {
     const pathDef = getPathById(player.path.pathId);
     if (!pathDef) return false;
 
-    return pathDef.hasComboMechanic ?? false;
+    return pathDef.hasComboMechanic;
   }, [getPathById]);
 
   return {
