@@ -19,13 +19,13 @@ function formatCombatAnnouncement(event: CombatEvent | null, playerName: string,
       return `You dodged ${enemyName || 'enemy'}'s attack.`;
 
     case COMBAT_EVENT_TYPE.ENEMY_ATTACK:
-      return `${enemyName || 'Enemy'} ${event.isCrit ? 'critically ' : ''}attacks for ${event.damage} damage.`;
+      return `${enemyName || 'Enemy'} attacks for ${event.damage} damage.`;
 
     case COMBAT_EVENT_TYPE.PLAYER_HIT:
       if (event.targetDied) {
         return `${playerName} has fallen in battle.`;
       }
-      return `You took ${event.damage} damage${event.isCrit ? ' (critical hit)' : ''}.`;
+      return `You took ${event.damage} damage.`;
 
     case COMBAT_EVENT_TYPE.ENEMY_HIT:
       if (event.targetDied) {

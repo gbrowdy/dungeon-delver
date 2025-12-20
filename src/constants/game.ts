@@ -29,8 +29,6 @@ export const COMBAT_TIMING = {
 export const COMBAT_MECHANICS = {
   /** Mana regenerated per combat tick */
   MANA_REGEN_PER_TICK: 1, // Reduced from 2 - mana is more precious
-  /** Base crit chance for enemies (percentage) - DISABLED: Multi-strike serves as enemy burst damage */
-  ENEMY_BASE_CRIT_CHANCE: 0, // Set to 0 to prevent unfair one-shot scenarios
   /** Damage variance minimum multiplier (0.8 = -20%) */
   DAMAGE_VARIANCE_MIN: 0.85,
   /** Damage variance range (0.3 = up to +15%) */

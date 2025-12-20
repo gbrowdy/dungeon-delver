@@ -490,9 +490,9 @@ export function useCombatActions({
       }
 
       // === ENEMY ATTACK ===
+      // Note: Enemies cannot crit - multi-strike serves as the burst damage mechanic
       const enemyIntent = enemy.intent;
       let enemyDamage = 0;
-      const enemyCrit = false; // Enemies cannot crit - multi-strike serves as burst damage
 
       if (enemyIntent?.type === 'ability' && enemyIntent.ability) {
         const ability = enemyIntent.ability;
@@ -694,8 +694,6 @@ export function useCombatActions({
           const enemyDamageVariance = COMBAT_MECHANICS.DAMAGE_VARIANCE_MIN + Math.random() * COMBAT_MECHANICS.DAMAGE_VARIANCE_RANGE;
           enemyDamage = Math.floor(enemyBaseDamage * enemyDamageVariance);
 
-          // Enemies cannot crit - removed to prevent unfair damage spikes
-
           if (player.isBlocking) {
             enemyDamage = Math.floor(enemyDamage * COMBAT_BALANCE.BLOCK_DAMAGE_REDUCTION);
             logs.push(`🛡️ Block! Damage reduced to ${enemyDamage}!`);
@@ -807,7 +805,7 @@ export function useCombatActions({
       const enemyAttackEvent: import('@/hooks/useBattleAnimation').EnemyAttackEvent = {
         type: COMBAT_EVENT_TYPE.ENEMY_ATTACK,
         damage: enemyDamage,
-        isCrit: enemyCrit,
+        isCrit: false, // Enemies cannot crit
         timestamp: Date.now(),
         id: generateEventId(),
       };
@@ -817,7 +815,7 @@ export function useCombatActions({
         const playerHitEvent: import('@/hooks/useBattleAnimation').PlayerHitEvent = {
           type: COMBAT_EVENT_TYPE.PLAYER_HIT,
           damage: enemyDamage,
-          isCrit: enemyCrit,
+          isCrit: false, // Enemies cannot crit
           timestamp: Date.now(),
           id: generateEventId(),
           targetDied: playerWillDie,

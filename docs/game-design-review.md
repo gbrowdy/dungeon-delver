@@ -103,10 +103,10 @@ if (crit) playerDamage *= 2
 
 **Enemy damage calculation:**
 ```typescript
-// src/hooks/useGameState.ts lines 232-236
+// src/hooks/useCombatActions.ts
 enemyBaseDamage = max(1, enemyAttack - playerDefense / 2)
-enemyDamage = floor(enemyBaseDamage * variance)  // variance: 0.8 to 1.2
-if (crit) enemyDamage *= 2
+enemyDamage = floor(enemyBaseDamage * variance)  // variance: 0.85 to 1.15
+// Note: Enemies cannot crit - multi-strike serves as the burst damage mechanic
 ```
 
 ### 2.2 Balance Issues
@@ -403,7 +403,7 @@ For flow state, challenge must match skill. Currently:
 
 ### 6.4 Frustration Points
 
-1. **Dying to bad RNG** - Enemy crits twice in a row
+1. ~~**Dying to bad RNG** - Enemy crits twice in a row~~ *RESOLVED: Enemy crits removed*
 2. **Mana starvation** - Watching power be ready but no mana
 3. **Item slot conflicts** - Wanting to equip two weapons
 4. **Long walks between rooms** - 1500ms transition with no player input

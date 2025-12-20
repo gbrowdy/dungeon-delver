@@ -15,7 +15,6 @@ export interface CombatTickResult {
   playerDamage: number;
   playerCrit: boolean;
   enemyDamage: number;
-  enemyCrit: boolean;
   enemyDefeated: boolean;
   playerDefeated: boolean;
   isStunned: boolean;
