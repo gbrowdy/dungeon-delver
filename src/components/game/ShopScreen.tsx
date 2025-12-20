@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Player, Item } from '@/types/game';
-import { ShopState, ShopItem, SHOP_UNLOCKS } from '@/types/shop';
+import { ShopState, ShopItem, SHOP_UNLOCKS, ShopTier } from '@/types/shop';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,16 @@ import {
   getEnhancedStats,
 } from '@/utils/enhancementUtils';
 import { ENHANCEMENT_COLORS, ENHANCEMENT_DISPLAY } from '@/constants/shop';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ShopScreenProps {
   player: Player;
@@ -66,19 +76,50 @@ function getItemIcon(iconName: string): keyof typeof Icons {
   return 'Package';
 }
 
+/**
+ * Tier hierarchy for comparison: starter < class < specialty < legendary
+ * Returns true if newItemTier is lower than equippedItemTier (i.e., a downgrade)
+ */
+function isDowngrade(newItemTier: ShopTier, equippedItemTier: ShopTier): boolean {
+  const tierOrder: ShopTier[] = ['starter', 'class', 'specialty', 'legendary'];
+  const newTierIndex = tierOrder.indexOf(newItemTier);
+  const equippedTierIndex = tierOrder.indexOf(equippedItemTier);
+  return newTierIndex < equippedTierIndex;
+}
+
 interface ItemCardProps {
   item: ShopItem;
   isPurchased: boolean;
   canAfford: boolean;
   onPurchase: () => void;
   showPathSynergy?: boolean;
+  equippedItems: Item[];
 }
 
-function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy }: ItemCardProps) {
+function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy, equippedItems }: ItemCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [showDowngradeDialog, setShowDowngradeDialog] = useState(false);
   const colors = TIER_COLORS[item.tier];
   const iconName = getItemIcon(item.icon);
   const IconComponent = Icons[iconName as keyof typeof Icons] || Icons.Package;
+
+  // Check if this item is a downgrade from currently equipped item
+  const equippedItem = equippedItems.find(equipped => equipped.type === item.type);
+  const isItemDowngrade = equippedItem && equippedItem.tier && isDowngrade(item.tier, equippedItem.tier);
+
+  // Handle purchase - show confirmation if downgrade
+  const handlePurchaseClick = () => {
+    if (isItemDowngrade && !isPurchased) {
+      setShowDowngradeDialog(true);
+    } else {
+      onPurchase();
+    }
+  };
+
+  const handleConfirmDowngrade = () => {
+    setShowDowngradeDialog(false);
+    onPurchase();
+  };
 
   // Format stats for display
   const stats = Object.entries(item.stats)
@@ -132,27 +173,41 @@ function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy }:
           />
         </div>
 
-        {/* Purchased indicator */}
-        {isPurchased && (
-          <Badge
-            variant="outline"
-            className="pixel-text text-pixel-2xs uppercase border-green-500 text-green-500"
-          >
-            <Icons.Check className="w-3 h-3 mr-1 text-green-500" />
-            Owned
-          </Badge>
-        )}
+        {/* Badges */}
+        <div className="flex flex-col gap-1 items-end">
+          {/* Purchased indicator */}
+          {isPurchased && (
+            <Badge
+              variant="outline"
+              className="pixel-text text-pixel-2xs uppercase border-green-500 text-green-500"
+            >
+              <Icons.Check className="w-3 h-3 mr-1 text-green-500" />
+              Owned
+            </Badge>
+          )}
 
-        {/* Path synergy badge */}
-        {showPathSynergy && !isPurchased && (
-          <Badge
-            variant="outline"
-            className="pixel-text text-pixel-2xs uppercase border-purple-400 text-purple-400"
-          >
-            <Icons.Zap className="w-3 h-3 mr-1 text-purple-400" />
-            Synergy
-          </Badge>
-        )}
+          {/* Downgrade warning badge */}
+          {isItemDowngrade && !isPurchased && (
+            <Badge
+              variant="outline"
+              className="pixel-text text-pixel-2xs uppercase border-orange-500 text-orange-500 bg-orange-950/30"
+            >
+              <Icons.AlertTriangle className="w-3 h-3 mr-1 text-orange-500" />
+              Downgrade
+            </Badge>
+          )}
+
+          {/* Path synergy badge */}
+          {showPathSynergy && !isPurchased && !isItemDowngrade && (
+            <Badge
+              variant="outline"
+              className="pixel-text text-pixel-2xs uppercase border-purple-400 text-purple-400"
+            >
+              <Icons.Zap className="w-3 h-3 mr-1 text-purple-400" />
+              Synergy
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Item name */}
@@ -200,7 +255,7 @@ function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy }:
           </div>
         ) : (
           <Button
-            onClick={onPurchase}
+            onClick={handlePurchaseClick}
             disabled={!canAfford}
             className={cn(
               'w-full pixel-button text-pixel-xs uppercase font-bold',
@@ -222,6 +277,36 @@ function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy }:
           </Button>
         )}
       </div>
+
+      {/* Downgrade confirmation dialog */}
+      <AlertDialog open={showDowngradeDialog} onOpenChange={setShowDowngradeDialog}>
+        <AlertDialogContent className="pixel-card border-2 border-orange-500/50 bg-gradient-to-b from-slate-900 to-slate-950">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="pixel-text text-pixel-sm uppercase text-orange-400 flex items-center gap-2">
+              <Icons.AlertTriangle className="w-5 h-5 text-orange-500" />
+              Confirm Purchase
+            </AlertDialogTitle>
+            <AlertDialogDescription className="pixel-text text-pixel-2xs text-slate-300 leading-relaxed">
+              This {item.type} is a lower tier than your current equipment. Purchase anyway?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col sm:flex-row gap-2">
+            <AlertDialogCancel
+              className="pixel-button text-pixel-xs uppercase border-b-4 border-slate-700 hover:border-slate-600"
+              onClick={() => setShowDowngradeDialog(false)}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="pixel-button text-pixel-xs uppercase border-b-4 bg-orange-600 hover:bg-orange-500 border-orange-800 hover:border-orange-700"
+              onClick={handleConfirmDowngrade}
+            >
+              <Icons.Coins className="w-3 h-3 mr-1.5 text-amber-400" />
+              Buy Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -531,6 +616,7 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
                 isPurchased={isItemPurchased(item.id)}
                 canAfford={canAfford(item)}
                 onPurchase={() => onPurchase(item.id)}
+                equippedItems={player.equippedItems}
               />
             ))}
           </div>
@@ -553,6 +639,7 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
                 isPurchased={isItemPurchased(item.id)}
                 canAfford={canAfford(item)}
                 onPurchase={() => onPurchase(item.id)}
+                equippedItems={player.equippedItems}
               />
             ))}
           </div>
@@ -576,6 +663,7 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
                 canAfford={canAfford(item)}
                 onPurchase={() => onPurchase(item.id)}
                 showPathSynergy={hasPathSynergy(item)}
+                equippedItems={player.equippedItems}
               />
             ))}
           </div>
@@ -605,6 +693,7 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
                 canAfford={canAfford(shopState.legendary)}
                 onPurchase={() => onPurchase(shopState.legendary!.id)}
                 showPathSynergy={hasPathSynergy(shopState.legendary)}
+                equippedItems={player.equippedItems}
               />
             </div>
           ) : !legendaryUnlocked ? (
