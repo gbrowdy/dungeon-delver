@@ -10,6 +10,8 @@ import { BattleOverlay } from './BattleOverlay';
 import { ScreenReaderAnnouncer } from './ScreenReaderAnnouncer';
 import { getPlayerDisplayName } from '@/utils/powerSynergies';
 import { getIcon, ABILITY_ICONS } from '@/lib/icons';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Star } from 'lucide-react';
 
 interface BattleArenaProps {
   player: Player;
@@ -186,40 +188,57 @@ export function BattleArena({
         <EffectsLayer effects={effects} onEffectComplete={removeEffect} />
 
         {/* Top info bar - hidden on mobile to prevent overlap with HP bars */}
-        <div className="absolute top-1 xs:top-2 left-1 xs:left-2 right-1 xs:right-2 justify-between items-start pointer-events-none gap-1 hidden sm:flex">
+        <div className="absolute top-1 xs:top-2 left-1 xs:left-2 right-1 xs:right-2 justify-between items-center pointer-events-none gap-1 hidden sm:flex">
           {/* Player name badge - visible only on sm+ screens */}
           <div className="pixel-panel-dark rounded px-2 py-1 flex-shrink-0">
             <span className="pixel-text text-pixel-sm text-gold font-bold">{getPlayerDisplayName(player)}</span>
             <span className="pixel-text text-pixel-xs text-gray-300 ml-2">Lv.{player.level}</span>
           </div>
-          {/* Enemy info - visible only on sm+ screens */}
+          {/* Enemy info - compact horizontal layout - visible only on sm+ screens */}
           {displayEnemy && !displayEnemy.isDying && (
-            <div className="pixel-panel-dark rounded px-2 py-1 text-right max-w-[300px] flex-shrink min-w-0">
-              <span className={cn('pixel-text text-pixel-xs font-bold block break-words', displayEnemy.isBoss ? 'text-gold' : 'text-health')}>
+            <div className="pixel-panel-dark rounded px-2 py-1 flex items-center gap-1.5 flex-shrink min-w-0 max-w-[420px] pointer-events-auto">
+              {/* Boss star icon */}
+              {displayEnemy.isBoss && (
+                <Star className="w-3.5 h-3.5 text-gold fill-gold flex-shrink-0" aria-label="Boss" />
+              )}
+
+              {/* Name */}
+              <span className={cn(
+                'pixel-text text-pixel-xs font-bold truncate',
+                displayEnemy.isBoss ? 'text-gold' : 'text-health'
+              )}>
                 {displayEnemy.name}
               </span>
-              <div className="pixel-text text-pixel-2xs text-gray-400">
+
+              {/* Stats */}
+              <div className="pixel-text text-pixel-2xs text-gray-400 flex-shrink-0">
                 PWR:{displayEnemy.power} ARM:{displayEnemy.armor}
               </div>
-              {/* Enemy abilities */}
+
+              {/* Abilities - icon-only badges with tooltips */}
               {displayEnemy.abilities.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1 justify-end">
-                  {displayEnemy.abilities.slice(0, 4).map(ability => {
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  {displayEnemy.abilities.slice(0, 5).map(ability => {
                     const AbilityIcon = getIcon(ABILITY_ICONS[ability.type?.toUpperCase() as keyof typeof ABILITY_ICONS], 'Sword');
                     return (
-                      <div
-                        key={ability.id}
-                        className="bg-health/20 border border-health/50 rounded px-1 py-0.5 flex items-center gap-0.5"
-                        title={ability.description}
-                      >
-                        <AbilityIcon className="w-4 h-4" />
-                        <span className="pixel-text text-pixel-2xs text-health/90">{ability.name}</span>
-                      </div>
+                      <Tooltip key={ability.id}>
+                        <TooltipTrigger asChild>
+                          <div className="bg-health/20 border border-health/50 rounded p-0.5 cursor-help">
+                            <AbilityIcon className="w-3.5 h-3.5 text-health/90" aria-hidden="true" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="pixel-panel-dark border-health/50">
+                          <div className="pixel-text text-pixel-2xs">
+                            <div className="text-health font-bold">{ability.name}</div>
+                            <div className="text-gray-300 mt-0.5">{ability.description}</div>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
                     );
                   })}
-                  {displayEnemy.abilities.length > 4 && (
-                    <span className="pixel-text text-pixel-2xs text-slate-500">
-                      +{displayEnemy.abilities.length - 4}
+                  {displayEnemy.abilities.length > 5 && (
+                    <span className="pixel-text text-pixel-2xs text-slate-500 ml-0.5">
+                      +{displayEnemy.abilities.length - 5}
                     </span>
                   )}
                 </div>
