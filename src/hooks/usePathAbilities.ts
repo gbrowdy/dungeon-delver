@@ -676,6 +676,19 @@ export function usePathAbilities() {
     return debuffs;
   }, [hasAbility]);
 
+  /**
+   * Check if the player's current path has the combo mechanic.
+   * Only active paths have combos - passive paths do not.
+   */
+  const hasComboMechanic = useCallback((player: Player): boolean => {
+    if (!player.path) return false;
+
+    const pathDef = getPathById(player.path.pathId);
+    if (!pathDef) return false;
+
+    return pathDef.hasComboMechanic ?? false;
+  }, [getPathById]);
+
   return {
     getPassiveStatBonuses,
     getPassiveDamageReduction,
@@ -690,6 +703,7 @@ export function usePathAbilities() {
     incrementAbilityCounter,
     resetAbilityCounter,
     addAttackModifier,
+    hasComboMechanic,
   };
 }
 

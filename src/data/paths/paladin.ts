@@ -19,6 +19,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
     description: 'Channel holy power through timed strikes and righteous judgment',
     type: 'active',
     theme: 'Holy damage bursts, smite mechanics, enemy weakening',
+    hasComboMechanic: true,
     subpaths: [
       {
         id: 'templar',
@@ -172,6 +173,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
     description: 'Sustain yourself through divine resilience and unwavering endurance',
     type: 'passive',
     theme: 'Self-sustaining without player input, HP regen, damage reduction',
+    hasComboMechanic: false,
     subpaths: [
       {
         id: 'sentinel',

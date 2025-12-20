@@ -18,12 +18,15 @@ import {
 export function PowersPanel() {
   const { player, combatState, actions } = useCombat();
   const { canUsePowers } = combatState;
-  const { getPowerModifiers } = usePathAbilities();
+  const { getPowerModifiers, hasComboMechanic } = usePathAbilities();
 
   // Calculate effective mana costs with path ability reductions
   const powerMods = getPowerModifiers(player);
   const getEffectiveManaCost = (baseCost: number) =>
     Math.max(1, Math.floor(baseCost * (1 - powerMods.costReduction)));
+
+  // Check if this player's path uses the combo system
+  const showCombo = hasComboMechanic(player);
 
   return (
     <div className="pixel-panel rounded-lg p-2 sm:p-3">
@@ -57,8 +60,8 @@ export function PowersPanel() {
         ))}
       </div>
 
-      {/* Combo indicator */}
-      {player.comboCount > 0 && (
+      {/* Combo indicator - only show for active paths */}
+      {showCombo && player.comboCount > 0 && (
         <ComboIndicator count={player.comboCount} />
       )}
     </div>
