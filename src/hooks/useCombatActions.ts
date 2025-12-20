@@ -831,8 +831,35 @@ export function useCombatActions({
         scheduleCombatEvent(playerDodgeEvent, scaledPlayerHitDelay);
       }
 
-      // Reset blocking after enemy has attacked
-      player.isBlocking = false;
+      // Reset blocking only if damage was actually dealt to the player
+      // Block persists through:
+      // - Non-damaging abilities (heal, enrage, shield)
+      // - Status effects that were negated (poison, stun)
+      // - Dodged attacks (regular attacks or multi_hit where all hits were dodged)
+      if (enemyDamage > 0) {
+        player.isBlocking = false;
+      } else if (player.isBlocking) {
+        // Block was held - add feedback to combat log
+        if (enemyIntent?.type === 'ability' && enemyIntent.ability) {
+          const ability = enemyIntent.ability;
+          const statusEffectAbilities: EnemyAbilityType[] = ['poison', 'stun'];
+          if (statusEffectAbilities.includes(ability.type)) {
+            logs.push(`🛡️ Block held - ${ability.name} was negated!`);
+          } else if (ability.type === 'heal') {
+            logs.push(`🛡️ Block held - enemy used ${ability.name}!`);
+          } else if (ability.type === 'enrage') {
+            logs.push(`🛡️ Block held - enemy used ${ability.name}!`);
+          } else if (ability.type === 'shield') {
+            logs.push(`🛡️ Block held - enemy used ${ability.name}!`);
+          } else if (ability.type === 'multi_hit') {
+            // All hits were dodged
+            logs.push(`🛡️ Block held - all hits dodged!`);
+          }
+        } else if (enemyDamage === 0 && enemyIntent?.type !== 'ability') {
+          // Player dodged a regular attack
+          logs.push(`🛡️ Block held - you dodged!`);
+        }
+      }
 
       // Berserking modifier: Auto-enrage at 50% HP (instead of default 30%)
       if (enemy.modifiers?.some(m => m.id === 'berserking') && !enemy.isEnraged) {
