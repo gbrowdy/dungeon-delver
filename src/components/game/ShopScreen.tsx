@@ -84,6 +84,12 @@ function isDowngrade(newItemTier: ShopTier, equippedItemTier: ShopTier): boolean
   const tierOrder: ShopTier[] = ['starter', 'class', 'specialty', 'legendary'];
   const newTierIndex = tierOrder.indexOf(newItemTier);
   const equippedTierIndex = tierOrder.indexOf(equippedItemTier);
+
+  // Guard against invalid tier values (indexOf returns -1)
+  if (newTierIndex === -1 || equippedTierIndex === -1) {
+    return false;
+  }
+
   return newTierIndex < equippedTierIndex;
 }
 
@@ -197,8 +203,8 @@ function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy, e
             </Badge>
           )}
 
-          {/* Path synergy badge */}
-          {showPathSynergy && !isPurchased && !isItemDowngrade && (
+          {/* Path synergy badge - shown even on downgrades so players know about synergy */}
+          {showPathSynergy && !isPurchased && (
             <Badge
               variant="outline"
               className="pixel-text text-pixel-2xs uppercase border-purple-400 text-purple-400"
