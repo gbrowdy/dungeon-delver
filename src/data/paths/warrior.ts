@@ -310,7 +310,8 @@ const BERSERKER_PATH: PathDefinition = {
   type: 'active',
   icon: 'ability-paths-warrior-berserker',
   abilities: BERSERKER_ABILITIES,
-  subpaths: [WARLORD_SUBPATH, EXECUTIONER_SUBPATH]
+  subpaths: [WARLORD_SUBPATH, EXECUTIONER_SUBPATH],
+  hasComboMechanic: true
 };
 
 // ============================================================================
@@ -554,7 +555,8 @@ const GUARDIAN_PATH: PathDefinition = {
   type: 'passive',
   icon: 'ability-paths-warrior-guardian',
   abilities: GUARDIAN_ABILITIES,
-  subpaths: [FORTRESS_SUBPATH, AVENGER_SUBPATH]
+  subpaths: [FORTRESS_SUBPATH, AVENGER_SUBPATH],
+  hasComboMechanic: false
 };
 
 // ============================================================================

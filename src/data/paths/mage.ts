@@ -449,6 +449,7 @@ const ARCHMAGE_PATH: PathDefinition = {
       icon: 'ability-paths-mage-destroyer',
     },
   ],
+  hasComboMechanic: true
 };
 
 const ENCHANTER_PATH: PathDefinition = {
@@ -473,6 +474,7 @@ const ENCHANTER_PATH: PathDefinition = {
       icon: 'ability-paths-mage-sage',
     },
   ],
+  hasComboMechanic: false
 };
 
 // ============================================================================

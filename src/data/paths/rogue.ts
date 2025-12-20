@@ -37,6 +37,7 @@ const ASSASSIN_PATH: PathDefinition = {
       icon: 'ability-paths-rogue-nightstalker'
     }
   ],
+  hasComboMechanic: true,
   abilities: [
     // Shadowblade abilities - Crit mastery
     {
@@ -210,6 +211,7 @@ const DUELIST_PATH: PathDefinition = {
       icon: 'ability-paths-rogue-phantom'
     }
   ],
+  hasComboMechanic: false,
   abilities: [
     // Swashbuckler abilities - Dodge-to-offense
     {

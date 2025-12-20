@@ -44,7 +44,7 @@ export function usePowerActions(context: PowerActivationContext) {
     combatSpeed,
   } = context;
 
-  const { processTrigger, hasAbility, addAttackModifier, getPowerModifiers } = usePathAbilities();
+  const { processTrigger, hasAbility, addAttackModifier, getPowerModifiers, hasComboMechanic } = usePathAbilities();
 
   const usePower = useCallback((powerId: string) => {
     setState((prev: GameState) => {
@@ -106,11 +106,13 @@ export function usePowerActions(context: PowerActivationContext) {
 
       player.lastPowerUsed = power.id;
 
-      // Check for vanilla combo bonus (still exists, separate from path abilities)
+      // Check for vanilla combo bonus (only for active paths)
       // Combo bonus starts at 2+ different powers: subtract 1 so 2 powers = 1x bonus, 3 powers = 2x bonus, etc.
       // MAX_COMBO_COUNT - 1 caps the bonus levels (e.g., if max is 5, cap at 4 bonus levels)
       let comboMultiplier = 1;
-      if (player.comboCount >= 2) {
+      const playerHasCombo = hasComboMechanic(player);
+
+      if (playerHasCombo && player.comboCount >= 2) {
         comboMultiplier = 1 + (Math.min(player.comboCount - 1, COMBAT_BALANCE.MAX_COMBO_COUNT - 1) * COMBAT_BALANCE.COMBO_DAMAGE_BONUS_PER_LEVEL);
         if (comboMultiplier > 1) {
           logs.push(`🔥 ${player.comboCount}x COMBO! (+${Math.floor((comboMultiplier - 1) * 100)}% damage)`);
@@ -519,7 +521,7 @@ export function usePowerActions(context: PowerActivationContext) {
         currentEnemy: enemy,
       };
     });
-  }, [setState, setLastCombatEvent, scheduleCombatEvent, enemyDeathProcessedRef, processTrigger, hasAbility, addAttackModifier, getPowerModifiers]);
+  }, [setState, setLastCombatEvent, scheduleCombatEvent, enemyDeathProcessedRef, processTrigger, hasAbility, addAttackModifier, getPowerModifiers, hasComboMechanic]);
 
   return {
     usePower,

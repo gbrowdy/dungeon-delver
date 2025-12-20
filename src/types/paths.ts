@@ -185,6 +185,7 @@ export interface PathDefinition {
   subpaths: SubpathDefinition[];    // Subpath branches (available at level 4+)
   theme?: string;                   // Optional: thematic tag for the overall path
   className?: string;               // Optional: class name for reference (can be derived from abilities)
+  hasComboMechanic: boolean;        // Whether this path uses the combo system. Active paths = true, passive paths = false.
 }
 
 /**
