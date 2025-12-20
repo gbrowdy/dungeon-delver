@@ -140,7 +140,8 @@ export const PALADIN_PATHS: PathDefinition[] = [
         effects: [
           {
             trigger: 'on_combo',
-            condition: { type: 'combo_count', value: 5 },
+            // Uses attack_count (auto-attacks) instead of combo_count (powers)
+            condition: { type: 'attack_count', value: 5, counterId: 'holy_avenger_attacks' },
             damageModifier: { type: 'bonus_damage', value: 2.0 },
           },
         ],
