@@ -191,6 +191,11 @@ export function usePathAbilities() {
       case 'combo_count': {
         return player.comboCount >= condition.value;
       }
+      case 'attack_count': {
+        // For attack-based combos like Holy Avenger - uses abilityCounters
+        const attackCount = player.abilityCounters?.[condition.counterId] ?? 0;
+        return attackCount >= condition.value;
+      }
       case 'enemy_has_status': {
         if (!enemy) return false;
         return (enemy.statusEffects?.length ?? 0) > 0;

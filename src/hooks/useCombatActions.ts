@@ -295,10 +295,17 @@ export function useCombatActions({
       enemy.health -= finalDamage;
       logs.push(`You deal ${finalDamage} damage to ${enemy.name}`);
 
-      // Increment combo count for attack-based combos (e.g., Holy Avenger)
-      playerAfterEffects.comboCount = (playerAfterEffects.comboCount || 0) + 1;
+      // Track attack count for attack-based abilities like Holy Avenger
+      // This uses abilityCounters instead of comboCount (which is for power combos)
+      if (hasAbility(playerAfterEffects, 'crusader_holy_avenger')) {
+        const { player: updatedPlayer } = incrementAbilityCounter(playerAfterEffects, 'holy_avenger_attacks', 5);
+        playerAfterEffects = updatedPlayer;
+      }
 
-      // Process path ability triggers: on_combo (for attack-based combos)
+      // Process path ability triggers: on_combo
+      // Note: This now handles both:
+      // - Power combos (comboCount managed in usePowerActions.ts)
+      // - Attack combos (via attack_count condition with abilityCounters)
       const onComboResult = processTrigger('on_combo', {
         player: playerAfterEffects,
         enemy,
@@ -312,8 +319,13 @@ export function useCombatActions({
         finalDamage += onComboResult.damageAmount;
         logs.push(...onComboResult.logs);
 
-        // Reset combo count after combo triggers
+        // Reset the appropriate counter after combo triggers
+        // For power combos, reset comboCount
         playerAfterEffects.comboCount = 0;
+        // For attack combos (Holy Avenger), reset the attack counter
+        if (hasAbility(playerAfterEffects, 'crusader_holy_avenger')) {
+          playerAfterEffects = resetAbilityCounter(playerAfterEffects, 'holy_avenger_attacks');
+        }
       }
 
       // Thorned modifier: Reflect damage back to player
@@ -422,7 +434,7 @@ export function useCombatActions({
         currentEnemy: enemy,
       };
     });
-  }, [setState, setLastCombatEvent, setDroppedItem, scheduleCombatEvent, combatSpeed, enemyDeathProcessedRef, processTrigger, hasAbility, resetAbilityCounter]);
+  }, [setState, setLastCombatEvent, setDroppedItem, scheduleCombatEvent, combatSpeed, enemyDeathProcessedRef, processTrigger, hasAbility, resetAbilityCounter, incrementAbilityCounter]);
 
   /**
    * Enemy attack callback - called when enemy's attack timer fills

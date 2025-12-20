@@ -58,6 +58,7 @@ export type PathAbilityCondition =
   | { type: 'mana_above'; value: number }
   | { type: 'enemy_hp_below'; value: number }
   | { type: 'combo_count'; value: number }
+  | { type: 'attack_count'; value: number; counterId: string }  // For attack-based combos like Holy Avenger
   | { type: 'enemy_has_status'; status: string };
 
 /**
