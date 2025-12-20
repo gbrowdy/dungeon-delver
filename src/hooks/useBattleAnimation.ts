@@ -46,6 +46,12 @@ export interface EnemyAttackEvent extends BaseCombatEvent {
   isCrit: boolean;
 }
 
+// Enemy ability event (non-attack abilities: heal, enrage, shield)
+export interface EnemyAbilityEvent extends BaseCombatEvent {
+  type: typeof COMBAT_EVENT_TYPE.ENEMY_ABILITY;
+  abilityType: 'heal' | 'enrage' | 'shield';
+}
+
 // Enemy hit event
 export interface EnemyHitEvent extends BaseCombatEvent {
   type: typeof COMBAT_EVENT_TYPE.ENEMY_HIT;
@@ -68,6 +74,7 @@ export type CombatEvent =
   | PlayerPowerEvent
   | PlayerDodgeEvent
   | EnemyAttackEvent
+  | EnemyAbilityEvent
   | EnemyHitEvent
   | PlayerHitEvent;
 
@@ -97,6 +104,8 @@ interface UseBattleAnimationReturn {
   enemyFlash: boolean;
   hitStop: boolean;
   playerDeathEffect: boolean;
+  enemyCasting: boolean;
+  enemyAuraColor: 'red' | 'blue' | 'green' | null;
   removeEffect: (id: string) => void;
 }
 
@@ -129,6 +138,8 @@ export function useBattleAnimation(
   const [enemyFlash, setEnemyFlash] = useState(false);
   const [hitStop, setHitStop] = useState(false);
   const [playerDeathEffect, setPlayerDeathEffect] = useState(false);
+  const [enemyCasting, setEnemyCasting] = useState(false);
+  const [enemyAuraColor, setEnemyAuraColor] = useState<'red' | 'blue' | 'green' | null>(null);
 
   const lastEventIdRef = useRef<string>('');
   const prevEnemyIdRef = useRef<string | null>(null);
@@ -192,6 +203,8 @@ export function useBattleAnimation(
       setEnemyFlash(false);
       setHitStop(false);
       setPlayerDeathEffect(false);
+      setEnemyCasting(false);
+      setEnemyAuraColor(null);
       lastEventIdRef.current = '';
       prevEnemyIdRef.current = null;
       deathAnimationTriggeredRef.current = null;
@@ -367,6 +380,25 @@ export function useBattleAnimation(
         break;
       }
 
+      case COMBAT_EVENT_TYPE.ENEMY_ABILITY: {
+        // Show casting pose with colored aura instead of attack lunge
+        const abilityColors = {
+          enrage: 'red' as const,
+          shield: 'blue' as const,
+          heal: 'green' as const,
+        };
+        setEnemyCasting(true);
+        setEnemyAuraColor(abilityColors[lastCombatEvent.abilityType]);
+        setEnemyState({ state: SPRITE_STATE.IDLE, frame: 1 }); // "casting" pose
+
+        createTrackedTimeout(() => {
+          setEnemyCasting(false);
+          setEnemyAuraColor(null);
+          setEnemyState({ state: SPRITE_STATE.IDLE, frame: 0 });
+        }, ANIMATION_TIMING.ENEMY_ABILITY_CAST);
+        break;
+      }
+
       case COMBAT_EVENT_TYPE.PLAYER_HIT: {
         // Hero takes damage - show hit state, flash, hit-stop, damage number, and shake
         setHeroState({ state: SPRITE_STATE.HIT, frame: 0 });
@@ -457,6 +489,8 @@ export function useBattleAnimation(
     enemyFlash,
     hitStop,
     playerDeathEffect,
+    enemyCasting,
+    enemyAuraColor,
     removeEffect,
   };
 }

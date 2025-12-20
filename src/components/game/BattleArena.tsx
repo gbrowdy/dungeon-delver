@@ -66,6 +66,8 @@ export function BattleArena({
     enemyFlash,
     hitStop,
     playerDeathEffect,
+    enemyCasting,
+    enemyAuraColor,
     removeEffect,
   } = useBattleAnimation(enemy, lastCombatEvent, isPaused, gamePhase, animationOptions);
 
@@ -157,6 +159,8 @@ export function BattleArena({
                 phase={phase}
                 displayEnemy={displayEnemy}
                 isAttacking={enemyAttacking}
+                enemyCasting={enemyCasting}
+                enemyAuraColor={enemyAuraColor}
                 isFlashing={enemyFlash}
                 hitStop={hitStop}
                 turnProgress={enemyProgress}
