@@ -64,14 +64,8 @@ export function calculateRewards(
     gold: player.gold + finalGold,
   };
 
-  // Build reward text with penalties shown
-  let rewardText = `${enemy.name} defeated! +${adjustedXP} XP, +${finalGold} gold`;
-  if (levelPenalty < 1) {
-    rewardText += ` (${Math.floor(levelPenalty * 100)}% - overleveled)`;
-  }
-  if (dropQualityBonus > 0) {
-    rewardText += ` (+${Math.floor(dropQualityBonus * 100)}% fortune bonus)`;
-  }
+  // Build reward text - show final values only (adjustments happen silently)
+  const rewardText = `${enemy.name} defeated! +${adjustedXP} XP, +${finalGold} gold`;
 
   return {
     adjustedXP,
