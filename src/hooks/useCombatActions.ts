@@ -493,6 +493,7 @@ export function useCombatActions({
       // Note: Enemies cannot crit - multi-strike serves as the burst damage mechanic
       const enemyIntent = enemy.intent;
       let enemyDamage = 0;
+      let statusEffectNegatedByBlock = false; // Track if blocking negated a status effect
 
       if (enemyIntent?.type === 'ability' && enemyIntent.ability) {
         const ability = enemyIntent.ability;
@@ -506,6 +507,7 @@ export function useCombatActions({
         const statusEffectAbilities: EnemyAbilityType[] = ['poison', 'stun'];
         if (player.isBlocking && statusEffectAbilities.includes(ability.type)) {
           logs.push(`🛡️ Block! Negated ${ability.name}!`);
+          statusEffectNegatedByBlock = true; // Block provided value, should be consumed
           // Skip the switch - status effect is fully negated
         } else switch (ability.type) {
           case 'multi_hit': {
@@ -831,21 +833,19 @@ export function useCombatActions({
         scheduleCombatEvent(playerDodgeEvent, scaledPlayerHitDelay);
       }
 
-      // Reset blocking only if damage was actually dealt to the player
+      // Reset blocking if:
+      // 1. Damage was actually dealt to the player
+      // 2. A status effect was negated (block provided value)
       // Block persists through:
       // - Non-damaging abilities (heal, enrage, shield)
-      // - Status effects that were negated (poison, stun)
       // - Dodged attacks (regular attacks or multi_hit where all hits were dodged)
-      if (enemyDamage > 0) {
+      if (enemyDamage > 0 || statusEffectNegatedByBlock) {
         player.isBlocking = false;
       } else if (player.isBlocking) {
         // Block was held - add feedback to combat log
         if (enemyIntent?.type === 'ability' && enemyIntent.ability) {
           const ability = enemyIntent.ability;
-          const statusEffectAbilities: EnemyAbilityType[] = ['poison', 'stun'];
-          if (statusEffectAbilities.includes(ability.type)) {
-            logs.push(`🛡️ Block held - ${ability.name} was negated!`);
-          } else if (ability.type === 'heal') {
+          if (ability.type === 'heal') {
             logs.push(`🛡️ Block held - enemy used ${ability.name}!`);
           } else if (ability.type === 'enrage') {
             logs.push(`🛡️ Block held - enemy used ${ability.name}!`);
