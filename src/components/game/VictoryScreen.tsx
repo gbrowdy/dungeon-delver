@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import { PixelIcon } from '@/components/ui/PixelIcon';
 import { getPlayerDisplayName } from '@/utils/powerSynergies';
 import { FLOOR_CONFIG } from '@/constants/game';
+import { getIcon } from '@/lib/icons';
+import type { SpriteType } from '@/data/sprites';
 
 interface VictoryScreenProps {
   player: Player;
@@ -16,6 +18,15 @@ interface VictoryScreenProps {
 export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScreenProps) {
   const [spriteState, setSpriteState] = useState<'idle' | 'walk'>('walk');
   const [showStats, setShowStats] = useState(false);
+
+  // Determine sprite type - use path variant if player has selected a path
+  const getSpriteType = (): SpriteType | string => {
+    if (player.path?.pathId) {
+      return player.path.pathId;
+    }
+    return player.class as SpriteType;
+  };
+  const spriteType = getSpriteType();
 
   // Victory walk animation, then show stats
   useEffect(() => {
@@ -162,7 +173,7 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
         <div className="flex justify-center">
           <div className="relative pixel-panel rounded-lg p-4 sm:p-6 border-2 border-amber-500/50 bg-gradient-to-b from-amber-900/20 to-slate-900/50">
             <PixelSprite
-              type={player.class}
+              type={spriteType}
               state={spriteState}
               direction="right"
               scale={5}
@@ -239,24 +250,27 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
                 Equipment
               </div>
               <div className="flex flex-wrap gap-2 justify-center">
-                {player.equippedItems.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="pixel-panel-dark rounded px-2 py-1 flex items-center gap-1"
-                  >
-                    <span className="text-sm">{item.icon}</span>
-                    <span className={cn(
-                      "pixel-text text-pixel-2xs",
-                      item.rarity === 'legendary' ? 'text-rarity-legendary' :
-                      item.rarity === 'epic' ? 'text-rarity-epic' :
-                      item.rarity === 'rare' ? 'text-rarity-rare' :
-                      item.rarity === 'uncommon' ? 'text-rarity-uncommon' :
-                      'text-rarity-common'
-                    )}>
-                      {item.name}
-                    </span>
-                  </div>
-                ))}
+                {player.equippedItems.map((item, idx) => {
+                  const IconComponent = getIcon(item.icon, 'Package');
+                  return (
+                    <div
+                      key={idx}
+                      className="pixel-panel-dark rounded px-2 py-1 flex items-center gap-1"
+                    >
+                      <IconComponent className="w-4 h-4" aria-hidden="true" />
+                      <span className={cn(
+                        "pixel-text text-pixel-2xs",
+                        item.rarity === 'legendary' ? 'text-rarity-legendary' :
+                        item.rarity === 'epic' ? 'text-rarity-epic' :
+                        item.rarity === 'rare' ? 'text-rarity-rare' :
+                        item.rarity === 'uncommon' ? 'text-rarity-uncommon' :
+                        'text-rarity-common'
+                      )}>
+                        {item.name}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
