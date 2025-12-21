@@ -217,6 +217,10 @@ export function useProgressionActions({
         shopItems: [],
         availablePowers: [],
         isTransitioning: false,
+        // Reset shop so it re-initializes with new floor (enables legendaries at floor 3+).
+        // Note: purchasedItems will be reset, but this is safe because items are immediately
+        // equipped on purchase, and the shop checks equippedItems as a fallback.
+        shopState: null,
       };
     });
   }, [setState]);

@@ -284,8 +284,9 @@ export function useShopState(): UseShopStateResult {
         };
       }
 
-      // Check if already purchased
-      if (shopState.purchasedItems.includes(itemId)) {
+      // Check if already purchased (in purchasedItems list or currently equipped)
+      if (shopState.purchasedItems.includes(itemId) ||
+          player.equippedItems.some(equipped => equipped.id === itemId)) {
         return {
           success: false,
           message: 'Item already purchased',

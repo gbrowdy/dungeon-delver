@@ -538,8 +538,10 @@ function EquippedItemCard({ item, slotType, playerGold, onEnhance }: EquippedIte
 export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnhance, onClose }: ShopScreenProps) {
   const legendaryUnlocked = currentFloor >= SHOP_UNLOCKS.legendary;
 
-  // Check if item is purchased
-  const isItemPurchased = (itemId: string) => shopState.purchasedItems.includes(itemId);
+  // Check if item is purchased (either in purchasedItems list or currently equipped)
+  const isItemPurchased = (itemId: string) =>
+    shopState.purchasedItems.includes(itemId) ||
+    player.equippedItems.some(item => item.id === itemId);
 
   // Check if player can afford item
   const canAfford = (item: ShopItem) => player.gold >= item.price;

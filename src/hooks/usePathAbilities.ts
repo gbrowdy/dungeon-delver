@@ -491,19 +491,37 @@ export function usePathAbilities() {
               if (stat === 'power' || stat === 'armor' || stat === 'speed' || stat === 'fortune') {
                 const bonus = mod.percentBonus || 0;
                 if (bonus > 0 && effect.duration) {
-                  // Create an active buff
-                  const buff: ActiveBuff = {
-                    id: generateUniqueId(`${ability.id}_${stat}`),
-                    name: ability.name,
-                    stat,
-                    multiplier: 1 + bonus,
-                    remainingTurns: effect.duration,
-                    icon: ability.icon || '✨',
-                  };
                   updatedPlayer.activeBuffs = updatedPlayer.activeBuffs || [];
-                  updatedPlayer.activeBuffs.push(buff);
-                  const percentDisplay = Math.round(bonus * 100);
-                  logs.push(`⬆️ ${ability.name}: ${stat} increased by ${percentDisplay}% for ${effect.duration}s`);
+
+                  // Check if a buff from this ability+stat already exists
+                  // Use trailing underscore for explicit boundary matching (IDs are formatted as ability_stat_timestamp_random)
+                  const buffKey = `${ability.id}_${stat}_`;
+                  const existingBuffIndex = updatedPlayer.activeBuffs.findIndex(
+                    b => b.id.startsWith(buffKey)
+                  );
+
+                  if (existingBuffIndex >= 0) {
+                    // Refresh the existing buff's duration instead of adding a new one
+                    updatedPlayer.activeBuffs[existingBuffIndex] = {
+                      ...updatedPlayer.activeBuffs[existingBuffIndex],
+                      remainingTurns: effect.duration,
+                    };
+                    const percentDisplay = Math.round(bonus * 100);
+                    logs.push(`🔄 ${ability.name}: ${stat} buff refreshed (+${percentDisplay}%) for ${effect.duration}s`);
+                  } else {
+                    // Create a new active buff
+                    const buff: ActiveBuff = {
+                      id: generateUniqueId(`${ability.id}_${stat}`),
+                      name: ability.name,
+                      stat,
+                      multiplier: 1 + bonus,
+                      remainingTurns: effect.duration,
+                      icon: ability.icon || '✨',
+                    };
+                    updatedPlayer.activeBuffs.push(buff);
+                    const percentDisplay = Math.round(bonus * 100);
+                    logs.push(`⬆️ ${ability.name}: ${stat} increased by ${percentDisplay}% for ${effect.duration}s`);
+                  }
                 }
               }
             }

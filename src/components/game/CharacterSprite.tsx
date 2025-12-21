@@ -277,7 +277,7 @@ export function CharacterSprite({
             return (
               <div key={buff.id} className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-success/50">
                 <IconComponent className="w-4 h-4" />
-                <span className="text-success/90">{buff.remainingTurns}</span>
+                <span className="text-success/90">{Math.ceil(buff.remainingTurns)}</span>
               </div>
             );
           })}
