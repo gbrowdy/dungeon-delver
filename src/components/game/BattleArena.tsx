@@ -13,6 +13,9 @@ import { getIcon, ABILITY_ICONS } from '@/lib/icons';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Star } from 'lucide-react';
 
+/** Maximum number of enemy abilities to display in the battle arena UI */
+const MAX_DISPLAYED_ABILITIES = 4;
+
 interface BattleArenaProps {
   player: Player;
   enemy: Enemy | null;
@@ -223,7 +226,7 @@ export function BattleArena({
               {displayEnemy.abilities.length > 0 && (
                 <TooltipProvider delayDuration={0}>
                   <div className="flex items-center gap-1 flex-wrap justify-end">
-                    {displayEnemy.abilities.slice(0, 4).map(ability => {
+                    {displayEnemy.abilities.slice(0, MAX_DISPLAYED_ABILITIES).map(ability => {
                       const AbilityIcon = getIcon(ABILITY_ICONS[ability.type?.toUpperCase() as keyof typeof ABILITY_ICONS], 'Sword');
                       return (
                         <Tooltip key={ability.id}>
@@ -245,9 +248,9 @@ export function BattleArena({
                         </Tooltip>
                       );
                     })}
-                    {displayEnemy.abilities.length > 4 && (
+                    {displayEnemy.abilities.length > MAX_DISPLAYED_ABILITIES && (
                       <span className="pixel-text text-pixel-2xs text-slate-500">
-                        +{displayEnemy.abilities.length - 4}
+                        +{displayEnemy.abilities.length - MAX_DISPLAYED_ABILITIES}
                       </span>
                     )}
                   </div>
