@@ -422,8 +422,13 @@ export function usePathAbilities() {
               break;
             }
             case 'bonus_damage': {
-              // mod.value is a decimal ratio (e.g., 2.0 = 200% bonus, 0.5 = 50% bonus)
-              const bonusDmg = Math.floor((context.damage || 0) * mod.value);
+              // mod.value is a decimal ratio (e.g., 1.5 = 150% of base, 0.5 = 50% bonus)
+              // For on_dodge triggers (riposte-style abilities), use player power as the base
+              // since there's no incoming damage to modify
+              const baseDamage = trigger === 'on_dodge'
+                ? context.player.currentStats.power
+                : (context.damage || 0);
+              const bonusDmg = Math.floor(baseDamage * mod.value);
               damageAmount += bonusDmg;
               logs.push(`💥 ${ability.name}: +${bonusDmg} bonus damage`);
               break;

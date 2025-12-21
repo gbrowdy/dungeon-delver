@@ -697,27 +697,6 @@ All colors MUST be HSL.
 }
 .animate-buff-particle { animation: buff-particle 0.5s ease-out forwards; }
 
-/* Enemy ability particle animation */
-@keyframes ability-particle {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) rotate(0deg) translateY(0) scale(0);
-  }
-  30% {
-    opacity: 1;
-    transform: translate(-50%, -50%) rotate(0deg) translateY(-15px) scale(1);
-  }
-  70% {
-    opacity: 0.8;
-    transform: translate(-50%, -50%) rotate(0deg) translateY(-25px) scale(0.8);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) rotate(0deg) translateY(-35px) scale(0.5);
-  }
-}
-.animate-ability-particle { animation: ability-particle 0.6s ease-out infinite; }
-
 /* Shield effect animations */
 @keyframes shield-appear {
   0% { opacity: 0; transform: scale(0.5); }

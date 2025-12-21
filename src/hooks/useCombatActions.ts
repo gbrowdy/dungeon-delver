@@ -74,6 +74,38 @@ export function useCombatActions({
   // Initialize path abilities hook for processing path ability effects
   const { processTrigger, hasAbility, getStatusImmunities, getPassiveDamageReduction, incrementAbilityCounter, resetAbilityCounter } = usePathAbilities();
 
+  /**
+   * Schedule a counter-attack sequence (for riposte, reflect, etc.)
+   * Shows player attack animation followed by damage on enemy.
+   */
+  const scheduleCounterAttackSequence = (
+    damage: number,
+    enemyHealth: number
+  ) => {
+    if (damage <= 0) return;
+
+    // First: trigger the player counter-attack animation
+    const counterAttackEvent: import('@/hooks/useBattleAnimation').PlayerAttackEvent = {
+      type: COMBAT_EVENT_TYPE.PLAYER_ATTACK,
+      damage,
+      isCrit: false,
+      timestamp: Date.now(),
+      id: generateEventId(),
+    };
+    setLastCombatEvent(counterAttackEvent);
+
+    // Then: schedule the enemy hit (damage number + reaction) after attack animation
+    const counterHitEvent: import('@/hooks/useBattleAnimation').EnemyHitEvent = {
+      type: COMBAT_EVENT_TYPE.ENEMY_HIT,
+      damage,
+      isCrit: false,
+      timestamp: Date.now(),
+      id: generateEventId(),
+      targetDied: enemyHealth <= 0,
+    };
+    const scaledDelay = Math.floor(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY / combatSpeed);
+    scheduleCombatEvent(counterHitEvent, scaledDelay);
+  };
 
   /**
    * Hero attack callback - called when hero's attack timer fills
@@ -670,6 +702,9 @@ export function useCombatActions({
           logs.push(...pathOnDodgeResult.logs);
           applyTriggerResultToEnemy(enemy, pathOnDodgeResult);
 
+          // Schedule counter-attack animation and damage for riposte
+          scheduleCounterAttackSequence(pathOnDodgeResult.damageAmount, enemy.health);
+
           // Blur: Track consecutive dodges for shield
           if (hasAbility(player, 'rogue_duelist_blur')) {
             const { player: updatedPlayer, newValue } = incrementAbilityCounter(player, 'blur_dodges', 3);
@@ -710,6 +745,10 @@ export function useCombatActions({
             player.currentStats = pathOnBlockResult.player.currentStats;
             logs.push(...pathOnBlockResult.logs);
             applyTriggerResultToEnemy(enemy, pathOnBlockResult);
+
+            // Schedule counter-attack animation and damage for block reflect
+            const blockCounterDamage = (pathOnBlockResult.damageAmount || 0) + (pathOnBlockResult.reflectedDamage || 0);
+            scheduleCounterAttackSequence(blockCounterDamage, enemy.health);
           }
 
           // Apply passive damage reduction from path abilities
@@ -804,30 +843,22 @@ export function useCombatActions({
 
       const playerWillDie = player.currentStats.health <= 0;
 
-      // For non-attack abilities, use different event
-      if (enemyIntent?.type === 'ability' && enemyIntent.ability) {
-        const abilityType = enemyIntent.ability.type;
-        if (abilityType === 'heal' || abilityType === 'enrage' || abilityType === 'shield') {
-          const enemyAbilityEvent: import('@/hooks/useBattleAnimation').EnemyAbilityEvent = {
-            type: COMBAT_EVENT_TYPE.ENEMY_ABILITY,
-            abilityType: abilityType,
-            timestamp: Date.now(),
-            id: generateEventId(),
-          };
-          scheduleCombatEvent(enemyAbilityEvent, scaledEnemyAttackDelay);
-        } else {
-          // Regular attack event for multi_hit, poison, stun
-          const enemyAttackEvent: import('@/hooks/useBattleAnimation').EnemyAttackEvent = {
-            type: COMBAT_EVENT_TYPE.ENEMY_ATTACK,
-            damage: enemyDamage,
-            isCrit: false, // Enemies cannot crit
-            timestamp: Date.now(),
-            id: generateEventId(),
-          };
-          scheduleCombatEvent(enemyAttackEvent, scaledEnemyAttackDelay);
-        }
+      // Determine animation event type based on enemy intent
+      const isNonAttackAbility = enemyIntent?.type === 'ability' &&
+        enemyIntent.ability &&
+        ['heal', 'enrage', 'shield'].includes(enemyIntent.ability.type);
+
+      if (isNonAttackAbility) {
+        // Non-attack abilities use casting animation instead of lunge
+        const enemyAbilityEvent: import('@/hooks/useBattleAnimation').EnemyAbilityEvent = {
+          type: COMBAT_EVENT_TYPE.ENEMY_ABILITY,
+          abilityType: enemyIntent.ability!.type as 'heal' | 'enrage' | 'shield',
+          timestamp: Date.now(),
+          id: generateEventId(),
+        };
+        scheduleCombatEvent(enemyAbilityEvent, scaledEnemyAttackDelay);
       } else {
-        // Regular attack
+        // Regular attacks and attack-type abilities (multi_hit, poison, stun) use lunge animation
         const enemyAttackEvent: import('@/hooks/useBattleAnimation').EnemyAttackEvent = {
           type: COMBAT_EVENT_TYPE.ENEMY_ATTACK,
           damage: enemyDamage,

@@ -10,7 +10,7 @@ import { BattleOverlay } from './BattleOverlay';
 import { ScreenReaderAnnouncer } from './ScreenReaderAnnouncer';
 import { getPlayerDisplayName } from '@/utils/powerSynergies';
 import { getIcon, ABILITY_ICONS } from '@/lib/icons';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Star } from 'lucide-react';
 
 interface BattleArenaProps {
@@ -198,54 +198,60 @@ export function BattleArena({
             <span className="pixel-text text-pixel-sm text-gold font-bold">{getPlayerDisplayName(player)}</span>
             <span className="pixel-text text-pixel-xs text-gray-300 ml-2">Lv.{player.level}</span>
           </div>
-          {/* Enemy info - compact horizontal layout - visible only on sm+ screens */}
+          {/* Enemy info - stacked layout - visible only on sm+ screens */}
           {displayEnemy && !displayEnemy.isDying && (
-            <div className="pixel-panel-dark rounded px-2 py-1 flex items-center gap-1.5 flex-shrink min-w-0 max-w-[420px] pointer-events-auto">
-              {/* Boss star icon */}
-              {displayEnemy.isBoss && (
-                <Star className="w-3.5 h-3.5 text-gold fill-gold flex-shrink-0" aria-label="Boss" />
-              )}
+            <div className="pixel-panel-dark rounded px-1.5 py-1 flex flex-col items-end gap-0.5 pointer-events-auto">
+              {/* Row 1: Name with boss star */}
+              <div className="flex items-center gap-1">
+                {displayEnemy.isBoss && (
+                  <Star className="w-3 h-3 text-gold fill-gold flex-shrink-0" aria-label="Boss" />
+                )}
+                <span className={cn(
+                  'pixel-text text-pixel-xs font-bold',
+                  displayEnemy.isBoss ? 'text-gold' : 'text-health'
+                )}>
+                  {displayEnemy.name}
+                </span>
+              </div>
 
-              {/* Name */}
-              <span className={cn(
-                'pixel-text text-pixel-xs font-bold truncate',
-                displayEnemy.isBoss ? 'text-gold' : 'text-health'
-              )}>
-                {displayEnemy.name}
-              </span>
-
-              {/* Stats */}
-              <div className="pixel-text text-pixel-2xs text-gray-400 flex-shrink-0">
+              {/* Row 2: Stats */}
+              <div className="pixel-text text-pixel-2xs text-gray-400">
                 PWR:{displayEnemy.power} ARM:{displayEnemy.armor}
               </div>
 
-              {/* Abilities - icon-only badges with tooltips */}
+              {/* Row 3: Abilities with names */}
               {displayEnemy.abilities.length > 0 && (
-                <div className="flex items-center gap-0.5 flex-shrink-0">
-                  {displayEnemy.abilities.slice(0, 5).map(ability => {
-                    const AbilityIcon = getIcon(ABILITY_ICONS[ability.type?.toUpperCase() as keyof typeof ABILITY_ICONS], 'Sword');
-                    return (
-                      <Tooltip key={ability.id}>
-                        <TooltipTrigger asChild>
-                          <div className="bg-health/20 border border-health/50 rounded p-0.5 cursor-help">
-                            <AbilityIcon className="w-3.5 h-3.5 text-health/90" aria-hidden="true" />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="pixel-panel-dark border-health/50">
-                          <div className="pixel-text text-pixel-2xs">
-                            <div className="text-health font-bold">{ability.name}</div>
-                            <div className="text-gray-300 mt-0.5">{ability.description}</div>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  })}
-                  {displayEnemy.abilities.length > 5 && (
-                    <span className="pixel-text text-pixel-2xs text-slate-500 ml-0.5">
-                      +{displayEnemy.abilities.length - 5}
-                    </span>
-                  )}
-                </div>
+                <TooltipProvider delayDuration={0}>
+                  <div className="flex items-center gap-1 flex-wrap justify-end">
+                    {displayEnemy.abilities.slice(0, 4).map(ability => {
+                      const AbilityIcon = getIcon(ABILITY_ICONS[ability.type?.toUpperCase() as keyof typeof ABILITY_ICONS], 'Sword');
+                      return (
+                        <Tooltip key={ability.id}>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              className="bg-health/20 border border-health/50 rounded px-1 py-0.5 cursor-help inline-flex items-center gap-1"
+                              aria-label={`${ability.name}: ${ability.description}`}
+                            >
+                              <AbilityIcon className="w-3 h-3 text-health/90 flex-shrink-0" aria-hidden="true" />
+                              <span className="pixel-text text-pixel-2xs text-health/90 leading-none">{ability.name}</span>
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="pixel-panel-dark border-health/50">
+                            <div className="pixel-text text-pixel-2xs text-gray-300">
+                              {ability.description}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                    {displayEnemy.abilities.length > 4 && (
+                      <span className="pixel-text text-pixel-2xs text-slate-500">
+                        +{displayEnemy.abilities.length - 4}
+                      </span>
+                    )}
+                  </div>
+                </TooltipProvider>
               )}
             </div>
           )}

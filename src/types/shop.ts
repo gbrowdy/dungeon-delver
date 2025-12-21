@@ -60,13 +60,6 @@ export interface ShopRotation {
   seed: number; // For deterministic rotation per run
 }
 
-// Re-export constants from @/constants/shop for backwards compatibility
-// These should be imported from @/constants/shop in new code
-export {
-  ENHANCEMENT_COST,
-  MAX_ENHANCEMENT_LEVEL as MAX_ENHANCEMENT,
-  ENHANCEMENT_BONUSES as ENHANCEMENT_CONFIG,
-  SHOP_PRICE_RANGES,
-  SHOP_UNLOCKS,
-  getTotalEnhancementCost,
-} from '@/constants/shop';
+// Re-export only what's actually used from @/constants/shop
+// Note: Import directly from @/constants/shop for new code
+export { SHOP_UNLOCKS } from '@/constants/shop';
