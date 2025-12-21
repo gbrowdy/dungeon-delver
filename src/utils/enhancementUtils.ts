@@ -6,75 +6,54 @@
 import type { Item, Stats } from '@/types/game';
 import type { ShopTier } from '@/types/shop';
 import {
-  ENHANCEMENT_COST,
+  ENHANCEMENT_COST_PERCENT,
   MAX_ENHANCEMENT_LEVEL,
   ENHANCEMENT_BONUSES,
 } from '@/constants/shop';
-
-/**
- * Get the primary and secondary stats from an item's stat bonus
- * Primary is the first non-zero stat, secondary is the second
- */
-function getPrimaryAndSecondaryStats(statBonus: Partial<Stats>): {
-  primary: keyof Stats | null;
-  secondary: keyof Stats | null;
-} {
-  const stats = Object.entries(statBonus).filter(([_, v]) => v && v !== 0);
-  return {
-    primary: stats[0]?.[0] as keyof Stats ?? null,
-    secondary: stats[1]?.[0] as keyof Stats ?? null,
-  };
-}
+import { SHOP_PRICE_RANGES } from '@/constants/shop';
 
 /**
  * Get the enhanced stats for an item (base stats + enhancement bonus)
  * This is what the item actually provides when equipped
+ *
+ * Enhancement bonuses apply to ALL stats on the item, not just primary.
+ * The bonus per stat per level is determined by the item's tier.
  *
  * @param item - The item to calculate enhanced stats for
  * @returns The combined base + enhancement stats
  *
  * @example
  * // Warrior's Blade: base { power: 4, fortune: 5 }, tier: 'class', enhancementLevel: 2
- * // Enhancement bonus: 2 * 2 = +4 to primary (power)
- * // Result: { power: 8, fortune: 5 }
+ * // Class tier: +2 per stat per level
+ * // Enhancement bonus: 2 * 2 = +4 to EACH stat
+ * // Result: { power: 8, fortune: 9 }
  */
 export function getEnhancedStats(item: Item): Partial<Stats> {
-  // Start with base stats
   const enhancedStats = { ...item.statBonus };
 
-  // If no tier or no enhancement level, return base stats
   if (!item.tier || item.enhancementLevel === 0) {
     return enhancedStats;
   }
 
-  // Get enhancement config for this tier
-  const enhancementConfig = ENHANCEMENT_BONUSES[item.tier];
+  // Use tier config or fall back to starter (with warning)
+  let enhancementConfig = ENHANCEMENT_BONUSES[item.tier];
   if (!enhancementConfig) {
-    // Fallback: treat unknown tiers as 'starter'
-    const starterConfig = ENHANCEMENT_BONUSES.starter;
-    const { primary } = getPrimaryAndSecondaryStats(item.statBonus);
+    console.warn(
+      `[enhancementUtils] Unknown item tier "${item.tier}" for item "${item.name}". ` +
+        `Falling back to starter tier bonuses.`
+    );
+    enhancementConfig = ENHANCEMENT_BONUSES.starter;
+  }
 
-    if (primary && enhancedStats[primary] !== undefined) {
-      enhancedStats[primary] = (enhancedStats[primary] ?? 0) +
-        (starterConfig.primaryPerLevel * item.enhancementLevel);
+  const bonusPerStat = enhancementConfig.perStatPerLevel * item.enhancementLevel;
+
+  // Apply bonus to ALL non-zero stats
+  for (const key of Object.keys(enhancedStats)) {
+    const statKey = key as keyof Stats;
+    const currentValue = enhancedStats[statKey];
+    if (currentValue !== undefined && currentValue !== 0) {
+      enhancedStats[statKey] = currentValue + bonusPerStat;
     }
-
-    return enhancedStats;
-  }
-
-  // Determine primary and secondary stats
-  const { primary, secondary } = getPrimaryAndSecondaryStats(item.statBonus);
-
-  // Apply primary stat bonus
-  if (primary && enhancedStats[primary] !== undefined) {
-    enhancedStats[primary] = (enhancedStats[primary] ?? 0) +
-      (enhancementConfig.primaryPerLevel * item.enhancementLevel);
-  }
-
-  // Apply secondary stat bonus (if tier supports it and item has secondary stat)
-  if (secondary && enhancementConfig.secondaryPerLevel && enhancedStats[secondary] !== undefined) {
-    enhancedStats[secondary] = (enhancedStats[secondary] ?? 0) +
-      (enhancementConfig.secondaryPerLevel * item.enhancementLevel);
   }
 
   return enhancedStats;
@@ -92,15 +71,38 @@ export function canEnhance(item: Item): boolean {
 
 /**
  * Get the cost to enhance an item by one level
+ * Cost scales with the item's tier (based on typical price for that tier)
  *
  * @param item - The item to check enhancement cost for
  * @returns The gold cost to enhance, or 0 if already at max
+ *
+ * @example
+ * // Starter item (45g base) = 10g per enhancement (20% of 45, rounded to nearest 5)
+ * // Class item (120g base) = 25g per enhancement (20% of 120, rounded to nearest 5)
+ * // Specialty item (~225g base) = 45g per enhancement (20% of 225)
+ * // Legendary item (~425g base) = 85g per enhancement (20% of 425, rounded to nearest 5)
  */
 export function getEnhancementCost(item: Item): number {
   if (!canEnhance(item)) {
     return 0;
   }
-  return ENHANCEMENT_COST;
+
+  // Get the base price range for this tier
+  const tier = item.tier || 'starter';
+  if (!item.tier) {
+    console.warn(
+      `[enhancementUtils] Item "${item.name}" has no tier set. ` +
+        `Defaulting to 'starter' for enhancement cost.`
+    );
+  }
+  const priceRange = SHOP_PRICE_RANGES[tier];
+
+  // Use the midpoint of the price range as the base for percentage calculation
+  const basePrice = Math.floor((priceRange.min + priceRange.max) / 2);
+
+  // Calculate cost as percentage of base price, rounded to nearest 5
+  const rawCost = Math.floor(basePrice * ENHANCEMENT_COST_PERCENT);
+  return Math.max(5, Math.round(rawCost / 5) * 5); // Round to nearest 5, minimum 5g
 }
 
 /**
@@ -138,48 +140,41 @@ export function getEnhancedItemName(item: Item): string {
 
 /**
  * Get the stat bonus preview for the next enhancement level
- * Shows what stats will be gained when enhancing
+ * Shows what stats will be gained when enhancing (ALL stats get bonus)
  *
  * @param item - The item to preview enhancement for
  * @returns The additional stats from the next enhancement, or null if at max
  *
  * @example
  * // Warrior's Blade (class tier): { power: 4, fortune: 5 }, enhancementLevel: 1
- * // Next level will add +2 power (primaryPerLevel)
- * // Returns: { power: 2 }
+ * // Next level will add +2 to EACH stat (perStatPerLevel)
+ * // Returns: { power: 2, fortune: 2 }
  */
 export function getNextEnhancementBonus(item: Item): Partial<Stats> | null {
   if (!canEnhance(item)) {
     return null;
   }
 
-  // Get enhancement config for this tier
+  // Get enhancement config for this tier (fall back to starter for consistency with getEnhancedStats)
   const tier = item.tier || 'starter';
-  const enhancementConfig = ENHANCEMENT_BONUSES[tier];
+  let enhancementConfig = ENHANCEMENT_BONUSES[tier];
 
   if (!enhancementConfig) {
-    // Fallback to starter config
-    const { primary } = getPrimaryAndSecondaryStats(item.statBonus);
-    if (!primary) return null;
-
-    return {
-      [primary]: ENHANCEMENT_BONUSES.starter.primaryPerLevel,
-    } as Partial<Stats>;
+    console.warn(
+      `[enhancementUtils] Unknown item tier "${tier}" for item "${item.name}". ` +
+        `Falling back to starter tier for enhancement preview.`
+    );
+    enhancementConfig = ENHANCEMENT_BONUSES.starter;
   }
-
-  // Determine primary and secondary stats
-  const { primary, secondary } = getPrimaryAndSecondaryStats(item.statBonus);
 
   const bonus: Partial<Stats> = {};
+  const bonusPerStat = enhancementConfig.perStatPerLevel;
 
-  // Add primary bonus
-  if (primary) {
-    bonus[primary] = enhancementConfig.primaryPerLevel;
-  }
-
-  // Add secondary bonus if applicable
-  if (secondary && enhancementConfig.secondaryPerLevel) {
-    bonus[secondary] = enhancementConfig.secondaryPerLevel;
+  // Add bonus to ALL non-zero stats on the item
+  for (const [key, value] of Object.entries(item.statBonus)) {
+    if (value !== undefined && value !== 0) {
+      bonus[key as keyof Stats] = bonusPerStat;
+    }
   }
 
   return Object.keys(bonus).length > 0 ? bonus : null;
