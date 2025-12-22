@@ -19,6 +19,15 @@ export const COMBAT_BALANCE = {
   ATTACK_HOLD_DURATION: 200, // How long to hold progress at 100% after attack fires (ms)
   BASE_SPEED: 10, // Reference speed for interval calculations
 
+  // Fortune scaling (Phase 1)
+  FORTUNE_LINEAR_CAP: 15, // Full linear scaling up to this point
+  FORTUNE_DIMINISH_RATE: 0.01, // Rate after cap (1% per fortune point)
+  CRIT_DAMAGE_CAP: 2.5, // Maximum crit multiplier (250%)
+
+  // Speed scaling (Phase 1)
+  SPEED_LINEAR_CAP: 12, // Full linear scaling up to this point
+  SPEED_DIMINISH_RATE: 0.04, // Rate after cap (4% per speed point)
+
   // Combo system
   MAX_COMBO_COUNT: 5,
   COMBO_DAMAGE_BONUS_PER_LEVEL: 0.1, // +10% damage per combo level

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   getCritChance,
   getCritDamage,
@@ -7,7 +7,24 @@ import {
   getProcChanceBonus,
 } from '../fortuneUtils';
 
+// Mock the feature flags module
+vi.mock('@/constants/features', () => ({
+  isFeatureEnabled: vi.fn(),
+}));
+
+import { isFeatureEnabled } from '@/constants/features';
+const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled);
+
 describe('fortuneUtils', () => {
+  beforeEach(() => {
+    // Default: feature flags disabled (legacy behavior)
+    mockIsFeatureEnabled.mockReturnValue(false);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe('getCritChance', () => {
     it('should return 5% base crit chance with 0 fortune', () => {
       expect(getCritChance(0)).toBe(0.05);
@@ -177,6 +194,163 @@ describe('fortuneUtils', () => {
       expect(getDodgeChance(fortune)).toBeCloseTo(0.05); // 5% dodge
       expect(getDropQualityBonus(fortune)).toBeCloseTo(1.1); // 10% better drops
       expect(getProcChanceBonus(fortune)).toBeCloseTo(1.05); // 5% more procs
+    });
+  });
+
+  // ============================================
+  // Phase 1: Diminishing Returns Tests
+  // ============================================
+  describe('Phase 1: Fortune Diminishing Returns', () => {
+    beforeEach(() => {
+      // Enable the FORTUNE_DIMINISHING_RETURNS feature flag
+      mockIsFeatureEnabled.mockImplementation(
+        (flag) => flag === 'FORTUNE_DIMINISHING_RETURNS'
+      );
+    });
+
+    describe('getCritChance with diminishing returns', () => {
+      it('should return linear scaling up to 15 fortune', () => {
+        expect(getCritChance(0)).toBe(0.05); // 5%
+        expect(getCritChance(5)).toBeCloseTo(0.15); // 15%
+        expect(getCritChance(10)).toBeCloseTo(0.25); // 25%
+        expect(getCritChance(15)).toBeCloseTo(0.35); // 35%
+      });
+
+      it('should have continuous scaling at the FORTUNE_LINEAR_CAP boundary', () => {
+        // Values should be continuous around the transition point (no discontinuity)
+        const atCap = getCritChance(15);
+        const slightlyAbove = getCritChance(15.001);
+
+        // The difference should be tiny (continuous, not jumping)
+        expect(Math.abs(slightlyAbove - atCap)).toBeLessThan(0.001);
+
+        // Verify exact boundary values
+        expect(getCritChance(14)).toBeCloseTo(0.33); // 5% + 14*2% = 33%
+        expect(getCritChance(15)).toBeCloseTo(0.35); // 5% + 15*2% = 35%
+        expect(getCritChance(16)).toBeCloseTo(0.36); // 35% + 1*1% = 36% (diminished)
+      });
+
+      it('should return diminished scaling above 15 fortune', () => {
+        // After 15: +FORTUNE_DIMINISH_RATE (1%) per fortune point instead of +2%
+        expect(getCritChance(20)).toBeCloseTo(0.40); // 35% + 5% = 40% (was 45% with linear)
+        expect(getCritChance(25)).toBeCloseTo(0.45); // 35% + 10% = 45% (was 50%+ with linear)
+        expect(getCritChance(30)).toBeCloseTo(0.50); // Capped at 50%
+      });
+
+      it('should cap at 50% crit chance', () => {
+        expect(getCritChance(50)).toBe(0.50);
+        expect(getCritChance(100)).toBe(0.50);
+      });
+
+      it('should handle negative fortune gracefully', () => {
+        expect(getCritChance(-5)).toBe(0.05);
+      });
+    });
+
+    describe('getCritDamage with cap', () => {
+      it('should add 4% crit damage per fortune point', () => {
+        expect(getCritDamage(0)).toBe(1.5); // 150%
+        expect(getCritDamage(5)).toBeCloseTo(1.7); // 150% + 20%
+        expect(getCritDamage(10)).toBeCloseTo(1.9); // 150% + 40%
+      });
+
+      it('should cap exactly at fortune 25', () => {
+        // With 4% per point and max bonus of 1.0, cap is at exactly fortune 25
+        expect(getCritDamage(24)).toBeCloseTo(2.46); // 1.5 + 24*0.04 = 2.46 (below cap)
+        expect(getCritDamage(25)).toBe(2.5); // Exactly at cap
+        expect(getCritDamage(26)).toBe(2.5); // Still capped
+      });
+
+      it('should cap at 250% crit damage', () => {
+        // Cap at 250% (2.5x)
+        expect(getCritDamage(25)).toBe(2.5); // 150% + 100% = 250% (capped)
+        expect(getCritDamage(30)).toBe(2.5); // Still capped
+        expect(getCritDamage(50)).toBe(2.5); // Still capped
+      });
+
+      it('should handle negative fortune gracefully', () => {
+        expect(getCritDamage(-5)).toBe(1.5);
+      });
+    });
+
+    describe('DPS impact comparison', () => {
+      // Helper to calculate expected DPS multiplier from crit
+      const calculateDpsFromCrit = (critChance: number, critDamage: number) => {
+        return 1 + critChance * (critDamage - 1);
+      };
+
+      it('should show reduced power at high fortune compared to legacy', () => {
+        // At 30 fortune with diminishing returns:
+        const newCritChance = getCritChance(30); // 50%
+        const newCritDamage = getCritDamage(30); // 2.5x
+
+        // Legacy values would be: 50% crit, 3.0x damage
+        // New DPS: 1 + 0.5 * 1.5 = 1.75x
+        // Legacy DPS: 1 + 0.5 * 2.0 = 2.0x
+        const newDps = calculateDpsFromCrit(newCritChance, newCritDamage);
+        expect(newDps).toBeCloseTo(1.75);
+      });
+
+      it('should maintain similar power at low fortune', () => {
+        // At 10 fortune (below diminishing threshold):
+        const critChance = getCritChance(10); // 25%
+        const critDamage = getCritDamage(10); // 1.9x
+
+        // DPS: 1 + 0.25 * 0.9 = 1.225x
+        const dps = calculateDpsFromCrit(critChance, critDamage);
+        expect(dps).toBeCloseTo(1.225);
+      });
+    });
+  });
+
+  // ============================================
+  // Edge Cases: NaN and Infinity Handling
+  // ============================================
+  describe('NaN and Infinity handling', () => {
+    let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should return safe defaults for NaN input', () => {
+      expect(getCritChance(NaN)).toBe(0.05); // Base crit chance
+      expect(getCritDamage(NaN)).toBe(1.5); // Base crit damage
+      expect(getDodgeChance(NaN)).toBe(0); // Zero dodge
+      expect(getDropQualityBonus(NaN)).toBe(1.0); // Base multiplier
+      expect(getProcChanceBonus(NaN)).toBe(1.0); // Base multiplier
+    });
+
+    it('should return safe defaults for Infinity input', () => {
+      expect(getCritChance(Infinity)).toBe(0.05);
+      expect(getCritDamage(Infinity)).toBe(1.5);
+      expect(getDodgeChance(Infinity)).toBe(0);
+      expect(getDropQualityBonus(Infinity)).toBe(1.0);
+      expect(getProcChanceBonus(Infinity)).toBe(1.0);
+    });
+
+    it('should return safe defaults for negative Infinity input', () => {
+      expect(getCritChance(-Infinity)).toBe(0.05);
+      expect(getCritDamage(-Infinity)).toBe(1.5);
+      expect(getDodgeChance(-Infinity)).toBe(0);
+      expect(getDropQualityBonus(-Infinity)).toBe(1.0);
+      expect(getProcChanceBonus(-Infinity)).toBe(1.0);
+    });
+
+    it('should log errors for invalid inputs', () => {
+      getCritChance(NaN);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[CRITICAL] getCritChance received invalid value')
+      );
+
+      getCritDamage(Infinity);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[CRITICAL] getCritDamage received invalid value')
+      );
     });
   });
 });
