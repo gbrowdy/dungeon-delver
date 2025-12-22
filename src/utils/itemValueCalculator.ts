@@ -9,9 +9,13 @@ import { STAT_POINT_VALUES, ITEM_TIER_BUDGETS } from '@/constants/balance';
 import type { ShopItem, ShopItemTier } from '@/types/shop';
 
 /**
- * Calculate the raw stat point value of an item's stats
+ * Calculate the raw stat point value of an item's stats.
+ * Unknown stats are logged as warnings to help catch typos and missing mappings.
  */
-export function calculateStatValue(stats: Partial<Record<string, number>>): number {
+export function calculateStatValue(
+  stats: Partial<Record<string, number>>,
+  itemId?: string
+): number {
   let totalValue = 0;
 
   for (const [stat, value] of Object.entries(stats)) {
@@ -20,6 +24,13 @@ export function calculateStatValue(stats: Partial<Record<string, number>>): numb
     const statWeight = STAT_POINT_VALUES[stat as keyof typeof STAT_POINT_VALUES];
     if (statWeight !== undefined) {
       totalValue += value * statWeight;
+    } else if (process.env.NODE_ENV !== 'production') {
+      // Log unknown stats in development to catch typos and missing mappings
+      console.warn(
+        `[itemValueCalculator] Unknown stat "${stat}" with value ${value}` +
+          (itemId ? ` on item "${itemId}"` : '') +
+          ` - not included in value calculation. Add to STAT_POINT_VALUES if valid.`
+      );
     }
   }
 
@@ -27,19 +38,48 @@ export function calculateStatValue(stats: Partial<Record<string, number>>): numb
 }
 
 /**
- * Estimate the effect value of an item based on its effect description
- * This is a heuristic - effects are complex and context-dependent
+ * Estimate the effect value of an item based on its effect description.
+ * This is a heuristic - effects are complex and context-dependent.
+ * Returns 0.5 as default for unrecognized effects (logged in development).
  */
 export function estimateEffectValue(item: ShopItem): number {
   if (!item.effect) return 0;
 
+  // Guard against missing description
+  if (!item.effect.description) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `[itemValueCalculator] Item "${item.id}" has an effect but no description. ` +
+          `Returning default value 0.5.`
+      );
+    }
+    return 0.5;
+  }
+
   const desc = item.effect.description.toLowerCase();
-  const value = item.effect.value ?? 0;
-  const chance = item.effect.chance ?? 1;
+  const rawValue = item.effect.value ?? 0;
+  const rawChance = item.effect.chance ?? 1;
+
+  // Guard against NaN/Infinity values
+  const value = Number.isFinite(rawValue) ? rawValue : 0;
+  const chance = Number.isFinite(rawChance) ? rawChance : 1;
+
+  if (!Number.isFinite(rawValue) || !Number.isFinite(rawChance)) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `[itemValueCalculator] Item "${item.id}" has invalid effect value (${rawValue}) ` +
+          `or chance (${rawChance}). Using defaults.`
+      );
+    }
+  }
 
   // Healing effects
   if (desc.includes('heal') && desc.includes('on kill')) {
     return 0.5 * chance;
+  }
+  // Crit-based healing (e.g., "Heal 5 HP on critical hit")
+  if (desc.includes('heal') && desc.includes('crit')) {
+    return (value >= 5 ? 1.0 : 0.5) * chance;
   }
   if (desc.includes('heal') && desc.includes('on hit')) {
     return (value >= 5 ? 1.0 : 0.5) * chance;
@@ -51,6 +91,10 @@ export function estimateEffectValue(item: ShopItem): number {
     return 1.5 * value;
   }
   if (desc.includes('regenerate') && desc.includes('hp')) {
+    return 1.5 * value;
+  }
+  // General healing (e.g., "Heal 1 HP per second")
+  if (desc.includes('heal') && desc.includes('per second')) {
     return 1.5 * value;
   }
 
@@ -68,7 +112,11 @@ export function estimateEffectValue(item: ShopItem): number {
     return 4.0;
   }
 
-  // Mana effects
+  // Mana effects - check mana + dodge before general dodge
+  if (desc.includes('mana') && desc.includes('dodge')) {
+    // Mana restoration on dodge (e.g., "50% chance to restore 5 mana on dodge")
+    return 0.5 * value * chance;
+  }
   if (desc.includes('mana') && desc.includes('on kill')) {
     return 0.3;
   }
@@ -76,6 +124,9 @@ export function estimateEffectValue(item: ShopItem): number {
     return 0.5;
   }
   if (desc.includes('mana') && (desc.includes('per second') || desc.includes('/sec'))) {
+    return 1.0 * value;
+  }
+  if (desc.includes('mana') && desc.includes('regeneration')) {
     return 1.0 * value;
   }
   if (desc.includes('cost') && desc.includes('less')) {
@@ -95,7 +146,8 @@ export function estimateEffectValue(item: ShopItem): number {
   if (desc.includes('reduce') && desc.includes('damage')) {
     return 2.5 * (value || 0.05);
   }
-  if (desc.includes('dodge')) {
+  if (desc.includes('dodge') && desc.includes('chance')) {
+    // Dodge chance buff (e.g., "+5% dodge chance")
     return 1.5 * (value || 0.05);
   }
   if (desc.includes('avoid') && desc.includes('damage')) {
@@ -131,8 +183,43 @@ export function estimateEffectValue(item: ShopItem): number {
   if (desc.includes('slow')) {
     return 1.0 * chance;
   }
+  // Attack speed reduction (similar to slow)
+  if (desc.includes('attack speed') && desc.includes('reduce')) {
+    return 1.0 * chance;
+  }
 
-  // Default: minor effect
+  // Healing effectiveness buff
+  if (desc.includes('healing') && desc.includes('effectiveness')) {
+    return 1.5 * (value || 0.15);
+  }
+
+  // On-hit bonus damage with chance
+  if (desc.includes('chance') && desc.includes('deal') && desc.includes('damage')) {
+    return 0.8 * chance;
+  }
+
+  // Crit-based mana restore
+  if (desc.includes('crit') && desc.includes('restore') && desc.includes('mana')) {
+    return 1.0;
+  }
+
+  // Early combat buffs (first X turns)
+  if (desc.includes('first') && desc.includes('turns')) {
+    return 1.0;
+  }
+
+  // Stacking damage buffs
+  if (desc.includes('stack')) {
+    return 2.0;
+  }
+
+  // Default: minor effect - log in development for awareness
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      `[itemValueCalculator] Effect "${desc.substring(0, 50)}..." ` +
+        `for item "${item.id}" didn't match any known patterns. Using default value 0.5.`
+    );
+  }
   return 0.5;
 }
 
@@ -140,25 +227,54 @@ export function estimateEffectValue(item: ShopItem): number {
  * Calculate the total value of an item (stats + effects)
  */
 export function calculateTotalItemValue(item: ShopItem): number {
-  const statValue = calculateStatValue(item.stats);
+  const statValue = calculateStatValue(item.stats, item.id);
   const effectValue = estimateEffectValue(item);
   return Math.round((statValue + effectValue) * 100) / 100;
 }
 
 /**
- * Calculate value per gold for an item
+ * Calculate value per gold for an item.
+ * Returns 0 if price is invalid (zero or negative).
  */
 export function calculateValuePerGold(item: ShopItem): number {
+  if (item.price <= 0) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(
+        `[itemValueCalculator] Item "${item.id}" has invalid price ${item.price}. ` +
+          `Cannot calculate value per gold. Returning 0.`
+      );
+    }
+    return 0;
+  }
   const totalValue = calculateTotalItemValue(item);
   return Math.round((totalValue / item.price) * 1000) / 1000; // Value per 1 gold
 }
 
 /**
- * Get the expected value budget for an item tier
+ * Get the expected value budget for an item tier.
+ * Returns a default budget for unknown tiers (logged in development).
  */
-export function getTierBudget(tier: ShopItemTier): { statPoints: number; effectValue: number; total: number } {
+export function getTierBudget(
+  tier: ShopItemTier
+): { statPoints: number; effectValue: number; total: number } {
   const tierKey = tier.toUpperCase() as keyof typeof ITEM_TIER_BUDGETS;
   const budget = ITEM_TIER_BUDGETS[tierKey];
+
+  if (!budget) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(
+        `[itemValueCalculator] Unknown tier "${tier}" - no budget defined. ` +
+          `Add tier to ITEM_TIER_BUDGETS. Returning default budget.`
+      );
+    }
+    // Return a sensible default rather than crashing
+    return {
+      statPoints: 5,
+      effectValue: 1,
+      total: 6,
+    };
+  }
+
   return {
     statPoints: budget.statPoints,
     effectValue: budget.effectValue,
@@ -178,7 +294,7 @@ export function checkItemValueBudget(item: ShopItem): {
   valuePerGold: number;
   status: 'underpowered' | 'balanced' | 'overpowered';
 } {
-  const statValue = calculateStatValue(item.stats);
+  const statValue = calculateStatValue(item.stats, item.id);
   const effectValue = estimateEffectValue(item);
   const totalValue = statValue + effectValue;
   const budget = getTierBudget(item.tier);

@@ -133,7 +133,8 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   // From Spec: Lucky Charm
   // Value budget: ~13 points
   // Stats: +12 Fortune (6) + +6 Speed (3) = 9 points
-  // Effect: 50% chance to restore 5 mana on dodge ≈ 2 points
+  // Effect: 50% chance to restore 5 mana on dodge ≈ 1.25 points
+  // Total: ~10.25 points (within budget variance)
   {
     id: 'lucky_charm',
     name: 'Lucky Charm',
@@ -417,7 +418,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
 
   // Value budget: ~13 points
   // Stats: +4 Power (4) + +6 Fortune (3) = 7 points
-  // Effect: 30% slow ≈ 2 points
+  // Effect: 30% chance for 10% slow ≈ 0.3 points (utility effect)
   {
     id: 'frost_shard',
     name: 'Frost Shard',
@@ -493,6 +494,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   // Value budget: ~13 points
   // Stats: +5 Power (5) + +3 Armor (3) = 8 points
   // Effect: Heal 5 on crit ≈ 1 point
+  // Total: ~9 points (slightly under budget, but has strong synergy value)
   {
     id: 'crusaders_mace',
     name: "Crusader's Mace",
