@@ -247,9 +247,7 @@ function formatBehavior(behavior: string, value: number): string {
     case 'counter_attack':
       return `${percent}% counter-attack chance`;
     case 'auto_block':
-      return `${percent}% auto-block chance`;
-    case 'enhanced_block':
-      return `Blocks absorb ${percent}% more`;
+      return `${percent}% auto-negate chance`;
     case 'lifesteal':
       return `${percent}% lifesteal`;
     default:

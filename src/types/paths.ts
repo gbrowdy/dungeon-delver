@@ -234,12 +234,12 @@ export interface SubpathChoice {
 /**
  * Behavior modifiers that stances can apply
  * These affect combat mechanics rather than raw stats
+ * Note: No blocking behaviors - passive paths don't use manual blocking
  */
 export type StanceBehavior =
   | 'reflect_damage'    // Reflect % of damage taken back to attacker
   | 'counter_attack'    // Chance to auto-attack when hit
-  | 'auto_block'        // Chance to automatically block attacks
-  | 'enhanced_block'    // Block absorbs more damage
+  | 'auto_block'        // Chance to automatically negate attacks
   | 'lifesteal';        // Heal for % of damage dealt
 
 /**

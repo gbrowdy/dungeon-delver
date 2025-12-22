@@ -330,17 +330,16 @@ describe('getStanceBehaviorModifiers', () => {
   it('should extract behavior modifiers correctly', () => {
     const effects: StanceEffect[] = [
       { type: 'behavior_modifier', behavior: 'reflect_damage', value: 0.20 },
-      { type: 'behavior_modifier', behavior: 'enhanced_block', value: 0.50 },
+      { type: 'behavior_modifier', behavior: 'lifesteal', value: 0.05 },
       { type: 'stat_modifier', stat: 'armor', percentBonus: 0.25 },
     ];
 
     const behaviors = getStanceBehaviorModifiers(effects);
 
     expect(behaviors.reflectDamage).toBe(0.20);
-    expect(behaviors.enhancedBlockValue).toBe(0.50);
+    expect(behaviors.lifestealPercent).toBe(0.05);
     expect(behaviors.counterAttackChance).toBe(0);
     expect(behaviors.autoBlockChance).toBe(0);
-    expect(behaviors.lifestealPercent).toBe(0);
   });
 
   it('should aggregate multiple behaviors of the same type', () => {

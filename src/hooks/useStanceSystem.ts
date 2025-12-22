@@ -156,19 +156,18 @@ export function calculateStanceStatModifiers(effects: StanceEffect[]): {
 
 /**
  * Helper to extract behavior modifiers from stance effects
+ * Note: No blocking behaviors - passive paths don't use manual blocking
  */
 export function getStanceBehaviorModifiers(effects: StanceEffect[]): {
   reflectDamage: number;
   counterAttackChance: number;
   autoBlockChance: number;
-  enhancedBlockValue: number;
   lifestealPercent: number;
 } {
   const result = {
     reflectDamage: 0,
     counterAttackChance: 0,
     autoBlockChance: 0,
-    enhancedBlockValue: 0,
     lifestealPercent: 0,
   };
 
@@ -183,9 +182,6 @@ export function getStanceBehaviorModifiers(effects: StanceEffect[]): {
           break;
         case 'auto_block':
           result.autoBlockChance += effect.value;
-          break;
-        case 'enhanced_block':
-          result.enhancedBlockValue += effect.value;
           break;
         case 'lifesteal':
           result.lifestealPercent += effect.value;

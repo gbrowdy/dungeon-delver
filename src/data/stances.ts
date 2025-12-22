@@ -25,12 +25,12 @@ export const GUARDIAN_STANCES: PassiveStance[] = [
   {
     id: 'iron_stance',
     name: 'Iron Stance',
-    description: '+25% Armor, -15% Attack Speed. Blocks absorb 50% more damage.',
+    description: '+25% Armor, -15% Attack Speed. Reduce incoming damage by 15%.',
     icon: 'shield',
     effects: [
       { type: 'stat_modifier', stat: 'armor', percentBonus: 0.25 },
       { type: 'stat_modifier', stat: 'speed', percentBonus: -0.15 },
-      { type: 'behavior_modifier', behavior: 'enhanced_block', value: 0.50 },
+      { type: 'damage_modifier', damageType: 'incoming', multiplier: 0.85 },
     ],
     switchCooldown: DEFAULT_STANCE_COOLDOWN,
   },
@@ -129,12 +129,12 @@ export const PROTECTOR_STANCES: PassiveStance[] = [
   {
     id: 'bulwark_stance',
     name: 'Bulwark Stance',
-    description: '+30% Armor, +15% max HP. Blocks absorb 25% more damage.',
+    description: '+30% Armor, +15% max HP. Reduce incoming damage by 10%.',
     icon: 'shield-check',
     effects: [
       { type: 'stat_modifier', stat: 'armor', percentBonus: 0.30 },
       { type: 'stat_modifier', stat: 'maxHealth', percentBonus: 0.15 },
-      { type: 'behavior_modifier', behavior: 'enhanced_block', value: 0.25 },
+      { type: 'damage_modifier', damageType: 'incoming', multiplier: 0.90 },
     ],
     switchCooldown: DEFAULT_STANCE_COOLDOWN,
   },
