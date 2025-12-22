@@ -30,14 +30,17 @@ import { WARRIOR_PATHS } from '@/data/paths/warrior';
 import { MAGE_PATHS } from '@/data/paths/mage';
 import { ROGUE_PATHS } from '@/data/paths/rogue';
 import { PALADIN_PATHS } from '@/data/paths/paladin';
-import { PATH_PLAYSTYLE_MODIFIERS } from '@/constants/balance';
+import { PATH_PLAYSTYLE_MODIFIERS, type PathPlaystyleModifiers } from '@/constants/balance';
 import { isFeatureEnabled } from '@/constants/features';
+
+// Re-export the type for consumers
+export type { PathPlaystyleModifiers } from '@/constants/balance';
 
 /**
  * Neutral modifiers that don't change any values (1.0 multipliers)
  * Used when feature is disabled or player hasn't selected a path yet
  */
-const NEUTRAL_MODIFIERS = {
+const NEUTRAL_MODIFIERS: PathPlaystyleModifiers = {
   autoDamageMultiplier: 1.0,
   attackSpeedMultiplier: 1.0,
   powerDamageMultiplier: 1.0,
@@ -46,10 +49,15 @@ const NEUTRAL_MODIFIERS = {
   procDamageMultiplier: 1.0,
   armorEffectiveness: 1.0,
   blockEffectiveness: 1.0,
-} as const;
+};
 
-/** Type for path playstyle modifiers */
-export type PathPlaystyleModifiers = typeof NEUTRAL_MODIFIERS;
+/**
+ * Normalize path exports to array format.
+ * Handles both object exports (WARRIOR_PATHS) and array exports (MAGE_PATHS, etc.)
+ */
+function normalizePaths(paths: PathDefinition[] | Record<string, PathDefinition>): PathDefinition[] {
+  return Array.isArray(paths) ? paths : Object.values(paths);
+}
 
 /**
  * Get all path definitions from all classes
@@ -57,11 +65,21 @@ export type PathPlaystyleModifiers = typeof NEUTRAL_MODIFIERS;
  */
 function getAllPaths(): PathDefinition[] {
   return [
-    ...Object.values(WARRIOR_PATHS),
-    ...MAGE_PATHS,
-    ...ROGUE_PATHS,
-    ...PALADIN_PATHS,
+    ...normalizePaths(WARRIOR_PATHS),
+    ...normalizePaths(MAGE_PATHS),
+    ...normalizePaths(ROGUE_PATHS),
+    ...normalizePaths(PALADIN_PATHS),
   ];
+}
+
+/**
+ * Validate that all modifier values are finite positive numbers.
+ * Returns true if valid, false if any value is invalid.
+ */
+function validateModifiers(modifiers: PathPlaystyleModifiers): boolean {
+  return Object.values(modifiers).every(
+    value => Number.isFinite(value) && value > 0
+  );
 }
 
 /**
@@ -74,6 +92,7 @@ function getAllPaths(): PathDefinition[] {
  * - Feature flag is disabled
  * - No path selected yet (level 1)
  * - Path not found (should never happen)
+ * - Modifiers fail validation (NaN, Infinity, or non-positive)
  *
  * @param player - The player to get modifiers for
  * @returns Path playstyle modifiers object
@@ -101,19 +120,22 @@ export function getPathPlaystyleModifiers(player: Player): PathPlaystyleModifier
     return NEUTRAL_MODIFIERS;
   }
 
-  // Return the appropriate modifiers based on path type
-  if (selectedPath.type === 'active') {
-    // Active paths use the active modifiers, but need to fill in missing fields
-    return {
-      ...NEUTRAL_MODIFIERS,
-      autoDamageMultiplier: PATH_PLAYSTYLE_MODIFIERS.active.autoDamageMultiplier,
-      attackSpeedMultiplier: PATH_PLAYSTYLE_MODIFIERS.active.attackSpeedMultiplier,
-      powerDamageMultiplier: PATH_PLAYSTYLE_MODIFIERS.active.powerDamageMultiplier,
-      cooldownMultiplier: PATH_PLAYSTYLE_MODIFIERS.active.cooldownMultiplier,
-    };
-  } else {
-    return PATH_PLAYSTYLE_MODIFIERS.passive;
+  // Get the appropriate modifiers based on path type
+  const modifiers = selectedPath.type === 'active'
+    ? PATH_PLAYSTYLE_MODIFIERS.active
+    : PATH_PLAYSTYLE_MODIFIERS.passive;
+
+  // Validate modifiers to prevent NaN/Infinity propagation
+  if (!validateModifiers(modifiers)) {
+    logError('Invalid path modifiers detected', {
+      pathId: player.path.pathId,
+      pathType: selectedPath.type,
+      modifiers,
+    });
+    return NEUTRAL_MODIFIERS;
   }
+
+  return modifiers;
 }
 
 /**
@@ -225,12 +247,7 @@ export function usePathAbilities() {
    * Get a specific path definition by ID
    */
   const getPathById = useCallback((pathId: string): PathDefinition | null => {
-    const allPaths: PathDefinition[] = [
-      ...Object.values(WARRIOR_PATHS),
-      ...MAGE_PATHS,
-      ...ROGUE_PATHS,
-      ...PALADIN_PATHS,
-    ];
+    const allPaths = getAllPaths();
     const found = allPaths.find(p => p.id === pathId);
     if (!found) {
       logError('Path not found', {

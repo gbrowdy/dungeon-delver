@@ -55,7 +55,34 @@ export const COMBAT_BALANCE = {
 // Active paths: Lower auto damage, stronger powers, faster cooldowns
 // Passive paths: Higher auto damage, weaker powers, enhanced procs
 
-export const PATH_PLAYSTYLE_MODIFIERS = {
+/**
+ * Complete set of path playstyle modifiers.
+ * All values must be positive numbers.
+ * A value of 1.0 means "no change" (neutral/identity).
+ * Values < 1.0 reduce the stat, > 1.0 increase it.
+ */
+export interface PathPlaystyleModifiers {
+  readonly autoDamageMultiplier: number;
+  readonly attackSpeedMultiplier: number;
+  readonly powerDamageMultiplier: number;
+  readonly cooldownMultiplier: number;
+  readonly procChanceMultiplier: number;
+  readonly procDamageMultiplier: number;
+  readonly armorEffectiveness: number;
+  readonly blockEffectiveness: number;
+}
+
+/**
+ * Path-specific feature flags (separate from numeric modifiers)
+ */
+export interface PathFeatures {
+  readonly resourceSystemEnabled?: boolean; // Phase 6: unique resource system
+}
+
+export const PATH_PLAYSTYLE_MODIFIERS: {
+  passive: PathPlaystyleModifiers;
+  active: PathPlaystyleModifiers;
+} = {
   passive: {
     autoDamageMultiplier: 1.50,       // +50% auto-attack damage
     attackSpeedMultiplier: 1.25,      // +25% attack speed
@@ -71,9 +98,18 @@ export const PATH_PLAYSTYLE_MODIFIERS = {
     attackSpeedMultiplier: 0.85,      // -15% attack speed
     powerDamageMultiplier: 2.0,       // +100% power damage
     cooldownMultiplier: 0.60,         // 40% faster cooldowns
-    resourceSystemEnabled: true,      // Uses unique resource (Phase 6)
+    procChanceMultiplier: 1.0,        // No proc bonus (neutral)
+    procDamageMultiplier: 1.0,        // No proc damage bonus (neutral)
+    armorEffectiveness: 1.0,          // No armor bonus (neutral)
+    blockEffectiveness: 1.0,          // No block bonus (neutral)
   },
-} as const;
+};
+
+/** Path-specific feature flags */
+export const PATH_FEATURES: { passive: PathFeatures; active: PathFeatures } = {
+  passive: { resourceSystemEnabled: false },
+  active: { resourceSystemEnabled: true }, // Phase 6: unique resource system
+};
 
 export const COOLDOWN_FLOOR = 500; // Minimum cooldown in milliseconds (0.5s)
 

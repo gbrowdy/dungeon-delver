@@ -157,19 +157,25 @@ export function processItemEffects(context: ItemEffectContext): ItemEffectResult
         } else if (trigger === ITEM_EFFECT_TRIGGER.ON_CRIT) {
           // Apply path proc damage multiplier (Phase 2) - passive paths get bonus proc damage
           const bonusDamage = Math.floor(damage * item.effect.value * pathModifiers.procDamageMultiplier);
-          additionalDamage += bonusDamage;
+          if (bonusDamage > 0) {
+            additionalDamage += bonusDamage;
+          }
           // Note: ON_CRIT damage bonus doesn't generate a log in original code
         } else if (trigger === ITEM_EFFECT_TRIGGER.ON_HIT) {
           // Apply path proc damage multiplier (Phase 2)
           const procDamage = Math.floor(item.effect.value * pathModifiers.procDamageMultiplier);
-          additionalDamage += procDamage;
-          logs.push(`${item.icon} Bonus damage: +${procDamage}`);
+          if (procDamage > 0) {
+            additionalDamage += procDamage;
+            logs.push(`${item.icon} Bonus damage: +${procDamage}`);
+          }
         } else if (trigger === ITEM_EFFECT_TRIGGER.ON_DAMAGED) {
           // Thornmail: Reflect damage when hit
           // Apply path proc damage multiplier (Phase 2)
           const reflectDamage = Math.floor(item.effect.value * pathModifiers.procDamageMultiplier);
-          additionalDamage += reflectDamage;
-          logs.push(`${item.icon} Reflected ${reflectDamage} damage!`);
+          if (reflectDamage > 0) {
+            additionalDamage += reflectDamage;
+            logs.push(`${item.icon} Reflected ${reflectDamage} damage!`);
+          }
         }
         break;
       }
