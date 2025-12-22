@@ -103,20 +103,40 @@ describe('speedUtils', () => {
         expect(getSpeedMultiplier(25)).toBeCloseTo(1.72);
       });
 
-      it('should provide less scaling than legacy at high speeds', () => {
+      it('should have continuous scaling at the SPEED_LINEAR_CAP boundary', () => {
+        // Values should be continuous around the transition point (no discontinuity)
+        const atCap = getSpeedMultiplier(12);
+        const slightlyAbove = getSpeedMultiplier(12.001);
+
+        // The difference should be tiny (continuous, not jumping)
+        expect(Math.abs(slightlyAbove - atCap)).toBeLessThan(0.01);
+
+        // Verify exact boundary values
+        expect(getSpeedMultiplier(11)).toBeCloseTo(1.1); // 11/10 = 1.1
+        expect(getSpeedMultiplier(12)).toBeCloseTo(1.2); // 12/10 = 1.2 (at cap)
+        expect(getSpeedMultiplier(13)).toBeCloseTo(1.24); // 1.2 + 1*0.04 = 1.24 (diminished)
+      });
+
+      it('should calculate correct multiplier at speed 50 (hard cap)', () => {
+        // Speed 50 = 1.2 + (50-12)*0.04 = 1.2 + 1.52 = 2.72
+        expect(getSpeedMultiplier(50)).toBeCloseTo(2.72);
+      });
+
+      it('should provide different scaling than legacy at high speeds', () => {
         // Compare soft cap vs legacy sqrt scaling at speed 25
+        // Note: Soft cap is MORE generous than sqrt at moderate-high speeds
         mockIsFeatureEnabled.mockReturnValue(true);
         const softCapMultiplier = getSpeedMultiplier(25);
 
         mockIsFeatureEnabled.mockReturnValue(false);
         const legacyMultiplier = getSpeedMultiplier(25);
 
-        // With soft cap: 1.72x
+        // With soft cap: 1.72x (linear to 12, then +0.04/point)
         // With legacy sqrt: sqrt(2.5) ≈ 1.58x
-        // Actually soft cap is MORE generous below the sqrt curve
-        // Let's verify the actual values
+        // Soft cap gives MORE speed at these values, but with predictable scaling
         expect(softCapMultiplier).toBeCloseTo(1.72);
         expect(legacyMultiplier).toBeCloseTo(1.58);
+        expect(softCapMultiplier).toBeGreaterThan(legacyMultiplier);
       });
 
       it('should provide similar scaling at moderate speeds', () => {
@@ -213,6 +233,54 @@ describe('speedUtils', () => {
       // Demonstrating the soft cap working
       const linearWouldBe = 2500 / 2.5;
       expect(stackedInterval).toBeGreaterThan(linearWouldBe);
+    });
+  });
+
+  // ============================================
+  // Edge Cases: NaN and Infinity Handling
+  // ============================================
+  describe('NaN and Infinity handling', () => {
+    let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should return safe defaults for NaN speed input', () => {
+      // NaN speed should default to BASE_SPEED (10), giving multiplier of 1.0
+      expect(getSpeedMultiplier(NaN)).toBeCloseTo(1.0);
+    });
+
+    it('should return safe defaults for Infinity speed input', () => {
+      expect(getSpeedMultiplier(Infinity)).toBeCloseTo(1.0);
+      expect(getSpeedMultiplier(-Infinity)).toBeCloseTo(1.0);
+    });
+
+    it('should return safe interval for NaN baseInterval', () => {
+      // NaN baseInterval defaults to 2500, speed 10 = 1.0x, so interval = 2500
+      expect(speedToInterval(10, NaN)).toBe(2500);
+    });
+
+    it('should enforce minimum interval of 100ms', () => {
+      // Even with extremely high speed, interval should not go below 100ms
+      const interval = speedToInterval(50, 100);
+      expect(interval).toBeGreaterThanOrEqual(100);
+    });
+
+    it('should log errors for invalid inputs', () => {
+      getSpeedMultiplier(NaN);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[CRITICAL] getSpeedMultiplier received invalid value')
+      );
+
+      speedToInterval(10, NaN);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[CRITICAL] speedToInterval received invalid value')
+      );
     });
   });
 });

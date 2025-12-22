@@ -9,6 +9,24 @@ import { isFeatureEnabled } from '@/constants/features';
 import { COMBAT_BALANCE } from '@/constants/balance';
 
 /**
+ * Validates that a numeric input is finite (not NaN or Infinity).
+ * Logs an error and returns a safe default if invalid.
+ */
+function validateFiniteNumber(
+  value: number,
+  functionName: string,
+  defaultValue: number
+): number {
+  if (!Number.isFinite(value)) {
+    console.error(
+      `[CRITICAL] ${functionName} received invalid value: ${value}`
+    );
+    return defaultValue;
+  }
+  return value;
+}
+
+/**
  * Calculate speed multiplier with optional soft cap.
  *
  * With SPEED_SOFT_CAP enabled:
@@ -22,7 +40,12 @@ import { COMBAT_BALANCE } from '@/constants/balance';
  * @returns Attack speed multiplier (higher = faster attacks)
  */
 export function getSpeedMultiplier(speed: number): number {
-  const clampedSpeed = Math.max(1, Math.min(50, speed));
+  const validatedSpeed = validateFiniteNumber(
+    speed,
+    'getSpeedMultiplier',
+    COMBAT_BALANCE.BASE_SPEED
+  );
+  const clampedSpeed = Math.max(1, Math.min(50, validatedSpeed));
 
   if (!isFeatureEnabled('SPEED_SOFT_CAP')) {
     // Legacy: sqrt scaling
@@ -53,6 +76,12 @@ export function getSpeedMultiplier(speed: number): number {
  * @returns Attack interval in milliseconds
  */
 export function speedToInterval(speed: number, baseInterval: number): number {
+  const validatedBaseInterval = validateFiniteNumber(
+    baseInterval,
+    'speedToInterval',
+    2500
+  );
   const multiplier = getSpeedMultiplier(speed);
-  return Math.floor(baseInterval / multiplier);
+  // Ensure we never return an interval less than 100ms to prevent combat loop issues
+  return Math.max(100, Math.floor(validatedBaseInterval / multiplier));
 }

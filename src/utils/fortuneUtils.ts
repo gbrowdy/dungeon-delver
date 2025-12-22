@@ -9,6 +9,24 @@ import { isFeatureEnabled } from '@/constants/features';
 import { COMBAT_BALANCE } from '@/constants/balance';
 
 /**
+ * Validates that a numeric input is finite (not NaN or Infinity).
+ * Logs an error and returns a safe default if invalid.
+ */
+function validateFiniteNumber(
+  value: number,
+  functionName: string,
+  defaultValue: number
+): number {
+  if (!Number.isFinite(value)) {
+    console.error(
+      `[CRITICAL] ${functionName} received invalid value: ${value}`
+    );
+    return defaultValue;
+  }
+  return value;
+}
+
+/**
  * Calculates critical hit chance based on fortune stat.
  *
  * With FORTUNE_DIMINISHING_RETURNS enabled:
@@ -21,7 +39,8 @@ import { COMBAT_BALANCE } from '@/constants/balance';
  * @returns Crit chance as a decimal (0.05 = 5%), capped at 50%
  */
 export function getCritChance(fortune: number): number {
-  const clampedFortune = Math.max(0, fortune);
+  const validatedFortune = validateFiniteNumber(fortune, 'getCritChance', 0);
+  const clampedFortune = Math.max(0, validatedFortune);
 
   if (!isFeatureEnabled('FORTUNE_DIMINISHING_RETURNS')) {
     // Legacy formula
@@ -57,7 +76,8 @@ export function getCritChance(fortune: number): number {
  * @returns Crit damage multiplier as a decimal (1.5 = 150%)
  */
 export function getCritDamage(fortune: number): number {
-  const clampedFortune = Math.max(0, fortune);
+  const validatedFortune = validateFiniteNumber(fortune, 'getCritDamage', 0);
+  const clampedFortune = Math.max(0, validatedFortune);
   const baseCritDamage = 1.5; // 150% base (1.5x multiplier)
 
   if (!isFeatureEnabled('FORTUNE_DIMINISHING_RETURNS')) {
@@ -82,7 +102,8 @@ export function getCritDamage(fortune: number): number {
  * @returns Dodge chance as a decimal (0.1 = 10%), capped at 25%
  */
 export function getDodgeChance(fortune: number): number {
-  const dodgeChance = Math.max(0, fortune) * 0.01; // 1% per fortune point (non-negative)
+  const validatedFortune = validateFiniteNumber(fortune, 'getDodgeChance', 0);
+  const dodgeChance = Math.max(0, validatedFortune) * 0.01; // 1% per fortune point (non-negative)
 
   // Cap at 25% to prevent excessive dodging
   return Math.min(dodgeChance, 0.25);
@@ -101,8 +122,13 @@ export function getDodgeChance(fortune: number): number {
  * @returns Quality bonus multiplier (1.2 = 20% bonus)
  */
 export function getDropQualityBonus(fortune: number): number {
+  const validatedFortune = validateFiniteNumber(
+    fortune,
+    'getDropQualityBonus',
+    0
+  );
   const baseMultiplier = 1.0;
-  const fortuneBonus = Math.max(0, fortune) * 0.02; // 2% per fortune point (non-negative)
+  const fortuneBonus = Math.max(0, validatedFortune) * 0.02; // 2% per fortune point (non-negative)
 
   return baseMultiplier + fortuneBonus;
 }
@@ -120,8 +146,13 @@ export function getDropQualityBonus(fortune: number): number {
  * @returns Proc chance multiplier (1.1 = 10% bonus)
  */
 export function getProcChanceBonus(fortune: number): number {
+  const validatedFortune = validateFiniteNumber(
+    fortune,
+    'getProcChanceBonus',
+    0
+  );
   const baseMultiplier = 1.0;
-  const fortuneBonus = Math.max(0, fortune) * 0.01; // 1% per fortune point (non-negative)
+  const fortuneBonus = Math.max(0, validatedFortune) * 0.01; // 1% per fortune point (non-negative)
 
   return baseMultiplier + fortuneBonus;
 }
