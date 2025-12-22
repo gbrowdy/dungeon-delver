@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { GameState, Power } from '@/types/game';
 import { calculateStats } from '@/hooks/useCharacterSetup';
 import { CombatEvent } from '@/hooks/useBattleAnimation';
-import { COMBAT_BALANCE, POWER_BALANCE, COOLDOWN_FLOOR } from '@/constants/balance';
+import { COMBAT_BALANCE, POWER_BALANCE, COOLDOWN_FLOOR_SECONDS } from '@/constants/balance';
 import { COMBAT_EVENT_DELAYS } from '@/constants/balance';
 import { COMBAT_EVENT_TYPE, BUFF_STAT, ITEM_EFFECT_TRIGGER, PAUSE_REASON } from '@/constants/enums';
 import { generateEventId } from '@/utils/eventId';
@@ -144,9 +144,9 @@ export function usePowerActions(context: PowerActivationContext) {
       player.powers = player.powers.map((p: Power, i: number) => {
         if (i !== powerIndex) return p;
 
-        // Apply cooldown modifier with minimum floor (COOLDOWN_FLOOR is in ms, p.cooldown is in seconds)
+        // Apply cooldown modifier with minimum floor
         const modifiedCooldown = p.cooldown * pathCooldownModifiers.cooldownMultiplier;
-        const effectiveCooldown = Math.max(COOLDOWN_FLOOR / 1000, modifiedCooldown);
+        const effectiveCooldown = Math.max(COOLDOWN_FLOOR_SECONDS, modifiedCooldown);
 
         return { ...p, currentCooldown: Math.max(0, effectiveCooldown - initialTickReduction) };
       });

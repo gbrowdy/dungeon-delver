@@ -112,6 +112,7 @@ export const PATH_FEATURES: { passive: PathFeatures; active: PathFeatures } = {
 };
 
 export const COOLDOWN_FLOOR = 500; // Minimum cooldown in milliseconds (0.5s)
+export const COOLDOWN_FLOOR_SECONDS = COOLDOWN_FLOOR / 1000; // Same value in seconds for use with power cooldowns
 
 export type PathPlaystyle = keyof typeof PATH_PLAYSTYLE_MODIFIERS;
 
