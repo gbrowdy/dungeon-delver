@@ -12,6 +12,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { PathResource, ThresholdEffect, Player } from '@/types/game';
 import { PATH_RESOURCES, DEFAULT_MANA_RESOURCE, getResourceDisplayName } from '@/data/pathResources';
 import { isFeatureEnabled } from '@/constants/features';
+import { logError } from '@/utils/gameLogger';
 
 export interface UsePathResourceReturn {
   resource: PathResource;
@@ -51,6 +52,14 @@ export function usePathResource(
 
     const resourceDef = PATH_RESOURCES[pathId];
     if (!resourceDef) {
+      // Log in development: pathId provided but not found in PATH_RESOURCES
+      // This could indicate a typo or missing resource definition
+      if (process.env.NODE_ENV !== 'production') {
+        logError('Path resource not found, falling back to mana', {
+          pathId,
+          availablePaths: Object.keys(PATH_RESOURCES),
+        });
+      }
       return {
         ...DEFAULT_MANA_RESOURCE,
         current: player?.currentStats?.mana ?? 50,
@@ -84,10 +93,14 @@ export function usePathResource(
     if (resource.decay.outOfCombatOnly && inCombat) return;
 
     decayTimerRef.current = setInterval(() => {
-      setResource(prev => ({
-        ...prev,
-        current: Math.max(0, prev.current - prev.decay!.rate),
-      }));
+      setResource(prev => {
+        // Defensive check: decay config could change between ticks
+        if (!prev.decay) return prev;
+        return {
+          ...prev,
+          current: Math.max(0, prev.current - prev.decay.rate),
+        };
+      });
     }, resource.decay.tickInterval);
 
     return () => {
@@ -100,8 +113,14 @@ export function usePathResource(
 
   /**
    * Add resource (from combat events like hits, crits, kills)
+   * @param amount - Amount of resource to add
+   * @param source - Source of generation (for debugging/logging)
    */
-  const addResource = useCallback((amount: number, _source: string) => {
+  const addResource = useCallback((amount: number, source: string) => {
+    if (process.env.NODE_ENV !== 'production' && amount > 0) {
+      // Debug logging for resource generation tracking
+      console.debug(`[Resource] +${amount} from ${source}`);
+    }
     setResource(prev => ({
       ...prev,
       current: Math.min(prev.max, prev.current + amount),
@@ -109,26 +128,26 @@ export function usePathResource(
   }, []);
 
   /**
-   * Consume resource for power usage
-   * Returns true if successful, false if insufficient resource
+   * Consume resource for power usage.
+   * Returns true if successful, false if insufficient resource.
+   *
+   * Note: Reads current state synchronously to return accurate result.
+   * The actual state update is still batched by React.
    */
   const consumeResource = useCallback((amount: number): boolean => {
-    let success = false;
+    // Read current value synchronously to determine success
+    if (resource.current < amount) {
+      return false;
+    }
 
-    setResource(prev => {
-      if (prev.current < amount) {
-        success = false;
-        return prev;
-      }
-      success = true;
-      return {
-        ...prev,
-        current: prev.current - amount,
-      };
-    });
+    setResource(prev => ({
+      ...prev,
+      current: prev.current - amount,
+    }));
 
-    return success;
-  }, []);
+    return true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally depend on resource.current only
+  }, [resource.current]);
 
   /**
    * Set resource to specific value (for sync with game state)
@@ -174,7 +193,8 @@ export function usePathResource(
 
     let multiplier = 1;
 
-    // Special case for arcane charges: stacking per charge
+    // Special case for arcane charges: multiplier = 1 + (bonusPerCharge * currentCharges)
+    // e.g., with 0.10 bonus and 3 charges: 1 + (0.10 * 3) = 1.30 (30% bonus)
     if (resource.type === 'arcane_charges') {
       const chargeBonus = damageEffects.find(t => t.effect.value);
       if (chargeBonus) {
@@ -227,6 +247,16 @@ export function getResourceGeneration(
 ): number {
   if (!pathId) return 0;
   const resourceDef = PATH_RESOURCES[pathId];
-  if (!resourceDef) return 0;
+  if (!resourceDef) {
+    // Log in development: unexpected pathId
+    if (process.env.NODE_ENV !== 'production') {
+      logError('Resource generation requested for unknown path', {
+        pathId,
+        trigger,
+        availablePaths: Object.keys(PATH_RESOURCES),
+      });
+    }
+    return 0;
+  }
   return resourceDef.generation[trigger] ?? 0;
 }

@@ -105,13 +105,15 @@ export type PathResourceType =
   | 'zeal';          // Crusader (Paladin)
 
 /**
- * Threshold effect triggered when resource reaches a certain value
+ * Threshold effect triggered when resource reaches a certain value.
+ * Uses discriminated union to enforce that:
+ * - cost_reduction and damage_bonus require a numeric value
+ * - special effects have no value (behavior defined elsewhere)
  */
-export interface ThresholdEffect {
-  type: 'cost_reduction' | 'damage_bonus' | 'special';
-  value?: number;
-  description: string;
-}
+export type ThresholdEffect =
+  | { type: 'cost_reduction'; value: number; description: string }
+  | { type: 'damage_bonus'; value: number; description: string }
+  | { type: 'special'; description: string };
 
 /**
  * Path resource configuration

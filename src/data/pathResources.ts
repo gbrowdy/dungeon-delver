@@ -12,15 +12,14 @@ import type { PathResource } from '@/types/game';
 
 /**
  * Default mana resource for passive paths and pre-level-2 players
+ * Note: Mana regeneration is handled by useCombatTimers, not by this config
  */
 export const DEFAULT_MANA_RESOURCE: PathResource = {
   type: 'mana',
   current: 50,
   max: 50,
   color: '#3b82f6', // blue-500
-  generation: {
-    passive: 1, // 1 mana per second
-  },
+  generation: {},
 };
 
 /**
@@ -42,6 +41,7 @@ export const PATH_RESOURCES: Record<string, PathResource> = {
       tickInterval: 1000,
       outOfCombatOnly: true,
     },
+    // Multiple thresholds at same value = multiple effects that trigger together
     thresholds: [
       {
         value: 80,
