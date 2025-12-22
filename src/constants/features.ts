@@ -10,7 +10,7 @@ export const FEATURE_FLAGS = {
   SPEED_SOFT_CAP: false,
 
   // Phase 2: Path playstyle modifiers
-  PATH_PLAYSTYLE_MODIFIERS: false,
+  PATH_PLAYSTYLE_MODIFIERS: true,
 
   // Phase 3: Exponential enemy scaling
   ENEMY_SCALING_V2: false,

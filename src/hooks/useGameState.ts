@@ -29,6 +29,7 @@ import {
   getEnhancementCost,
   enhanceItem,
 } from '@/utils/enhancementUtils';
+import { getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
 
 // Base combat tick interval (ms) - modified by speed multiplier
 // At 1x: 2500ms per combat round (gives time to see intent + animations)
@@ -308,7 +309,11 @@ export function useGameState() {
   const shouldRunCombatTimers = state.gamePhase === GAME_PHASE.COMBAT && !state.isPaused && !state.player?.isDying;
 
   // Get hero and enemy speed stats for attack timing
-  const heroSpeed = state.player?.currentStats.speed ?? 10;
+  // Apply path playstyle attack speed modifier (Phase 2)
+  // Active paths: 0.85x attack speed, Passive paths: 1.25x attack speed
+  const pathModifiers = state.player ? getPathPlaystyleModifiers(state.player) : null;
+  const baseHeroSpeed = state.player?.currentStats.speed ?? 10;
+  const heroSpeed = pathModifiers ? baseHeroSpeed * pathModifiers.attackSpeedMultiplier : baseHeroSpeed;
   const enemySpeed = state.currentEnemy?.speed ?? 10;
 
   // Check if hero is stunned - show purple progress bar

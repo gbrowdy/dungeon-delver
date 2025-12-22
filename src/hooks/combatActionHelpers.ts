@@ -128,12 +128,14 @@ export function processTurnStartEffects(
  * @param playerStats - Player's current stats
  * @param enemyArmor - Enemy's armor value
  * @param isEnemyShielded - Whether enemy has shield active
+ * @param autoDamageMultiplier - Path-based auto-attack damage multiplier (default 1.0)
  * @returns Damage amount, crit status, and logs
  */
 export function calculateAttackDamage(
   playerStats: Player['currentStats'],
   enemyArmor: number,
-  isEnemyShielded: boolean
+  isEnemyShielded: boolean,
+  autoDamageMultiplier: number = 1.0
 ): AttackDamageResult {
   const logs: string[] = [];
 
@@ -149,6 +151,10 @@ export function calculateAttackDamage(
   const damageVariance = COMBAT_MECHANICS.DAMAGE_VARIANCE_MIN +
     Math.random() * COMBAT_MECHANICS.DAMAGE_VARIANCE_RANGE;
   let damage = baseDamage * damageVariance;
+
+  // Apply path playstyle auto damage modifier (Phase 2)
+  // Active paths: 0.60x, Passive paths: 1.50x
+  damage *= autoDamageMultiplier;
 
   // Apply critical hit multiplier using fortune-based calculation
   if (isCrit) {
