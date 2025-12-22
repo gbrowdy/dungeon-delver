@@ -25,6 +25,7 @@ import {
   PathDefinition,
 } from '@/types/paths';
 import { deepClonePlayer } from '@/utils/stateUtils';
+import { logError } from '@/utils/gameLogger';
 import { WARRIOR_PATHS } from '@/data/paths/warrior';
 import { MAGE_PATHS } from '@/data/paths/mage';
 import { ROGUE_PATHS } from '@/data/paths/rogue';
@@ -147,7 +148,10 @@ export function usePathAbilities() {
     ];
     const found = allPaths.find(p => p.id === pathId);
     if (!found) {
-      console.warn(`[usePathAbilities] Path not found: "${pathId}". Available paths: ${allPaths.map(p => p.id).join(', ')}`);
+      logError('Path not found', {
+        pathId,
+        availablePaths: allPaths.map(p => p.id),
+      });
     }
     return found || null;
   }, []);
@@ -201,7 +205,10 @@ export function usePathAbilities() {
         return (enemy.statusEffects?.length ?? 0) > 0;
       }
       default: {
-        console.error(`[usePathAbilities] Unknown condition type: "${(condition as PathAbilityCondition).type}". Condition will be treated as not met.`);
+        logError('Unknown condition type', {
+          conditionType: (condition as PathAbilityCondition).type,
+          condition,
+        });
         return false;
       }
     }
@@ -215,7 +222,10 @@ export function usePathAbilities() {
 
     const pathDef = getPathById(player.path.pathId);
     if (!pathDef) {
-      console.error(`[usePathAbilities] Cannot get abilities: path "${player.path.pathId}" not found`);
+      logError('Cannot get abilities: path not found', {
+        pathId: player.path.pathId,
+        playerClass: player.class,
+      });
       return [];
     }
 
@@ -229,7 +239,11 @@ export function usePathAbilities() {
       id => !pathDef.abilities.some(a => a.id === id)
     );
     if (orphanedAbilities.length > 0) {
-      console.warn(`[usePathAbilities] Player has abilities not in path definition: ${orphanedAbilities.join(', ')}`);
+      logError('Player has abilities not in path definition', {
+        orphanedAbilities,
+        pathId: player.path.pathId,
+        validAbilities: pathDef.abilities.map(a => a.id),
+      });
     }
 
     return abilities;
@@ -493,12 +507,13 @@ export function usePathAbilities() {
                 if (bonus > 0 && effect.duration) {
                   updatedPlayer.activeBuffs = updatedPlayer.activeBuffs || [];
 
-                  // Check if a buff from this ability+stat already exists
-                  // Use trailing underscore for explicit boundary matching (IDs are formatted as ability_stat_timestamp_random)
-                  const buffKey = `${ability.id}_${stat}_`;
-                  const existingBuffIndex = updatedPlayer.activeBuffs.findIndex(
-                    b => b.id.startsWith(buffKey)
-                  );
+                  // Check if a buff from this ability+stat already exists.
+                  // IDs are formatted as ability_stat_timestamp_random, so we compare
+                  // the first two components (ability ID and stat) explicitly.
+                  const existingBuffIndex = updatedPlayer.activeBuffs.findIndex(b => {
+                    const parts = b.id.split('_');
+                    return parts.length >= 2 && parts[0] === ability.id && parts[1] === stat;
+                  });
 
                   if (existingBuffIndex >= 0) {
                     // Refresh the existing buff's duration instead of adding a new one
@@ -744,7 +759,7 @@ function getStatusIcon(type: 'poison' | 'stun' | 'slow' | 'bleed'): string {
     case 'bleed':
       return '🩸';
     default: {
-      console.warn(`[usePathAbilities] Unknown status type: "${type}"`);
+      logError('Unknown status type', { type });
       return '❓';
     }
   }
