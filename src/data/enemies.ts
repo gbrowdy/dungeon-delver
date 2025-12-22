@@ -3,7 +3,11 @@ import {
   ENEMY_SCALING,
   ENEMY_BASE_STATS,
   FLOOR_CONFIG,
+  FLOOR_MULTIPLIERS,
+  ENEMY_STAT_SCALING,
+  ROOM_SCALING,
 } from '@/constants/game';
+import { isFeatureEnabled } from '@/constants/features';
 import {
   COMBAT_BALANCE,
   REWARD_CONFIG,
@@ -335,6 +339,54 @@ const MIN_ROOM = 1;
 const MIN_ROOMS_PER_FLOOR = 1;
 
 /**
+ * Calculate difficulty multiplier for enemy scaling
+ * Uses exponential floor scaling when ENEMY_SCALING_V2 is enabled
+ */
+function getDifficultyMultiplier(floor: number, room: number): number {
+  if (!isFeatureEnabled('ENEMY_SCALING_V2')) {
+    // Legacy linear scaling
+    return 1 + (floor - 1) * ENEMY_SCALING.PER_FLOOR_MULTIPLIER + (room - 1) * ENEMY_SCALING.PER_ROOM_MULTIPLIER;
+  }
+
+  // Exponential floor scaling + linear room scaling
+  const floorIndex = Math.min(floor - 1, FLOOR_MULTIPLIERS.length - 1);
+  const floorMult = FLOOR_MULTIPLIERS[floorIndex] ?? 1.0;
+  const roomMult = 1 + (room - 1) * ROOM_SCALING.MULTIPLIER;
+  return floorMult * roomMult;
+}
+
+/**
+ * Apply per-stat scaling rates when ENEMY_SCALING_V2 is enabled
+ * Different stats scale at different rates to prevent spongy enemies
+ */
+interface StatMultipliers {
+  health: number;
+  damage: number;
+  defense: number;
+  speed: number;
+}
+
+function getStatMultipliers(baseMult: number): StatMultipliers {
+  if (!isFeatureEnabled('ENEMY_SCALING_V2')) {
+    // Legacy: all stats scale uniformly
+    return {
+      health: baseMult,
+      damage: baseMult,
+      defense: baseMult,
+      speed: 1, // Speed doesn't scale in legacy mode
+    };
+  }
+
+  // New: separate scaling rates for each stat
+  return {
+    health: baseMult * ENEMY_STAT_SCALING.HEALTH,
+    damage: baseMult * ENEMY_STAT_SCALING.DAMAGE,
+    defense: baseMult * ENEMY_STAT_SCALING.DEFENSE,
+    speed: 1 + (baseMult - 1) * ENEMY_STAT_SCALING.SPEED, // Speed scales more gently
+  };
+}
+
+/**
  * Generates an enemy based on floor, room, and difficulty parameters.
  * Includes input validation to ensure safe parameter ranges.
  * On Floor 5, Room 5 (final room), spawns the final boss instead of a regular enemy.
@@ -360,7 +412,10 @@ export function generateEnemy(floor: number, room: number, roomsPerFloor: number
   if (floor === FLOOR_CONFIG.FINAL_BOSS_FLOOR && isBoss) {
     return generateFinalBoss();
   }
-  const difficultyMultiplier = 1 + (floor - 1) * ENEMY_SCALING.PER_FLOOR_MULTIPLIER + (room - 1) * ENEMY_SCALING.PER_ROOM_MULTIPLIER;
+
+  // Calculate difficulty scaling (uses new exponential system when ENEMY_SCALING_V2 enabled)
+  const baseDifficultyMult = getDifficultyMultiplier(floor, room);
+  const statMults = getStatMultipliers(baseDifficultyMult);
 
   // Determine enemy tier for stat selection and modifier assignment
   let namePool: readonly string[];
@@ -443,16 +498,17 @@ export function generateEnemy(floor: number, room: number, roomsPerFloor: number
   const themeArmorMult = floorTheme.statModifiers.armor;
   const themeSpeedMult = floorTheme.statModifiers.speed;
 
-  // Calculate base stats with difficulty and theme multipliers
-  const health = Math.floor(baseHealth * difficultyMultiplier * statMultiplier * themeHealthMult);
-  const power = Math.floor(basePower * difficultyMultiplier * statMultiplier * themePowerMult);
+  // Calculate base stats with per-stat difficulty multipliers and theme multipliers
+  // When ENEMY_SCALING_V2 is enabled, each stat scales at a different rate
+  const health = Math.floor(baseHealth * statMults.health * statMultiplier * themeHealthMult);
+  const power = Math.floor(basePower * statMults.damage * statMultiplier * themePowerMult);
 
   // Armor and speed may be modified by modifiers, so use let
-  let armor = Math.floor(baseArmor * difficultyMultiplier * statMultiplier * themeArmorMult);
+  let armor = Math.floor(baseArmor * statMults.defense * statMultiplier * themeArmorMult);
   let speed = REWARD_CONFIG.ENEMY_BASE_SPEED + Math.floor(Math.random() * REWARD_CONFIG.ENEMY_SPEED_RANGE);
 
-  // Apply base theme speed multiplier
-  speed = Math.floor(speed * themeSpeedMult);
+  // Apply speed scaling (new system applies difficulty-based speed scaling)
+  speed = Math.floor(speed * statMults.speed * themeSpeedMult);
 
   // Apply modifier-specific stat changes
   for (const modifier of modifiers) {
