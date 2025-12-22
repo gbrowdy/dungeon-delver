@@ -86,32 +86,42 @@ export const ENEMY_SCALING = {
   UNCOMMON_THRESHOLD: 0.4,
 } as const;
 
-// Phase 3: Exponential floor scaling (used when ENEMY_SCALING_V2 is enabled)
+/**
+ * Floor-based difficulty multipliers (Phase 3: Exponential scaling)
+ * Index corresponds to floor number (0 = Floor 1, 1 = Floor 2, etc.)
+ * Used when ENEMY_SCALING_V2 feature flag is enabled
+ */
 export const FLOOR_MULTIPLIERS = [
-  1.0,    // Floor 1 - Tutorial, player feels powerful
-  1.45,   // Floor 2 - First challenge
-  2.1,    // Floor 3 - Gear check
-  3.0,    // Floor 4 - Path abilities matter
-  4.2,    // Floor 5 - Final push (climactic)
-  5.5,    // Floor 6+ (if extended)
-  7.0,
-  9.0,
-  11.5,
-  15.0,   // Floor 10 - Maximum
+  1.0,   // Floor 1: Tutorial - player feels powerful
+  1.45,  // Floor 2: First challenge
+  2.1,   // Floor 3: Gear check
+  3.0,   // Floor 4: Path abilities matter
+  4.2,   // Floor 5: Final push (climactic)
+  5.5,   // Floor 6: Extended content
+  7.0,   // Floor 7: Extended content
+  9.0,   // Floor 8: Extended content
+  11.5,  // Floor 9: Extended content
+  15.0,  // Floor 10: Maximum difficulty
 ] as const;
 
-// Separate scaling rates for different enemy stats
-// Prevents "spongy" enemies while maintaining threat level
+/**
+ * Per-stat scaling rates for enemy difficulty (Phase 3)
+ * Values < 1.0 mean the stat scales slower than the base multiplier
+ * This prevents enemies from becoming too tanky or dealing too much damage
+ */
 export const ENEMY_STAT_SCALING = {
-  HEALTH: 1.0,       // Full scaling - enemies should have HP to fight
-  DAMAGE: 0.9,       // Slightly lower - player should survive hits
-  DEFENSE: 0.7,      // Slower scaling - prevent spongy enemies
-  SPEED: 0.8,        // Moderate - don't let enemies attack too fast
+  HEALTH: 1.0,  // Full scaling - enemies need HP to be meaningful fights
+  POWER: 0.9,   // Slightly reduced - player should survive hits
+  ARMOR: 0.7,   // Slower scaling - prevents spongy enemies
+  SPEED: 0.8,   // Moderate - prevents overwhelming attack frequency
 } as const;
 
-// Room scaling within a floor
+/**
+ * Room-within-floor scaling for V2 enemy scaling system
+ * Note: Legacy system uses ENEMY_SCALING.PER_ROOM_MULTIPLIER (0.08)
+ */
 export const ROOM_SCALING = {
-  MULTIPLIER: 0.12,  // Increased from 0.08 - room progression matters more
+  MULTIPLIER: 0.12,
 } as const;
 
 // Enemy base stats by tier - adjusted for harder early game
