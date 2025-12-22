@@ -2,8 +2,12 @@ import { Shield, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCombat } from '@/contexts/CombatContext';
 import { PowerButton } from './PowerButton';
+import { StanceToggle } from './StanceToggle';
 import { COMBAT_BALANCE } from '@/constants/balance';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
+import { useStanceSystem } from '@/hooks/useStanceSystem';
+import { getStancesForPath } from '@/data/stances';
+import { isFeatureEnabled } from '@/constants/features';
 import {
   Tooltip,
   TooltipContent,
@@ -13,12 +17,13 @@ import {
 
 /**
  * PowersPanel - Displays mana bar, block button, power buttons, and combo indicator.
+ * For passive paths with PASSIVE_STANCE_SYSTEM enabled, shows stance toggle UI.
  * Styled with pixel art / 8-bit retro aesthetic.
  */
 export function PowersPanel() {
   const { player, combatState, actions } = useCombat();
-  const { canUsePowers } = combatState;
-  const { getPowerModifiers, hasComboMechanic } = usePathAbilities();
+  const { canUsePowers, isPaused } = combatState;
+  const { getPowerModifiers, hasComboMechanic, isPassivePath } = usePathAbilities();
 
   // Calculate effective mana costs with path ability reductions
   const powerMods = getPowerModifiers(player);
@@ -28,6 +33,21 @@ export function PowersPanel() {
   // Check if this player's path uses the combo system
   const showCombo = hasComboMechanic(player);
 
+  // Stance system for passive paths
+  const pathId = player.path?.pathId ?? '';
+  const availableStances = getStancesForPath(pathId);
+  const {
+    currentStance,
+    switchStance,
+    cooldownRemaining,
+    isStanceSystemActive,
+  } = useStanceSystem(availableStances, availableStances[0]?.id, isPaused);
+
+  // Determine if we should show stance UI instead of standard powers
+  const showStanceUI = isFeatureEnabled('PASSIVE_STANCE_SYSTEM') &&
+    isPassivePath(player) &&
+    isStanceSystemActive;
+
   return (
     <div className="pixel-panel rounded-lg p-2 sm:p-3">
       {/* Mana bar header */}
@@ -36,33 +56,47 @@ export function PowersPanel() {
         max={player.currentStats.maxMana}
       />
 
-      {/* Powers grid */}
-      <div className="flex flex-wrap gap-1.5">
-        {/* Block Button */}
-        <BlockButton
-          isBlocking={player.isBlocking}
-          currentMana={player.currentStats.mana}
-          canUse={canUsePowers}
-          onActivate={actions.activateBlock}
+      {showStanceUI ? (
+        /* Stance UI for passive paths */
+        <StanceToggle
+          stances={availableStances}
+          currentStanceId={currentStance?.id}
+          onSwitch={switchStance}
+          cooldownRemaining={cooldownRemaining}
+          isPaused={isPaused}
         />
+      ) : (
+        /* Standard powers UI for active paths */
+        <>
+          {/* Powers grid */}
+          <div className="flex flex-wrap gap-1.5">
+            {/* Block Button */}
+            <BlockButton
+              isBlocking={player.isBlocking}
+              currentMana={player.currentStats.mana}
+              canUse={canUsePowers}
+              onActivate={actions.activateBlock}
+            />
 
-        {/* Power buttons */}
-        {player.powers.map(power => (
-          <PowerButton
-            key={power.id}
-            power={power}
-            currentMana={player.currentStats.mana}
-            effectiveManaCost={getEffectiveManaCost(power.manaCost)}
-            onUse={() => actions.usePower(power.id)}
-            disabled={!canUsePowers}
-            playerPathId={player.path?.pathId ?? null}
-          />
-        ))}
-      </div>
+            {/* Power buttons */}
+            {player.powers.map(power => (
+              <PowerButton
+                key={power.id}
+                power={power}
+                currentMana={player.currentStats.mana}
+                effectiveManaCost={getEffectiveManaCost(power.manaCost)}
+                onUse={() => actions.usePower(power.id)}
+                disabled={!canUsePowers}
+                playerPathId={player.path?.pathId ?? null}
+              />
+            ))}
+          </div>
 
-      {/* Combo indicator - only show for active paths */}
-      {showCombo && player.comboCount > 0 && (
-        <ComboIndicator count={player.comboCount} />
+          {/* Combo indicator - only show for active paths */}
+          {showCombo && player.comboCount > 0 && (
+            <ComboIndicator count={player.comboCount} />
+          )}
+        </>
       )}
     </div>
   );

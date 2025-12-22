@@ -226,3 +226,78 @@ export interface SubpathChoice {
   subpaths: [SubpathDefinition, SubpathDefinition]; // Always 2 subpath choices
   path: PathDefinition;                              // Parent path context
 }
+
+// ============================================================================
+// STANCE SYSTEM TYPES (Phase 5: Passive Trigger System)
+// ============================================================================
+
+/**
+ * Behavior modifiers that stances can apply
+ * These affect combat mechanics rather than raw stats
+ */
+export type StanceBehavior =
+  | 'reflect_damage'    // Reflect % of damage taken back to attacker
+  | 'counter_attack'    // Chance to auto-attack when hit
+  | 'auto_block'        // Chance to automatically block attacks
+  | 'enhanced_block'    // Block absorbs more damage
+  | 'lifesteal';        // Heal for % of damage dealt
+
+/**
+ * Individual effect within a stance
+ * Stances can have multiple effects of different types
+ */
+export interface StanceEffect {
+  type: 'stat_modifier' | 'behavior_modifier' | 'damage_modifier';
+
+  // For stat modifiers
+  stat?: PathStatType;
+  flatBonus?: number;
+  percentBonus?: number;
+
+  // For behavior modifiers
+  behavior?: StanceBehavior;
+  value?: number;  // Percentage or chance (0-1)
+
+  // For damage modifiers
+  damageType?: 'incoming' | 'outgoing';
+  multiplier?: number;  // 0.9 = 10% reduction, 1.1 = 10% increase
+}
+
+/**
+ * Stance definition for passive paths
+ * Stances provide persistent stat/behavior modifiers
+ * Players can switch between stances with a cooldown
+ */
+export interface PassiveStance {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  effects: StanceEffect[];
+  switchCooldown: number;  // milliseconds (default 5000)
+}
+
+/**
+ * Triggered ability for passive paths
+ * Automatically activates when conditions are met
+ */
+export interface PassiveTrigger {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  trigger: PathAbilityTrigger;
+  condition?: PathAbilityCondition;
+  effect: PathAbilityEffect;
+  internalCooldown: number;  // milliseconds between procs
+}
+
+/**
+ * Player's active stance state
+ * Tracks current stance and cooldowns
+ */
+export interface PlayerStanceState {
+  activeStanceId: string;
+  stanceCooldownRemaining: number;  // milliseconds until can switch
+  triggerCooldowns: Record<string, number>;  // triggerId → remaining ms
+}
