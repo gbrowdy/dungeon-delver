@@ -498,16 +498,17 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
   {
     id: 'retribution',
     name: 'Retribution',
-    description: 'When you block, your next attack deals 150% bonus damage and is a guaranteed critical hit',
+    description: 'After taking damage, your next attack deals 75% bonus damage (4s cooldown)',
     icon: 'ability-paths-warrior-retribution',
     levelRequired: 5,
     isCapstone: false,
     subpath: 'avenger',
     effects: [
       {
-        trigger: 'on_block',
-        statModifiers: [{ stat: 'power', percentBonus: 1.5 }],
-        duration: 1 // Next attack only
+        trigger: 'on_damaged',
+        statModifiers: [{ stat: 'power', percentBonus: 0.75 }],
+        duration: 1, // Next attack only
+        cooldown: 4
       }
     ]
   },

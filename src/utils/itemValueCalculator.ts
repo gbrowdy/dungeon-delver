@@ -7,6 +7,7 @@
 
 import { STAT_POINT_VALUES, ITEM_TIER_BUDGETS } from '@/constants/balance';
 import type { ShopItem, ShopItemTier } from '@/types/shop';
+import { logError } from '@/utils/gameLogger';
 
 /**
  * Calculate the raw stat point value of an item's stats.
@@ -26,11 +27,12 @@ export function calculateStatValue(
       totalValue += value * statWeight;
     } else if (process.env.NODE_ENV !== 'production') {
       // Log unknown stats in development to catch typos and missing mappings
-      console.warn(
-        `[itemValueCalculator] Unknown stat "${stat}" with value ${value}` +
-          (itemId ? ` on item "${itemId}"` : '') +
-          ` - not included in value calculation. Add to STAT_POINT_VALUES if valid.`
-      );
+      logError(`Unknown stat "${stat}" in item value calculation`, {
+        stat,
+        value,
+        itemId: itemId ?? 'unknown',
+        hint: 'Add to STAT_POINT_VALUES if valid',
+      });
     }
   }
 
@@ -48,10 +50,10 @@ export function estimateEffectValue(item: ShopItem): number {
   // Guard against missing description
   if (!item.effect.description) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn(
-        `[itemValueCalculator] Item "${item.id}" has an effect but no description. ` +
-          `Returning default value 0.5.`
-      );
+      logError('Item effect missing description', {
+        itemId: item.id,
+        fallbackValue: 0.5,
+      });
     }
     return 0.5;
   }
@@ -66,10 +68,12 @@ export function estimateEffectValue(item: ShopItem): number {
 
   if (!Number.isFinite(rawValue) || !Number.isFinite(rawChance)) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn(
-        `[itemValueCalculator] Item "${item.id}" has invalid effect value (${rawValue}) ` +
-          `or chance (${rawChance}). Using defaults.`
-      );
+      logError('Invalid effect value or chance', {
+        itemId: item.id,
+        rawValue,
+        rawChance,
+        usingDefaults: true,
+      });
     }
   }
 
@@ -215,10 +219,11 @@ export function estimateEffectValue(item: ShopItem): number {
 
   // Default: minor effect - log in development for awareness
   if (process.env.NODE_ENV !== 'production') {
-    console.warn(
-      `[itemValueCalculator] Effect "${desc.substring(0, 50)}..." ` +
-        `for item "${item.id}" didn't match any known patterns. Using default value 0.5.`
-    );
+    logError('Effect did not match any known patterns', {
+      itemId: item.id,
+      description: desc.substring(0, 50),
+      fallbackValue: 0.5,
+    });
   }
   return 0.5;
 }
@@ -239,10 +244,11 @@ export function calculateTotalItemValue(item: ShopItem): number {
 export function calculateValuePerGold(item: ShopItem): number {
   if (item.price <= 0) {
     if (process.env.NODE_ENV !== 'production') {
-      console.error(
-        `[itemValueCalculator] Item "${item.id}" has invalid price ${item.price}. ` +
-          `Cannot calculate value per gold. Returning 0.`
-      );
+      logError('Invalid item price - cannot calculate value per gold', {
+        itemId: item.id,
+        price: item.price,
+        returning: 0,
+      });
     }
     return 0;
   }
@@ -262,10 +268,11 @@ export function getTierBudget(
 
   if (!budget) {
     if (process.env.NODE_ENV !== 'production') {
-      console.error(
-        `[itemValueCalculator] Unknown tier "${tier}" - no budget defined. ` +
-          `Add tier to ITEM_TIER_BUDGETS. Returning default budget.`
-      );
+      logError('Unknown item tier - no budget defined', {
+        tier,
+        hint: 'Add tier to ITEM_TIER_BUDGETS',
+        fallbackBudget: { statPoints: 5, effectValue: 1, total: 6 },
+      });
     }
     // Return a sensible default rather than crashing
     return {

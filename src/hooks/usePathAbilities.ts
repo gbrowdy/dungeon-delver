@@ -829,6 +829,32 @@ export function usePathAbilities() {
     return pathDef.hasComboMechanic;
   }, [getPathById]);
 
+  /**
+   * Check if the player's current path is a passive path.
+   * Passive paths use stances instead of active power timing.
+   */
+  const isPassivePath = useCallback((player: Player): boolean => {
+    if (!player.path) return false;
+
+    const pathDef = getPathById(player.path.pathId);
+    if (!pathDef) return false;
+
+    return pathDef.type === 'passive';
+  }, [getPathById]);
+
+  /**
+   * Get the path type for a player ('active' or 'passive')
+   * Returns null if no path is selected
+   */
+  const getPathType = useCallback((player: Player): 'active' | 'passive' | null => {
+    if (!player.path) return null;
+
+    const pathDef = getPathById(player.path.pathId);
+    if (!pathDef) return null;
+
+    return pathDef.type;
+  }, [getPathById]);
+
   return {
     getPassiveStatBonuses,
     getPassiveDamageReduction,
@@ -844,6 +870,9 @@ export function usePathAbilities() {
     resetAbilityCounter,
     addAttackModifier,
     hasComboMechanic,
+    isPassivePath,
+    getPathType,
+    getPathById,
   };
 }
 

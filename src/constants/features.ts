@@ -6,8 +6,8 @@
 
 export const FEATURE_FLAGS = {
   // Phase 1: Fortune/Speed diminishing returns
-  FORTUNE_DIMINISHING_RETURNS: false,
-  SPEED_SOFT_CAP: false,
+  FORTUNE_DIMINISHING_RETURNS: true,
+  SPEED_SOFT_CAP: true,
 
   // Phase 2: Path playstyle modifiers
   PATH_PLAYSTYLE_MODIFIERS: true,
@@ -16,10 +16,10 @@ export const FEATURE_FLAGS = {
   ENEMY_SCALING_V2: true,
 
   // Phase 4: Item tier rebalancing
-  ITEM_TIER_REBALANCE: false,
+  ITEM_TIER_REBALANCE: true,
 
   // Phase 5: Passive stance system
-  PASSIVE_STANCE_SYSTEM: false,
+  PASSIVE_STANCE_SYSTEM: true,
 
   // Phase 6: Active path unique resources
   ACTIVE_RESOURCE_SYSTEM: false,

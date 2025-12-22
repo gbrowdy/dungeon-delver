@@ -224,14 +224,15 @@ export const PALADIN_PATHS: PathDefinition[] = [
       {
         id: 'shield_of_renewal',
         name: 'Shield of Renewal',
-        description: 'Blocking an attack heals you for 10% of max HP (passive)',
+        description: 'Taking damage heals you for 5% of max HP (8s cooldown)',
         icon: 'ability-paths-paladin-shield_of_renewal',
         levelRequired: 5,
         subpath: 'sentinel',
         effects: [
           {
-            trigger: 'on_block',
-            heal: 10,
+            trigger: 'on_damaged',
+            heal: 5,
+            cooldown: 8,
           },
         ],
       },
