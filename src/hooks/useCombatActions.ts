@@ -36,7 +36,7 @@ import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
-import { usePathAbilities } from '@/hooks/usePathAbilities';
+import { usePathAbilities, getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
 import type { PauseReasonType } from '@/constants/enums';
 import type { CombatEvent } from '@/hooks/useBattleAnimation';
 
@@ -185,19 +185,23 @@ export function useCombatActions({
         }
       }
 
+      // Get path playstyle modifiers for auto-attack damage scaling
+      const pathModifiers = getPathPlaystyleModifiers(updatedPlayer);
+
       // Calculate attack damage with variance and crit
       let damageResult = calculateAttackDamage(
         updatedPlayer.currentStats,
         enemy.armor,
-        enemy.isShielded || false
+        enemy.isShielded || false,
+        pathModifiers.autoDamageMultiplier
       );
 
       // Override crit if forced by attack modifier
       if (forceCrit && !damageResult.isCrit) {
-        // Recalculate with guaranteed crit
+        // Recalculate with guaranteed crit (applying same path modifier)
         const baseDamage = Math.max(1, updatedPlayer.currentStats.power - enemy.armor / 2);
         const damageVariance = COMBAT_MECHANICS.DAMAGE_VARIANCE_MIN + Math.random() * COMBAT_MECHANICS.DAMAGE_VARIANCE_RANGE;
-        const critDamage = Math.floor(baseDamage * damageVariance * COMBAT_MECHANICS.CRIT_MULTIPLIER);
+        const critDamage = Math.floor(baseDamage * damageVariance * pathModifiers.autoDamageMultiplier * COMBAT_MECHANICS.CRIT_MULTIPLIER);
         damageResult = {
           damage: critDamage,
           isCrit: true,

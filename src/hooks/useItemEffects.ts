@@ -9,6 +9,7 @@ import { Item, Player } from '@/types/game';
 import { ITEM_EFFECT_TRIGGER, EFFECT_TYPE } from '@/constants/enums';
 import { deepClonePlayer } from '@/utils/stateUtils';
 import { getProcChanceBonus } from '@/utils/fortuneUtils';
+import { getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
 
 /**
  * Context for item effect processing
@@ -56,13 +57,17 @@ export function processItemEffects(context: ItemEffectContext): ItemEffectResult
   // Get fortune proc bonus
   const procBonus = getProcChanceBonus(player.currentStats.fortune);
 
+  // Get path playstyle modifiers for proc chance and damage (Phase 2)
+  // Passive paths: +50% proc chance, +75% proc damage
+  const pathModifiers = getPathPlaystyleModifiers(player);
+
   // Process all equipped items with matching trigger
   updatedPlayer.equippedItems.forEach((item: Item) => {
     if (item.effect?.trigger !== trigger) return;
 
-    // Check effect chance (default to 1 = 100%) with fortune bonus
+    // Check effect chance (default to 1 = 100%) with fortune and path modifiers
     const baseChance = item.effect.chance ?? 1;
-    const modifiedChance = Math.min(1, baseChance * procBonus); // Cap at 100%
+    const modifiedChance = Math.min(1, baseChance * procBonus * pathModifiers.procChanceMultiplier); // Cap at 100%
     if (Math.random() >= modifiedChance) return;
 
     // Process effect based on type
@@ -143,22 +148,28 @@ export function processItemEffects(context: ItemEffectContext): ItemEffectResult
         if (trigger === ITEM_EFFECT_TRIGGER.ON_POWER_CAST) {
           // Archmage's Staff: +X% power damage
           // Store the multiplier to be applied by the caller
+          // Note: This is power damage, not proc damage, so no procDamageMultiplier applied
           powerDamageMultiplier =
             (powerDamageMultiplier ?? 1.0) + item.effect.value;
           logs.push(
             `${item.icon} Power amplified: +${Math.floor(item.effect.value * 100)}% damage`
           );
         } else if (trigger === ITEM_EFFECT_TRIGGER.ON_CRIT) {
-          const bonusDamage = Math.floor(damage * item.effect.value);
+          // Apply path proc damage multiplier (Phase 2) - passive paths get bonus proc damage
+          const bonusDamage = Math.floor(damage * item.effect.value * pathModifiers.procDamageMultiplier);
           additionalDamage += bonusDamage;
           // Note: ON_CRIT damage bonus doesn't generate a log in original code
         } else if (trigger === ITEM_EFFECT_TRIGGER.ON_HIT) {
-          additionalDamage += item.effect.value;
-          logs.push(`${item.icon} Bonus damage: +${item.effect.value}`);
+          // Apply path proc damage multiplier (Phase 2)
+          const procDamage = Math.floor(item.effect.value * pathModifiers.procDamageMultiplier);
+          additionalDamage += procDamage;
+          logs.push(`${item.icon} Bonus damage: +${procDamage}`);
         } else if (trigger === ITEM_EFFECT_TRIGGER.ON_DAMAGED) {
           // Thornmail: Reflect damage when hit
-          additionalDamage += item.effect.value;
-          logs.push(`${item.icon} Reflected ${item.effect.value} damage!`);
+          // Apply path proc damage multiplier (Phase 2)
+          const reflectDamage = Math.floor(item.effect.value * pathModifiers.procDamageMultiplier);
+          additionalDamage += reflectDamage;
+          logs.push(`${item.icon} Reflected ${reflectDamage} damage!`);
         }
         break;
       }

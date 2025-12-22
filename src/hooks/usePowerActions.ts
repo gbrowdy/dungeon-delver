@@ -2,14 +2,14 @@ import { useCallback } from 'react';
 import { GameState, Power } from '@/types/game';
 import { calculateStats } from '@/hooks/useCharacterSetup';
 import { CombatEvent } from '@/hooks/useBattleAnimation';
-import { COMBAT_BALANCE, POWER_BALANCE } from '@/constants/balance';
+import { COMBAT_BALANCE, POWER_BALANCE, COOLDOWN_FLOOR } from '@/constants/balance';
 import { COMBAT_EVENT_DELAYS } from '@/constants/balance';
 import { COMBAT_EVENT_TYPE, BUFF_STAT, ITEM_EFFECT_TRIGGER, PAUSE_REASON } from '@/constants/enums';
 import { generateEventId } from '@/utils/eventId';
 import { getDropQualityBonus } from '@/utils/fortuneUtils';
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
-import { usePathAbilities } from '@/hooks/usePathAbilities';
+import { usePathAbilities, getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
 import { applyTriggerResultToEnemy } from '@/hooks/combatActionHelpers';
 import { processLevelUp } from '@/hooks/useRewardCalculation';
 
@@ -136,9 +136,20 @@ export function usePowerActions(context: PowerActivationContext) {
       // This prevents the visual "pause" before the cooldown bar starts moving
       const cooldownSpeed = 1.0; // Constant cooldown speed (stat removed)
       const initialTickReduction = (COMBAT_BALANCE.COOLDOWN_TICK_INTERVAL / 1000) * cooldownSpeed * prev.combatSpeed;
-      player.powers = player.powers.map((p: Power, i: number) =>
-        i === powerIndex ? { ...p, currentCooldown: Math.max(0, p.cooldown - initialTickReduction) } : p
-      );
+
+      // Get path playstyle cooldown modifier (Phase 2)
+      // Active paths: 0.6x cooldowns (40% faster), Passive paths: 2.0x cooldowns (slower)
+      const pathCooldownModifiers = getPathPlaystyleModifiers(player);
+
+      player.powers = player.powers.map((p: Power, i: number) => {
+        if (i !== powerIndex) return p;
+
+        // Apply cooldown modifier with minimum floor (COOLDOWN_FLOOR is in ms, p.cooldown is in seconds)
+        const modifiedCooldown = p.cooldown * pathCooldownModifiers.cooldownMultiplier;
+        const effectiveCooldown = Math.max(COOLDOWN_FLOOR / 1000, modifiedCooldown);
+
+        return { ...p, currentCooldown: Math.max(0, effectiveCooldown - initialTickReduction) };
+      });
 
       logs.push(`${power.icon} Used ${power.name}!`);
 
@@ -172,11 +183,15 @@ export function usePowerActions(context: PowerActivationContext) {
         logs.push(`🗡️ Shadow Dance: Next 3 attacks will be guaranteed critical hits!`);
       }
 
+      // Get path playstyle modifiers for power damage scaling (Phase 2)
+      // Active paths: 2.0x power damage, Passive paths: 0.5x power damage
+      const pathPlaystyleModifiers = getPathPlaystyleModifiers(player);
+
       switch (power.effect) {
         case 'damage': {
           // Apply power bonus from path abilities (e.g., Lethal Momentum gives +50% power damage)
           const powerBonusMultiplier = 1 + powerMods.powerBonus;
-          let baseDamage = Math.floor(player.currentStats.power * power.value * comboMultiplier * powerBonusMultiplier);
+          let baseDamage = Math.floor(player.currentStats.power * power.value * comboMultiplier * powerBonusMultiplier * pathPlaystyleModifiers.powerDamageMultiplier);
 
           // Apply power damage multiplier from items (e.g., Archmage's Staff)
           if (powerCastResult.powerDamageMultiplier) {

@@ -30,6 +30,91 @@ import { WARRIOR_PATHS } from '@/data/paths/warrior';
 import { MAGE_PATHS } from '@/data/paths/mage';
 import { ROGUE_PATHS } from '@/data/paths/rogue';
 import { PALADIN_PATHS } from '@/data/paths/paladin';
+import { PATH_PLAYSTYLE_MODIFIERS } from '@/constants/balance';
+import { isFeatureEnabled } from '@/constants/features';
+
+/**
+ * Neutral modifiers that don't change any values (1.0 multipliers)
+ * Used when feature is disabled or player hasn't selected a path yet
+ */
+const NEUTRAL_MODIFIERS = {
+  autoDamageMultiplier: 1.0,
+  attackSpeedMultiplier: 1.0,
+  powerDamageMultiplier: 1.0,
+  cooldownMultiplier: 1.0,
+  procChanceMultiplier: 1.0,
+  procDamageMultiplier: 1.0,
+  armorEffectiveness: 1.0,
+  blockEffectiveness: 1.0,
+} as const;
+
+/** Type for path playstyle modifiers */
+export type PathPlaystyleModifiers = typeof NEUTRAL_MODIFIERS;
+
+/**
+ * Get all path definitions from all classes
+ * Used internally for path lookups
+ */
+function getAllPaths(): PathDefinition[] {
+  return [
+    ...Object.values(WARRIOR_PATHS),
+    ...MAGE_PATHS,
+    ...ROGUE_PATHS,
+    ...PALADIN_PATHS,
+  ];
+}
+
+/**
+ * Get the playstyle modifiers for a player based on their selected path.
+ *
+ * Active paths: Lower auto damage (-40%), stronger powers (+100%), faster cooldowns (-40%)
+ * Passive paths: Higher auto damage (+50%), weaker powers (-50%), enhanced procs (+50%)
+ *
+ * Returns neutral modifiers (1.0) if:
+ * - Feature flag is disabled
+ * - No path selected yet (level 1)
+ * - Path not found (should never happen)
+ *
+ * @param player - The player to get modifiers for
+ * @returns Path playstyle modifiers object
+ */
+export function getPathPlaystyleModifiers(player: Player): PathPlaystyleModifiers {
+  // Feature flag check - return neutral if disabled
+  if (!isFeatureEnabled('PATH_PLAYSTYLE_MODIFIERS')) {
+    return NEUTRAL_MODIFIERS;
+  }
+
+  // No path selected yet (level 1)
+  if (!player.path?.pathId) {
+    return NEUTRAL_MODIFIERS;
+  }
+
+  // Get path definition to determine if active or passive
+  const allPaths = getAllPaths();
+  const selectedPath = allPaths.find(p => p.id === player.path!.pathId);
+
+  if (!selectedPath) {
+    logError('Unknown path in getPathPlaystyleModifiers', {
+      pathId: player.path.pathId,
+      playerClass: player.class?.id,
+    });
+    return NEUTRAL_MODIFIERS;
+  }
+
+  // Return the appropriate modifiers based on path type
+  if (selectedPath.type === 'active') {
+    // Active paths use the active modifiers, but need to fill in missing fields
+    return {
+      ...NEUTRAL_MODIFIERS,
+      autoDamageMultiplier: PATH_PLAYSTYLE_MODIFIERS.active.autoDamageMultiplier,
+      attackSpeedMultiplier: PATH_PLAYSTYLE_MODIFIERS.active.attackSpeedMultiplier,
+      powerDamageMultiplier: PATH_PLAYSTYLE_MODIFIERS.active.powerDamageMultiplier,
+      cooldownMultiplier: PATH_PLAYSTYLE_MODIFIERS.active.cooldownMultiplier,
+    };
+  } else {
+    return PATH_PLAYSTYLE_MODIFIERS.passive;
+  }
+}
 
 /**
  * Generate a unique ID for debuffs/buffs without module-level state.
