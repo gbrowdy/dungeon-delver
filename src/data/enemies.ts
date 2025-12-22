@@ -3,7 +3,12 @@ import {
   ENEMY_SCALING,
   ENEMY_BASE_STATS,
   FLOOR_CONFIG,
+  FLOOR_MULTIPLIERS,
+  ENEMY_STAT_SCALING,
+  ROOM_SCALING,
 } from '@/constants/game';
+import { isFeatureEnabled } from '@/constants/features';
+import { logError } from '@/utils/gameLogger';
 import {
   COMBAT_BALANCE,
   REWARD_CONFIG,
@@ -335,6 +340,83 @@ const MIN_ROOM = 1;
 const MIN_ROOMS_PER_FLOOR = 1;
 
 /**
+ * Calculate difficulty multiplier for enemy scaling
+ * Uses exponential floor scaling when ENEMY_SCALING_V2 is enabled
+ *
+ * Note: This function assumes sanitized inputs (floor >= 1, room >= 1).
+ * Input validation is handled by generateEnemy() before calling this function.
+ */
+function getDifficultyMultiplier(floor: number, room: number): number {
+  // Development-time assertion for invalid inputs
+  if (import.meta.env.DEV) {
+    if (floor < 1 || room < 1 || !Number.isFinite(floor) || !Number.isFinite(room)) {
+      logError('getDifficultyMultiplier called with invalid inputs', { floor, room });
+    }
+  }
+
+  if (!isFeatureEnabled('ENEMY_SCALING_V2')) {
+    // Legacy linear scaling
+    return 1 + (floor - 1) * ENEMY_SCALING.PER_FLOOR_MULTIPLIER + (room - 1) * ENEMY_SCALING.PER_ROOM_MULTIPLIER;
+  }
+
+  // Exponential floor scaling + linear room scaling
+  const floorIndex = Math.min(floor - 1, FLOOR_MULTIPLIERS.length - 1);
+  const floorMult = FLOOR_MULTIPLIERS[floorIndex];
+
+  // Log if fallback is used - indicates potential misconfiguration
+  if (floorMult === undefined) {
+    logError('FLOOR_MULTIPLIERS access returned undefined, using fallback', {
+      floorIndex,
+      floor,
+      arrayLength: FLOOR_MULTIPLIERS.length,
+    });
+    return 1.0 * (1 + (room - 1) * ROOM_SCALING.MULTIPLIER);
+  }
+
+  const roomMult = 1 + (room - 1) * ROOM_SCALING.MULTIPLIER;
+  return floorMult * roomMult;
+}
+
+/**
+ * Apply per-stat scaling rates when ENEMY_SCALING_V2 is enabled
+ * Different stats scale at different rates to prevent spongy enemies
+ */
+interface StatMultipliers {
+  health: number;
+  power: number;
+  armor: number;
+  speed: number;
+}
+
+function getStatMultipliers(baseMult: number): StatMultipliers {
+  // Sanity check - baseMult should always be >= 1.0
+  if (!Number.isFinite(baseMult) || baseMult < 0.1) {
+    logError('getStatMultipliers received invalid baseMult', { baseMult });
+    baseMult = 1.0; // Safe fallback
+  }
+
+  if (!isFeatureEnabled('ENEMY_SCALING_V2')) {
+    // Legacy: all stats scale uniformly
+    return {
+      health: baseMult,
+      power: baseMult,
+      armor: baseMult,
+      speed: 1, // Speed doesn't scale in legacy mode
+    };
+  }
+
+  // New: separate scaling rates for each stat
+  // Speed uses additive scaling: starts at 1x, adds scaled portion of difficulty increase
+  // Formula: 1 + (baseMult - 1) * rate means at baseMult=3.0 with rate=0.8: 1 + 2*0.8 = 2.6x
+  return {
+    health: baseMult * ENEMY_STAT_SCALING.HEALTH,
+    power: baseMult * ENEMY_STAT_SCALING.POWER,
+    armor: baseMult * ENEMY_STAT_SCALING.ARMOR,
+    speed: 1 + (baseMult - 1) * ENEMY_STAT_SCALING.SPEED,
+  };
+}
+
+/**
  * Generates an enemy based on floor, room, and difficulty parameters.
  * Includes input validation to ensure safe parameter ranges.
  * On Floor 5, Room 5 (final room), spawns the final boss instead of a regular enemy.
@@ -344,6 +426,11 @@ const MIN_ROOMS_PER_FLOOR = 1;
  * @param floorTheme Floor theme to apply stat modifiers and ability biases (defaults to neutral theme)
  */
 export function generateEnemy(floor: number, room: number, roomsPerFloor: number, floorTheme: FloorTheme = DEFAULT_FLOOR_THEME): Enemy {
+  // Capture raw values before sanitization for logging
+  const rawFloor = floor;
+  const rawRoom = room;
+  const rawRoomsPerFloor = roomsPerFloor;
+
   // Input validation - validate AFTER converting to ensure bounds
   // Use Math.max/min to clamp values safely
   floor = Math.max(MIN_FLOOR, Math.min(MAX_FLOOR, Math.floor(Number(floor) || MIN_FLOOR)));
@@ -353,6 +440,14 @@ export function generateEnemy(floor: number, room: number, roomsPerFloor: number
   // Ensure room doesn't exceed roomsPerFloor
   room = Math.min(room, roomsPerFloor);
 
+  // Log if any values were sanitized - indicates caller bug
+  if (rawFloor !== floor || rawRoom !== room || rawRoomsPerFloor !== roomsPerFloor) {
+    logError('generateEnemy received invalid inputs that were sanitized', {
+      raw: { floor: rawFloor, room: rawRoom, roomsPerFloor: rawRoomsPerFloor },
+      sanitized: { floor, room, roomsPerFloor },
+    });
+  }
+
   const isBoss = room === roomsPerFloor;
 
   // Check if this should be the final boss
@@ -360,7 +455,10 @@ export function generateEnemy(floor: number, room: number, roomsPerFloor: number
   if (floor === FLOOR_CONFIG.FINAL_BOSS_FLOOR && isBoss) {
     return generateFinalBoss();
   }
-  const difficultyMultiplier = 1 + (floor - 1) * ENEMY_SCALING.PER_FLOOR_MULTIPLIER + (room - 1) * ENEMY_SCALING.PER_ROOM_MULTIPLIER;
+
+  // Calculate difficulty scaling (uses new exponential system when ENEMY_SCALING_V2 enabled)
+  const baseDifficultyMult = getDifficultyMultiplier(floor, room);
+  const statMults = getStatMultipliers(baseDifficultyMult);
 
   // Determine enemy tier for stat selection and modifier assignment
   let namePool: readonly string[];
@@ -443,16 +541,17 @@ export function generateEnemy(floor: number, room: number, roomsPerFloor: number
   const themeArmorMult = floorTheme.statModifiers.armor;
   const themeSpeedMult = floorTheme.statModifiers.speed;
 
-  // Calculate base stats with difficulty and theme multipliers
-  const health = Math.floor(baseHealth * difficultyMultiplier * statMultiplier * themeHealthMult);
-  const power = Math.floor(basePower * difficultyMultiplier * statMultiplier * themePowerMult);
+  // Calculate base stats with per-stat difficulty multipliers and theme multipliers
+  // When ENEMY_SCALING_V2 is enabled, each stat scales at a different rate
+  const health = Math.floor(baseHealth * statMults.health * statMultiplier * themeHealthMult);
+  const power = Math.floor(basePower * statMults.power * statMultiplier * themePowerMult);
 
   // Armor and speed may be modified by modifiers, so use let
-  let armor = Math.floor(baseArmor * difficultyMultiplier * statMultiplier * themeArmorMult);
+  let armor = Math.floor(baseArmor * statMults.armor * statMultiplier * themeArmorMult);
   let speed = REWARD_CONFIG.ENEMY_BASE_SPEED + Math.floor(Math.random() * REWARD_CONFIG.ENEMY_SPEED_RANGE);
 
-  // Apply base theme speed multiplier
-  speed = Math.floor(speed * themeSpeedMult);
+  // Apply speed scaling (new system applies difficulty-based speed scaling)
+  speed = Math.floor(speed * statMults.speed * themeSpeedMult);
 
   // Apply modifier-specific stat changes
   for (const modifier of modifiers) {

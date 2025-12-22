@@ -74,7 +74,7 @@ export const FLOOR_CONFIG = {
   STARTING_EXP_TO_LEVEL: 100, // Reduced from 150 - faster first level
 } as const;
 
-// Enemy scaling - balanced curve
+// Enemy scaling - balanced curve (legacy linear scaling)
 export const ENEMY_SCALING = {
   /** Health/attack multiplier increase per floor */
   PER_FLOOR_MULTIPLIER: 0.35, // Reduced from 0.45 - enemies don't outpace player as fast
@@ -84,6 +84,44 @@ export const ENEMY_SCALING = {
   RARE_THRESHOLD: 0.7,
   /** Threshold for uncommon enemies (percentage of floor) */
   UNCOMMON_THRESHOLD: 0.4,
+} as const;
+
+/**
+ * Floor-based difficulty multipliers (Phase 3: Exponential scaling)
+ * Index corresponds to floor number (0 = Floor 1, 1 = Floor 2, etc.)
+ * Used when ENEMY_SCALING_V2 feature flag is enabled
+ */
+export const FLOOR_MULTIPLIERS = [
+  1.0,   // Floor 1: Tutorial - player feels powerful
+  1.45,  // Floor 2: First challenge
+  2.1,   // Floor 3: Gear check
+  3.0,   // Floor 4: Path abilities matter
+  4.2,   // Floor 5: Final push (climactic)
+  5.5,   // Floor 6: Extended content
+  7.0,   // Floor 7: Extended content
+  9.0,   // Floor 8: Extended content
+  11.5,  // Floor 9: Extended content
+  15.0,  // Floor 10: Maximum difficulty
+] as const;
+
+/**
+ * Per-stat scaling rates for enemy difficulty (Phase 3)
+ * Values < 1.0 mean the stat scales slower than the base multiplier
+ * This prevents enemies from becoming too tanky or dealing too much damage
+ */
+export const ENEMY_STAT_SCALING = {
+  HEALTH: 1.0,  // Full scaling - enemies need HP to be meaningful fights
+  POWER: 0.9,   // Slightly reduced - player should survive hits
+  ARMOR: 0.7,   // Slower scaling - prevents spongy enemies
+  SPEED: 0.8,   // Moderate - prevents overwhelming attack frequency
+} as const;
+
+/**
+ * Room-within-floor scaling for V2 enemy scaling system
+ * Note: Legacy system uses ENEMY_SCALING.PER_ROOM_MULTIPLIER (0.08)
+ */
+export const ROOM_SCALING = {
+  MULTIPLIER: 0.12,
 } as const;
 
 // Enemy base stats by tier - adjusted for harder early game

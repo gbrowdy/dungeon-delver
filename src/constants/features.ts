@@ -13,7 +13,7 @@ export const FEATURE_FLAGS = {
   PATH_PLAYSTYLE_MODIFIERS: true,
 
   // Phase 3: Exponential enemy scaling
-  ENEMY_SCALING_V2: false,
+  ENEMY_SCALING_V2: true,
 
   // Phase 4: Item tier rebalancing
   ITEM_TIER_REBALANCE: false,
