@@ -9,6 +9,9 @@ import { CharacterClass, ItemType, ItemEffect, Stats } from './game';
  */
 export type ShopTier = 'starter' | 'class' | 'specialty' | 'legendary';
 
+// Alias for item tier (same as ShopTier, used in value calculations)
+export type ShopItemTier = ShopTier;
+
 /**
  * Shop item definition
  * Extends base Item concept with shop-specific properties

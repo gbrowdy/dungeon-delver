@@ -12,13 +12,17 @@ import type { ShopItem } from '@/types/shop';
 
 export const SPECIALTY_ITEMS: ShopItem[] = [
   // From Spec: Vampiric Dagger
+  // Value budget: ~13 points (10 stat + 3 effect)
+  // Stats: +5 Power (5) + +8 Fortune (4) = 9 points
+  // Effect: 5% HP on kill ≈ 2 points
   {
     id: 'vampiric_dagger',
     name: 'Vampiric Dagger',
     type: 'weapon',
     price: 160,
     stats: {
-      power: 3,
+      power: 5,
+      fortune: 8,
     },
     effect: {
       trigger: 'on_kill',
@@ -33,13 +37,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // From Spec: Thornmail
+  // Value budget: ~13 points
+  // Stats: +6 Armor (6) + +20 Health (4) = 10 points
+  // Effect: Reflect 3 damage ≈ 2 points
   {
     id: 'thornmail',
     name: 'Thornmail',
     type: 'armor',
     price: 180,
     stats: {
-      armor: 4,
+      armor: 6,
+      maxHealth: 20,
     },
     effect: {
       trigger: 'on_damaged',
@@ -54,13 +62,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // From Spec: Berserker Axe
+  // Value budget: ~13 points
+  // Stats: +6 Power (6) + +6 Fortune (3) = 9 points
+  // Effect: +10% damage below 50% HP ≈ 2 points
   {
     id: 'berserker_axe',
     name: 'Berserker Axe',
     type: 'weapon',
     price: 160,
     stats: {
-      power: 5,
+      power: 6,
+      fortune: 6,
     },
     effect: {
       trigger: 'passive',
@@ -75,13 +87,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // From Spec: Guardian Shield
+  // Value budget: ~13 points
+  // Stats: +6 Armor (6) + +25 Health (5) = 11 points
+  // Effect: Block 50% more effective ≈ 2 points
   {
     id: 'guardian_shield',
     name: 'Guardian Shield',
     type: 'armor',
     price: 180,
     stats: {
-      armor: 5,
+      armor: 6,
+      maxHealth: 25,
     },
     effect: {
       trigger: 'passive',
@@ -96,13 +112,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // From Spec: Speed Boots
+  // Value budget: ~13 points
+  // Stats: +18 Speed (9) + +6 Fortune (3) = 12 points
+  // No effect, but high stat budget for a utility item
   {
     id: 'speed_boots',
     name: 'Speed Boots',
     type: 'accessory',
     price: 140,
     stats: {
-      speed: 15, // ~10% speed increase
+      speed: 18,
+      fortune: 6,
     },
     tier: 'specialty',
     icon: 'Zap',
@@ -111,13 +131,25 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // From Spec: Lucky Charm
+  // Value budget: ~13 points
+  // Stats: +12 Fortune (6) + +6 Speed (3) = 9 points
+  // Effect: 50% chance to restore 5 mana on dodge ≈ 1.25 points
+  // Total: ~10.25 points (within budget variance)
   {
     id: 'lucky_charm',
     name: 'Lucky Charm',
     type: 'accessory',
     price: 160,
     stats: {
-      fortune: 8, // +8% fortune (crit/dodge)
+      fortune: 12,
+      speed: 6,
+    },
+    effect: {
+      trigger: 'on_dodge',
+      type: 'mana',
+      value: 5,
+      chance: 0.50,
+      description: '50% chance to restore 5 mana on dodge',
     },
     tier: 'specialty',
     icon: 'Clover',
@@ -126,13 +158,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // From Spec: Executioner's Blade
+  // Value budget: ~13 points
+  // Stats: +6 Power (6) + +6 Fortune (3) = 9 points
+  // Effect: +50% damage vs low HP ≈ 3 points
   {
     id: 'executioners_blade',
     name: "Executioner's Blade",
     type: 'weapon',
     price: 200,
     stats: {
-      power: 4,
+      power: 6,
+      fortune: 6,
     },
     effect: {
       trigger: 'passive',
@@ -147,14 +183,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // From Spec: Lifeward Amulet
+  // Value budget: ~13 points
+  // Stats: +30 Health (6) + +3 Armor (3) = 9 points
+  // Effect: Heal 1 HP/sec ≈ 2 points
   {
     id: 'lifeward_amulet',
     name: 'Lifeward Amulet',
     type: 'accessory',
     price: 180,
     stats: {
-      health: 15,
-      maxHealth: 15,
+      maxHealth: 30,
+      armor: 3,
     },
     effect: {
       trigger: 'passive',
@@ -169,14 +208,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // NEW: Mana-focused items
+  // Value budget: ~13 points
+  // Stats: +40 Mana (6) + +3 Power (3) = 9 points
+  // Effect: +2 mana/sec ≈ 2 points
   {
     id: 'arcane_crystal',
     name: 'Arcane Crystal',
     type: 'accessory',
     price: 160,
     stats: {
-      mana: 20,
-      maxMana: 20,
+      maxMana: 40,
+      power: 3,
     },
     effect: {
       trigger: 'passive',
@@ -190,13 +232,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     pathSynergies: ['spellblade', 'elementalist'],
   },
 
+  // Value budget: ~13 points
+  // Stats: +8 Fortune (4) + +4 Power (4) = 8 points
+  // Effect: -20% cost ≈ 4 points
   {
     id: 'spell_efficiency_ring',
     name: 'Ring of Efficiency',
     type: 'accessory',
     price: 180,
     stats: {
-      fortune: 3,
+      fortune: 8,
+      power: 4,
     },
     effect: {
       trigger: 'passive',
@@ -211,13 +257,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // NEW: Fortune items (crit damage, proc chance)
+  // Value budget: ~13 points
+  // Stats: +10 Fortune (5) + +4 Speed (2) = 7 points
+  // Effect: +50% crit damage ≈ 3 points
   {
     id: 'critical_lens',
     name: 'Critical Lens',
     type: 'accessory',
     price: 200,
     stats: {
-      fortune: 5,
+      fortune: 10,
+      speed: 4,
     },
     effect: {
       trigger: 'passive',
@@ -231,20 +281,24 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     pathSynergies: ['assassin', 'duelist'],
   },
 
+  // Value budget: ~13 points
+  // Stats: +5 Power (5) + +4 Fortune (2) = 7 points
+  // Effect: 25% chance for 8 bonus damage ≈ 2 points
   {
     id: 'chain_lightning_orb',
     name: 'Chain Lightning Orb',
     type: 'weapon',
     price: 220,
     stats: {
-      power: 3,
+      power: 5,
+      fortune: 4,
     },
     effect: {
       trigger: 'on_hit',
       type: 'damage',
-      value: 5,
-      chance: 0.15, // 15% chance
-      description: '15% chance to deal 5 bonus damage',
+      value: 8,
+      chance: 0.25, // 25% chance
+      description: '25% chance to deal 8 bonus damage',
     },
     tier: 'specialty',
     icon: 'Zap',
@@ -253,14 +307,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // NEW: Hybrid items (power + armor, speed + health)
+  // Value budget: ~13 points
+  // Stats: +4 Power (4) + +5 Armor (5) + +15 Health (3) = 12 points
   {
     id: 'battle_plate',
     name: 'Battle Plate',
     type: 'armor',
     price: 200,
     stats: {
-      power: 2,
-      armor: 3,
+      power: 4,
+      armor: 5,
+      maxHealth: 15,
     },
     tier: 'specialty',
     icon: 'ShieldCheck',
@@ -268,14 +325,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     pathSynergies: ['protector', 'berserker', 'duelist'],
   },
 
+  // Value budget: ~13 points
+  // Stats: +14 Speed (7) + +3 Armor (3) = 10 points
+  // Effect: +5% dodge ≈ 2 points
   {
     id: 'assassins_cloak',
     name: "Assassin's Cloak",
     type: 'armor',
     price: 180,
     stats: {
-      speed: 10,
-      armor: 2,
+      speed: 14,
+      armor: 3,
     },
     effect: {
       trigger: 'passive',
@@ -289,15 +349,16 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     pathSynergies: ['assassin'],
   },
 
+  // Value budget: ~13 points
+  // Stats: +35 Health (7) + +8 Speed (4) = 11 points
   {
     id: 'gladiator_helm',
     name: 'Gladiator Helm',
     type: 'armor',
     price: 160,
     stats: {
-      health: 10,
-      maxHealth: 10,
-      speed: 5,
+      maxHealth: 35,
+      speed: 8,
     },
     tier: 'specialty',
     icon: 'Helmet',
@@ -306,13 +367,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // NEW: Gold/resource generation
+  // Value budget: ~13 points
+  // Stats: +10 Fortune (5) + +6 Speed (3) = 8 points
+  // Effect: +25% gold ≈ 1 point (economy items intentionally slightly lower combat value)
   {
     id: 'merchants_signet',
     name: "Merchant's Signet",
     type: 'accessory',
     price: 140,
     stats: {
-      fortune: 5,
+      fortune: 10,
+      speed: 6,
     },
     effect: {
       trigger: 'on_kill',
@@ -327,14 +392,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // NEW: Combo/synergy items
+  // Value budget: ~13 points
+  // Stats: +5 Power (5) + +10 Speed (5) = 10 points
+  // Effect: stacking damage ≈ 2 points
   {
     id: 'momentum_blade',
     name: 'Momentum Blade',
     type: 'weapon',
     price: 180,
     stats: {
-      power: 3,
-      speed: 5,
+      power: 5,
+      speed: 10,
     },
     effect: {
       trigger: 'on_hit',
@@ -348,13 +416,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     pathSynergies: ['duelist', 'berserker'],
   },
 
+  // Value budget: ~13 points
+  // Stats: +4 Power (4) + +6 Fortune (3) = 7 points
+  // Effect: 30% chance for 10% slow ≈ 0.3 points (utility effect)
   {
     id: 'frost_shard',
     name: 'Frost Shard',
     type: 'weapon',
     price: 160,
     stats: {
-      power: 2,
+      power: 4,
+      fortune: 6,
     },
     effect: {
       trigger: 'on_hit',
@@ -370,14 +442,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // NEW: Defensive utility
+  // Value budget: ~13 points
+  // Stats: +25 Health (5) + +3 Armor (3) = 8 points
+  // Effect: Revive 30% ≈ 4 points (powerful)
   {
     id: 'phoenix_feather',
     name: 'Phoenix Feather',
     type: 'accessory',
     price: 220,
     stats: {
-      health: 10,
-      maxHealth: 10,
+      maxHealth: 25,
+      armor: 3,
     },
     effect: {
       trigger: 'on_death',
@@ -391,13 +466,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     pathSynergies: ['guardian', 'protector', 'berserker'],
   },
 
+  // Value budget: ~13 points
+  // Stats: +7 Armor (7) + +20 Health (4) = 11 points
+  // Effect: +3 armor early ≈ 1 point
   {
     id: 'bulwark_gauntlets',
     name: 'Bulwark Gauntlets',
     type: 'armor',
     price: 200,
     stats: {
-      armor: 6,
+      armor: 7,
+      maxHealth: 20,
     },
     effect: {
       trigger: 'combat_start',
@@ -412,14 +491,18 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // NEW: Crusader/Templar path items
+  // Value budget: ~13 points
+  // Stats: +5 Power (5) + +3 Armor (3) = 8 points
+  // Effect: Heal 5 on crit ≈ 1 point
+  // Total: ~9 points (slightly under budget, but has strong synergy value)
   {
     id: 'crusaders_mace',
     name: "Crusader's Mace",
     type: 'weapon',
     price: 180,
     stats: {
-      power: 4,
-      armor: 2,
+      power: 5,
+      armor: 3,
     },
     effect: {
       trigger: 'on_crit',
@@ -433,15 +516,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     pathSynergies: ['crusader', 'templar', 'guardian'],
   },
 
+  // Value budget: ~13 points
+  // Stats: +30 Health (6) + +3 Armor (3) = 9 points
+  // Effect: +15% healing ≈ 2 points
   {
     id: 'templar_banner',
     name: 'Templar Banner',
     type: 'accessory',
     price: 160,
     stats: {
-      health: 15,
-      maxHealth: 15,
-      armor: 2,
+      maxHealth: 30,
+      armor: 3,
     },
     effect: {
       trigger: 'passive',
@@ -456,14 +541,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // NEW: Stun/Control items
+  // Value budget: ~13 points
+  // Stats: +4 Power (4) + +10 Speed (5) = 9 points
+  // Effect: 12% stun ≈ 2 points
   {
     id: 'stun_baton',
     name: 'Stun Baton',
     type: 'weapon',
     price: 200,
     stats: {
-      power: 3,
-      speed: 5,
+      power: 4,
+      speed: 10,
     },
     effect: {
       trigger: 'on_hit',
@@ -478,13 +566,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     pathSynergies: ['duelist', 'protector'],
   },
 
+  // Value budget: ~13 points
+  // Stats: +8 Fortune (4) + +4 Power (4) = 8 points
+  // Effect: 25% slow ≈ 2 points
   {
     id: 'gravity_orb',
     name: 'Gravity Orb',
     type: 'accessory',
     price: 180,
     stats: {
-      fortune: 3,
+      fortune: 8,
+      power: 4,
     },
     effect: {
       trigger: 'on_hit',
@@ -500,14 +592,17 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   },
 
   // NEW: Additional defensive utility
+  // Value budget: ~13 points
+  // Stats: +4 Armor (4) + +25 Health (5) = 9 points
+  // Effect: -5 flat reduction ≈ 3 points
   {
     id: 'barrier_crystal',
     name: 'Barrier Crystal',
     type: 'accessory',
     price: 200,
     stats: {
-      armor: 3,
-      maxHealth: 10,
+      armor: 4,
+      maxHealth: 25,
     },
     effect: {
       trigger: 'passive',

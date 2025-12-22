@@ -150,6 +150,91 @@ export const REWARD_CONFIG = {
   BOSS_LEGENDARY_BOOST: 0,
 } as const;
 
+// === ITEM TIER VALUE BUDGETS (Phase 4) ===
+// Defines how much total "stat point value" each item tier should provide
+// Used to ensure consistent value scaling across tiers
+
+export const ITEM_TIER_BUDGETS = {
+  // Starter items: Very basic, single stat bonuses
+  STARTER: {
+    statPoints: 3,       // e.g., +3 Power or +15 Health
+    effectValue: 0,      // No effects
+    priceRange: { min: 40, max: 50 },
+  },
+  // Class items: Dual-stat with small class-specific effects
+  CLASS: {
+    statPoints: 8,       // e.g., +4 Power, +5 Fortune
+    effectValue: 1,      // Small effect worth ~1 stat point
+    priceRange: { min: 100, max: 140 },
+  },
+  // Specialty items: Strong stats with meaningful effects
+  SPECIALTY: {
+    statPoints: 10,      // e.g., +5 Power, +3 Speed
+    effectValue: 3,      // Meaningful effect worth ~3 stat points
+    priceRange: { min: 140, max: 220 },
+  },
+  // Legendary items: Powerful stats with build-defining effects
+  LEGENDARY: {
+    statPoints: 14,      // e.g., +7 Power, +5 Armor
+    effectValue: 6,      // Powerful effect worth ~6 stat points
+    priceRange: { min: 320, max: 400 },
+  },
+} as const;
+
+// Convert effects to stat point equivalents for value comparison
+// These values are used to audit item balance and ensure consistency
+export const EFFECT_VALUES = {
+  // Healing effects (value per trigger)
+  ON_HIT_HEAL_2: 0.5,           // Heal 2 on hit ≈ 0.5 stat points
+  ON_HIT_HEAL_5: 1.0,           // Heal 5 on hit ≈ 1 stat point
+  ON_KILL_HEAL_5: 0.5,          // Heal 5% max HP on kill ≈ 0.5 stat points
+  LIFESTEAL_10: 2.5,            // 10% lifesteal ≈ 2.5 stat points
+  HP_REGEN_1: 1.5,              // +1 HP/sec ≈ 1.5 stat points
+
+  // Damage effects
+  ON_CRIT_BONUS_20: 1.0,        // +20% crit damage ≈ 1 stat point
+  ON_CRIT_BONUS_50: 2.5,        // +50% crit damage ≈ 2.5 stat points
+  ON_HIT_DAMAGE_5: 0.8,         // +5 damage on hit ≈ 0.8 stat points
+  EXECUTE_50_BELOW_25: 3.0,     // +50% damage vs low HP ≈ 3 stat points
+  LOW_HP_DAMAGE_10: 1.0,        // +10% damage below 50% HP ≈ 1 stat point
+
+  // Mana effects
+  ON_KILL_MANA_5: 0.3,          // +5 mana on kill ≈ 0.3 stat points
+  ON_CRIT_MANA_3: 0.5,          // +3 mana on crit ≈ 0.5 stat points
+  MANA_REGEN_2: 1.0,            // +2 mana/sec ≈ 1 stat point
+  POWER_COST_REDUCTION_20: 2.0, // -20% power cost ≈ 2 stat points
+
+  // Defensive effects
+  BLOCK_ENHANCEMENT_50: 2.0,    // Block 50% more effective ≈ 2 stat points
+  DAMAGE_REFLECT_3: 1.0,        // Reflect 3 damage ≈ 1 stat point
+  DAMAGE_REDUCTION_5: 2.5,      // -5% damage taken ≈ 2.5 stat points
+  DODGE_CHANCE_5: 1.5,          // +5% dodge chance ≈ 1.5 stat points
+
+  // Utility effects
+  GOLD_BONUS_25: 0.5,           // +25% gold ≈ 0.5 stat points (economy)
+  COOLDOWN_REDUCTION_10: 0.5,   // -10% cooldowns ≈ 0.5 stat points
+  COOLDOWN_REDUCTION_15: 0.8,   // -15% cooldowns ≈ 0.8 stat points
+
+  // Legendary-tier effects (build-defining)
+  SURVIVE_LETHAL: 5.0,          // Survive lethal damage ≈ 5 stat points
+  REVIVE_30: 4.0,               // Revive with 30% HP ≈ 4 stat points
+  TRIPLE_CRIT: 4.0,             // 3x crit multiplier ≈ 4 stat points
+  POWER_DAMAGE_50: 4.0,         // +50% power damage ≈ 4 stat points
+  IGNORE_DODGE: 3.0,            // Attacks ignore dodge ≈ 3 stat points
+} as const;
+
+// Stat point values for raw stats (used in value calculations)
+export const STAT_POINT_VALUES = {
+  power: 1.0,      // 1 power = 1 stat point
+  armor: 1.0,      // 1 armor = 1 stat point
+  speed: 0.5,      // 2 speed = 1 stat point (speed is abundant)
+  fortune: 0.5,    // 2 fortune = 1 stat point (crit chance)
+  maxHealth: 0.2,  // 5 health = 1 stat point
+  health: 0.2,     // 5 health = 1 stat point
+  maxMana: 0.15,   // 6-7 mana = 1 stat point
+  mana: 0.15,      // 6-7 mana = 1 stat point
+} as const;
+
 // === ITEM BALANCE ===
 
 export const ITEM_BALANCE = {
