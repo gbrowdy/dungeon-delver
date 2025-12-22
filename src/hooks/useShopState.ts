@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { ShopState, ShopItem, ShopTier } from '@/types/shop';
 import { CharacterClass, Player, Item } from '@/types/game';
+import { logError } from '@/utils/gameLogger';
 import { STARTER_GEAR } from '@/data/shop/starterGear';
 import { CLASS_GEAR } from '@/data/shop/classGear';
 import { SPECIALTY_ITEMS } from '@/data/shop/specialtyItems';
@@ -209,7 +210,10 @@ export function useShopState(): UseShopStateResult {
       }
 
       if (!characterClass) {
-        console.warn('Could not determine character class for path update');
+        logError('Could not determine character class for path update', {
+          pathId,
+          classGearIds: prev.classGear.map(i => i.id),
+        });
         return prev;
       }
 
@@ -217,7 +221,11 @@ export function useShopState(): UseShopStateResult {
       const pathGear = classGearSet.paths[pathId];
 
       if (!pathGear) {
-        console.warn(`Path gear not found for pathId: ${pathId}`);
+        logError('Path gear not found for pathId', {
+          pathId,
+          characterClass,
+          availablePaths: Object.keys(classGearSet.paths),
+        });
         return prev;
       }
 
@@ -248,10 +256,14 @@ export function useShopState(): UseShopStateResult {
 
   /**
    * Check if an item has been purchased
+   * Checks both purchasedItems list AND player's equipped items
+   * (needed because shopState resets on floor transition but equipped items persist)
    */
   const isItemPurchased = useCallback(
-    (itemId: string): boolean => {
-      return shopState.purchasedItems.includes(itemId);
+    (itemId: string, player?: Player): boolean => {
+      const inPurchaseList = shopState.purchasedItems.includes(itemId);
+      const isEquipped = player?.equippedItems.some(item => item.id === itemId) ?? false;
+      return inPurchaseList || isEquipped;
     },
     [shopState.purchasedItems]
   );

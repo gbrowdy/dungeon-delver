@@ -539,6 +539,8 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
   const legendaryUnlocked = currentFloor >= SHOP_UNLOCKS.legendary;
 
   // Check if item is purchased (either in purchasedItems list or currently equipped)
+  // Note: This mirrors useShopState.isItemPurchased but uses local props
+  // (needed because shopState resets on floor transition but equipped items persist)
   const isItemPurchased = (itemId: string) =>
     shopState.purchasedItems.includes(itemId) ||
     player.equippedItems.some(item => item.id === itemId);

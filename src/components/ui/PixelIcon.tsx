@@ -186,6 +186,11 @@ const SIZE_CLASSES: Record<number, string> = {
  * Falls back to category default if no keywords match.
  */
 function getSemanticIcon(type: string): LucideIconName {
+  // Handle undefined/null type gracefully
+  if (!type) {
+    return 'HelpCircle';
+  }
+
   // Try keyword matching
   for (const [pattern, icon] of KEYWORD_ICONS) {
     if (pattern.test(type)) {

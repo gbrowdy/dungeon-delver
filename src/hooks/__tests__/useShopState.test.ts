@@ -266,4 +266,80 @@ describe('useShopState', () => {
     // Should have berserker-specific items
     expect(gearIds).toContain('berserker_blade');
   });
+
+  it('should fail to purchase item already equipped on player (after shop reset)', () => {
+    const { result } = renderHook(() => useShopState());
+
+    // Initialize shop
+    act(() => {
+      result.current.initializeShop('warrior', null, 1, 12345);
+    });
+
+    const itemToPurchase = result.current.shopState.starterGear[0];
+    const player = createMockPlayer(200);
+
+    // Purchase once
+    let firstPurchase;
+    act(() => {
+      firstPurchase = result.current.purchaseItem(itemToPurchase.id, player);
+    });
+    expect(firstPurchase.success).toBe(true);
+
+    // Simulate floor transition: reset shop (clears purchasedItems)
+    // But player still has item equipped
+    act(() => {
+      result.current.initializeShop('warrior', null, 2, 54321);
+    });
+
+    // Create player with item already equipped (simulates persistence after shop reset)
+    const playerWithEquipped = createMockPlayer(200);
+    playerWithEquipped.equippedItems = [{
+      id: itemToPurchase.id,
+      name: itemToPurchase.name,
+      type: itemToPurchase.type as 'weapon' | 'armor' | 'accessory',
+      rarity: 'common',
+      statBonus: {},
+      description: itemToPurchase.description,
+      icon: itemToPurchase.icon,
+      enhancementLevel: 0,
+      maxEnhancement: 3,
+    }];
+
+    // Try to purchase again - should fail because item is equipped
+    let secondPurchase;
+    act(() => {
+      secondPurchase = result.current.purchaseItem(itemToPurchase.id, playerWithEquipped);
+    });
+
+    expect(secondPurchase.success).toBe(false);
+    expect(secondPurchase.message).toContain('already purchased');
+  });
+
+  it('should correctly check isItemPurchased with equipped items', () => {
+    const { result } = renderHook(() => useShopState());
+
+    act(() => {
+      result.current.initializeShop('warrior', null, 1, 12345);
+    });
+
+    const itemId = 'test_item_id';
+
+    // Not purchased, not equipped
+    expect(result.current.isItemPurchased(itemId)).toBe(false);
+
+    // Not purchased, but equipped
+    const playerWithEquipped = createMockPlayer(100);
+    playerWithEquipped.equippedItems = [{
+      id: itemId,
+      name: 'Test Item',
+      type: 'weapon',
+      rarity: 'common',
+      statBonus: {},
+      description: 'Test',
+      icon: 'Sword',
+      enhancementLevel: 0,
+      maxEnhancement: 3,
+    }];
+    expect(result.current.isItemPurchased(itemId, playerWithEquipped)).toBe(true);
+  });
 });
