@@ -181,6 +181,42 @@ describe('DEFAULT_STANCE_COOLDOWN', () => {
   });
 });
 
+describe('Passive paths have no resources', () => {
+  // Per BALANCE_DESIGN.md: "Passive paths have NO powers, NO resources, and NO block."
+  // Stances should not reference mana or other resource types.
+  const RESOURCE_STATS = ['mana', 'maxMana'];
+
+  it('should not reference mana in any stance effects', () => {
+    const allStances = [
+      ...GUARDIAN_STANCES,
+      ...ENCHANTER_STANCES,
+      ...DUELIST_STANCES,
+      ...PROTECTOR_STANCES,
+    ];
+
+    allStances.forEach(stance => {
+      stance.effects.forEach(effect => {
+        if (effect.type === 'stat_modifier' && effect.stat) {
+          expect(RESOURCE_STATS).not.toContain(effect.stat);
+        }
+      });
+    });
+  });
+
+  it('should not mention mana in stance descriptions', () => {
+    const allStances = [
+      ...GUARDIAN_STANCES,
+      ...ENCHANTER_STANCES,
+      ...DUELIST_STANCES,
+      ...PROTECTOR_STANCES,
+    ];
+
+    allStances.forEach(stance => {
+      expect(stance.description.toLowerCase()).not.toContain('mana');
+    });
+  });
+});
+
 // Validation helper
 function validateStanceStructure(stance: PassiveStance): void {
   // Required properties

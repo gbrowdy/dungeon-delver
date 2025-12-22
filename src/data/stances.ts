@@ -56,11 +56,11 @@ export const ENCHANTER_STANCES: PassiveStance[] = [
   {
     id: 'arcane_stance',
     name: 'Arcane Stance',
-    description: '+25% Power, +2 Mana regen. Attacks deal bonus magic damage.',
+    description: '+25% Power, +15% Speed. Attacks deal 10% bonus magic damage.',
     icon: 'sparkles',
     effects: [
       { type: 'stat_modifier', stat: 'power', percentBonus: 0.25 },
-      { type: 'stat_modifier', stat: 'mana', flatBonus: 2 },
+      { type: 'stat_modifier', stat: 'speed', percentBonus: 0.15 },
       { type: 'damage_modifier', damageType: 'outgoing', multiplier: 1.10 },
     ],
     switchCooldown: DEFAULT_STANCE_COOLDOWN,
@@ -68,11 +68,11 @@ export const ENCHANTER_STANCES: PassiveStance[] = [
   {
     id: 'disruption_stance',
     name: 'Disruption Stance',
-    description: '+15% Armor, +20% max Mana. Reduce incoming damage by 10%.',
+    description: '+20% Armor, +10% max HP. Reduce incoming damage by 10%.',
     icon: 'shield-alert',
     effects: [
-      { type: 'stat_modifier', stat: 'armor', percentBonus: 0.15 },
-      { type: 'stat_modifier', stat: 'maxMana', percentBonus: 0.20 },
+      { type: 'stat_modifier', stat: 'armor', percentBonus: 0.20 },
+      { type: 'stat_modifier', stat: 'maxHealth', percentBonus: 0.10 },
       { type: 'damage_modifier', damageType: 'incoming', multiplier: 0.90 },
     ],
     switchCooldown: DEFAULT_STANCE_COOLDOWN,
