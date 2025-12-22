@@ -23,7 +23,7 @@ interface ShopItem {
  * Starter Gear - Basic equipment available at the start of the game
  * All items cost 45 gold and provide simple stat bonuses
  *
- * Value budget: ~3 stat points per item
+ * Value budget: 3 stat points per item
  */
 export const STARTER_GEAR: ShopItem[] = [
   // Value: +3 Power = 3 stat points

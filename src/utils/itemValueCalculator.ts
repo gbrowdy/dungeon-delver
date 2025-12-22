@@ -85,7 +85,7 @@ export function estimateEffectValue(item: ShopItem): number {
     return (value >= 5 ? 1.0 : 0.5) * chance;
   }
   if (desc.includes('heal') && desc.includes('damage dealt')) {
-    return value * 25; // Lifesteal: 10% = 2.5 points
+    return value * 25; // Lifesteal: 10% (0.10) = 2.5 points
   }
   if (desc.includes('hp per second') || desc.includes('hp/sec')) {
     return 1.5 * value;

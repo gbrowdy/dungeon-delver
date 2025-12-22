@@ -157,7 +157,7 @@ export const REWARD_CONFIG = {
 export const ITEM_TIER_BUDGETS = {
   // Starter items: Very basic, single stat bonuses
   STARTER: {
-    statPoints: 3,       // e.g., +2 Power or +10 Health
+    statPoints: 3,       // e.g., +3 Power or +15 Health
     effectValue: 0,      // No effects
     priceRange: { min: 40, max: 50 },
   },
