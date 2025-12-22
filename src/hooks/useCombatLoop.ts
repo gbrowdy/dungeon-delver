@@ -1,5 +1,6 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import { COMBAT_BALANCE } from '@/constants/balance';
+import { speedToInterval } from '@/utils/speedUtils';
 
 /**
  * Combat loop with separate attack timers for hero and enemy.
@@ -23,19 +24,6 @@ interface CombatLoopReturn {
   enemyProgress: number; // 0-1 progress to next enemy attack
   resetTimers: () => void;
   resetHeroProgress: () => void; // Reset only hero attack progress (used when stunned)
-}
-
-// Convert speed stat to attack interval with diminishing returns
-// Uses square root scaling to prevent speed from being overpowered
-// Base speed of 10 = base interval
-// Speed 15: sqrt(1.5) = 1.22x faster (was 1.5x with linear)
-// Speed 7: sqrt(0.7) = 0.84x speed (was 0.7x with linear)
-function speedToInterval(speed: number, baseInterval: number): number {
-  // Clamp speed to reasonable range
-  const clampedSpeed = Math.max(1, Math.min(50, speed));
-  const speedRatio = clampedSpeed / COMBAT_BALANCE.BASE_SPEED;
-  // Square root gives diminishing returns - high speed is less dominant
-  return Math.floor(baseInterval / Math.sqrt(speedRatio));
 }
 
 export function useCombatLoop({

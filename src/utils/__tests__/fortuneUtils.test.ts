@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   getCritChance,
   getCritDamage,
@@ -7,7 +7,24 @@ import {
   getProcChanceBonus,
 } from '../fortuneUtils';
 
+// Mock the feature flags module
+vi.mock('@/constants/features', () => ({
+  isFeatureEnabled: vi.fn(),
+}));
+
+import { isFeatureEnabled } from '@/constants/features';
+const mockIsFeatureEnabled = vi.mocked(isFeatureEnabled);
+
 describe('fortuneUtils', () => {
+  beforeEach(() => {
+    // Default: feature flags disabled (legacy behavior)
+    mockIsFeatureEnabled.mockReturnValue(false);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe('getCritChance', () => {
     it('should return 5% base crit chance with 0 fortune', () => {
       expect(getCritChance(0)).toBe(0.05);
@@ -177,6 +194,91 @@ describe('fortuneUtils', () => {
       expect(getDodgeChance(fortune)).toBeCloseTo(0.05); // 5% dodge
       expect(getDropQualityBonus(fortune)).toBeCloseTo(1.1); // 10% better drops
       expect(getProcChanceBonus(fortune)).toBeCloseTo(1.05); // 5% more procs
+    });
+  });
+
+  // ============================================
+  // Phase 1: Diminishing Returns Tests
+  // ============================================
+  describe('Phase 1: Fortune Diminishing Returns', () => {
+    beforeEach(() => {
+      // Enable the FORTUNE_DIMINISHING_RETURNS feature flag
+      mockIsFeatureEnabled.mockImplementation(
+        (flag) => flag === 'FORTUNE_DIMINISHING_RETURNS'
+      );
+    });
+
+    describe('getCritChance with diminishing returns', () => {
+      it('should return linear scaling up to 15 fortune', () => {
+        expect(getCritChance(0)).toBe(0.05); // 5%
+        expect(getCritChance(5)).toBeCloseTo(0.15); // 15%
+        expect(getCritChance(10)).toBeCloseTo(0.25); // 25%
+        expect(getCritChance(15)).toBeCloseTo(0.35); // 35%
+      });
+
+      it('should return diminished scaling above 15 fortune', () => {
+        // After 15: +1% per fortune point instead of +2%
+        expect(getCritChance(20)).toBeCloseTo(0.40); // 35% + 5% = 40% (was 45% with linear)
+        expect(getCritChance(25)).toBeCloseTo(0.45); // 35% + 10% = 45% (was 50%+ with linear)
+        expect(getCritChance(30)).toBeCloseTo(0.50); // Capped at 50%
+      });
+
+      it('should cap at 50% crit chance', () => {
+        expect(getCritChance(50)).toBe(0.50);
+        expect(getCritChance(100)).toBe(0.50);
+      });
+
+      it('should handle negative fortune gracefully', () => {
+        expect(getCritChance(-5)).toBe(0.05);
+      });
+    });
+
+    describe('getCritDamage with cap', () => {
+      it('should add 4% crit damage per fortune point', () => {
+        expect(getCritDamage(0)).toBe(1.5); // 150%
+        expect(getCritDamage(5)).toBeCloseTo(1.7); // 150% + 20%
+        expect(getCritDamage(10)).toBeCloseTo(1.9); // 150% + 40%
+      });
+
+      it('should cap at 250% crit damage', () => {
+        // Cap at 250% (2.5x)
+        expect(getCritDamage(25)).toBe(2.5); // 150% + 100% = 250% (capped)
+        expect(getCritDamage(30)).toBe(2.5); // Still capped
+        expect(getCritDamage(50)).toBe(2.5); // Still capped
+      });
+
+      it('should handle negative fortune gracefully', () => {
+        expect(getCritDamage(-5)).toBe(1.5);
+      });
+    });
+
+    describe('DPS impact comparison', () => {
+      // Helper to calculate expected DPS multiplier from crit
+      const calculateDpsFromCrit = (critChance: number, critDamage: number) => {
+        return 1 + critChance * (critDamage - 1);
+      };
+
+      it('should show reduced power at high fortune compared to legacy', () => {
+        // At 30 fortune with diminishing returns:
+        const newCritChance = getCritChance(30); // 50%
+        const newCritDamage = getCritDamage(30); // 2.5x
+
+        // Legacy values would be: 50% crit, 3.0x damage
+        // New DPS: 1 + 0.5 * 1.5 = 1.75x
+        // Legacy DPS: 1 + 0.5 * 2.0 = 2.0x
+        const newDps = calculateDpsFromCrit(newCritChance, newCritDamage);
+        expect(newDps).toBeCloseTo(1.75);
+      });
+
+      it('should maintain similar power at low fortune', () => {
+        // At 10 fortune (below diminishing threshold):
+        const critChance = getCritChance(10); // 25%
+        const critDamage = getCritDamage(10); // 1.9x
+
+        // DPS: 1 + 0.25 * 0.9 = 1.225x
+        const dps = calculateDpsFromCrit(critChance, critDamage);
+        expect(dps).toBeCloseTo(1.225);
+      });
     });
   });
 });
