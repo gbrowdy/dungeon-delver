@@ -29,7 +29,7 @@ import {
   COMBAT_EVENT_TYPE,
   PAUSE_REASON,
 } from '@/constants/enums';
-import { logPauseChange } from '@/utils/gameLogger';
+import { logPauseChange, logCombatEvent } from '@/utils/gameLogger';
 import { generateEventId } from '@/utils/eventId';
 import { isFeatureEnabled } from '@/constants/features';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
@@ -42,12 +42,10 @@ import type { CombatEvent } from '@/hooks/useBattleAnimation';
 
 /**
  * Combat metrics logging for balance testing
- * Only logs in development mode when feature flags are being tested
+ * Uses gameLogger infrastructure for consistent logging behavior
  */
 function logCombatMetric(event: string, data: Record<string, unknown>): void {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[COMBAT] ${event}`, data);
-  }
+  logCombatEvent(event, data);
 }
 
 /**
