@@ -31,6 +31,7 @@ import {
 } from '@/constants/enums';
 import { logPauseChange } from '@/utils/gameLogger';
 import { generateEventId } from '@/utils/eventId';
+import { isFeatureEnabled } from '@/constants/features';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
@@ -38,6 +39,16 @@ import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
 import type { PauseReasonType } from '@/constants/enums';
 import type { CombatEvent } from '@/hooks/useBattleAnimation';
+
+/**
+ * Combat metrics logging for balance testing
+ * Only logs in development mode when feature flags are being tested
+ */
+function logCombatMetric(event: string, data: Record<string, unknown>): void {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[COMBAT] ${event}`, data);
+  }
+}
 
 /**
  * Parameters for the combat actions hook
@@ -326,6 +337,19 @@ export function useCombatActions({
       // Apply damage to enemy
       enemy.health -= finalDamage;
       logs.push(`You deal ${finalDamage} damage to ${enemy.name}`);
+
+      // Log combat metrics for balance testing
+      logCombatMetric('player_attack', {
+        damage: finalDamage,
+        isCrit: damageResult.isCrit,
+        playerPower: updatedPlayer.currentStats.power,
+        playerFortune: updatedPlayer.currentStats.fortune,
+        enemyArmor: enemy.armor,
+        enemyHealthBefore: enemy.health + finalDamage,
+        enemyHealthAfter: enemy.health,
+        floor: prev.currentFloor,
+        room: prev.currentRoom,
+      });
 
       // Track attack count for attack-based abilities like Holy Avenger
       // This uses abilityCounters instead of comboCount (which is for power combos)
@@ -686,6 +710,14 @@ export function useCombatActions({
         }
 
         if (playerDodged) {
+          // Log dodge metrics for balance testing
+          logCombatMetric('player_dodge', {
+            playerFortune: player.currentStats.fortune,
+            uncannyDodge: uncannyDodgeTriggered,
+            floor: prev.currentFloor,
+            room: prev.currentRoom,
+          });
+
           if (uncannyDodgeTriggered) {
             logs.push(`⚔️ Uncanny Dodge! You automatically evade ${enemy.name}'s attack!`);
           } else {
@@ -783,6 +815,20 @@ export function useCombatActions({
               player = resetAbilityCounter(player, 'blur_dodges');
             }
           }
+
+          // Log combat metrics for balance testing
+          logCombatMetric('enemy_attack', {
+            damage: enemyDamage,
+            shieldAbsorbed: shieldResult.shieldAbsorbed,
+            damageToHealth: shieldResult.remainingDamage,
+            enemyPower: enemy.power,
+            playerArmor: player.currentStats.armor,
+            playerHealthBefore: player.currentStats.health + shieldResult.remainingDamage,
+            playerHealthAfter: player.currentStats.health,
+            isBlocking: player.isBlocking,
+            floor: prev.currentFloor,
+            room: prev.currentRoom,
+          });
 
           // Vampiric modifier: Heal enemy based on damage dealt
           if (enemy.modifiers?.some(m => m.id === 'vampiric')) {

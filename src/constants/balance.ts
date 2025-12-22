@@ -41,6 +41,35 @@ export const COMBAT_BALANCE = {
   POISON_SCALING_PER_FLOOR: 0.1, // +10% poison damage per floor
 } as const;
 
+// === PATH PLAYSTYLE MODIFIERS ===
+// These modifiers create fundamental differences between active and passive paths
+// Active paths: Lower auto damage, stronger powers, faster cooldowns
+// Passive paths: Higher auto damage, weaker powers, enhanced procs
+
+export const PATH_PLAYSTYLE_MODIFIERS = {
+  passive: {
+    autoDamageMultiplier: 1.50,       // +50% auto-attack damage
+    attackSpeedMultiplier: 1.25,      // +25% attack speed
+    powerDamageMultiplier: 0.50,      // -50% power damage (Phase 5: → 0.25)
+    cooldownMultiplier: 2.0,          // 2x longer cooldowns
+    procChanceMultiplier: 1.50,       // +50% item proc chance
+    procDamageMultiplier: 1.75,       // +75% proc damage
+    armorEffectiveness: 1.25,         // +25% armor value
+    blockEffectiveness: 1.25,         // +25% block reduction
+  },
+  active: {
+    autoDamageMultiplier: 0.60,       // -40% auto-attack damage
+    attackSpeedMultiplier: 0.85,      // -15% attack speed
+    powerDamageMultiplier: 2.0,       // +100% power damage
+    cooldownMultiplier: 0.60,         // 40% faster cooldowns
+    resourceSystemEnabled: true,      // Uses unique resource (Phase 6)
+  },
+} as const;
+
+export const COOLDOWN_FLOOR = 500; // Minimum cooldown in milliseconds (0.5s)
+
+export type PathPlaystyle = keyof typeof PATH_PLAYSTYLE_MODIFIERS;
+
 // === REWARD SCALING ===
 
 export const REWARD_CONFIG = {
