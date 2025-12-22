@@ -20,9 +20,10 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
   const [showStats, setShowStats] = useState(false);
 
   // Determine sprite type - use path variant if player has selected a path
-  const getSpriteType = (): SpriteType | string => {
+  // pathId is constrained by the path system to be a valid SpriteType
+  const getSpriteType = (): SpriteType => {
     if (player.path?.pathId) {
-      return player.path.pathId;
+      return player.path.pathId as SpriteType;
     }
     return player.class as SpriteType;
   };
