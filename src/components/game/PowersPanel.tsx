@@ -111,7 +111,10 @@ interface ManaBarProps {
 }
 
 function ManaBar({ current, max }: ManaBarProps) {
-  const percentage = (current / max) * 100;
+  // Guard against division by zero and invalid values
+  const safeMax = Number.isFinite(max) && max > 0 ? max : 1;
+  const safeCurrent = Number.isFinite(current) ? Math.max(0, current) : 0;
+  const percentage = Math.min(100, (safeCurrent / safeMax) * 100);
 
   return (
     <div className="flex items-center gap-1.5 xs:gap-2 mb-2">

@@ -1,11 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { PassiveStance, StanceEffect, PlayerStanceState } from '@/types/paths';
 import { isFeatureEnabled } from '@/constants/features';
-
-/**
- * Default cooldown for switching stances (5 seconds)
- */
-const DEFAULT_STANCE_COOLDOWN = 5000;
+import { DEFAULT_STANCE_COOLDOWN } from '@/data/stances';
+import { logError } from '@/utils/gameLogger';
 
 /**
  * Tick interval for cooldown updates (100ms for smooth UI)
@@ -52,6 +49,13 @@ export function useStanceSystem(
   const getInitialStanceId = () => {
     if (initialStanceId && availableStances.some(s => s.id === initialStanceId)) {
       return initialStanceId;
+    }
+    // Log when falling back - indicates potential bug in caller
+    if (initialStanceId && process.env.NODE_ENV !== 'production') {
+      logError(`Initial stance "${initialStanceId}" not found in available stances`, {
+        available: availableStances.map(s => s.id),
+        fallback: availableStances[0]?.id ?? 'none',
+      });
     }
     return availableStances[0]?.id ?? '';
   };
@@ -136,27 +140,36 @@ export function useStanceSystem(
 export function calculateStanceStatModifiers(effects: StanceEffect[]): {
   flatBonuses: Partial<Record<string, number>>;
   percentBonuses: Partial<Record<string, number>>;
+  regenBonuses: Partial<Record<string, number>>;
 } {
   const flatBonuses: Partial<Record<string, number>> = {};
   const percentBonuses: Partial<Record<string, number>> = {};
+  const regenBonuses: Partial<Record<string, number>> = {};
 
   for (const effect of effects) {
-    if (effect.type === 'stat_modifier' && effect.stat) {
+    if (effect.type === 'stat_modifier') {
+      // Discriminated union guarantees stat exists for stat_modifier type
+      const targetMap = effect.applyTo === 'regen' ? regenBonuses : percentBonuses;
+
       if (effect.flatBonus !== undefined) {
         flatBonuses[effect.stat] = (flatBonuses[effect.stat] ?? 0) + effect.flatBonus;
       }
       if (effect.percentBonus !== undefined) {
-        percentBonuses[effect.stat] = (percentBonuses[effect.stat] ?? 0) + effect.percentBonus;
+        if (effect.applyTo === 'regen') {
+          regenBonuses[effect.stat] = (regenBonuses[effect.stat] ?? 0) + effect.percentBonus;
+        } else {
+          percentBonuses[effect.stat] = (percentBonuses[effect.stat] ?? 0) + effect.percentBonus;
+        }
       }
     }
   }
 
-  return { flatBonuses, percentBonuses };
+  return { flatBonuses, percentBonuses, regenBonuses };
 }
 
 /**
  * Helper to extract behavior modifiers from stance effects
- * Note: No blocking behaviors - passive paths don't use manual blocking
+ * Note: No manual blocking - passive paths use auto_block behavior instead
  */
 export function getStanceBehaviorModifiers(effects: StanceEffect[]): {
   reflectDamage: number;
@@ -172,7 +185,8 @@ export function getStanceBehaviorModifiers(effects: StanceEffect[]): {
   };
 
   for (const effect of effects) {
-    if (effect.type === 'behavior_modifier' && effect.behavior && effect.value !== undefined) {
+    if (effect.type === 'behavior_modifier') {
+      // Discriminated union guarantees behavior and value exist
       switch (effect.behavior) {
         case 'reflect_damage':
           result.reflectDamage += effect.value;
@@ -186,6 +200,13 @@ export function getStanceBehaviorModifiers(effects: StanceEffect[]): {
         case 'lifesteal':
           result.lifestealPercent += effect.value;
           break;
+        default: {
+          // Exhaustive check - TypeScript will error if new behaviors are added
+          const _exhaustive: never = effect.behavior;
+          if (process.env.NODE_ENV !== 'production') {
+            logError(`Unknown stance behavior: ${_exhaustive}`, { effect });
+          }
+        }
       }
     }
   }

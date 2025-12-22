@@ -189,39 +189,43 @@ function StanceEffectsList({ effects }: { effects: PassiveStance['effects'] }) {
 
 /**
  * Format a single stance effect for display
+ * Uses discriminated union - no defensive checks needed for required fields
  */
 function formatStanceEffect(effect: PassiveStance['effects'][number]): string {
   switch (effect.type) {
-    case 'stat_modifier':
-      if (effect.stat && effect.percentBonus !== undefined) {
+    case 'stat_modifier': {
+      // Discriminated union guarantees stat exists
+      if (effect.percentBonus !== undefined) {
         const sign = effect.percentBonus >= 0 ? '+' : '';
-        return `${sign}${Math.round(effect.percentBonus * 100)}% ${formatStatName(effect.stat)}`;
+        const suffix = effect.applyTo === 'regen' ? ' Regen' : '';
+        return `${sign}${Math.round(effect.percentBonus * 100)}% ${formatStatName(effect.stat)}${suffix}`;
       }
-      if (effect.stat && effect.flatBonus !== undefined) {
+      if (effect.flatBonus !== undefined) {
         const sign = effect.flatBonus >= 0 ? '+' : '';
         return `${sign}${effect.flatBonus} ${formatStatName(effect.stat)}`;
       }
-      return 'Stat modifier';
+      return `${formatStatName(effect.stat)} modifier`;
+    }
 
     case 'behavior_modifier':
-      if (effect.behavior && effect.value !== undefined) {
-        return formatBehavior(effect.behavior, effect.value);
-      }
-      return 'Behavior modifier';
+      // Discriminated union guarantees behavior and value exist
+      return formatBehavior(effect.behavior, effect.value);
 
-    case 'damage_modifier':
-      if (effect.multiplier !== undefined) {
-        const reduction = effect.multiplier < 1;
-        const percent = Math.abs(Math.round((effect.multiplier - 1) * 100));
-        const direction = effect.damageType === 'incoming' ? 'damage taken' : 'damage dealt';
-        return reduction
-          ? `-${percent}% ${direction}`
-          : `+${percent}% ${direction}`;
-      }
-      return 'Damage modifier';
+    case 'damage_modifier': {
+      // Discriminated union guarantees multiplier and damageType exist
+      const reduction = effect.multiplier < 1;
+      const percent = Math.abs(Math.round((effect.multiplier - 1) * 100));
+      const direction = effect.damageType === 'incoming' ? 'damage taken' : 'damage dealt';
+      return reduction
+        ? `-${percent}% ${direction}`
+        : `+${percent}% ${direction}`;
+    }
 
-    default:
+    default: {
+      // Exhaustive check - TypeScript will error if new effect types are added
+      const _exhaustive: never = effect;
       return 'Unknown effect';
+    }
   }
 }
 

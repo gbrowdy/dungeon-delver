@@ -17,10 +17,11 @@ import { renderHook, act } from '@testing-library/react';
 import { useStanceSystem, calculateStanceStatModifiers, getStanceBehaviorModifiers } from '../useStanceSystem';
 import type { PassiveStance, StanceEffect } from '@/types/paths';
 
-// Mock the feature flag
+// Mock the feature flag - use a mutable ref so we can change it in tests
+let featureFlagEnabled = true;
 vi.mock('@/constants/features', () => ({
   isFeatureEnabled: vi.fn((flag: string) => {
-    if (flag === 'PASSIVE_STANCE_SYSTEM') return true;
+    if (flag === 'PASSIVE_STANCE_SYSTEM') return featureFlagEnabled;
     return false;
   }),
 }));
@@ -35,7 +36,7 @@ const mockStances: PassiveStance[] = [
     effects: [
       { type: 'stat_modifier', stat: 'armor', percentBonus: 0.25 },
       { type: 'stat_modifier', stat: 'speed', percentBonus: -0.15 },
-      { type: 'behavior_modifier', behavior: 'enhanced_block', value: 0.50 },
+      { type: 'behavior_modifier', behavior: 'auto_block', value: 0.50 },
     ],
     switchCooldown: 5000,
   },
@@ -351,5 +352,150 @@ describe('getStanceBehaviorModifiers', () => {
     const behaviors = getStanceBehaviorModifiers(effects);
 
     expect(behaviors.reflectDamage).toBe(0.25);
+  });
+
+  it('should handle all behavior types', () => {
+    const effects: StanceEffect[] = [
+      { type: 'behavior_modifier', behavior: 'reflect_damage', value: 0.10 },
+      { type: 'behavior_modifier', behavior: 'counter_attack', value: 0.25 },
+      { type: 'behavior_modifier', behavior: 'auto_block', value: 0.15 },
+      { type: 'behavior_modifier', behavior: 'lifesteal', value: 0.05 },
+    ];
+
+    const behaviors = getStanceBehaviorModifiers(effects);
+
+    expect(behaviors.reflectDamage).toBe(0.10);
+    expect(behaviors.counterAttackChance).toBe(0.25);
+    expect(behaviors.autoBlockChance).toBe(0.15);
+    expect(behaviors.lifestealPercent).toBe(0.05);
+  });
+});
+
+describe('calculateStanceStatModifiers - regen bonuses', () => {
+  it('should separate regen bonuses from regular percent bonuses', () => {
+    const effects: StanceEffect[] = [
+      { type: 'stat_modifier', stat: 'health', percentBonus: 0.50, applyTo: 'regen' },
+      { type: 'stat_modifier', stat: 'armor', percentBonus: 0.25 },
+    ];
+
+    const { percentBonuses, regenBonuses } = calculateStanceStatModifiers(effects);
+
+    expect(regenBonuses['health']).toBe(0.50);
+    expect(percentBonuses['armor']).toBe(0.25);
+    expect(percentBonuses['health']).toBeUndefined();
+  });
+
+  it('should aggregate multiple regen bonuses', () => {
+    const effects: StanceEffect[] = [
+      { type: 'stat_modifier', stat: 'health', percentBonus: 0.25, applyTo: 'regen' },
+      { type: 'stat_modifier', stat: 'health', percentBonus: 0.25, applyTo: 'regen' },
+    ];
+
+    const { regenBonuses } = calculateStanceStatModifiers(effects);
+
+    expect(regenBonuses['health']).toBe(0.50);
+  });
+
+  it('should handle effects without applyTo as regular percent bonuses', () => {
+    const effects: StanceEffect[] = [
+      { type: 'stat_modifier', stat: 'health', percentBonus: 0.10 },
+    ];
+
+    const { percentBonuses, regenBonuses } = calculateStanceStatModifiers(effects);
+
+    expect(percentBonuses['health']).toBe(0.10);
+    expect(regenBonuses['health']).toBeUndefined();
+  });
+});
+
+describe('useStanceSystem - edge cases', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  it('should not allow switching with only one stance', () => {
+    const singleStance: PassiveStance[] = [mockStances[0]];
+    const { result } = renderHook(() => useStanceSystem(singleStance));
+
+    expect(result.current.canSwitchStance).toBe(false);
+    expect(result.current.availableStances.length).toBe(1);
+  });
+
+  it('should resume cooldown correctly after unpausing', () => {
+    const { result, rerender } = renderHook(
+      ({ isPaused }) => useStanceSystem(mockStances, 'iron_stance', isPaused),
+      { initialProps: { isPaused: false } }
+    );
+
+    // Switch stance to start cooldown
+    act(() => {
+      result.current.switchStance('retribution_stance');
+    });
+
+    expect(result.current.cooldownRemaining).toBe(5000);
+
+    // Pause the game
+    rerender({ isPaused: true });
+
+    // Advance time while paused - cooldown should not change
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
+    expect(result.current.cooldownRemaining).toBe(5000);
+
+    // Unpause and advance time
+    rerender({ isPaused: false });
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    // Should have approximately 2000ms remaining (5000 - 3000 after unpause)
+    expect(result.current.cooldownRemaining).toBeLessThanOrEqual(2100);
+    expect(result.current.cooldownRemaining).toBeGreaterThanOrEqual(1900);
+  });
+});
+
+describe('useStanceSystem - feature flag disabled', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    // Disable the feature flag via the mutable ref
+    featureFlagEnabled = false;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+    // Re-enable the feature flag
+    featureFlagEnabled = true;
+  });
+
+  it('should return inactive system when feature flag is disabled', () => {
+    const { result } = renderHook(() => useStanceSystem(mockStances));
+
+    expect(result.current.isStanceSystemActive).toBe(false);
+  });
+
+  it('should return empty modifiers when feature flag is disabled', () => {
+    const { result } = renderHook(() => useStanceSystem(mockStances));
+
+    const modifiers = result.current.getStanceModifiers();
+    expect(modifiers).toEqual([]);
+  });
+
+  it('should not switch stances when feature flag is disabled', () => {
+    const { result } = renderHook(() => useStanceSystem(mockStances, 'iron_stance'));
+
+    act(() => {
+      result.current.switchStance('retribution_stance');
+    });
+
+    // Should still be on iron stance (switch didn't happen)
+    expect(result.current.currentStance?.id).toBe('iron_stance');
+    expect(result.current.cooldownRemaining).toBe(0);
   });
 });

@@ -245,23 +245,31 @@ export type StanceBehavior =
 /**
  * Individual effect within a stance
  * Stances can have multiple effects of different types
+ *
+ * This is a proper discriminated union - each variant has only the fields
+ * it needs, and TypeScript can narrow the type based on the 'type' field.
+ *
+ * Note: stat_modifier effects are simpler than PathAbility StatModifiers -
+ * they support applyTo but lack target and scaling fields.
  */
-export interface StanceEffect {
-  type: 'stat_modifier' | 'behavior_modifier' | 'damage_modifier';
-
-  // For stat modifiers
-  stat?: PathStatType;
-  flatBonus?: number;
-  percentBonus?: number;
-
-  // For behavior modifiers
-  behavior?: StanceBehavior;
-  value?: number;  // Percentage or chance (0-1)
-
-  // For damage modifiers
-  damageType?: 'incoming' | 'outgoing';
-  multiplier?: number;  // 0.9 = 10% reduction, 1.1 = 10% increase
-}
+export type StanceEffect =
+  | {
+      type: 'stat_modifier';
+      stat: PathStatType;
+      flatBonus?: number;
+      percentBonus?: number;
+      applyTo?: StatModifierApplyTo;  // 'base' (default), 'regen', or 'max'
+    }
+  | {
+      type: 'behavior_modifier';
+      behavior: StanceBehavior;
+      value: number;  // Percentage or chance (0-1)
+    }
+  | {
+      type: 'damage_modifier';
+      damageType: 'incoming' | 'outgoing';
+      multiplier: number;  // 0.9 = 10% reduction, 1.1 = 10% increase
+    };
 
 /**
  * Stance definition for passive paths

@@ -87,7 +87,7 @@ export const DUELIST_STANCES: PassiveStance[] = [
   {
     id: 'evasion_stance',
     name: 'Evasion Stance',
-    description: '+20% Speed, +15% dodge chance. Auto-block 15% of attacks.',
+    description: '+20% Speed. Auto-negate 15% of attacks.',
     icon: 'wind',
     effects: [
       { type: 'stat_modifier', stat: 'speed', percentBonus: 0.20 },
@@ -120,7 +120,7 @@ export const PROTECTOR_STANCES: PassiveStance[] = [
     description: '+50% HP regen, +10% max HP. Heal 3% of damage dealt.',
     icon: 'heart-pulse',
     effects: [
-      { type: 'stat_modifier', stat: 'health', percentBonus: 0.50 },
+      { type: 'stat_modifier', stat: 'health', percentBonus: 0.50, applyTo: 'regen' },
       { type: 'stat_modifier', stat: 'maxHealth', percentBonus: 0.10 },
       { type: 'behavior_modifier', behavior: 'lifesteal', value: 0.03 },
     ],
