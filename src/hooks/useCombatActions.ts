@@ -87,7 +87,7 @@ export function useCombatActions({
    * Schedule a counter-attack sequence (for riposte, reflect, etc.)
    * Shows player attack animation followed by damage on enemy.
    */
-  const scheduleCounterAttackSequence = (
+  const scheduleCounterAttackSequence = useCallback((
     damage: number,
     enemyHealth: number
   ) => {
@@ -114,7 +114,7 @@ export function useCombatActions({
     };
     const scaledDelay = Math.floor(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY / combatSpeed);
     scheduleCombatEvent(counterHitEvent, scaledDelay);
-  };
+  }, [combatSpeed, scheduleCombatEvent, setLastCombatEvent]);
 
   /**
    * Hero attack callback - called when hero's attack timer fills
@@ -1070,7 +1070,7 @@ export function useCombatActions({
         currentEnemy: enemy,
       };
     });
-  }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef, processTrigger, hasAbility, getStatusImmunities, getPassiveDamageReduction, incrementAbilityCounter, resetAbilityCounter]);
+  }, [setState, scheduleCombatEvent, combatSpeed, playerDeathProcessedRef, processTrigger, hasAbility, getStatusImmunities, getPassiveDamageReduction, incrementAbilityCounter, resetAbilityCounter, scheduleCounterAttackSequence]);
 
   /**
    * Active block - reduces incoming damage but costs mana
