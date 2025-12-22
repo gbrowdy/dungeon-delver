@@ -13,6 +13,11 @@ import {
   getEffectiveEnemyStat,
   applyTriggerResultToEnemy,
   applyShieldAbsorption,
+  processPathResourceOnKill,
+  getPathResourceAttackModifiers,
+  applyPathResourceAttackConsumption,
+  checkPathResourceExecute,
+  applyPathResourceExecute,
 } from '@/hooks/combatActionHelpers';
 import {
   COMBAT_MECHANICS,
@@ -175,6 +180,13 @@ export function useCombatActions({
         forceCrit = true;
       }
 
+      // Check path resource attack modifiers (e.g., Crusader max Zeal = guaranteed crit)
+      const pathResourceMods = getPathResourceAttackModifiers(updatedPlayer);
+      if (pathResourceMods.forceCrit) {
+        forceCrit = true;
+        logs.push(...pathResourceMods.logs);
+      }
+
       // Check Perfect Form momentum stacks BEFORE attack
       let perfectFormMultiplier = 1.0;
       if (hasAbility(updatedPlayer, 'rogue_duelist_perfect_form')) {
@@ -229,6 +241,15 @@ export function useCombatActions({
         logs.push(`⚡ Perfect Form bonus: +${bonusDamage} damage!`);
         // Reset momentum stacks after use
         playerAfterEffects = resetAbilityCounter(playerAfterEffects, 'perfect_form_momentum');
+      }
+
+      // Apply path resource damage multiplier (e.g., Crusader max Zeal = +50% damage)
+      if (pathResourceMods.bonusDamageMultiplier > 1) {
+        const bonusDamage = Math.floor(finalDamage * (pathResourceMods.bonusDamageMultiplier - 1));
+        finalDamage += bonusDamage;
+        logs.push(`⚡ Divine Judgment bonus: +${bonusDamage} damage!`);
+        // Consume the resource after the attack
+        applyPathResourceAttackConsumption(playerAfterEffects, pathResourceMods);
       }
 
       // Process path ability triggers: on_hit
@@ -340,6 +361,16 @@ export function useCombatActions({
       enemy.health -= finalDamage;
       logs.push(`You deal ${finalDamage} damage to ${enemy.name}`);
 
+      // Check for path resource execute (e.g., Assassin max Momentum = execute <20% HP)
+      if (enemy.health > 0) {
+        const executeResult = checkPathResourceExecute(playerAfterEffects, enemy);
+        if (executeResult.shouldExecute) {
+          logs.push(...executeResult.logs);
+          applyPathResourceExecute(playerAfterEffects, enemy, executeResult);
+          logs.push(`💀 ${enemy.name} executed instantly!`);
+        }
+      }
+
       // Log combat metrics for balance testing
       logCombatMetric('player_attack', {
         damage: finalDamage,
@@ -441,6 +472,11 @@ export function useCombatActions({
         });
         playerAfterEffects = onKillResult.player;
         logs = [...logs, ...onKillResult.logs];
+
+        // Process path resource on-kill effects (e.g., Berserker max Fury = full HP restore)
+        const pathResourceOnKillResult = processPathResourceOnKill(playerAfterEffects, logs);
+        playerAfterEffects = pathResourceOnKillResult.player;
+        logs = pathResourceOnKillResult.logs;
 
         // Process enemy death (rewards, level-up, items, on-kill effects)
         const deathResult = processEnemyDeath(

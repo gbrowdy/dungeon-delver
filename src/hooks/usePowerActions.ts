@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { GameState, Power } from '@/types/game';
+import { GameState, Power, PathResource } from '@/types/game';
 import { calculateStats } from '@/hooks/useCharacterSetup';
 import { CombatEvent } from '@/hooks/useBattleAnimation';
 import { COMBAT_BALANCE, POWER_BALANCE, COOLDOWN_FLOOR_SECONDS } from '@/constants/balance';
@@ -12,6 +12,8 @@ import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities, getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
 import { applyTriggerResultToEnemy } from '@/hooks/combatActionHelpers';
 import { processLevelUp } from '@/hooks/useRewardCalculation';
+import { isFeatureEnabled } from '@/constants/features';
+import { PATH_RESOURCES, getResourceDisplayName } from '@/data/pathResources';
 
 /**
  * Context for power activation - all state needed to execute a power
@@ -63,7 +65,26 @@ export function usePowerActions(context: PowerActivationContext) {
 
       // Get power modifiers from path abilities (e.g., Efficient Casting reduces mana cost)
       const powerMods = getPowerModifiers(prev.player);
-      const effectiveManaCost = Math.max(1, Math.floor(power.manaCost * (1 - powerMods.costReduction)));
+
+      // Check if using path resource system (Phase 6)
+      const pathId = prev.player.path?.pathId;
+      const usesPathResource = isFeatureEnabled('ACTIVE_RESOURCE_SYSTEM') &&
+        pathId !== undefined &&
+        pathId in PATH_RESOURCES;
+      const pathResource = usesPathResource ? prev.player.pathResource : undefined;
+
+      // Calculate effective cost with threshold reductions for path resources
+      let effectiveManaCost = Math.max(1, Math.floor(power.manaCost * (1 - powerMods.costReduction)));
+      if (usesPathResource && pathResource) {
+        // Apply threshold-based cost reduction
+        const thresholdReductions = pathResource.thresholds?.filter(
+          t => pathResource.current >= t.value && t.effect.type === 'cost_reduction'
+        ) ?? [];
+        for (const threshold of thresholdReductions) {
+          effectiveManaCost = Math.floor(effectiveManaCost * (1 - (threshold.effect.value ?? 0)));
+        }
+        effectiveManaCost = Math.max(1, effectiveManaCost);
+      }
 
       if (power.currentCooldown > 0) {
         // Power is on cooldown - provide feedback
@@ -72,13 +93,21 @@ export function usePowerActions(context: PowerActivationContext) {
         return prev;
       }
 
-      // Check resource cost (HP or Mana depending on Reckless Fury)
+      // Check resource cost (HP, Mana, or Path Resource)
       if (useHpForMana) {
         const hpCost = Math.floor(effectiveManaCost * 0.5);
         // Need at least hpCost + 1 HP to use power (can't kill yourself)
         if (prev.player.currentStats.health <= hpCost) {
           const newLog = `❌ Not enough HP for ${power.name} (need ${hpCost + 1} HP)`;
           safeCombatLogAdd(prev.combatLog, newLog, 'usePower:notEnoughHP');
+          return prev;
+        }
+      } else if (usesPathResource && pathResource) {
+        // Path resource check
+        if (pathResource.current < effectiveManaCost) {
+          const resourceName = getResourceDisplayName(pathResource.type);
+          const newLog = `❌ Not enough ${resourceName} for ${power.name} (${Math.floor(pathResource.current)}/${effectiveManaCost})`;
+          safeCombatLogAdd(prev.combatLog, newLog, 'usePower:notEnoughResource');
           return prev;
         }
       } else {
@@ -119,11 +148,31 @@ export function usePowerActions(context: PowerActivationContext) {
         }
       }
 
-      // Deduct resource cost (HP or Mana depending on Reckless Fury)
+      // Deduct resource cost (HP, Mana, or Path Resource)
       if (useHpForMana) {
         const hpCost = Math.floor(effectiveManaCost * 0.5);
         player.currentStats.health -= hpCost;
         logs.push(`💔 Reckless Fury: Paid ${hpCost} HP for ${power.name}`);
+      } else if (usesPathResource && player.pathResource) {
+        // Deduct from path resource
+        const resourceName = getResourceDisplayName(player.pathResource.type);
+        player.pathResource = {
+          ...player.pathResource,
+          current: player.pathResource.current - effectiveManaCost,
+        };
+        // Log cost reduction if applicable
+        if (powerMods.costReduction > 0 || (pathResource?.thresholds?.some(t => pathResource.current >= t.value && t.effect.type === 'cost_reduction'))) {
+          logs.push(`✨ Cost reduced: ${power.manaCost} → ${effectiveManaCost} ${resourceName}`);
+        }
+        // Generate resource on power use if applicable
+        const onPowerUseGen = player.pathResource.generation.onPowerUse ?? 0;
+        if (onPowerUseGen > 0) {
+          player.pathResource = {
+            ...player.pathResource,
+            current: Math.min(player.pathResource.max, player.pathResource.current + onPowerUseGen),
+          };
+          logs.push(`⚡ +${onPowerUseGen} ${resourceName} from power use`);
+        }
       } else {
         player.currentStats.mana -= effectiveManaCost;
         // Log mana cost reduction if applicable
@@ -187,11 +236,40 @@ export function usePowerActions(context: PowerActivationContext) {
       // Active paths: 2.0x power damage, Passive paths: 0.5x power damage
       const pathPlaystyleModifiers = getPathPlaystyleModifiers(player);
 
+      // Calculate path resource damage multiplier (Phase 6)
+      // e.g., Archmage gets +10% per charge, Berserker gets +30% at 80+ fury
+      let pathResourceDamageMultiplier = 1;
+      if (usesPathResource && player.pathResource) {
+        const damageEffects = player.pathResource.thresholds?.filter(
+          t => player.pathResource!.current >= t.value && t.effect.type === 'damage_bonus'
+        ) ?? [];
+
+        // Special case for arcane charges: stacking per charge
+        if (player.pathResource.type === 'arcane_charges') {
+          const chargeBonus = damageEffects.find(t => t.effect.value);
+          if (chargeBonus) {
+            pathResourceDamageMultiplier += (chargeBonus.effect.value ?? 0) * player.pathResource.current;
+            if (player.pathResource.current > 0) {
+              logs.push(`⚡ Arcane Charges: +${Math.floor((chargeBonus.effect.value ?? 0) * player.pathResource.current * 100)}% spell damage`);
+            }
+          }
+        } else {
+          // Standard: add all damage bonuses
+          for (const threshold of damageEffects) {
+            pathResourceDamageMultiplier += threshold.effect.value ?? 0;
+          }
+          if (pathResourceDamageMultiplier > 1) {
+            const resourceName = getResourceDisplayName(player.pathResource.type);
+            logs.push(`🔥 ${resourceName} bonus: +${Math.floor((pathResourceDamageMultiplier - 1) * 100)}% damage`);
+          }
+        }
+      }
+
       switch (power.effect) {
         case 'damage': {
           // Apply power bonus from path abilities (e.g., Lethal Momentum gives +50% power damage)
           const powerBonusMultiplier = 1 + powerMods.powerBonus;
-          let baseDamage = Math.floor(player.currentStats.power * power.value * comboMultiplier * powerBonusMultiplier * pathPlaystyleModifiers.powerDamageMultiplier);
+          let baseDamage = Math.floor(player.currentStats.power * power.value * comboMultiplier * powerBonusMultiplier * pathPlaystyleModifiers.powerDamageMultiplier * pathResourceDamageMultiplier);
 
           // Apply power damage multiplier from items (e.g., Archmage's Staff)
           if (powerCastResult.powerDamageMultiplier) {

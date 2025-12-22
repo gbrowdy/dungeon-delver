@@ -1,5 +1,5 @@
 import {
-  Player, Enemy, Item, StatusEffect, ActiveBuff, EnemyStatDebuff,
+  Player, Enemy, Item, StatusEffect, ActiveBuff, EnemyStatDebuff, Power,
 } from '@/types/game';
 import { calculateStats } from '@/hooks/useCharacterSetup';
 import { calculateRewards, processLevelUp, calculateItemDrop } from '@/hooks/useRewardCalculation';
@@ -14,6 +14,7 @@ import {
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getCritChance, getCritDamage, getDropQualityBonus } from '@/utils/fortuneUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
+import { isFeatureEnabled } from '@/constants/features';
 import type { TriggerResult } from '@/hooks/usePathAbilities';
 
 /**
@@ -433,5 +434,194 @@ export function applyTriggerResultToEnemy(
         enemy.statDebuffs!.push(debuff);
       }
     });
+  }
+}
+
+// ============================================================================
+// PATH RESOURCE SPECIAL EFFECTS (Phase 6)
+// ============================================================================
+
+/**
+ * Result of processing path resource on-kill effects
+ */
+export interface PathResourceOnKillResult {
+  player: Player;
+  logs: string[];
+}
+
+/**
+ * Process path resource special effects when killing an enemy
+ *
+ * Currently handles:
+ * - Berserker at 100 Fury: Full HP restore
+ *
+ * @param player - Current player state (will be mutated)
+ * @param logs - Combat logs to append to
+ * @returns Updated player and logs
+ */
+export function processPathResourceOnKill(
+  player: Player,
+  logs: string[]
+): PathResourceOnKillResult {
+  if (!isFeatureEnabled('ACTIVE_RESOURCE_SYSTEM') || !player.pathResource) {
+    return { player, logs };
+  }
+
+  const updatedLogs = [...logs];
+
+  // Berserker at max Fury (100): Full HP restore on kill
+  if (player.pathResource.type === 'fury' && player.pathResource.current >= 100) {
+    const healAmount = player.currentStats.maxHealth - player.currentStats.health;
+    if (healAmount > 0) {
+      player.currentStats.health = player.currentStats.maxHealth;
+      updatedLogs.push(`🔥 BLOODLUST! Max Fury kill restores full HP! (+${healAmount} HP)`);
+    }
+  }
+
+  return { player, logs: updatedLogs };
+}
+
+/**
+ * Result of checking path resource attack modifiers
+ */
+export interface PathResourceAttackModifiers {
+  forceCrit: boolean;
+  bonusDamageMultiplier: number;
+  consumeResource: boolean;
+  logs: string[];
+}
+
+/**
+ * Check for path resource special attack modifiers before an attack
+ *
+ * Currently handles:
+ * - Crusader at 10 Zeal: Guaranteed critical + 50% burst damage, consumes all Zeal
+ *
+ * @param player - Current player state
+ * @returns Attack modifiers to apply
+ */
+export function getPathResourceAttackModifiers(
+  player: Player
+): PathResourceAttackModifiers {
+  const result: PathResourceAttackModifiers = {
+    forceCrit: false,
+    bonusDamageMultiplier: 1,
+    consumeResource: false,
+    logs: [],
+  };
+
+  if (!isFeatureEnabled('ACTIVE_RESOURCE_SYSTEM') || !player.pathResource) {
+    return result;
+  }
+
+  // Crusader at max Zeal (10): Guaranteed crit + burst damage, consume all Zeal
+  if (player.pathResource.type === 'zeal' && player.pathResource.current >= 10) {
+    result.forceCrit = true;
+    result.bonusDamageMultiplier = 1.5; // 50% bonus damage
+    result.consumeResource = true;
+    result.logs.push(`✨ DIVINE JUDGMENT! Max Zeal unleashes guaranteed critical strike!`);
+  }
+
+  return result;
+}
+
+/**
+ * Apply path resource attack modifiers after an attack (consume resource, etc.)
+ *
+ * @param player - Player to modify (will be mutated)
+ * @param modifiers - The modifiers that were applied
+ */
+export function applyPathResourceAttackConsumption(
+  player: Player,
+  modifiers: PathResourceAttackModifiers
+): void {
+  if (!player.pathResource || !modifiers.consumeResource) return;
+
+  // Crusader: consume all Zeal after divine judgment
+  if (player.pathResource.type === 'zeal') {
+    player.pathResource = {
+      ...player.pathResource,
+      current: 0,
+    };
+  }
+}
+
+/**
+ * Result of checking path resource execute effects
+ */
+export interface PathResourceExecuteResult {
+  shouldExecute: boolean;
+  resetCooldowns: boolean;
+  logs: string[];
+}
+
+/**
+ * Check if path resource enables an execute on low HP enemies
+ *
+ * Currently handles:
+ * - Assassin at 5 Momentum: Execute enemies below 20% HP, reset all cooldowns
+ *
+ * @param player - Current player state
+ * @param enemy - Current enemy state
+ * @returns Execute result with whether to kill instantly and reset cooldowns
+ */
+export function checkPathResourceExecute(
+  player: Player,
+  enemy: Enemy
+): PathResourceExecuteResult {
+  const result: PathResourceExecuteResult = {
+    shouldExecute: false,
+    resetCooldowns: false,
+    logs: [],
+  };
+
+  if (!isFeatureEnabled('ACTIVE_RESOURCE_SYSTEM') || !player.pathResource) {
+    return result;
+  }
+
+  // Assassin at max Momentum (5): Execute enemies below 20% HP
+  if (player.pathResource.type === 'momentum' && player.pathResource.current >= 5) {
+    const hpPercent = enemy.health / enemy.maxHealth;
+    if (hpPercent <= 0.20 && hpPercent > 0) {
+      result.shouldExecute = true;
+      result.resetCooldowns = true;
+      result.logs.push(`⚡ DEATH MARK! Max Momentum executes low HP target!`);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Apply execute effect: kill enemy instantly and reset cooldowns
+ *
+ * @param player - Player to modify (will be mutated)
+ * @param enemy - Enemy to execute (will be mutated)
+ * @param executeResult - The execute result containing flags
+ */
+export function applyPathResourceExecute(
+  player: Player,
+  enemy: Enemy,
+  executeResult: PathResourceExecuteResult
+): void {
+  if (!executeResult.shouldExecute) return;
+
+  // Kill the enemy instantly
+  enemy.health = 0;
+
+  // Reset all power cooldowns
+  if (executeResult.resetCooldowns) {
+    player.powers = player.powers.map((power: Power) => ({
+      ...power,
+      currentCooldown: 0,
+    }));
+  }
+
+  // Consume all momentum
+  if (player.pathResource?.type === 'momentum') {
+    player.pathResource = {
+      ...player.pathResource,
+      current: 0,
+    };
   }
 }

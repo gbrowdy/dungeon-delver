@@ -22,7 +22,7 @@ export const FEATURE_FLAGS = {
   PASSIVE_STANCE_SYSTEM: true,
 
   // Phase 6: Active path unique resources
-  ACTIVE_RESOURCE_SYSTEM: false,
+  ACTIVE_RESOURCE_SYSTEM: true,
 } as const;
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;
