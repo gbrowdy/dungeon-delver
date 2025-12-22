@@ -231,7 +231,7 @@ describe('fortuneUtils', () => {
       });
 
       it('should return diminished scaling above 15 fortune', () => {
-        // After 15: +1% per fortune point instead of +2%
+        // After 15: +FORTUNE_DIMINISH_RATE (1%) per fortune point instead of +2%
         expect(getCritChance(20)).toBeCloseTo(0.40); // 35% + 5% = 40% (was 45% with linear)
         expect(getCritChance(25)).toBeCloseTo(0.45); // 35% + 10% = 45% (was 50%+ with linear)
         expect(getCritChance(30)).toBeCloseTo(0.50); // Capped at 50%
