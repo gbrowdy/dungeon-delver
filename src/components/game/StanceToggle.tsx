@@ -230,14 +230,13 @@ function formatStanceEffect(effect: PassiveStance['effects'][number]): string {
 }
 
 function formatStatName(stat: string): string {
+  // Note: No mana mappings - passive paths (which use stances) have no mana resource
   const names: Record<string, string> = {
     health: 'HP Regen',
     maxHealth: 'Max HP',
     power: 'Power',
     armor: 'Armor',
     speed: 'Speed',
-    mana: 'Mana Regen',
-    maxMana: 'Max Mana',
     fortune: 'Fortune',
   };
   return names[stat] ?? stat;
