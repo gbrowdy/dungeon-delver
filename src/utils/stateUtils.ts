@@ -11,6 +11,7 @@ import type {
   EnemyIntent,
   EnemyStatDebuff,
   AttackModifier,
+  PathResource,
 } from '@/types/game';
 
 /**
@@ -37,6 +38,7 @@ function cloneStatusEffects(effects: StatusEffect[]): StatusEffect[] {
     id: effect.id,
     type: effect.type,
     damage: effect.damage,
+    value: effect.value,
     remainingTurns: effect.remainingTurns,
     icon: effect.icon,
   }));
@@ -162,10 +164,28 @@ function cloneAttackModifiers(modifiers: AttackModifier[]): AttackModifier[] {
   return modifiers.map((mod) => ({
     id: mod.id,
     effect: mod.effect,
-    value: mod.value,
+    value: mod.effect === 'guaranteed_crit' ? undefined : mod.value,
     remainingAttacks: mod.remainingAttacks,
     sourceName: mod.sourceName,
-  }));
+  })) as AttackModifier[];
+}
+
+/**
+ * Deep clone a PathResource object
+ */
+function clonePathResource(resource: PathResource): PathResource {
+  return {
+    type: resource.type,
+    current: resource.current,
+    max: resource.max,
+    color: resource.color,
+    generation: { ...resource.generation },
+    decay: resource.decay ? { ...resource.decay } : undefined,
+    thresholds: resource.thresholds?.map(t => ({
+      value: t.value,
+      effect: { ...t.effect },
+    })),
+  };
 }
 
 /**
@@ -210,6 +230,8 @@ export function deepClonePlayer(player: Player): Player {
     attackModifiers: player.attackModifiers ? cloneAttackModifiers(player.attackModifiers) : undefined,
     // Class-based HP regen (e.g., Paladin has 0.5)
     hpRegen: player.hpRegen,
+    // Path resource (Phase 6: Active Path Resources)
+    pathResource: player.pathResource ? clonePathResource(player.pathResource) : undefined,
   };
 }
 

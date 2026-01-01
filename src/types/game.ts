@@ -89,6 +89,67 @@ export type AttackModifier =
   | (AttackModifierBase & { effect: 'bonus_damage'; value: number })
   | (AttackModifierBase & { effect: 'lifesteal'; value: number });
 
+// ============================================================================
+// PATH RESOURCE SYSTEM (Phase 6: Active Path Resources)
+// ============================================================================
+
+/**
+ * Resource types for active paths
+ * Each active path uses a unique resource instead of mana
+ */
+export type PathResourceType =
+  | 'mana'           // Default (pre-level 2 or passive paths)
+  | 'fury'           // Berserker (Warrior)
+  | 'arcane_charges' // Archmage (Mage)
+  | 'momentum'       // Assassin (Rogue)
+  | 'zeal';          // Crusader (Paladin)
+
+/**
+ * Threshold effect triggered when resource reaches a certain value.
+ * Uses discriminated union to enforce that:
+ * - cost_reduction and damage_bonus require a numeric value
+ * - special effects have no value (behavior defined elsewhere)
+ */
+export type ThresholdEffect =
+  | { type: 'cost_reduction'; value: number; description: string }
+  | { type: 'damage_bonus'; value: number; description: string }
+  | { type: 'special'; description: string };
+
+/**
+ * Path resource configuration
+ * Defines generation, decay, and threshold effects for active path resources
+ */
+export interface PathResource {
+  type: PathResourceType;
+  current: number;
+  max: number;
+  color: string;  // CSS color for UI
+
+  // Generation config
+  generation: {
+    onHit?: number;      // Gain per auto-attack
+    onDamaged?: number;  // Gain per hit taken
+    onCrit?: number;     // Gain per critical hit
+    onKill?: number;     // Gain per enemy killed
+    onPowerUse?: number; // Gain per power used
+    onBlock?: number;    // Gain per successful block
+    passive?: number;    // Gain per second
+  };
+
+  // Decay config
+  decay?: {
+    rate: number;        // Amount lost per tick
+    tickInterval: number; // Milliseconds between decay ticks
+    outOfCombatOnly?: boolean;
+  };
+
+  // Threshold effects
+  thresholds?: {
+    value: number;
+    effect: ThresholdEffect;
+  }[];
+}
+
 // Item special effects
 export type ItemEffectTrigger =
   | 'on_hit'
@@ -235,6 +296,7 @@ export interface Player {
   abilityCounters?: Record<string, number>;
   attackModifiers?: AttackModifier[]; // Temporary attack effects (shadow_dance, ambush)
   hpRegen?: number; // Base HP regen per second from class (e.g., Paladin has 0.5)
+  pathResource?: PathResource; // Active path resource (Phase 6) - replaces mana for active paths
 }
 
 export interface GameState {
