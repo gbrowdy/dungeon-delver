@@ -707,13 +707,20 @@ export function useCombatActions({
                 logs.push(`💔 Shield broken!`);
               }
 
-              // Only apply remaining damage to HP (skip if test invincible)
-              if (shieldResult.remainingDamage > 0 && !isTestInvincible()) {
-                player.currentStats.health -= shieldResult.remainingDamage;
+              // Apply remaining damage through centralized utility
+              if (shieldResult.remainingDamage > 0) {
+                const damageResult = applyDamageToPlayer(
+                  player,
+                  shieldResult.remainingDamage,
+                  'enemy_ability'
+                );
+                player = damageResult.player;
 
-                // Reset blur counter on damage taken (breaks consecutive dodge streak)
-                if (hasAbility(player, 'rogue_duelist_blur')) {
-                  player = resetAbilityCounter(player, 'blur_dodges');
+                if (damageResult.actualDamage > 0) {
+                  // Reset blur counter on damage taken (breaks consecutive dodge streak)
+                  if (hasAbility(player, 'rogue_duelist_blur')) {
+                    player = resetAbilityCounter(player, 'blur_dodges');
+                  }
                 }
               }
 
