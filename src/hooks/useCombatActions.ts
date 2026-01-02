@@ -42,6 +42,7 @@ import { isTestInvincible } from '@/hooks/useTestHooks';
 import { getResourceGeneration, pathUsesResourceSystem } from '@/hooks/usePathResource';
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
+import { applyDamageToPlayer } from '@/utils/damageUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities, getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
 import type { PauseReasonType } from '@/constants/enums';
@@ -904,28 +905,36 @@ export function useCombatActions({
             logs.push(`💔 Shield broken!`);
           }
 
-          // Only apply remaining damage to HP (skip if test invincible)
-          if (shieldResult.remainingDamage > 0 && !isTestInvincible()) {
-            player.currentStats.health -= shieldResult.remainingDamage;
-            logs.push(`${enemy.name} deals ${shieldResult.remainingDamage} damage to you`);
+          // Apply remaining damage through centralized utility
+          if (shieldResult.remainingDamage > 0) {
+            const damageResult = applyDamageToPlayer(
+              player,
+              shieldResult.remainingDamage,
+              'enemy_attack'
+            );
+            player = damageResult.player;
 
-            // Reset blur counter on damage taken (breaks consecutive dodge streak)
-            if (hasAbility(player, 'rogue_duelist_blur')) {
-              player = resetAbilityCounter(player, 'blur_dodges');
-            }
+            if (damageResult.actualDamage > 0) {
+              logs.push(`${enemy.name} deals ${damageResult.actualDamage} damage to you`);
 
-            // Generate path resource on damaged (Phase 6)
-            const damagedPathId = player.path?.pathId;
-            if (pathUsesResourceSystem(damagedPathId) && player.pathResource) {
-              const onDamagedGen = getResourceGeneration(damagedPathId, 'onDamaged');
-              if (onDamagedGen > 0) {
-                player.pathResource = {
-                  ...player.pathResource,
-                  current: Math.min(
-                    player.pathResource.max,
-                    player.pathResource.current + onDamagedGen
-                  ),
-                };
+              // Reset blur counter on damage taken (breaks consecutive dodge streak)
+              if (hasAbility(player, 'rogue_duelist_blur')) {
+                player = resetAbilityCounter(player, 'blur_dodges');
+              }
+
+              // Generate path resource on damaged (Phase 6)
+              const damagedPathId = player.path?.pathId;
+              if (pathUsesResourceSystem(damagedPathId) && player.pathResource) {
+                const onDamagedGen = getResourceGeneration(damagedPathId, 'onDamaged');
+                if (onDamagedGen > 0) {
+                  player.pathResource = {
+                    ...player.pathResource,
+                    current: Math.min(
+                      player.pathResource.max,
+                      player.pathResource.current + onDamagedGen
+                    ),
+                  };
+                }
               }
             }
           }
