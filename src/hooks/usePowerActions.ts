@@ -302,6 +302,7 @@ export function usePowerActions(context: PowerActivationContext) {
             // Multi-hit powers - divide damage across hits and proc on-hit effects
             const hitCount = power.id === 'fan-of-knives' ? 5 : 3;
             const damagePerHit = Math.floor(baseDamage / hitCount);
+            let hitsConnected = 0;
 
             for (let i = 0; i < hitCount; i++) {
               // Each hit can crit independently
@@ -325,11 +326,12 @@ export function usePowerActions(context: PowerActivationContext) {
               if (burstHitResult.blocked) {
                 logs.push(...burstHitResult.logs);
               } else {
-                totalDamage += hitDamage;
+                totalDamage += burstHitResult.actualDamage;
+                hitsConnected++;
               }
             }
-            if (totalDamage > 0) {
-              logs.push(`Dealt ${totalDamage} damage in ${hitCount} hits!`);
+            if (hitsConnected > 0) {
+              logs.push(`Dealt ${totalDamage} damage in ${hitsConnected} hits!`);
             }
           } else if (power.category === 'execute') {
             // Execute powers - bonus damage vs low HP enemies
@@ -397,7 +399,7 @@ export function usePowerActions(context: PowerActivationContext) {
           if (onComboResult.damageAmount && onComboResult.damageAmount > 0) {
             const comboDamageResult = applyDamageToEnemy(enemy, onComboResult.damageAmount, 'path_ability');
             enemy = comboDamageResult.enemy;
-            totalDamage += onComboResult.damageAmount;
+            totalDamage += comboDamageResult.actualDamage;
             logs.push(...onComboResult.logs);
 
             // Reset combo count after combo triggers

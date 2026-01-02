@@ -461,7 +461,7 @@ export function useCombatActions({
       if (onComboResult.damageAmount && onComboResult.damageAmount > 0) {
         const comboResult = applyDamageToEnemy(enemy, onComboResult.damageAmount, 'path_ability');
         enemy = comboResult.enemy;
-        finalDamage += onComboResult.damageAmount;
+        finalDamage += comboResult.actualDamage;
         logs.push(...onComboResult.logs);
 
         // Reset the appropriate counter after combo triggers
