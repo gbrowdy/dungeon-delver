@@ -12,7 +12,6 @@ import {
   processEnemyDeath,
   getEffectiveEnemyStat,
   applyTriggerResultToEnemy,
-  applyShieldAbsorption,
   processPathResourceOnKill,
   getPathResourceAttackModifiers,
   applyPathResourceAttackConsumption,
@@ -38,10 +37,10 @@ import { logPauseChange, logCombatEvent } from '@/utils/gameLogger';
 import { generateEventId } from '@/utils/eventId';
 import { isFeatureEnabled } from '@/constants/features';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
-import { isTestInvincible } from '@/hooks/useTestHooks';
 import { getResourceGeneration, pathUsesResourceSystem } from '@/hooks/usePathResource';
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
+import { applyDamageToPlayer } from '@/utils/damageUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities, getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
 import type { PauseReasonType } from '@/constants/enums';
@@ -448,11 +447,19 @@ export function useCombatActions({
         }
       }
 
-      // Thorned modifier: Reflect damage back to player (skip if test invincible)
-      if (enemy.modifiers?.some(m => m.id === 'thorned') && !isTestInvincible()) {
+      // Thorned modifier: Reflect damage back to player
+      if (enemy.modifiers?.some(m => m.id === 'thorned')) {
         const reflectDamage = Math.floor(finalDamage * 0.1);
-        playerAfterEffects.currentStats.health -= reflectDamage;
-        logs.push(`🌵 Thorns reflect ${reflectDamage} damage back to you!`);
+        const reflectResult = applyDamageToPlayer(
+          playerAfterEffects,
+          reflectDamage,
+          'reflect'
+        );
+        playerAfterEffects = reflectResult.player;
+
+        if (reflectResult.actualDamage > 0) {
+          logs.push(`🌵 Thorns reflect ${reflectResult.actualDamage} damage back to you!`);
+        }
       }
 
       // Decrement attack modifiers
@@ -694,22 +701,18 @@ export function useCombatActions({
                 }
               }
 
-              // Shield absorbs damage first
-              const shieldResult = applyShieldAbsorption(player, totalDamage);
-              player.shield = shieldResult.newShieldValue;
-              player.shieldRemainingDuration = shieldResult.newShieldDuration;
+              // Apply damage through centralized utility (handles shield absorption)
+              const damageResult = applyDamageToPlayer(player, totalDamage, 'enemy_ability');
+              player = damageResult.player;
 
-              if (shieldResult.shieldAbsorbed > 0) {
-                logs.push(`🛡️ Shield absorbs ${shieldResult.shieldAbsorbed} damage!`);
+              if (damageResult.shieldAbsorbed > 0) {
+                logs.push(`🛡️ Shield absorbs ${damageResult.shieldAbsorbed} damage!`);
               }
-              if (shieldResult.shieldBroken) {
+              if (damageResult.shieldBroken) {
                 logs.push(`💔 Shield broken!`);
               }
 
-              // Only apply remaining damage to HP (skip if test invincible)
-              if (shieldResult.remainingDamage > 0 && !isTestInvincible()) {
-                player.currentStats.health -= shieldResult.remainingDamage;
-
+              if (damageResult.actualDamage > 0) {
                 // Reset blur counter on damage taken (breaks consecutive dodge streak)
                 if (hasAbility(player, 'rogue_duelist_blur')) {
                   player = resetAbilityCounter(player, 'blur_dodges');
@@ -892,22 +895,20 @@ export function useCombatActions({
             }
           }
 
-          // Shield absorbs damage first
-          const shieldResult = applyShieldAbsorption(player, enemyDamage);
-          player.shield = shieldResult.newShieldValue;
-          player.shieldRemainingDuration = shieldResult.newShieldDuration;
+          // Apply damage through centralized utility (handles shield absorption)
+          const healthBeforeDamage = player.currentStats.health;
+          const damageResult = applyDamageToPlayer(player, enemyDamage, 'enemy_attack');
+          player = damageResult.player;
 
-          if (shieldResult.shieldAbsorbed > 0) {
-            logs.push(`🛡️ Shield absorbs ${shieldResult.shieldAbsorbed} damage!`);
+          if (damageResult.shieldAbsorbed > 0) {
+            logs.push(`🛡️ Shield absorbs ${damageResult.shieldAbsorbed} damage!`);
           }
-          if (shieldResult.shieldBroken) {
+          if (damageResult.shieldBroken) {
             logs.push(`💔 Shield broken!`);
           }
 
-          // Only apply remaining damage to HP (skip if test invincible)
-          if (shieldResult.remainingDamage > 0 && !isTestInvincible()) {
-            player.currentStats.health -= shieldResult.remainingDamage;
-            logs.push(`${enemy.name} deals ${shieldResult.remainingDamage} damage to you`);
+          if (damageResult.actualDamage > 0) {
+            logs.push(`${enemy.name} deals ${damageResult.actualDamage} damage to you`);
 
             // Reset blur counter on damage taken (breaks consecutive dodge streak)
             if (hasAbility(player, 'rogue_duelist_blur')) {
@@ -933,11 +934,11 @@ export function useCombatActions({
           // Log combat metrics for balance testing
           logCombatMetric('enemy_attack', {
             damage: enemyDamage,
-            shieldAbsorbed: shieldResult.shieldAbsorbed,
-            damageToHealth: shieldResult.remainingDamage,
+            shieldAbsorbed: damageResult.shieldAbsorbed,
+            damageToHealth: damageResult.actualDamage,
             enemyPower: enemy.power,
             playerArmor: player.currentStats.armor,
-            playerHealthBefore: player.currentStats.health + shieldResult.remainingDamage,
+            playerHealthBefore: healthBeforeDamage,
             playerHealthAfter: player.currentStats.health,
             isBlocking: player.isBlocking,
             floor: prev.currentFloor,

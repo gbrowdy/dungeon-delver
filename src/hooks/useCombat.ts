@@ -4,6 +4,7 @@ import { calculateEnemyIntent } from '@/data/enemies';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
+import { applyDamageToPlayer } from '@/utils/damageUtils';
 
 /**
  * Combat result from a single combat tick
@@ -104,16 +105,26 @@ export function useCombat() {
     player: Player,
     logs: string[]
   ): { player: Player; isStunned: boolean } => {
-    const updatedPlayer = deepClonePlayer(player);
+    let updatedPlayer = deepClonePlayer(player);
 
-    // Process status effects
-    updatedPlayer.statusEffects = player.statusEffects.map((effect: StatusEffect) => {
-      if (effect.type === 'poison' && effect.damage) {
-        updatedPlayer.currentStats.health -= effect.damage;
-        logs.push(`☠️ Poison deals ${effect.damage} damage!`);
+    // Collect poison effects before processing (to avoid iteration issues)
+    const poisonEffects = updatedPlayer.statusEffects.filter(
+      (effect: StatusEffect) => effect.type === 'poison' && effect.damage
+    );
+
+    // Process poison damage from all poison effects
+    for (const effect of poisonEffects) {
+      const poisonResult = applyDamageToPlayer(updatedPlayer, effect.damage!, 'status_effect');
+      updatedPlayer = poisonResult.player;
+      if (poisonResult.actualDamage > 0) {
+        logs.push(`☠️ Poison deals ${poisonResult.actualDamage} damage!`);
       }
-      return { ...effect, remainingTurns: effect.remainingTurns - 1 };
-    }).filter((effect: StatusEffect) => effect.remainingTurns > 0);
+    }
+
+    // Tick down and filter expired status effects
+    updatedPlayer.statusEffects = updatedPlayer.statusEffects
+      .map((effect: StatusEffect) => ({ ...effect, remainingTurns: effect.remainingTurns - 1 }))
+      .filter((effect: StatusEffect) => effect.remainingTurns > 0);
 
     // Check for stun
     const isStunned = updatedPlayer.statusEffects.some((e: StatusEffect) => e.type === 'stun');
@@ -192,9 +203,12 @@ export function useCombat() {
           if (player.isBlocking) {
             logs.push(`🛡️ Block reduced multi-hit damage!`);
           }
-          updatedPlayer.currentStats.health -= totalDamage;
-          logs.push(`${ability.icon} ${hits} hits deal ${totalDamage} total damage!`);
-          damage = totalDamage;
+          const multiHitResult = applyDamageToPlayer(updatedPlayer, totalDamage, 'enemy_ability');
+          updatedPlayer = multiHitResult.player;
+          if (multiHitResult.actualDamage > 0) {
+            logs.push(`${ability.icon} ${hits} hits deal ${multiHitResult.actualDamage} total damage!`);
+          }
+          damage = multiHitResult.actualDamage;
         }
         break;
       }

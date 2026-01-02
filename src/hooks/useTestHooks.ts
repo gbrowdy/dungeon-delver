@@ -74,10 +74,7 @@ export function useTestHooks({ state, setState }: UseTestHooksParams): void {
         ...prev,
         currentEnemy: {
           ...prev.currentEnemy,
-          currentStats: {
-            ...prev.currentEnemy.currentStats,
-            health: hp,
-          },
+          health: hp,
         },
       };
     });
@@ -126,10 +123,7 @@ export function useTestHooks({ state, setState }: UseTestHooksParams): void {
         ...prev,
         currentEnemy: {
           ...prev.currentEnemy,
-          currentStats: {
-            ...prev.currentEnemy.currentStats,
-            health: 1,
-          },
+          health: 1,
         },
       };
     });

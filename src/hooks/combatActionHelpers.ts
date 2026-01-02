@@ -13,6 +13,7 @@ import {
 } from '@/constants/enums';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getCritChance, getCritDamage, getDropQualityBonus } from '@/utils/fortuneUtils';
+import { applyDamageToPlayer } from '@/utils/damageUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { isFeatureEnabled } from '@/constants/features';
 import type { TriggerResult } from '@/hooks/usePathAbilities';
@@ -71,7 +72,7 @@ export function processTurnStartEffects(
   player: Player,
   logs: string[]
 ): TurnStartEffectsResult {
-  const updatedPlayer = deepClonePlayer(player);
+  let updatedPlayer = deepClonePlayer(player);
   const updatedLogs = [...logs];
 
   // Check if player is stunned
@@ -79,14 +80,24 @@ export function processTurnStartEffects(
     (e: StatusEffect) => e.type === STATUS_EFFECT_TYPE.STUN
   );
 
-  // Process status effects on player (poison, etc.) and tick down durations
-  updatedPlayer.statusEffects = updatedPlayer.statusEffects.map((effect: StatusEffect) => {
-    if (effect.type === STATUS_EFFECT_TYPE.POISON && effect.damage) {
-      updatedPlayer.currentStats.health -= effect.damage;
-      updatedLogs.push(`☠️ Poison deals ${effect.damage} damage!`);
+  // Collect poison effects before processing (to avoid iteration issues)
+  const poisonEffects = updatedPlayer.statusEffects.filter(
+    (effect: StatusEffect) => effect.type === STATUS_EFFECT_TYPE.POISON && effect.damage
+  );
+
+  // Process poison damage from all poison effects
+  for (const effect of poisonEffects) {
+    const poisonResult = applyDamageToPlayer(updatedPlayer, effect.damage!, 'status_effect');
+    updatedPlayer = poisonResult.player;
+    if (poisonResult.actualDamage > 0) {
+      updatedLogs.push(`☠️ Poison deals ${poisonResult.actualDamage} damage!`);
     }
-    return { ...effect, remainingTurns: effect.remainingTurns - 1 };
-  }).filter((effect: StatusEffect) => effect.remainingTurns > 0);
+  }
+
+  // Tick down and filter expired status effects
+  updatedPlayer.statusEffects = updatedPlayer.statusEffects
+    .map((effect: StatusEffect) => ({ ...effect, remainingTurns: effect.remainingTurns - 1 }))
+    .filter((effect: StatusEffect) => effect.remainingTurns > 0);
 
   // NOTE: Buff durations are now ticked time-based in useCombatTimers.ts (not turn-based)
   // Active buffs are still applied to stats below via calculateStats()
@@ -342,53 +353,6 @@ export function getEffectiveEnemyStat(
   });
 
   return Math.floor(baseValue * multiplier);
-}
-
-/**
- * Result of applying shield absorption
- */
-export interface ShieldAbsorptionResult {
-  remainingDamage: number;
-  shieldAbsorbed: number;
-  shieldBroken: boolean;
-  newShieldValue: number;
-  newShieldDuration: number;
-}
-
-/**
- * Apply shield absorption to incoming damage.
- * Shield absorbs damage before HP, and breaks when depleted.
- *
- * @param player - Current player state (with shield properties)
- * @param incomingDamage - Amount of damage to absorb
- * @returns Shield absorption result with remaining damage and updated shield state
- */
-export function applyShieldAbsorption(
-  player: Player,
-  incomingDamage: number
-): ShieldAbsorptionResult {
-  if (!player.shield || player.shield <= 0) {
-    return {
-      remainingDamage: incomingDamage,
-      shieldAbsorbed: 0,
-      shieldBroken: false,
-      newShieldValue: 0,
-      newShieldDuration: player.shieldRemainingDuration ?? 0,
-    };
-  }
-
-  const shieldAbsorbed = Math.min(player.shield, incomingDamage);
-  const newShieldValue = player.shield - shieldAbsorbed;
-  const remainingDamage = incomingDamage - shieldAbsorbed;
-  const shieldBroken = newShieldValue <= 0;
-
-  return {
-    remainingDamage,
-    shieldAbsorbed,
-    shieldBroken,
-    newShieldValue: shieldBroken ? 0 : newShieldValue,
-    newShieldDuration: shieldBroken ? 0 : (player.shieldRemainingDuration ?? 0),
-  };
 }
 
 /**

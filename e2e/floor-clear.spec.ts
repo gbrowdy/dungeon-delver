@@ -1,22 +1,48 @@
 // e2e/floor-clear.spec.ts
-// NOTE: This test is skipped because the invincibility test hook doesn't reliably
-// prevent all damage sources (status effects, multi-hit abilities, etc.).
-// The floor-complete UI is tested indirectly through other flows.
 
 import { test, expect } from '@playwright/test';
 import {
   gotoTestMode,
   startGameWithClass,
   waitForTestHooks,
+  setPlayerInvincible,
+  setEnemyOneHitKill,
 } from './helpers/test-utils';
 
 test.describe('Floor Clear Flow', () => {
-  // Skip this test - the invincibility hook doesn't cover all damage paths
-  // and the test is too flaky without it. The floor complete UI is still
-  // tested indirectly when players complete floors in manual testing.
-  test.skip('completing floor 1 shows floor complete screen without power choices', async ({ page }) => {
-    // This test requires a more robust game state manipulation approach
-    // to reliably clear floors without player death.
+  test('completing floor 1 shows floor complete screen', async ({ page }) => {
+    await gotoTestMode(page);
+    await startGameWithClass(page, 'WARRIOR');
+    await waitForTestHooks(page);
+
+    // Enable invincibility - now works reliably with centralized damage
+    await setPlayerInvincible(page, true);
+
+    // Floor 1 has 4 rooms - clear each one
+    const roomsOnFloor1 = 4;
+    for (let room = 1; room <= roomsOnFloor1; room++) {
+      // Wait for enemy to spawn (currentEnemy is not null)
+      await page.waitForFunction(
+        () => window.__TEST_HOOKS__?.getGameState()?.currentEnemy !== null,
+        { timeout: 10000 }
+      );
+
+      // Set enemy to 1 HP repeatedly until it dies
+      // This handles cases where the enemy heals or the timing is off
+      await page.waitForFunction(
+        () => {
+          const state = window.__TEST_HOOKS__?.getGameState();
+          if (!state?.currentEnemy) return true; // Enemy died
+          // Keep setting to 1 HP
+          window.__TEST_HOOKS__?.setEnemyOneHitKill();
+          return false;
+        },
+        { timeout: 15000, polling: 100 }
+      );
+    }
+
+    // Verify floor complete screen appears
+    await expect(page.getByText('FLOOR COMPLETE!')).toBeVisible({ timeout: 5000 });
   });
 
   test('floor indicator shows current floor', async ({ page }) => {
