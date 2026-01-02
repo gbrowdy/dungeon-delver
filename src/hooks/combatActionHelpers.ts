@@ -355,53 +355,6 @@ export function getEffectiveEnemyStat(
 }
 
 /**
- * Result of applying shield absorption
- */
-export interface ShieldAbsorptionResult {
-  remainingDamage: number;
-  shieldAbsorbed: number;
-  shieldBroken: boolean;
-  newShieldValue: number;
-  newShieldDuration: number;
-}
-
-/**
- * Apply shield absorption to incoming damage.
- * Shield absorbs damage before HP, and breaks when depleted.
- *
- * @param player - Current player state (with shield properties)
- * @param incomingDamage - Amount of damage to absorb
- * @returns Shield absorption result with remaining damage and updated shield state
- */
-export function applyShieldAbsorption(
-  player: Player,
-  incomingDamage: number
-): ShieldAbsorptionResult {
-  if (!player.shield || player.shield <= 0) {
-    return {
-      remainingDamage: incomingDamage,
-      shieldAbsorbed: 0,
-      shieldBroken: false,
-      newShieldValue: 0,
-      newShieldDuration: player.shieldRemainingDuration ?? 0,
-    };
-  }
-
-  const shieldAbsorbed = Math.min(player.shield, incomingDamage);
-  const newShieldValue = player.shield - shieldAbsorbed;
-  const remainingDamage = incomingDamage - shieldAbsorbed;
-  const shieldBroken = newShieldValue <= 0;
-
-  return {
-    remainingDamage,
-    shieldAbsorbed,
-    shieldBroken,
-    newShieldValue: shieldBroken ? 0 : newShieldValue,
-    newShieldDuration: shieldBroken ? 0 : (player.shieldRemainingDuration ?? 0),
-  };
-}
-
-/**
  * Apply path ability trigger results to an enemy.
  * Handles damage, reflected damage, status effects, and stat debuffs.
  * Debuffs with matching stat+source refresh duration instead of stacking.
