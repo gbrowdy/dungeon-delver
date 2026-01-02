@@ -5,6 +5,9 @@ import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
 import { applyDamageToPlayer } from '@/utils/damageUtils';
+import { applyStatusToPlayer } from '@/utils/statusEffectUtils';
+import { STATUS_EFFECT_TYPE } from '@/constants/enums';
+import { COMBAT_BALANCE } from '@/constants/balance';
 
 /**
  * Combat result from a single combat tick
@@ -172,7 +175,7 @@ export function useCombat() {
     logs: string[]
   ): { enemy: Enemy; player: Player; damage: number } => {
     const updatedEnemy = deepCloneEnemy(enemy);
-    const updatedPlayer = deepClonePlayer(player);
+    let updatedPlayer = deepClonePlayer(player);
     let damage = 0;
 
     logs.push(`${ability.icon} ${enemy.name} uses ${ability.name}!`);
@@ -213,30 +216,28 @@ export function useCombat() {
         break;
       }
       case 'poison': {
-        const poisonDamage = Math.floor(ability.value * (1 + (floor - 1) * 0.1));
-        updatedPlayer.statusEffects.push({
-          id: `poison-${Date.now()}`,
-          type: 'poison',
-          damage: poisonDamage,
-          remainingTurns: 3,
-          icon: 'status-poison',
-        });
-        logs.push(`☠️ You are poisoned! (${poisonDamage} damage/turn for 3 turns)`);
+        const poisonDamage = Math.floor(ability.value * (1 + (floor - 1) * COMBAT_BALANCE.POISON_SCALING_PER_FLOOR));
+        const immunities = getStatusImmunities(player);
+        const poisonResult = applyStatusToPlayer(
+          updatedPlayer,
+          { type: STATUS_EFFECT_TYPE.POISON, damage: poisonDamage },
+          'enemy_ability',
+          immunities
+        );
+        updatedPlayer = poisonResult.player;
+        logs.push(...poisonResult.logs);
         break;
       }
       case 'stun': {
         const immunities = getStatusImmunities(player);
-        if (immunities.includes('stun')) {
-          logs.push(`🛡️ Immovable Object! You resist the stun!`);
-        } else {
-          updatedPlayer.statusEffects.push({
-            id: `stun-${Date.now()}`,
-            type: 'stun',
-            remainingTurns: ability.value,
-            icon: 'status-stun',
-          });
-          logs.push(`💫 You are stunned for ${ability.value} turn(s)!`);
-        }
+        const stunResult = applyStatusToPlayer(
+          updatedPlayer,
+          { type: STATUS_EFFECT_TYPE.STUN, duration: ability.value },
+          'enemy_ability',
+          immunities
+        );
+        updatedPlayer = stunResult.player;
+        logs.push(...stunResult.logs);
         break;
       }
       case 'heal': {
