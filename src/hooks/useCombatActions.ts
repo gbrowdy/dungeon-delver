@@ -449,11 +449,19 @@ export function useCombatActions({
         }
       }
 
-      // Thorned modifier: Reflect damage back to player (skip if test invincible)
-      if (enemy.modifiers?.some(m => m.id === 'thorned') && !isTestInvincible()) {
+      // Thorned modifier: Reflect damage back to player
+      if (enemy.modifiers?.some(m => m.id === 'thorned')) {
         const reflectDamage = Math.floor(finalDamage * 0.1);
-        playerAfterEffects.currentStats.health -= reflectDamage;
-        logs.push(`🌵 Thorns reflect ${reflectDamage} damage back to you!`);
+        const reflectResult = applyDamageToPlayer(
+          playerAfterEffects,
+          reflectDamage,
+          'reflect'
+        );
+        playerAfterEffects = reflectResult.player;
+
+        if (reflectResult.actualDamage > 0) {
+          logs.push(`🌵 Thorns reflect ${reflectResult.actualDamage} damage back to you!`);
+        }
       }
 
       // Decrement attack modifiers
