@@ -311,9 +311,15 @@ export function usePowerActions(context: PowerActivationContext) {
 
               const burstHitResult = applyDamageToEnemy(enemy, hitDamage, 'power');
               enemy = burstHitResult.enemy;
-              totalDamage += hitDamage;
+              if (burstHitResult.blocked) {
+                logs.push(...burstHitResult.logs);
+              } else {
+                totalDamage += hitDamage;
+              }
             }
-            logs.push(`Dealt ${totalDamage} damage in ${hitCount} hits!`);
+            if (totalDamage > 0) {
+              logs.push(`Dealt ${totalDamage} damage in ${hitCount} hits!`);
+            }
           } else if (power.category === 'execute') {
             // Execute powers - bonus damage vs low HP enemies
             const hpPercent = enemy.health / enemy.maxHealth;
@@ -330,10 +336,14 @@ export function usePowerActions(context: PowerActivationContext) {
               logs.push(`💀 EXECUTE! Enemy below ${Math.floor(executeThreshold * 100)}% HP!`);
             }
 
-            const executeResult = applyDamageToEnemy(enemy, baseDamage, 'power');
-            enemy = executeResult.enemy;
-            totalDamage = baseDamage;
-            logs.push(`Dealt ${totalDamage} damage!`);
+            const executeDamageResult = applyDamageToEnemy(enemy, baseDamage, 'power');
+            enemy = executeDamageResult.enemy;
+            if (executeDamageResult.blocked) {
+              logs.push(...executeDamageResult.logs);
+            } else {
+              totalDamage = baseDamage;
+              logs.push(`Dealt ${totalDamage} damage!`);
+            }
           } else if (power.category === 'sacrifice') {
             // Sacrifice powers - spend HP for damage
             const hpCostPercent = power.id === 'reckless-swing' ? 0.15 : 0.20;
@@ -344,14 +354,22 @@ export function usePowerActions(context: PowerActivationContext) {
 
             const sacrificeDamageResult = applyDamageToEnemy(enemy, baseDamage, 'power');
             enemy = sacrificeDamageResult.enemy;
-            totalDamage = baseDamage;
-            logs.push(`Dealt ${totalDamage} damage!`);
+            if (sacrificeDamageResult.blocked) {
+              logs.push(...sacrificeDamageResult.logs);
+            } else {
+              totalDamage = baseDamage;
+              logs.push(`Dealt ${totalDamage} damage!`);
+            }
           } else {
             // Strike and other damage powers
             const strikeDamageResult = applyDamageToEnemy(enemy, baseDamage, 'power');
             enemy = strikeDamageResult.enemy;
-            totalDamage = baseDamage;
-            logs.push(`Dealt ${totalDamage} magical damage!`);
+            if (strikeDamageResult.blocked) {
+              logs.push(...strikeDamageResult.logs);
+            } else {
+              totalDamage = baseDamage;
+              logs.push(`Dealt ${totalDamage} magical damage!`);
+            }
           }
 
           // Process path ability triggers: on_combo (for power-based combos like Elemental Convergence)
@@ -510,7 +528,11 @@ export function usePowerActions(context: PowerActivationContext) {
               const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
               const frostResult = applyDamageToEnemy(enemy, damage, 'power');
               enemy = frostResult.enemy;
-              logs.push(`Dealt ${damage} frost damage!`);
+              if (frostResult.blocked) {
+                logs.push(...frostResult.logs);
+              } else {
+                logs.push(`Dealt ${damage} frost damage!`);
+              }
 
               // Apply slow effect
               enemy.statusEffects = enemy.statusEffects || [];
@@ -528,7 +550,11 @@ export function usePowerActions(context: PowerActivationContext) {
               const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
               const stunBlowResult = applyDamageToEnemy(enemy, damage, 'power');
               enemy = stunBlowResult.enemy;
-              logs.push(`Dealt ${damage} damage!`);
+              if (stunBlowResult.blocked) {
+                logs.push(...stunBlowResult.logs);
+              } else {
+                logs.push(`Dealt ${damage} damage!`);
+              }
 
               // 40% chance to stun
               const stunChance = 0.4;

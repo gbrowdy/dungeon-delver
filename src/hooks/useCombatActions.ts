@@ -369,8 +369,12 @@ export function useCombatActions({
       // Apply damage to enemy
       const mainDamageResult = applyDamageToEnemy(enemy, finalDamage, 'hero_attack');
       enemy = mainDamageResult.enemy;
-      // Use custom log message for hero attack (more informative than generic)
-      logs.push(`You deal ${finalDamage} damage to ${enemy.name}`);
+      // Include centralized logs (shield blocks, etc.) but use custom hero attack format
+      if (mainDamageResult.blocked) {
+        logs.push(...mainDamageResult.logs);
+      } else {
+        logs.push(`You deal ${finalDamage} damage to ${enemy.name}`);
+      }
 
       // Generate path resource on hit (Phase 6)
       const pathId = playerAfterEffects.path?.pathId;
