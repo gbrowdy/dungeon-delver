@@ -93,7 +93,7 @@ export function FloorCompleteScreen({
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-2 sm:p-4 relative overflow-hidden">
+    <div data-testid="floor-complete" className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-2 sm:p-4 relative overflow-hidden">
       {/* Dark atmospheric background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-amber-900/10 rounded-full blur-[120px]" />
@@ -235,7 +235,7 @@ export function FloorCompleteScreen({
           <div className="space-y-4">
             {/* Power Choice */}
             {availablePowers.length > 0 && (
-              <div className="pixel-panel rounded-lg p-4 border-2 border-primary/30">
+              <div data-testid="power-choices" className="pixel-panel rounded-lg p-4 border-2 border-primary/30">
                 <h3 className="pixel-text text-pixel-sm text-primary mb-3 flex items-center gap-2">
                   <PixelIcon type={UI_ICONS.SPARKLE} size={16} /> Choose a Power!
                 </h3>
@@ -381,6 +381,7 @@ export function FloorCompleteScreen({
             <PixelIcon type={UI_ICONS.HAMMER} size={16} /> Visit Shop
           </Button>
           <Button
+            data-testid="continue-button"
             onClick={onContinue}
             className="pixel-button text-pixel-sm px-8 sm:px-12 py-3 sm:py-4 bg-orange-600 hover:bg-orange-500 uppercase"
           >

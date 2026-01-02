@@ -30,7 +30,7 @@ export function CombatHeader() {
       <div className="flex items-center justify-between gap-1 xs:gap-2">
         {/* Left side: Floor info */}
         <div className="min-w-0">
-          <h2 className="pixel-text text-pixel-sm xs:text-pixel-base text-primary font-bold whitespace-nowrap">
+          <h2 data-testid="floor-indicator" className="pixel-text text-pixel-sm xs:text-pixel-base text-primary font-bold whitespace-nowrap">
             Floor {currentFloor}
           </h2>
           <div className="flex items-center gap-1 xs:gap-2 pixel-text text-pixel-2xs xs:text-pixel-xs">
@@ -97,7 +97,7 @@ interface EnemyProgressIndicatorsProps {
 
 function EnemyProgressIndicators({ total, defeated, hasCurrent }: EnemyProgressIndicatorsProps) {
   return (
-    <div className="flex gap-0.5" role="img" aria-label={`${defeated} of ${total} enemies defeated`}>
+    <div data-testid="room-indicator" className="flex gap-0.5" role="img" aria-label={`${defeated} of ${total} enemies defeated`}>
       {Array.from({ length: total }).map((_, i) => (
         <div
           key={i}

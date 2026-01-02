@@ -137,6 +137,7 @@ export function PowerButton({ power, currentMana, effectiveManaCost, onUse, disa
       <Tooltip>
         <TooltipTrigger asChild>
           <button
+            data-testid={`power-${power.id}`}
             onClick={onUse}
             disabled={!canUse}
             className={cn(
@@ -166,7 +167,11 @@ export function PowerButton({ power, currentMana, effectiveManaCost, onUse, disa
               <PowerIcon className="w-6 h-6 xs:w-7 xs:h-7" />
             </div>
             <span className={cn("pixel-text text-pixel-2xs font-medium relative z-10 text-slate-200 truncate max-w-full", isOnCooldown && "opacity-50")}>{power.name}</span>
-            <span className={cn("pixel-text text-pixel-2xs relative z-10", isOnCooldown ? "text-slate-400" : hasReduction ? "text-emerald-400" : "text-mana")} aria-hidden="true">
+            <span
+              data-testid={isOnCooldown ? `power-cooldown-${power.id}` : undefined}
+              className={cn("pixel-text text-pixel-2xs relative z-10", isOnCooldown ? "text-slate-400" : hasReduction ? "text-emerald-400" : "text-mana")}
+              aria-hidden="true"
+            >
               {isOnCooldown ? `${Math.ceil(power.currentCooldown)}s` : `${manaCost} MP`}
             </span>
           </button>

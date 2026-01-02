@@ -27,7 +27,7 @@ export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitS
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+    <div data-testid="death-screen" className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
       {/* Dark atmospheric background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-red-900/10 rounded-full blur-[120px]" />
@@ -56,7 +56,7 @@ export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitS
             <PixelIcon type="ui-skull" size={48} className="skull-gradient" />
           </div>
 
-          <p className="pixel-text text-pixel-xs sm:text-pixel-sm text-slate-400 tracking-wider">
+          <p data-testid="death-floor-display" className="pixel-text text-pixel-xs sm:text-pixel-sm text-slate-400 tracking-wider">
             Floor {currentFloor}
           </p>
 
@@ -105,6 +105,7 @@ export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitS
           {/* Retry and Abandon Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
+              data-testid="retry-button"
               onClick={onRetry}
               size="lg"
               className={cn(

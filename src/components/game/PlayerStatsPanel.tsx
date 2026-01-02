@@ -104,6 +104,7 @@ function PlayerInfo({ name, playerClass, level }: PlayerInfoProps) {
       </div>
       <div>
         <div
+          data-testid="player-path-name"
           className="pixel-text text-pixel-xs xs:text-pixel-sm sm:text-pixel-base font-bold"
           style={{ color: classColor.primary }}
         >

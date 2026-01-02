@@ -84,7 +84,7 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 sm:p-6">
+    <div data-testid="path-selection" className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 sm:p-6">
       {/* Background effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-purple-900/5 rounded-full blur-[120px]" />
@@ -327,6 +327,7 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
         {/* Confirm button */}
         <div className="text-center pt-2 sm:pt-4">
           <Button
+            data-testid="path-confirm-button"
             ref={confirmButtonRef}
             onClick={handleSelect}
             disabled={!selectedPath}

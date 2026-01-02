@@ -150,7 +150,7 @@ function ManaBar({ current, max }: ManaBarProps) {
             style={{ width: `${percentage}%` }}
           />
         </div>
-        <span className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">
+        <span data-testid="mana-display" className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">
           {Math.floor(current)}/{max}
         </span>
       </div>

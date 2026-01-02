@@ -30,6 +30,7 @@ import {
   enhanceItem,
 } from '@/utils/enhancementUtils';
 import { getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
+import { useTestHooks } from '@/hooks/useTestHooks';
 
 // Base combat tick interval (ms) - modified by speed multiplier
 // At 1x: 2500ms per combat round (gives time to see intent + animations)
@@ -79,6 +80,9 @@ export function useGameState() {
 
   // Use the shop state hook
   const shopStateManager = useShopState();
+
+  // Mount test hooks for E2E testing (only active when ?testMode=true)
+  useTestHooks({ state, setState });
 
   // Use the extracted character setup hook (needs shopStateManager)
   const { selectClass: selectClassBase } = useCharacterSetup(setState);
