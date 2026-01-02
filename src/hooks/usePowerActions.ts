@@ -225,6 +225,17 @@ export function usePowerActions(context: PowerActivationContext) {
       });
       player.currentStats = pathOnPowerResult.player.currentStats;
       logs.push(...pathOnPowerResult.logs);
+
+      // Apply trigger damage to enemy (on_power_use abilities, etc.)
+      if (pathOnPowerResult.damageAmount) {
+        const triggerDmgResult = applyDamageToEnemy(enemy, pathOnPowerResult.damageAmount, 'path_ability');
+        enemy = triggerDmgResult.enemy;
+      }
+      if (pathOnPowerResult.reflectedDamage) {
+        const reflectDmgResult = applyDamageToEnemy(enemy, pathOnPowerResult.reflectedDamage, 'reflect');
+        enemy = reflectDmgResult.enemy;
+        logs.push(...reflectDmgResult.logs);
+      }
       applyTriggerResultToEnemy(enemy, pathOnPowerResult);
 
       // Shadow Dance: Next 3 attacks after using a power are guaranteed critical hits
@@ -595,7 +606,18 @@ export function usePowerActions(context: PowerActivationContext) {
                 );
               }
 
-              // Apply results to enemy
+              // Apply trigger damage to enemy (on_status_inflict abilities, etc.)
+              if (onStatusInflictResult.damageAmount) {
+                const triggerDmgResult = applyDamageToEnemy(enemy, onStatusInflictResult.damageAmount, 'path_ability');
+                enemy = triggerDmgResult.enemy;
+              }
+              if (onStatusInflictResult.reflectedDamage) {
+                const reflectDmgResult = applyDamageToEnemy(enemy, onStatusInflictResult.reflectedDamage, 'reflect');
+                enemy = reflectDmgResult.enemy;
+                logs.push(...reflectDmgResult.logs);
+              }
+
+              // Apply results to enemy (status effects, debuffs)
               applyTriggerResultToEnemy(enemy, onStatusInflictResult);
 
               // Only add logs if there were actual effects

@@ -158,6 +158,17 @@ export function useCombatActions({
       });
       Object.assign(updatedPlayer, { currentStats: pathTurnStartResult.player.currentStats });
       logs.push(...pathTurnStartResult.logs);
+
+      // Apply trigger damage to enemy (turn_start abilities, etc.)
+      if (pathTurnStartResult.damageAmount) {
+        const triggerDmgResult = applyDamageToEnemy(enemy, pathTurnStartResult.damageAmount, 'path_ability');
+        enemy = triggerDmgResult.enemy;
+      }
+      if (pathTurnStartResult.reflectedDamage) {
+        const reflectDmgResult = applyDamageToEnemy(enemy, pathTurnStartResult.reflectedDamage, 'reflect');
+        enemy = reflectDmgResult.enemy;
+        logs.push(...reflectDmgResult.logs);
+      }
       applyTriggerResultToEnemy(enemy, pathTurnStartResult);
 
       // NOTE: Power cooldowns are now time-based, not turn-based
@@ -703,6 +714,17 @@ export function useCombatActions({
                 });
                 player.currentStats = pathOnBlockResult.player.currentStats;
                 logs.push(...pathOnBlockResult.logs);
+
+                // Apply trigger damage to enemy (block reflect, etc.)
+                if (pathOnBlockResult.damageAmount) {
+                  const triggerDmgResult = applyDamageToEnemy(enemy, pathOnBlockResult.damageAmount, 'path_ability');
+                  enemy = triggerDmgResult.enemy;
+                }
+                if (pathOnBlockResult.reflectedDamage) {
+                  const reflectDmgResult = applyDamageToEnemy(enemy, pathOnBlockResult.reflectedDamage, 'reflect');
+                  enemy = reflectDmgResult.enemy;
+                  logs.push(...reflectDmgResult.logs);
+                }
                 applyTriggerResultToEnemy(enemy, pathOnBlockResult);
               }
 
@@ -834,9 +856,20 @@ export function useCombatActions({
           });
           player.currentStats = pathOnDodgeResult.player.currentStats;
           logs.push(...pathOnDodgeResult.logs);
+
+          // Apply trigger damage to enemy (Riposte counter-attack, etc.)
+          if (pathOnDodgeResult.damageAmount) {
+            const triggerDmgResult = applyDamageToEnemy(enemy, pathOnDodgeResult.damageAmount, 'path_ability');
+            enemy = triggerDmgResult.enemy;
+          }
+          if (pathOnDodgeResult.reflectedDamage) {
+            const reflectDmgResult = applyDamageToEnemy(enemy, pathOnDodgeResult.reflectedDamage, 'reflect');
+            enemy = reflectDmgResult.enemy;
+            logs.push(...reflectDmgResult.logs);
+          }
           applyTriggerResultToEnemy(enemy, pathOnDodgeResult);
 
-          // Schedule counter-attack animation and damage for riposte
+          // Schedule counter-attack animation for riposte
           scheduleCounterAttackSequence(pathOnDodgeResult.damageAmount, enemy.health);
 
           // Blur: Track consecutive dodges for shield
@@ -878,6 +911,17 @@ export function useCombatActions({
             });
             player.currentStats = pathOnBlockResult.player.currentStats;
             logs.push(...pathOnBlockResult.logs);
+
+            // Apply trigger damage to enemy (block reflect, etc.)
+            if (pathOnBlockResult.damageAmount) {
+              const triggerDmgResult = applyDamageToEnemy(enemy, pathOnBlockResult.damageAmount, 'path_ability');
+              enemy = triggerDmgResult.enemy;
+            }
+            if (pathOnBlockResult.reflectedDamage) {
+              const reflectDmgResult = applyDamageToEnemy(enemy, pathOnBlockResult.reflectedDamage, 'reflect');
+              enemy = reflectDmgResult.enemy;
+              logs.push(...reflectDmgResult.logs);
+            }
             applyTriggerResultToEnemy(enemy, pathOnBlockResult);
 
             // Generate path resource on block (Phase 6)
