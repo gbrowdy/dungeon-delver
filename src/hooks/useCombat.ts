@@ -105,18 +105,19 @@ export function useCombat() {
     player: Player,
     logs: string[]
   ): { player: Player; isStunned: boolean } => {
-    const updatedPlayer = deepClonePlayer(player);
+    let updatedPlayer = deepClonePlayer(player);
+
+    // Collect poison effects before processing (to avoid iteration issues)
+    const poisonEffects = updatedPlayer.statusEffects.filter(
+      (effect: StatusEffect) => effect.type === 'poison' && effect.damage
+    );
 
     // Process poison damage from all poison effects
-    for (const effect of updatedPlayer.statusEffects) {
-      if (effect.type === 'poison' && effect.damage) {
-        const poisonResult = applyDamageToPlayer(updatedPlayer, effect.damage, 'status_effect');
-        updatedPlayer.currentStats = poisonResult.player.currentStats;
-        updatedPlayer.shield = poisonResult.player.shield;
-        updatedPlayer.shieldRemainingDuration = poisonResult.player.shieldRemainingDuration;
-        if (poisonResult.actualDamage > 0) {
-          logs.push(`☠️ Poison deals ${poisonResult.actualDamage} damage!`);
-        }
+    for (const effect of poisonEffects) {
+      const poisonResult = applyDamageToPlayer(updatedPlayer, effect.damage!, 'status_effect');
+      updatedPlayer = poisonResult.player;
+      if (poisonResult.actualDamage > 0) {
+        logs.push(`☠️ Poison deals ${poisonResult.actualDamage} damage!`);
       }
     }
 

@@ -72,7 +72,7 @@ export function processTurnStartEffects(
   player: Player,
   logs: string[]
 ): TurnStartEffectsResult {
-  const updatedPlayer = deepClonePlayer(player);
+  let updatedPlayer = deepClonePlayer(player);
   const updatedLogs = [...logs];
 
   // Check if player is stunned
@@ -80,16 +80,17 @@ export function processTurnStartEffects(
     (e: StatusEffect) => e.type === STATUS_EFFECT_TYPE.STUN
   );
 
+  // Collect poison effects before processing (to avoid iteration issues)
+  const poisonEffects = updatedPlayer.statusEffects.filter(
+    (effect: StatusEffect) => effect.type === STATUS_EFFECT_TYPE.POISON && effect.damage
+  );
+
   // Process poison damage from all poison effects
-  for (const effect of updatedPlayer.statusEffects) {
-    if (effect.type === STATUS_EFFECT_TYPE.POISON && effect.damage) {
-      const poisonResult = applyDamageToPlayer(updatedPlayer, effect.damage, 'status_effect');
-      updatedPlayer.currentStats = poisonResult.player.currentStats;
-      updatedPlayer.shield = poisonResult.player.shield;
-      updatedPlayer.shieldRemainingDuration = poisonResult.player.shieldRemainingDuration;
-      if (poisonResult.actualDamage > 0) {
-        updatedLogs.push(`☠️ Poison deals ${poisonResult.actualDamage} damage!`);
-      }
+  for (const effect of poisonEffects) {
+    const poisonResult = applyDamageToPlayer(updatedPlayer, effect.damage!, 'status_effect');
+    updatedPlayer = poisonResult.player;
+    if (poisonResult.actualDamage > 0) {
+      updatedLogs.push(`☠️ Poison deals ${poisonResult.actualDamage} damage!`);
     }
   }
 
