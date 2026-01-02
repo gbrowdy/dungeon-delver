@@ -12,7 +12,6 @@ import {
   processEnemyDeath,
   getEffectiveEnemyStat,
   applyTriggerResultToEnemy,
-  applyShieldAbsorption,
   processPathResourceOnKill,
   getPathResourceAttackModifiers,
   applyPathResourceAttackConsumption,
@@ -702,32 +701,21 @@ export function useCombatActions({
                 }
               }
 
-              // Shield absorbs damage first
-              const shieldResult = applyShieldAbsorption(player, totalDamage);
-              player.shield = shieldResult.newShieldValue;
-              player.shieldRemainingDuration = shieldResult.newShieldDuration;
+              // Apply damage through centralized utility (handles shield absorption)
+              const damageResult = applyDamageToPlayer(player, totalDamage, 'enemy_ability');
+              player = damageResult.player;
 
-              if (shieldResult.shieldAbsorbed > 0) {
-                logs.push(`🛡️ Shield absorbs ${shieldResult.shieldAbsorbed} damage!`);
+              if (damageResult.shieldAbsorbed > 0) {
+                logs.push(`🛡️ Shield absorbs ${damageResult.shieldAbsorbed} damage!`);
               }
-              if (shieldResult.shieldBroken) {
+              if (damageResult.shieldBroken) {
                 logs.push(`💔 Shield broken!`);
               }
 
-              // Apply remaining damage through centralized utility
-              if (shieldResult.remainingDamage > 0) {
-                const damageResult = applyDamageToPlayer(
-                  player,
-                  shieldResult.remainingDamage,
-                  'enemy_ability'
-                );
-                player = damageResult.player;
-
-                if (damageResult.actualDamage > 0) {
-                  // Reset blur counter on damage taken (breaks consecutive dodge streak)
-                  if (hasAbility(player, 'rogue_duelist_blur')) {
-                    player = resetAbilityCounter(player, 'blur_dodges');
-                  }
+              if (damageResult.actualDamage > 0) {
+                // Reset blur counter on damage taken (breaks consecutive dodge streak)
+                if (hasAbility(player, 'rogue_duelist_blur')) {
+                  player = resetAbilityCounter(player, 'blur_dodges');
                 }
               }
 
@@ -907,48 +895,38 @@ export function useCombatActions({
             }
           }
 
-          // Shield absorbs damage first
-          const shieldResult = applyShieldAbsorption(player, enemyDamage);
-          player.shield = shieldResult.newShieldValue;
-          player.shieldRemainingDuration = shieldResult.newShieldDuration;
+          // Apply damage through centralized utility (handles shield absorption)
+          const healthBeforeDamage = player.currentStats.health;
+          const damageResult = applyDamageToPlayer(player, enemyDamage, 'enemy_attack');
+          player = damageResult.player;
 
-          if (shieldResult.shieldAbsorbed > 0) {
-            logs.push(`🛡️ Shield absorbs ${shieldResult.shieldAbsorbed} damage!`);
+          if (damageResult.shieldAbsorbed > 0) {
+            logs.push(`🛡️ Shield absorbs ${damageResult.shieldAbsorbed} damage!`);
           }
-          if (shieldResult.shieldBroken) {
+          if (damageResult.shieldBroken) {
             logs.push(`💔 Shield broken!`);
           }
 
-          // Apply remaining damage through centralized utility
-          if (shieldResult.remainingDamage > 0) {
-            const damageResult = applyDamageToPlayer(
-              player,
-              shieldResult.remainingDamage,
-              'enemy_attack'
-            );
-            player = damageResult.player;
+          if (damageResult.actualDamage > 0) {
+            logs.push(`${enemy.name} deals ${damageResult.actualDamage} damage to you`);
 
-            if (damageResult.actualDamage > 0) {
-              logs.push(`${enemy.name} deals ${damageResult.actualDamage} damage to you`);
+            // Reset blur counter on damage taken (breaks consecutive dodge streak)
+            if (hasAbility(player, 'rogue_duelist_blur')) {
+              player = resetAbilityCounter(player, 'blur_dodges');
+            }
 
-              // Reset blur counter on damage taken (breaks consecutive dodge streak)
-              if (hasAbility(player, 'rogue_duelist_blur')) {
-                player = resetAbilityCounter(player, 'blur_dodges');
-              }
-
-              // Generate path resource on damaged (Phase 6)
-              const damagedPathId = player.path?.pathId;
-              if (pathUsesResourceSystem(damagedPathId) && player.pathResource) {
-                const onDamagedGen = getResourceGeneration(damagedPathId, 'onDamaged');
-                if (onDamagedGen > 0) {
-                  player.pathResource = {
-                    ...player.pathResource,
-                    current: Math.min(
-                      player.pathResource.max,
-                      player.pathResource.current + onDamagedGen
-                    ),
-                  };
-                }
+            // Generate path resource on damaged (Phase 6)
+            const damagedPathId = player.path?.pathId;
+            if (pathUsesResourceSystem(damagedPathId) && player.pathResource) {
+              const onDamagedGen = getResourceGeneration(damagedPathId, 'onDamaged');
+              if (onDamagedGen > 0) {
+                player.pathResource = {
+                  ...player.pathResource,
+                  current: Math.min(
+                    player.pathResource.max,
+                    player.pathResource.current + onDamagedGen
+                  ),
+                };
               }
             }
           }
@@ -956,11 +934,11 @@ export function useCombatActions({
           // Log combat metrics for balance testing
           logCombatMetric('enemy_attack', {
             damage: enemyDamage,
-            shieldAbsorbed: shieldResult.shieldAbsorbed,
-            damageToHealth: shieldResult.remainingDamage,
+            shieldAbsorbed: damageResult.shieldAbsorbed,
+            damageToHealth: damageResult.actualDamage,
             enemyPower: enemy.power,
             playerArmor: player.currentStats.armor,
-            playerHealthBefore: player.currentStats.health + shieldResult.remainingDamage,
+            playerHealthBefore: healthBeforeDamage,
             playerHealthAfter: player.currentStats.health,
             isBlocking: player.isBlocking,
             floor: prev.currentFloor,

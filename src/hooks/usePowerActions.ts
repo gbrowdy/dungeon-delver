@@ -156,12 +156,8 @@ export function usePowerActions(context: PowerActivationContext) {
       // Deduct resource cost (HP, Mana, or Path Resource)
       if (useHpForMana) {
         const hpCost = Math.floor(effectiveManaCost * 0.5);
-        const hpCostResult = applyDamageToPlayer(player, hpCost, 'hp_cost');
+        const hpCostResult = applyDamageToPlayer(player, hpCost, 'hp_cost', { minHealth: 1 });
         player = hpCostResult.player;
-        // HP costs can't kill - ensure at least 1 HP
-        if (player.currentStats.health < 1) {
-          player.currentStats.health = 1;
-        }
         logs.push(`💔 Reckless Fury: Paid ${hpCostResult.actualDamage} HP for ${power.name}`);
       } else if (usesPathResource && player.pathResource) {
         // Deduct from path resource
@@ -340,12 +336,8 @@ export function usePowerActions(context: PowerActivationContext) {
             // Sacrifice powers - spend HP for damage
             const hpCostPercent = power.id === 'reckless-swing' ? 0.15 : 0.20;
             const hpCost = Math.floor(player.currentStats.maxHealth * hpCostPercent);
-            const sacrificeResult = applyDamageToPlayer(player, hpCost, 'hp_cost');
+            const sacrificeResult = applyDamageToPlayer(player, hpCost, 'hp_cost', { minHealth: 1 });
             player = sacrificeResult.player;
-            // HP costs can't kill - ensure at least 1 HP
-            if (player.currentStats.health < 1) {
-              player.currentStats.health = 1;
-            }
             logs.push(`🩸 Sacrificed ${sacrificeResult.actualDamage} HP!`);
 
             enemy.health -= baseDamage;
@@ -422,12 +414,8 @@ export function usePowerActions(context: PowerActivationContext) {
             // Sacrifice power - spend HP to restore mana
             const hpCostPercent = 0.20;
             const hpCost = Math.floor(player.currentStats.maxHealth * hpCostPercent);
-            const sacrificeResult = applyDamageToPlayer(player, hpCost, 'hp_cost');
+            const sacrificeResult = applyDamageToPlayer(player, hpCost, 'hp_cost', { minHealth: 1 });
             player = sacrificeResult.player;
-            // HP costs can't kill - ensure at least 1 HP
-            if (player.currentStats.health < 1) {
-              player.currentStats.health = 1;
-            }
             logs.push(`🩸 Sacrificed ${sacrificeResult.actualDamage} HP!`);
 
             const manaRestored = power.value; // Flat 50 mana

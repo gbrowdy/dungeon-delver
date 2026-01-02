@@ -24,8 +24,18 @@ export interface DamageResult {
   actualDamage: number;
   /** Amount of damage absorbed by shield */
   shieldAbsorbed: number;
+  /** Whether shield was completely depleted by this damage */
+  shieldBroken: boolean;
   /** Whether damage was blocked entirely (e.g., test invincibility) */
   blocked: boolean;
+}
+
+/**
+ * Options for applying damage to a player.
+ */
+export interface DamageOptions {
+  /** Minimum health to floor at (default: 0). Use 1 for HP costs that can't kill. */
+  minHealth?: number;
 }
 
 /**
@@ -33,27 +43,30 @@ export interface DamageResult {
  *
  * This function handles:
  * - Test invincibility (for E2E testing)
- * - Shield absorption
- * - Health reduction with floor at 0
+ * - Shield absorption (bypassed for hp_cost source)
+ * - Health reduction with configurable floor
  * - Combat log generation
  *
  * @param player - The player to apply damage to
  * @param damage - Amount of damage to apply
  * @param source - Source of the damage (affects shield bypass)
+ * @param options - Optional configuration (minHealth floor)
  * @returns DamageResult with updated player and metadata
  *
  * @example
  * ```typescript
+ * // Standard damage (can kill)
  * const result = applyDamageToPlayer(player, 25, 'enemy_attack');
- * if (result.player.currentStats.health <= 0) {
- *   // Handle death
- * }
+ *
+ * // HP cost (can't kill, bypasses shield)
+ * const costResult = applyDamageToPlayer(player, 10, 'hp_cost', { minHealth: 1 });
  * ```
  */
 export function applyDamageToPlayer(
   player: Player,
   damage: number,
-  source: DamageSource
+  source: DamageSource,
+  options?: DamageOptions
 ): DamageResult {
   const updatedPlayer = deepClonePlayer(player);
   const logs: string[] = [];
@@ -65,12 +78,14 @@ export function applyDamageToPlayer(
       logs: ['[Test] Damage blocked by invincibility'],
       actualDamage: 0,
       shieldAbsorbed: 0,
+      shieldBroken: false,
       blocked: true,
     };
   }
 
   let remainingDamage = damage;
   let shieldAbsorbed = 0;
+  let shieldBroken = false;
 
   // HP costs bypass shield (self-inflicted damage from powers)
   const bypassShield = source === 'hp_cost';
@@ -87,13 +102,15 @@ export function applyDamageToPlayer(
     if (updatedPlayer.shield <= 0) {
       updatedPlayer.shield = 0;
       updatedPlayer.shieldRemainingDuration = 0;
+      shieldBroken = true;
       logs.push(`Shield broken!`);
     }
   }
 
   // Apply remaining damage to health
   const healthBefore = updatedPlayer.currentStats.health;
-  updatedPlayer.currentStats.health = Math.max(0, healthBefore - remainingDamage);
+  const minHealth = options?.minHealth ?? 0;
+  updatedPlayer.currentStats.health = Math.max(minHealth, healthBefore - remainingDamage);
   const actualDamage = healthBefore - updatedPlayer.currentStats.health;
 
   return {
@@ -101,6 +118,7 @@ export function applyDamageToPlayer(
     logs,
     actualDamage,
     shieldAbsorbed,
+    shieldBroken,
     blocked: false,
   };
 }

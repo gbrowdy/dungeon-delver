@@ -80,21 +80,23 @@ export function processTurnStartEffects(
     (e: StatusEffect) => e.type === STATUS_EFFECT_TYPE.STUN
   );
 
-  // Process status effects on player (poison, etc.) and tick down durations
-  let workingPlayer = updatedPlayer;
-  updatedPlayer.statusEffects = updatedPlayer.statusEffects.map((effect: StatusEffect) => {
+  // Process poison damage from all poison effects
+  for (const effect of updatedPlayer.statusEffects) {
     if (effect.type === STATUS_EFFECT_TYPE.POISON && effect.damage) {
-      const poisonResult = applyDamageToPlayer(workingPlayer, effect.damage, 'status_effect');
-      workingPlayer = poisonResult.player;
+      const poisonResult = applyDamageToPlayer(updatedPlayer, effect.damage, 'status_effect');
+      updatedPlayer.currentStats = poisonResult.player.currentStats;
+      updatedPlayer.shield = poisonResult.player.shield;
+      updatedPlayer.shieldRemainingDuration = poisonResult.player.shieldRemainingDuration;
       if (poisonResult.actualDamage > 0) {
         updatedLogs.push(`☠️ Poison deals ${poisonResult.actualDamage} damage!`);
       }
     }
-    return { ...effect, remainingTurns: effect.remainingTurns - 1 };
-  }).filter((effect: StatusEffect) => effect.remainingTurns > 0);
+  }
 
-  // Apply accumulated poison damage
-  updatedPlayer.currentStats = workingPlayer.currentStats;
+  // Tick down and filter expired status effects
+  updatedPlayer.statusEffects = updatedPlayer.statusEffects
+    .map((effect: StatusEffect) => ({ ...effect, remainingTurns: effect.remainingTurns - 1 }))
+    .filter((effect: StatusEffect) => effect.remainingTurns > 0);
 
   // NOTE: Buff durations are now ticked time-based in useCombatTimers.ts (not turn-based)
   // Active buffs are still applied to stats below via calculateStats()

@@ -107,21 +107,23 @@ export function useCombat() {
   ): { player: Player; isStunned: boolean } => {
     const updatedPlayer = deepClonePlayer(player);
 
-    // Process status effects
-    let workingPlayer = updatedPlayer;
-    updatedPlayer.statusEffects = player.statusEffects.map((effect: StatusEffect) => {
+    // Process poison damage from all poison effects
+    for (const effect of updatedPlayer.statusEffects) {
       if (effect.type === 'poison' && effect.damage) {
-        const poisonResult = applyDamageToPlayer(workingPlayer, effect.damage, 'status_effect');
-        workingPlayer = poisonResult.player;
+        const poisonResult = applyDamageToPlayer(updatedPlayer, effect.damage, 'status_effect');
+        updatedPlayer.currentStats = poisonResult.player.currentStats;
+        updatedPlayer.shield = poisonResult.player.shield;
+        updatedPlayer.shieldRemainingDuration = poisonResult.player.shieldRemainingDuration;
         if (poisonResult.actualDamage > 0) {
           logs.push(`☠️ Poison deals ${poisonResult.actualDamage} damage!`);
         }
       }
-      return { ...effect, remainingTurns: effect.remainingTurns - 1 };
-    }).filter((effect: StatusEffect) => effect.remainingTurns > 0);
+    }
 
-    // Apply accumulated poison damage
-    updatedPlayer.currentStats = workingPlayer.currentStats;
+    // Tick down and filter expired status effects
+    updatedPlayer.statusEffects = updatedPlayer.statusEffects
+      .map((effect: StatusEffect) => ({ ...effect, remainingTurns: effect.remainingTurns - 1 }))
+      .filter((effect: StatusEffect) => effect.remainingTurns > 0);
 
     // Check for stun
     const isStunned = updatedPlayer.statusEffects.some((e: StatusEffect) => e.type === 'stun');

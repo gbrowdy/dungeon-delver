@@ -141,6 +141,7 @@ describe('applyDamageToPlayer', () => {
     expect(result.player.shield).toBe(0);
     expect(result.player.shieldRemainingDuration).toBe(0);
     expect(result.shieldAbsorbed).toBe(10);
+    expect(result.shieldBroken).toBe(true);
     expect(result.actualDamage).toBe(5);
     expect(result.player.currentStats.health).toBe(95);
   });
@@ -168,6 +169,7 @@ describe('applyDamageToPlayer', () => {
     const result = applyDamageToPlayer(player, 20, 'enemy_attack');
 
     expect(result.shieldAbsorbed).toBe(20);
+    expect(result.shieldBroken).toBe(false);
     expect(result.actualDamage).toBe(0);
     expect(result.player.currentStats.health).toBe(100);
     expect(result.player.shield).toBe(30);
@@ -259,5 +261,25 @@ describe('applyDamageToPlayer', () => {
     // Enemy abilities should use shield
     expect(result.shieldAbsorbed).toBe(10);
     expect(result.actualDamage).toBe(5);
+  });
+
+  it('respects minHealth option to prevent death', () => {
+    const player = createMockPlayer({
+      currentStats: { ...createMockPlayer().currentStats, health: 10 },
+    });
+    const result = applyDamageToPlayer(player, 50, 'hp_cost', { minHealth: 1 });
+
+    // Should floor at 1 instead of 0
+    expect(result.player.currentStats.health).toBe(1);
+    expect(result.actualDamage).toBe(9);
+  });
+
+  it('allows death when minHealth is 0 (default)', () => {
+    const player = createMockPlayer({
+      currentStats: { ...createMockPlayer().currentStats, health: 10 },
+    });
+    const result = applyDamageToPlayer(player, 50, 'enemy_attack');
+
+    expect(result.player.currentStats.health).toBe(0);
   });
 });
