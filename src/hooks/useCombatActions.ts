@@ -38,6 +38,7 @@ import { logPauseChange, logCombatEvent } from '@/utils/gameLogger';
 import { generateEventId } from '@/utils/eventId';
 import { isFeatureEnabled } from '@/constants/features';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+import { isTestInvincible } from '@/hooks/useTestHooks';
 import { getResourceGeneration, pathUsesResourceSystem } from '@/hooks/usePathResource';
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
@@ -447,8 +448,8 @@ export function useCombatActions({
         }
       }
 
-      // Thorned modifier: Reflect damage back to player
-      if (enemy.modifiers?.some(m => m.id === 'thorned')) {
+      // Thorned modifier: Reflect damage back to player (skip if test invincible)
+      if (enemy.modifiers?.some(m => m.id === 'thorned') && !isTestInvincible()) {
         const reflectDamage = Math.floor(finalDamage * 0.1);
         playerAfterEffects.currentStats.health -= reflectDamage;
         logs.push(`🌵 Thorns reflect ${reflectDamage} damage back to you!`);
@@ -705,8 +706,8 @@ export function useCombatActions({
                 logs.push(`💔 Shield broken!`);
               }
 
-              // Only apply remaining damage to HP
-              if (shieldResult.remainingDamage > 0) {
+              // Only apply remaining damage to HP (skip if test invincible)
+              if (shieldResult.remainingDamage > 0 && !isTestInvincible()) {
                 player.currentStats.health -= shieldResult.remainingDamage;
 
                 // Reset blur counter on damage taken (breaks consecutive dodge streak)
@@ -903,8 +904,8 @@ export function useCombatActions({
             logs.push(`💔 Shield broken!`);
           }
 
-          // Only apply remaining damage to HP
-          if (shieldResult.remainingDamage > 0) {
+          // Only apply remaining damage to HP (skip if test invincible)
+          if (shieldResult.remainingDamage > 0 && !isTestInvincible()) {
             player.currentStats.health -= shieldResult.remainingDamage;
             logs.push(`${enemy.name} deals ${shieldResult.remainingDamage} damage to you`);
 

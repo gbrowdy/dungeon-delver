@@ -18,6 +18,10 @@ export interface TestHooks {
 
   // Speed helpers
   setEnemyOneHitKill: () => void;
+
+  // Combat helpers
+  setPlayerInvincible: (invincible: boolean) => void;
+  isPlayerInvincible: () => boolean;
 }
 
 declare global {

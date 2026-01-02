@@ -30,8 +30,8 @@ test.describe('Class Select Tablet Layout', () => {
       fullPage: false,
     });
     
-    // Verify description is visible
-    const description = page.locator('text=Heavy armor');
+    // Verify Warrior description is visible (from classes.ts)
+    const description = page.locator('text=A mighty fighter with high health');
     await expect(description).toBeVisible();
   });
 });

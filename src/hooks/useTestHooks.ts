@@ -1,12 +1,29 @@
 // src/hooks/useTestHooks.ts
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { GameState } from '@/types/game';
 import type { TestHooks } from '@/types/test-hooks';
 
 interface UseTestHooksParams {
   state: GameState;
   setState: React.Dispatch<React.SetStateAction<GameState>>;
+}
+
+/**
+ * Check if player is in test invincible mode.
+ * Uses window global for reliable cross-module access.
+ */
+export function isTestInvincible(): boolean {
+  return typeof window !== 'undefined' && (window as any).__TEST_INVINCIBLE__ === true;
+}
+
+/**
+ * Set player invincibility mode.
+ */
+function setTestInvincible(invincible: boolean): void {
+  if (typeof window !== 'undefined') {
+    (window as any).__TEST_INVINCIBLE__ = invincible;
+  }
 }
 
 /**
@@ -109,11 +126,22 @@ export function useTestHooks({ state, setState }: UseTestHooksParams): void {
         ...prev,
         currentEnemy: {
           ...prev.currentEnemy,
-          health: 1,
+          currentStats: {
+            ...prev.currentEnemy.currentStats,
+            health: 1,
+          },
         },
       };
     });
   }, [setState]);
+
+  const setPlayerInvincible = useCallback((invincible: boolean) => {
+    setTestInvincible(invincible);
+  }, []);
+
+  const isPlayerInvincible = useCallback(() => {
+    return isTestInvincible();
+  }, []);
 
   useEffect(() => {
     if (!isTestMode) {
@@ -135,6 +163,8 @@ export function useTestHooks({ state, setState }: UseTestHooksParams): void {
       getCurrentFloor,
       getCurrentRoom,
       setEnemyOneHitKill,
+      setPlayerInvincible,
+      isPlayerInvincible,
     };
 
     window.__TEST_HOOKS__ = hooks;
@@ -154,5 +184,7 @@ export function useTestHooks({ state, setState }: UseTestHooksParams): void {
     getCurrentFloor,
     getCurrentRoom,
     setEnemyOneHitKill,
+    setPlayerInvincible,
+    isPlayerInvincible,
   ]);
 }

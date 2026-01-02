@@ -69,3 +69,12 @@ export async function waitForTestHooks(page: Page): Promise<void> {
     timeout: 5000,
   });
 }
+
+/**
+ * Set player invincibility mode (prevents all damage)
+ */
+export async function setPlayerInvincible(page: Page, invincible: boolean): Promise<void> {
+  await page.evaluate((inv) => {
+    window.__TEST_HOOKS__?.setPlayerInvincible(inv);
+  }, invincible);
+}
