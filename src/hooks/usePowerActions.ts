@@ -4,7 +4,7 @@ import { calculateStats } from '@/hooks/useCharacterSetup';
 import { CombatEvent } from '@/hooks/useBattleAnimation';
 import { COMBAT_BALANCE, POWER_BALANCE, COOLDOWN_FLOOR_SECONDS } from '@/constants/balance';
 import { COMBAT_EVENT_DELAYS } from '@/constants/balance';
-import { COMBAT_EVENT_TYPE, BUFF_STAT, ITEM_EFFECT_TRIGGER, PAUSE_REASON } from '@/constants/enums';
+import { COMBAT_EVENT_TYPE, BUFF_STAT, ITEM_EFFECT_TRIGGER, PAUSE_REASON, STATUS_EFFECT_TYPE } from '@/constants/enums';
 import { generateEventId } from '@/utils/eventId';
 import { getDropQualityBonus } from '@/utils/fortuneUtils';
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
@@ -15,6 +15,7 @@ import { processLevelUp } from '@/hooks/useRewardCalculation';
 import { isFeatureEnabled } from '@/constants/features';
 import { PATH_RESOURCES, getResourceDisplayName } from '@/data/pathResources';
 import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
+import { applyStatusToEnemy } from '@/utils/statusEffectUtils';
 
 /**
  * Context for power activation - all state needed to execute a power
@@ -548,15 +549,13 @@ export function usePowerActions(context: PowerActivationContext) {
               }
 
               // Apply slow effect
-              enemy.statusEffects = enemy.statusEffects || [];
-              enemy.statusEffects.push({
-                id: `slow-${Date.now()}`,
-                type: 'slow',
-                value: 0.3, // 30% slow
-                remainingTurns: 4,
-                icon: 'status-slow',
-              });
-              logs.push(`❄️ Enemy slowed by 30% for 4 turns!`);
+              const slowResult = applyStatusToEnemy(
+                enemy,
+                { type: STATUS_EFFECT_TYPE.SLOW, value: 0.3, duration: 4 },
+                'power'
+              );
+              enemy = slowResult.enemy;
+              logs.push(...slowResult.logs);
               statusApplied = true;
             } else if (power.id === 'stunning-blow') {
               // Deal damage first
@@ -572,14 +571,13 @@ export function usePowerActions(context: PowerActivationContext) {
               // 40% chance to stun
               const stunChance = 0.4;
               if (Math.random() < stunChance) {
-                enemy.statusEffects = enemy.statusEffects || [];
-                enemy.statusEffects.push({
-                  id: `stun-${Date.now()}`,
-                  type: 'stun',
-                  remainingTurns: 2,
-                  icon: 'status-stun',
-                });
-                logs.push(`💫 Enemy stunned for 2 turns!`);
+                const stunResult = applyStatusToEnemy(
+                  enemy,
+                  { type: STATUS_EFFECT_TYPE.STUN, duration: 2 },
+                  'power'
+                );
+                enemy = stunResult.enemy;
+                logs.push(...stunResult.logs);
                 statusApplied = true;
               } else {
                 logs.push(`Stun failed!`);
