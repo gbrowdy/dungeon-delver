@@ -38,6 +38,7 @@ import { logPauseChange, logCombatEvent } from '@/utils/gameLogger';
 import { generateEventId } from '@/utils/eventId';
 import { isFeatureEnabled } from '@/constants/features';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+import { getResourceGeneration, pathUsesResourceSystem } from '@/hooks/usePathResource';
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
@@ -361,6 +362,35 @@ export function useCombatActions({
       enemy.health -= finalDamage;
       logs.push(`You deal ${finalDamage} damage to ${enemy.name}`);
 
+      // Generate path resource on hit (Phase 6)
+      const pathId = playerAfterEffects.path?.pathId;
+      if (pathUsesResourceSystem(pathId) && playerAfterEffects.pathResource) {
+        const onHitGen = getResourceGeneration(pathId, 'onHit');
+        if (onHitGen > 0) {
+          playerAfterEffects.pathResource = {
+            ...playerAfterEffects.pathResource,
+            current: Math.min(
+              playerAfterEffects.pathResource.max,
+              playerAfterEffects.pathResource.current + onHitGen
+            ),
+          };
+        }
+
+        // Generate on crit if applicable
+        if (damageResult.isCrit) {
+          const onCritGen = getResourceGeneration(pathId, 'onCrit');
+          if (onCritGen > 0) {
+            playerAfterEffects.pathResource = {
+              ...playerAfterEffects.pathResource,
+              current: Math.min(
+                playerAfterEffects.pathResource.max,
+                playerAfterEffects.pathResource.current + onCritGen
+              ),
+            };
+          }
+        }
+      }
+
       // Check for path resource execute (e.g., Assassin max Momentum = execute <20% HP)
       if (enemy.health > 0) {
         const executeResult = checkPathResourceExecute(playerAfterEffects, enemy);
@@ -472,6 +502,21 @@ export function useCombatActions({
         });
         playerAfterEffects = onKillResult.player;
         logs = [...logs, ...onKillResult.logs];
+
+        // Generate path resource on kill (Phase 6)
+        const killPathId = playerAfterEffects.path?.pathId;
+        if (pathUsesResourceSystem(killPathId) && playerAfterEffects.pathResource) {
+          const onKillGen = getResourceGeneration(killPathId, 'onKill');
+          if (onKillGen > 0) {
+            playerAfterEffects.pathResource = {
+              ...playerAfterEffects.pathResource,
+              current: Math.min(
+                playerAfterEffects.pathResource.max,
+                playerAfterEffects.pathResource.current + onKillGen
+              ),
+            };
+          }
+        }
 
         // Process path resource on-kill effects (e.g., Berserker max Fury = full HP restore)
         const pathResourceOnKillResult = processPathResourceOnKill(playerAfterEffects, logs);
@@ -816,6 +861,21 @@ export function useCombatActions({
             logs.push(...pathOnBlockResult.logs);
             applyTriggerResultToEnemy(enemy, pathOnBlockResult);
 
+            // Generate path resource on block (Phase 6)
+            const blockPathId = player.path?.pathId;
+            if (pathUsesResourceSystem(blockPathId) && player.pathResource) {
+              const onBlockGen = getResourceGeneration(blockPathId, 'onBlock');
+              if (onBlockGen > 0) {
+                player.pathResource = {
+                  ...player.pathResource,
+                  current: Math.min(
+                    player.pathResource.max,
+                    player.pathResource.current + onBlockGen
+                  ),
+                };
+              }
+            }
+
             // Schedule counter-attack animation and damage for block reflect
             const blockCounterDamage = (pathOnBlockResult.damageAmount || 0) + (pathOnBlockResult.reflectedDamage || 0);
             scheduleCounterAttackSequence(blockCounterDamage, enemy.health);
@@ -851,6 +911,21 @@ export function useCombatActions({
             // Reset blur counter on damage taken (breaks consecutive dodge streak)
             if (hasAbility(player, 'rogue_duelist_blur')) {
               player = resetAbilityCounter(player, 'blur_dodges');
+            }
+
+            // Generate path resource on damaged (Phase 6)
+            const damagedPathId = player.path?.pathId;
+            if (pathUsesResourceSystem(damagedPathId) && player.pathResource) {
+              const onDamagedGen = getResourceGeneration(damagedPathId, 'onDamaged');
+              if (onDamagedGen > 0) {
+                player.pathResource = {
+                  ...player.pathResource,
+                  current: Math.min(
+                    player.pathResource.max,
+                    player.pathResource.current + onDamagedGen
+                  ),
+                };
+              }
             }
           }
 

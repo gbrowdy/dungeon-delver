@@ -120,7 +120,8 @@ export function ResourceBar({
 
 /**
  * Compact resource bar for use in combat UI header
- * Shows just the bar without labels or threshold effects
+ * Shows just the bar without labels or threshold effect descriptions
+ * (still shows threshold marker lines for visual reference)
  */
 interface CompactResourceBarProps {
   resource: PathResource;

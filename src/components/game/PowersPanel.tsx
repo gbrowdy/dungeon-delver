@@ -3,11 +3,13 @@ import { cn } from '@/lib/utils';
 import { useCombat } from '@/contexts/CombatContext';
 import { PowerButton } from './PowerButton';
 import { StanceToggle } from './StanceToggle';
+import { ResourceBar } from './ResourceBar';
 import { COMBAT_BALANCE } from '@/constants/balance';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
 import { useStanceSystem } from '@/hooks/useStanceSystem';
 import { getStancesForPath } from '@/data/stances';
 import { isFeatureEnabled } from '@/constants/features';
+import { pathUsesResourceSystem } from '@/hooks/usePathResource';
 import {
   Tooltip,
   TooltipContent,
@@ -48,13 +50,27 @@ export function PowersPanel() {
     isPassivePath(player) &&
     isStanceSystemActive;
 
+  // Check if player uses path resource system (Phase 6)
+  const usesPathResource = pathUsesResourceSystem(pathId) && player.pathResource;
+
   return (
     <div className="pixel-panel rounded-lg p-2 sm:p-3">
-      {/* Mana bar header */}
-      <ManaBar
-        current={player.currentStats.mana}
-        max={player.currentStats.maxMana}
-      />
+      {/* Resource bar header - show path resource OR mana */}
+      {usesPathResource && player.pathResource ? (
+        <div className="mb-2">
+          <h3 className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400 mb-1">Powers</h3>
+          <ResourceBar
+            resource={player.pathResource}
+            thresholdMarkers={true}
+            showLabel={true}
+          />
+        </div>
+      ) : (
+        <ManaBar
+          current={player.currentStats.mana}
+          max={player.currentStats.maxMana}
+        />
+      )}
 
       {showStanceUI ? (
         /* Stance UI for passive paths */

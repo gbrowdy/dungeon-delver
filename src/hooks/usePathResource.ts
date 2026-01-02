@@ -52,9 +52,10 @@ export function usePathResource(
 
     const resourceDef = PATH_RESOURCES[pathId];
     if (!resourceDef) {
-      // Log in development: pathId provided but not found in PATH_RESOURCES
-      // This could indicate a typo or missing resource definition
-      if (process.env.NODE_ENV !== 'production') {
+      // Log missing resource definitions - this is a configuration bug that should always be logged
+      // Passive paths (guardian, enchanter, shadow, templar) won't have resources and that's expected
+      const passivePaths = ['guardian', 'enchanter', 'shadow', 'templar'];
+      if (!passivePaths.includes(pathId)) {
         logError('Path resource not found, falling back to mana', {
           pathId,
           availablePaths: Object.keys(PATH_RESOURCES),
@@ -185,6 +186,7 @@ export function usePathResource(
 
   /**
    * Get cumulative damage multiplier from threshold effects
+   * @returns Multiplier where 1.0 = no bonus, 1.3 = 30% bonus, etc.
    */
   const getDamageMultiplier = useCallback((): number => {
     const damageEffects = resource.thresholds?.filter(
@@ -248,8 +250,9 @@ export function getResourceGeneration(
   if (!pathId) return 0;
   const resourceDef = PATH_RESOURCES[pathId];
   if (!resourceDef) {
-    // Log in development: unexpected pathId
-    if (process.env.NODE_ENV !== 'production') {
+    // Only log for paths that should have resources (not passive paths)
+    const passivePaths = ['guardian', 'enchanter', 'shadow', 'templar'];
+    if (!passivePaths.includes(pathId)) {
       logError('Resource generation requested for unknown path', {
         pathId,
         trigger,
