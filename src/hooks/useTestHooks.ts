@@ -14,7 +14,7 @@ interface UseTestHooksParams {
  * Uses window global for reliable cross-module access.
  */
 export function isTestInvincible(): boolean {
-  return typeof window !== 'undefined' && (window as any).__TEST_INVINCIBLE__ === true;
+  return typeof window !== 'undefined' && window.__TEST_INVINCIBLE__ === true;
 }
 
 /**
@@ -22,7 +22,7 @@ export function isTestInvincible(): boolean {
  */
 function setTestInvincible(invincible: boolean): void {
   if (typeof window !== 'undefined') {
-    (window as any).__TEST_INVINCIBLE__ = invincible;
+    window.__TEST_INVINCIBLE__ = invincible;
   }
 }
 

@@ -20,15 +20,19 @@ export async function startGameWithClass(
   // Click start game
   await page.getByRole('button', { name: /start game/i }).click();
 
-  // Wait for class selection
-  await page.waitForTimeout(500);
+  // Wait for class selection to be visible
+  const classLocator = page.locator(`text=${className}`).first();
+  await classLocator.waitFor({ state: 'visible' });
 
   // Select the class
-  await page.locator(`text=${className}`).first().click();
-  await page.waitForTimeout(300);
+  await classLocator.click();
+
+  // Wait for begin button to be enabled after class selection
+  const beginButton = page.getByRole('button', { name: /begin as/i });
+  await expect(beginButton).toBeEnabled();
 
   // Click begin button
-  await page.getByRole('button', { name: /begin as/i }).click();
+  await beginButton.click();
 
   // Wait for combat to load
   await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });

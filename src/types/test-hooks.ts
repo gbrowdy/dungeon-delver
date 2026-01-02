@@ -27,6 +27,7 @@ export interface TestHooks {
 declare global {
   interface Window {
     __TEST_HOOKS__?: TestHooks;
+    __TEST_INVINCIBLE__?: boolean;
   }
 }
 
