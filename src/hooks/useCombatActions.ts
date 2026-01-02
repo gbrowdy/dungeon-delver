@@ -41,6 +41,7 @@ import { getResourceGeneration, pathUsesResourceSystem } from '@/hooks/usePathRe
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
+import { applyStatusToPlayer, applyStatusToEnemy } from '@/utils/statusEffectUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities, getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
 import type { PauseReasonType } from '@/constants/enums';
@@ -284,8 +285,17 @@ export function useCombatActions({
 
       // Apply status effect to enemy if triggered
       if (onHitResult.statusToApply) {
-        enemy.statusEffects = enemy.statusEffects || [];
-        enemy.statusEffects.push(onHitResult.statusToApply);
+        const statusResult = applyStatusToEnemy(
+          enemy,
+          {
+            type: onHitResult.statusToApply.type,
+            damage: onHitResult.statusToApply.damage,
+            value: onHitResult.statusToApply.value,
+            duration: onHitResult.statusToApply.remainingTurns,
+          },
+          'path_ability'
+        );
+        enemy = statusResult.enemy;
 
         // Process path ability triggers: on_status_inflict
         const onStatusInflictResult = processTrigger('on_status_inflict', {
@@ -349,8 +359,17 @@ export function useCombatActions({
 
         // Apply status effect to enemy if triggered
         if (onCritResult.statusToApply) {
-          enemy.statusEffects = enemy.statusEffects || [];
-          enemy.statusEffects.push(onCritResult.statusToApply);
+          const critStatusResult = applyStatusToEnemy(
+            enemy,
+            {
+              type: onCritResult.statusToApply.type,
+              damage: onCritResult.statusToApply.damage,
+              value: onCritResult.statusToApply.value,
+              duration: onCritResult.statusToApply.remainingTurns,
+            },
+            'path_ability'
+          );
+          enemy = critStatusResult.enemy;
 
           // Process path ability triggers: on_status_inflict
           const onStatusInflictResult = processTrigger('on_status_inflict', {
@@ -763,29 +782,27 @@ export function useCombatActions({
           }
           case 'poison': {
             const poisonDamage = Math.floor(ability.value * (1 + (prev.currentFloor - 1) * COMBAT_BALANCE.POISON_SCALING_PER_FLOOR));
-            player.statusEffects.push({
-              id: `poison-${Date.now()}`,
-              type: STATUS_EFFECT_TYPE.POISON,
-              damage: poisonDamage,
-              remainingTurns: COMBAT_BALANCE.DEFAULT_POISON_DURATION,
-              icon: 'status-poison',
-            });
-            logs.push(`☠️ You are poisoned! (${poisonDamage} damage/turn for ${COMBAT_BALANCE.DEFAULT_POISON_DURATION} turns)`);
+            const immunities = getStatusImmunities(player);
+            const poisonResult = applyStatusToPlayer(
+              player,
+              { type: STATUS_EFFECT_TYPE.POISON, damage: poisonDamage },
+              'enemy_ability',
+              immunities
+            );
+            player = poisonResult.player;
+            logs.push(...poisonResult.logs);
             break;
           }
           case 'stun': {
             const immunities = getStatusImmunities(player);
-            if (immunities.includes('stun')) {
-              logs.push(`🛡️ Immovable Object! You resist the stun!`);
-            } else {
-              player.statusEffects.push({
-                id: `stun-${Date.now()}`,
-                type: STATUS_EFFECT_TYPE.STUN,
-                remainingTurns: ability.value,
-                icon: 'status-stun',
-              });
-              logs.push(`💫 You are stunned for ${ability.value} turn(s)!`);
-            }
+            const stunResult = applyStatusToPlayer(
+              player,
+              { type: STATUS_EFFECT_TYPE.STUN, duration: ability.value },
+              'enemy_ability',
+              immunities
+            );
+            player = stunResult.player;
+            logs.push(...stunResult.logs);
             break;
           }
           case 'heal': {
