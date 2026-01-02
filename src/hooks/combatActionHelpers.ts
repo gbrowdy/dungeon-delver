@@ -13,6 +13,7 @@ import {
 } from '@/constants/enums';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getCritChance, getCritDamage, getDropQualityBonus } from '@/utils/fortuneUtils';
+import { applyDamageToPlayer } from '@/utils/damageUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { isFeatureEnabled } from '@/constants/features';
 import type { TriggerResult } from '@/hooks/usePathAbilities';
@@ -80,13 +81,20 @@ export function processTurnStartEffects(
   );
 
   // Process status effects on player (poison, etc.) and tick down durations
+  let workingPlayer = updatedPlayer;
   updatedPlayer.statusEffects = updatedPlayer.statusEffects.map((effect: StatusEffect) => {
     if (effect.type === STATUS_EFFECT_TYPE.POISON && effect.damage) {
-      updatedPlayer.currentStats.health -= effect.damage;
-      updatedLogs.push(`☠️ Poison deals ${effect.damage} damage!`);
+      const poisonResult = applyDamageToPlayer(workingPlayer, effect.damage, 'status_effect');
+      workingPlayer = poisonResult.player;
+      if (poisonResult.actualDamage > 0) {
+        updatedLogs.push(`☠️ Poison deals ${poisonResult.actualDamage} damage!`);
+      }
     }
     return { ...effect, remainingTurns: effect.remainingTurns - 1 };
   }).filter((effect: StatusEffect) => effect.remainingTurns > 0);
+
+  // Apply accumulated poison damage
+  updatedPlayer.currentStats = workingPlayer.currentStats;
 
   // NOTE: Buff durations are now ticked time-based in useCombatTimers.ts (not turn-based)
   // Active buffs are still applied to stats below via calculateStats()
