@@ -4,6 +4,8 @@ import { PathDefinition, PathAbility, PlayerPath } from '@/types/paths';
 import { GAME_PHASE } from '@/constants/enums';
 import { deepClonePlayer } from '@/utils/stateUtils';
 import { PATH_SELECTION_BONUSES } from '@/constants/paths';
+import { getPathResource } from '@/data/pathResources';
+import { isFeatureEnabled } from '@/constants/features';
 
 // Import path data for all classes
 import { WARRIOR_PATHS } from '@/data/paths/warrior';
@@ -117,6 +119,11 @@ export function usePathActions({ setState }: UsePathActionsOptions) {
         pathId,
         abilities: [],
       };
+
+      // Initialize path resource if the active resource system is enabled
+      if (isFeatureEnabled('ACTIVE_RESOURCE_SYSTEM')) {
+        updatedPlayer.pathResource = getPathResource(pathId);
+      }
 
       // Apply immediate stat bonuses from path selection
       const bonus = PATH_SELECTION_BONUSES[pathId];

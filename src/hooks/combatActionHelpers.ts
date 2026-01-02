@@ -606,8 +606,9 @@ export function applyPathResourceExecute(
 ): void {
   if (!executeResult.shouldExecute) return;
 
-  // Kill the enemy instantly
+  // Kill the enemy instantly and mark as dying for animation system
   enemy.health = 0;
+  enemy.isDying = true;
 
   // Reset all power cooldowns
   if (executeResult.resetCooldowns) {

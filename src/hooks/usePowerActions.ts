@@ -148,6 +148,10 @@ export function usePowerActions(context: PowerActivationContext) {
         }
       }
 
+      // Save path resource current value BEFORE deduction for damage calculation
+      // This ensures Arcane Charges damage bonus uses the value before spending
+      const pathResourceCurrentBeforeDeduction = player.pathResource?.current ?? 0;
+
       // Deduct resource cost (HP, Mana, or Path Resource)
       if (useHpForMana) {
         const hpCost = Math.floor(effectiveManaCost * 0.5);
@@ -238,23 +242,25 @@ export function usePowerActions(context: PowerActivationContext) {
 
       // Calculate path resource damage multiplier (Phase 6)
       // e.g., Archmage gets +10% per charge, Berserker gets +30% at 80+ fury
+      // IMPORTANT: Use pathResourceCurrentBeforeDeduction to calculate damage BEFORE resource was spent
       let pathResourceDamageMultiplier = 1;
       if (usesPathResource && player.pathResource) {
         const damageEffects = player.pathResource.thresholds?.filter(
-          t => player.pathResource!.current >= t.value && t.effect.type === 'damage_bonus'
+          t => pathResourceCurrentBeforeDeduction >= t.value && t.effect.type === 'damage_bonus'
         ) ?? [];
 
         // Special case for arcane charges: stacking per charge
         if (player.pathResource.type === 'arcane_charges') {
           const chargeBonus = damageEffects.find(t => t.effect.value);
           if (chargeBonus) {
-            pathResourceDamageMultiplier += (chargeBonus.effect.value ?? 0) * player.pathResource.current;
-            if (player.pathResource.current > 0) {
-              logs.push(`⚡ Arcane Charges: +${Math.floor((chargeBonus.effect.value ?? 0) * player.pathResource.current * 100)}% spell damage`);
+            // Use the value BEFORE deduction for damage calculation
+            pathResourceDamageMultiplier += (chargeBonus.effect.value ?? 0) * pathResourceCurrentBeforeDeduction;
+            if (pathResourceCurrentBeforeDeduction > 0) {
+              logs.push(`⚡ Arcane Charges: +${Math.floor((chargeBonus.effect.value ?? 0) * pathResourceCurrentBeforeDeduction * 100)}% spell damage`);
             }
           }
         } else {
-          // Standard: add all damage bonuses
+          // Standard: add all damage bonuses (based on resource value before deduction)
           for (const threshold of damageEffects) {
             pathResourceDamageMultiplier += threshold.effect.value ?? 0;
           }
