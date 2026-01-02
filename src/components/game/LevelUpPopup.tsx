@@ -13,7 +13,7 @@ export function LevelUpPopup({ newLevel, onContinue }: LevelUpPopupProps) {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 animate-in fade-in duration-300 p-2 sm:p-4">
+    <div data-testid="level-up-popup" className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 animate-in fade-in duration-300 p-2 sm:p-4">
       <div className="pixel-panel border-2 border-gold rounded-lg p-4 sm:p-6 max-w-sm w-full shadow-2xl shadow-gold/20 animate-in zoom-in-95 duration-300 relative overflow-hidden">
         {/* Pixel art burst effects */}
         {!prefersReducedMotion && (
@@ -102,7 +102,7 @@ export function LevelUpPopup({ newLevel, onContinue }: LevelUpPopupProps) {
           {/* Pixel divider */}
           <PixelDivider color="amber" className="pt-3" />
 
-          <p className="pixel-text text-lg sm:text-xl font-bold text-white mt-3">
+          <p data-testid="level-up-new-level" className="pixel-text text-lg sm:text-xl font-bold text-white mt-3">
             Level {newLevel}
           </p>
         </div>

@@ -7,15 +7,17 @@ interface HealthBarProps {
   variant?: 'health' | 'mana' | 'xp';
   showValues?: boolean;
   className?: string;
+  testId?: string;
 }
 
-export function HealthBar({ 
-  current, 
-  max, 
-  label, 
-  variant = 'health', 
+export function HealthBar({
+  current,
+  max,
+  label,
+  variant = 'health',
   showValues = true,
-  className 
+  className,
+  testId
 }: HealthBarProps) {
   const percentage = Math.max(0, Math.min(100, (current / max) * 100));
   
@@ -32,7 +34,7 @@ export function HealthBar({
   };
   
   return (
-    <div className={cn('space-y-1', className)}>
+    <div data-testid={testId} className={cn('space-y-1', className)}>
       <div className="flex justify-between text-pixel-sm">
         <span className="text-muted-foreground">{label}</span>
         {showValues && (
