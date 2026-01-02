@@ -1,0 +1,213 @@
+import { Player, Enemy, StatusEffect } from '@/types/game';
+import { STATUS_EFFECT_TYPE, StatusEffectType } from '@/constants/enums';
+import { COMBAT_BALANCE } from '@/constants/balance';
+import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+export type StatusEffectSource =
+  | 'enemy_ability'
+  | 'power'
+  | 'path_ability'
+  | 'item_effect';
+
+export interface StatusEffectConfig {
+  type: StatusEffectType;
+  duration?: number;
+  damage?: number;
+  value?: number;
+}
+
+export interface PlayerStatusResult {
+  player: Player;
+  logs: string[];
+  applied: boolean;
+}
+
+export interface EnemyStatusResult {
+  enemy: Enemy;
+  logs: string[];
+  applied: boolean;
+}
+
+// ============================================================================
+// INTERNAL HELPERS (not exported)
+// ============================================================================
+
+const DEFAULT_DURATIONS: Record<StatusEffectType, number> = {
+  [STATUS_EFFECT_TYPE.POISON]: COMBAT_BALANCE.DEFAULT_POISON_DURATION,
+  [STATUS_EFFECT_TYPE.STUN]: COMBAT_BALANCE.DEFAULT_STUN_DURATION,
+  [STATUS_EFFECT_TYPE.SLOW]: COMBAT_BALANCE.DEFAULT_BUFF_DURATION,
+  [STATUS_EFFECT_TYPE.BLEED]: COMBAT_BALANCE.DEFAULT_POISON_DURATION,
+};
+
+const STATUS_ICONS: Record<StatusEffectType, string> = {
+  [STATUS_EFFECT_TYPE.POISON]: 'status-poison',
+  [STATUS_EFFECT_TYPE.STUN]: 'status-stun',
+  [STATUS_EFFECT_TYPE.SLOW]: 'status-slow',
+  [STATUS_EFFECT_TYPE.BLEED]: 'status-bleed',
+};
+
+function getDefaultDuration(type: StatusEffectType): number {
+  return DEFAULT_DURATIONS[type] ?? COMBAT_BALANCE.DEFAULT_BUFF_DURATION;
+}
+
+function getStatusIcon(type: StatusEffectType): string {
+  return STATUS_ICONS[type] ?? 'status-unknown';
+}
+
+function generateStatusId(type: StatusEffectType): string {
+  return `${type}-${Date.now()}`;
+}
+
+// ============================================================================
+// CORE LOGIC
+// ============================================================================
+
+function applyOrRefreshStatus(
+  statusEffects: StatusEffect[],
+  config: StatusEffectConfig
+): { effect: StatusEffect; refreshed: boolean } {
+  const duration = config.duration ?? getDefaultDuration(config.type);
+  const existingIndex = statusEffects.findIndex(e => e.type === config.type);
+
+  if (existingIndex >= 0) {
+    const existing = statusEffects[existingIndex];
+    const newDamage = config.damage !== undefined
+      ? Math.max(existing.damage ?? 0, config.damage)
+      : existing.damage;
+    const newValue = config.value !== undefined
+      ? Math.max(existing.value ?? 0, config.value)
+      : existing.value;
+
+    const refreshedEffect: StatusEffect = {
+      ...existing,
+      damage: newDamage,
+      value: newValue,
+      remainingTurns: duration,
+    };
+    statusEffects[existingIndex] = refreshedEffect;
+    return { effect: refreshedEffect, refreshed: true };
+  }
+
+  const newEffect: StatusEffect = {
+    id: generateStatusId(config.type),
+    type: config.type,
+    damage: config.damage,
+    value: config.value,
+    remainingTurns: duration,
+    icon: getStatusIcon(config.type),
+  };
+  statusEffects.push(newEffect);
+  return { effect: newEffect, refreshed: false };
+}
+
+// ============================================================================
+// PUBLIC API
+// ============================================================================
+
+export function hasStatusEffect(
+  statusEffects: StatusEffect[],
+  type: StatusEffectType
+): boolean {
+  return statusEffects.some(e => e.type === type);
+}
+
+export function applyStatusToPlayer(
+  player: Player,
+  config: StatusEffectConfig,
+  source: StatusEffectSource,
+  immunities: StatusEffectType[] = []
+): PlayerStatusResult {
+  const updatedPlayer = deepClonePlayer(player);
+  const logs: string[] = [];
+
+  if (immunities.includes(config.type)) {
+    logs.push(`Resisted ${config.type}!`);
+    return { player: updatedPlayer, logs, applied: false };
+  }
+
+  const { effect, refreshed } = applyOrRefreshStatus(
+    updatedPlayer.statusEffects,
+    config
+  );
+
+  const logMessage = getStatusLogMessage('You', config.type, effect, refreshed);
+  logs.push(logMessage);
+
+  return { player: updatedPlayer, logs, applied: true };
+}
+
+function getStatusLogMessage(
+  targetName: string,
+  type: StatusEffectType,
+  effect: StatusEffect,
+  refreshed: boolean
+): string {
+  switch (type) {
+    case STATUS_EFFECT_TYPE.POISON:
+      return `${targetName} are poisoned! (${effect.damage} damage/turn for ${effect.remainingTurns} turns)`;
+    case STATUS_EFFECT_TYPE.STUN:
+      return `${targetName} are stunned for ${effect.remainingTurns} turn(s)!`;
+    case STATUS_EFFECT_TYPE.SLOW: {
+      const slowPercent = Math.round((effect.value ?? 0) * 100);
+      return `${targetName} are slowed by ${slowPercent}% for ${effect.remainingTurns} turns!`;
+    }
+    case STATUS_EFFECT_TYPE.BLEED:
+      return `${targetName} are bleeding! (${effect.damage} damage/turn for ${effect.remainingTurns} turns)`;
+    default:
+      return `${targetName} affected by ${type}!`;
+  }
+}
+
+export function applyStatusToEnemy(
+  enemy: Enemy,
+  config: StatusEffectConfig,
+  source: StatusEffectSource
+): EnemyStatusResult {
+  const updatedEnemy = deepCloneEnemy(enemy);
+  const logs: string[] = [];
+
+  if (!updatedEnemy.statusEffects) {
+    updatedEnemy.statusEffects = [];
+  }
+
+  const { effect, refreshed } = applyOrRefreshStatus(
+    updatedEnemy.statusEffects,
+    config
+  );
+
+  const logMessage = getEnemyStatusLogMessage(
+    updatedEnemy.name,
+    config.type,
+    effect,
+    refreshed
+  );
+  logs.push(logMessage);
+
+  return { enemy: updatedEnemy, logs, applied: true };
+}
+
+function getEnemyStatusLogMessage(
+  enemyName: string,
+  type: StatusEffectType,
+  effect: StatusEffect,
+  refreshed: boolean
+): string {
+  switch (type) {
+    case STATUS_EFFECT_TYPE.POISON:
+      return `${enemyName} is poisoned! (${effect.damage} damage/turn for ${effect.remainingTurns} turns)`;
+    case STATUS_EFFECT_TYPE.STUN:
+      return `${enemyName} is stunned for ${effect.remainingTurns} turn(s)!`;
+    case STATUS_EFFECT_TYPE.SLOW: {
+      const slowPercent = Math.round((effect.value ?? 0) * 100);
+      return `${enemyName} is slowed by ${slowPercent}% for ${effect.remainingTurns} turns!`;
+    }
+    case STATUS_EFFECT_TYPE.BLEED:
+      return `${enemyName} is bleeding! (${effect.damage} damage/turn for ${effect.remainingTurns} turns)`;
+    default:
+      return `${enemyName} affected by ${type}!`;
+  }
+}
