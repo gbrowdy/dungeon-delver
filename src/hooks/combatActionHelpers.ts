@@ -13,7 +13,7 @@ import {
 } from '@/constants/enums';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getCritChance, getCritDamage, getDropQualityBonus } from '@/utils/fortuneUtils';
-import { applyDamageToPlayer } from '@/utils/damageUtils';
+import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { isFeatureEnabled } from '@/constants/features';
 import type { TriggerResult } from '@/hooks/usePathAbilities';
@@ -357,8 +357,11 @@ export function getEffectiveEnemyStat(
 
 /**
  * Apply path ability trigger results to an enemy.
- * Handles damage, reflected damage, status effects, and stat debuffs.
+ * Handles status effects and stat debuffs.
  * Debuffs with matching stat+source refresh duration instead of stacking.
+ *
+ * NOTE: Damage (damageAmount, reflectedDamage) should be applied separately
+ * using applyDamageToEnemy() for centralized damage handling.
  *
  * @param enemy - The enemy to apply effects to
  * @param triggerResult - The result from processTrigger()
@@ -367,15 +370,8 @@ export function applyTriggerResultToEnemy(
   enemy: Enemy,
   triggerResult: TriggerResult
 ): void {
-  // Apply damage to enemy if any
-  if (triggerResult.damageAmount) {
-    enemy.health -= triggerResult.damageAmount;
-  }
-
-  // Apply reflected damage to enemy if any
-  if (triggerResult.reflectedDamage) {
-    enemy.health -= triggerResult.reflectedDamage;
-  }
+  // NOTE: Damage is now handled separately via applyDamageToEnemy() in callers
+  // This function only handles status effects and debuffs
 
   // Apply status effect to enemy if triggered
   if (triggerResult.statusToApply) {
@@ -562,17 +558,19 @@ export function checkPathResourceExecute(
  * @param player - Player to modify (will be mutated)
  * @param enemy - Enemy to execute (will be mutated)
  * @param executeResult - The execute result containing flags
+ * @returns The updated enemy after execute damage
  */
 export function applyPathResourceExecute(
   player: Player,
   enemy: Enemy,
   executeResult: PathResourceExecuteResult
-): void {
-  if (!executeResult.shouldExecute) return;
+): Enemy {
+  if (!executeResult.shouldExecute) return enemy;
 
-  // Kill the enemy instantly and mark as dying for animation system
-  enemy.health = 0;
-  enemy.isDying = true;
+  // Kill the enemy instantly using centralized damage function
+  const executeDamageResult = applyDamageToEnemy(enemy, 0, 'execute');
+  const updatedEnemy = executeDamageResult.enemy;
+  updatedEnemy.isDying = true;
 
   // Reset all power cooldowns
   if (executeResult.resetCooldowns) {
@@ -589,4 +587,6 @@ export function applyPathResourceExecute(
       current: 0,
     };
   }
+
+  return updatedEnemy;
 }

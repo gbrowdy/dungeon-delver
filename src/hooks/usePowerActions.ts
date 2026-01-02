@@ -14,7 +14,7 @@ import { applyTriggerResultToEnemy } from '@/hooks/combatActionHelpers';
 import { processLevelUp } from '@/hooks/useRewardCalculation';
 import { isFeatureEnabled } from '@/constants/features';
 import { PATH_RESOURCES, getResourceDisplayName } from '@/data/pathResources';
-import { applyDamageToPlayer } from '@/utils/damageUtils';
+import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
 
 /**
  * Context for power activation - all state needed to execute a power
@@ -120,8 +120,8 @@ export function usePowerActions(context: PowerActivationContext) {
         }
       }
 
-      const player = { ...prev.player };
-      const enemy = { ...prev.currentEnemy };
+      let player = { ...prev.player };
+      let enemy = { ...prev.currentEnemy };
       const logs: string[] = [];
 
       // Track different powers used for combo system (e.g., Elemental Convergence)
@@ -309,7 +309,8 @@ export function usePowerActions(context: PowerActivationContext) {
               // Add any additional damage from on-hit effects
               hitDamage += hitResult.additionalDamage;
 
-              enemy.health -= hitDamage;
+              const burstHitResult = applyDamageToEnemy(enemy, hitDamage, 'power');
+              enemy = burstHitResult.enemy;
               totalDamage += hitDamage;
             }
             logs.push(`Dealt ${totalDamage} damage in ${hitCount} hits!`);
@@ -329,7 +330,8 @@ export function usePowerActions(context: PowerActivationContext) {
               logs.push(`💀 EXECUTE! Enemy below ${Math.floor(executeThreshold * 100)}% HP!`);
             }
 
-            enemy.health -= baseDamage;
+            const executeResult = applyDamageToEnemy(enemy, baseDamage, 'power');
+            enemy = executeResult.enemy;
             totalDamage = baseDamage;
             logs.push(`Dealt ${totalDamage} damage!`);
           } else if (power.category === 'sacrifice') {
@@ -340,12 +342,14 @@ export function usePowerActions(context: PowerActivationContext) {
             player = sacrificeResult.player;
             logs.push(`🩸 Sacrificed ${sacrificeResult.actualDamage} HP!`);
 
-            enemy.health -= baseDamage;
+            const sacrificeDamageResult = applyDamageToEnemy(enemy, baseDamage, 'power');
+            enemy = sacrificeDamageResult.enemy;
             totalDamage = baseDamage;
             logs.push(`Dealt ${totalDamage} damage!`);
           } else {
             // Strike and other damage powers
-            enemy.health -= baseDamage;
+            const strikeDamageResult = applyDamageToEnemy(enemy, baseDamage, 'power');
+            enemy = strikeDamageResult.enemy;
             totalDamage = baseDamage;
             logs.push(`Dealt ${totalDamage} magical damage!`);
           }
@@ -362,7 +366,8 @@ export function usePowerActions(context: PowerActivationContext) {
 
           // Apply combo bonus damage if any
           if (onComboResult.damageAmount && onComboResult.damageAmount > 0) {
-            enemy.health -= onComboResult.damageAmount;
+            const comboDamageResult = applyDamageToEnemy(enemy, onComboResult.damageAmount, 'path_ability');
+            enemy = comboDamageResult.enemy;
             totalDamage += onComboResult.damageAmount;
             logs.push(...onComboResult.logs);
 
@@ -503,7 +508,8 @@ export function usePowerActions(context: PowerActivationContext) {
             if (power.id === 'frost-nova') {
               // Deal damage first
               const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
-              enemy.health -= damage;
+              const frostResult = applyDamageToEnemy(enemy, damage, 'power');
+              enemy = frostResult.enemy;
               logs.push(`Dealt ${damage} frost damage!`);
 
               // Apply slow effect
@@ -520,7 +526,8 @@ export function usePowerActions(context: PowerActivationContext) {
             } else if (power.id === 'stunning-blow') {
               // Deal damage first
               const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
-              enemy.health -= damage;
+              const stunBlowResult = applyDamageToEnemy(enemy, damage, 'power');
+              enemy = stunBlowResult.enemy;
               logs.push(`Dealt ${damage} damage!`);
 
               // 40% chance to stun

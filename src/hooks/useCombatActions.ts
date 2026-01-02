@@ -40,7 +40,7 @@ import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getResourceGeneration, pathUsesResourceSystem } from '@/hooks/usePathResource';
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
-import { applyDamageToPlayer } from '@/utils/damageUtils';
+import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities, getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
 import type { PauseReasonType } from '@/constants/enums';
@@ -143,7 +143,7 @@ export function useCombatActions({
       if (prev.currentEnemy.isDying || prev.player.isDying) return prev;
 
       const player = deepClonePlayer(prev.player);
-      const enemy = deepCloneEnemy(prev.currentEnemy);
+      let enemy = deepCloneEnemy(prev.currentEnemy);
       let logs: string[] = [];
 
       // Process turn-start effects (status effects, buffs, turn-start items)
@@ -266,7 +266,9 @@ export function useCombatActions({
 
       // Apply reflected damage to enemy if any
       if (onHitResult.reflectedDamage) {
-        enemy.health -= onHitResult.reflectedDamage;
+        const reflectResult = applyDamageToEnemy(enemy, onHitResult.reflectedDamage, 'path_ability');
+        enemy = reflectResult.enemy;
+        logs.push(...reflectResult.logs);
       }
 
       // Apply status effect to enemy if triggered
@@ -284,7 +286,9 @@ export function useCombatActions({
 
         // Apply reflected damage to enemy if any
         if (onStatusInflictResult.reflectedDamage) {
-          enemy.health -= onStatusInflictResult.reflectedDamage;
+          const reflectResult = applyDamageToEnemy(enemy, onStatusInflictResult.reflectedDamage, 'path_ability');
+          enemy = reflectResult.enemy;
+          logs.push(...reflectResult.logs);
         }
 
         // Apply results to enemy
@@ -327,7 +331,9 @@ export function useCombatActions({
 
         // Apply reflected damage to enemy if any
         if (onCritResult.reflectedDamage) {
-          enemy.health -= onCritResult.reflectedDamage;
+          const reflectResult = applyDamageToEnemy(enemy, onCritResult.reflectedDamage, 'path_ability');
+          enemy = reflectResult.enemy;
+          logs.push(...reflectResult.logs);
         }
 
         // Apply status effect to enemy if triggered
@@ -345,7 +351,9 @@ export function useCombatActions({
 
           // Apply reflected damage to enemy if any
           if (onStatusInflictResult.reflectedDamage) {
-            enemy.health -= onStatusInflictResult.reflectedDamage;
+            const reflectResult = applyDamageToEnemy(enemy, onStatusInflictResult.reflectedDamage, 'path_ability');
+            enemy = reflectResult.enemy;
+            logs.push(...reflectResult.logs);
           }
 
           // Apply results to enemy
@@ -359,7 +367,9 @@ export function useCombatActions({
       }
 
       // Apply damage to enemy
-      enemy.health -= finalDamage;
+      const mainDamageResult = applyDamageToEnemy(enemy, finalDamage, 'hero_attack');
+      enemy = mainDamageResult.enemy;
+      // Use custom log message for hero attack (more informative than generic)
       logs.push(`You deal ${finalDamage} damage to ${enemy.name}`);
 
       // Generate path resource on hit (Phase 6)
@@ -396,7 +406,7 @@ export function useCombatActions({
         const executeResult = checkPathResourceExecute(playerAfterEffects, enemy);
         if (executeResult.shouldExecute) {
           logs.push(...executeResult.logs);
-          applyPathResourceExecute(playerAfterEffects, enemy, executeResult);
+          enemy = applyPathResourceExecute(playerAfterEffects, enemy, executeResult);
           logs.push(`💀 ${enemy.name} executed instantly!`);
         }
       }
@@ -434,7 +444,8 @@ export function useCombatActions({
 
       // Apply combo bonus damage if any (damageAmount is already calculated in usePathAbilities)
       if (onComboResult.damageAmount && onComboResult.damageAmount > 0) {
-        enemy.health -= onComboResult.damageAmount;
+        const comboResult = applyDamageToEnemy(enemy, onComboResult.damageAmount, 'path_ability');
+        enemy = comboResult.enemy;
         finalDamage += onComboResult.damageAmount;
         logs.push(...onComboResult.logs);
 
@@ -603,7 +614,7 @@ export function useCombatActions({
       if (prev.currentEnemy.isDying || prev.player.isDying) return prev;
 
       let player = deepClonePlayer(prev.player);
-      const enemy = deepCloneEnemy(prev.currentEnemy);
+      let enemy = deepCloneEnemy(prev.currentEnemy);
       const logs: string[] = [];
 
       // Tick down enemy ability cooldowns
@@ -964,7 +975,9 @@ export function useCombatActions({
 
           // Apply reflection damage to enemy if any
           if (onDamagedResult.additionalDamage > 0) {
-            enemy.health -= onDamagedResult.additionalDamage;
+            const itemReflectResult = applyDamageToEnemy(enemy, onDamagedResult.additionalDamage, 'reflect');
+            enemy = itemReflectResult.enemy;
+            logs.push(...itemReflectResult.logs);
           }
 
           // Process path ability triggers: on_damaged
@@ -978,7 +991,9 @@ export function useCombatActions({
 
           // Apply reflected damage to enemy if any
           if (pathOnDamagedResult.reflectedDamage) {
-            enemy.health -= pathOnDamagedResult.reflectedDamage;
+            const pathReflectResult = applyDamageToEnemy(enemy, pathOnDamagedResult.reflectedDamage, 'path_ability');
+            enemy = pathReflectResult.enemy;
+            logs.push(...pathReflectResult.logs);
           }
 
           // Process path ability triggers: on_low_hp
@@ -993,7 +1008,9 @@ export function useCombatActions({
 
           // Apply reflected damage to enemy if any
           if (pathOnLowHpResult.reflectedDamage) {
-            enemy.health -= pathOnLowHpResult.reflectedDamage;
+            const lowHpReflectResult = applyDamageToEnemy(enemy, pathOnLowHpResult.reflectedDamage, 'path_ability');
+            enemy = lowHpReflectResult.enemy;
+            logs.push(...lowHpReflectResult.logs);
           }
         }
       }
