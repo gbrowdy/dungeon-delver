@@ -1,6 +1,6 @@
-import { Player } from '@/types/game';
+import { Player, Enemy } from '@/types/game';
 import { isTestInvincible } from '@/hooks/useTestHooks';
-import { deepClonePlayer } from '@/utils/stateUtils';
+import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 
 /**
  * Source of damage for determining how it should be processed.
@@ -120,5 +120,138 @@ export function applyDamageToPlayer(
     shieldAbsorbed,
     shieldBroken,
     blocked: false,
+  };
+}
+
+// ============================================================================
+// ENEMY DAMAGE APPLICATION
+// ============================================================================
+
+/**
+ * Source of damage to an enemy for determining how it should be processed.
+ * - hero_attack: Standard hero auto-attack
+ * - power: Player power/ability damage
+ * - status_effect: Damage over time from status effects (poison, bleed)
+ * - reflect: Reflected damage from items/path abilities
+ * - path_ability: Damage from path ability triggers
+ * - execute: Instant kill (Assassin momentum, etc.)
+ */
+export type EnemyDamageSource =
+  | 'hero_attack'
+  | 'power'
+  | 'status_effect'
+  | 'reflect'
+  | 'path_ability'
+  | 'execute';
+
+/**
+ * Result of applying damage to an enemy.
+ */
+export interface EnemyDamageResult {
+  /** Updated enemy with damage applied (cloned, not mutated) */
+  enemy: Enemy;
+  /** Combat log messages generated */
+  logs: string[];
+  /** Actual damage dealt (0 if blocked by shield) */
+  actualDamage: number;
+  /** Whether damage was blocked entirely (enemy shield) */
+  blocked: boolean;
+  /** Whether this damage killed the enemy */
+  killed: boolean;
+}
+
+/**
+ * Generate a combat log message for enemy damage based on source.
+ */
+function getEnemyDamageLog(
+  name: string,
+  damage: number,
+  source: EnemyDamageSource
+): string {
+  switch (source) {
+    case 'status_effect':
+      return `${name} takes ${damage} damage from status effect!`;
+    case 'reflect':
+      return `${name} takes ${damage} reflected damage!`;
+    default:
+      return `${name} takes ${damage} damage!`;
+  }
+}
+
+/**
+ * Centralized function for applying damage to an enemy.
+ *
+ * This function handles:
+ * - Enemy shield blocking (bypassed by execute)
+ * - Health reduction (clamped to 0)
+ * - Execute instant kills
+ * - Combat log generation
+ *
+ * @param enemy - The enemy to apply damage to
+ * @param damage - Amount of damage to apply
+ * @param source - Source of the damage (affects shield bypass and logging)
+ * @returns EnemyDamageResult with updated enemy and metadata
+ *
+ * @example
+ * ```typescript
+ * // Standard hero attack
+ * const result = applyDamageToEnemy(enemy, 25, 'hero_attack');
+ *
+ * // Execute (instant kill, bypasses shield)
+ * const execResult = applyDamageToEnemy(enemy, 0, 'execute');
+ * ```
+ */
+export function applyDamageToEnemy(
+  enemy: Enemy,
+  damage: number,
+  source: EnemyDamageSource
+): EnemyDamageResult {
+  const updatedEnemy = deepCloneEnemy(enemy);
+  const logs: string[] = [];
+
+  // Check enemy shield first (blocks all damage except execute)
+  if (updatedEnemy.isShielded && source !== 'execute') {
+    logs.push(`${updatedEnemy.name}'s shield blocks the attack!`);
+    return {
+      enemy: updatedEnemy,
+      logs,
+      actualDamage: 0,
+      blocked: true,
+      killed: false,
+    };
+  }
+
+  // Handle execute (instant kill)
+  if (source === 'execute') {
+    const actualDamage = updatedEnemy.health;
+    updatedEnemy.health = 0;
+    logs.push(`${updatedEnemy.name} executed!`);
+    return {
+      enemy: updatedEnemy,
+      logs,
+      actualDamage,
+      blocked: false,
+      killed: true,
+    };
+  }
+
+  // Apply damage
+  const healthBefore = updatedEnemy.health;
+  updatedEnemy.health = Math.max(0, healthBefore - damage);
+  const actualDamage = healthBefore - updatedEnemy.health;
+  const killed = updatedEnemy.health <= 0;
+
+  // Generate log based on source
+  if (actualDamage > 0) {
+    const logMessage = getEnemyDamageLog(updatedEnemy.name, actualDamage, source);
+    logs.push(logMessage);
+  }
+
+  return {
+    enemy: updatedEnemy,
+    logs,
+    actualDamage,
+    blocked: false,
+    killed,
   };
 }

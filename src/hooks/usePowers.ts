@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Player, Enemy, Power, Stats } from '@/types/game';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+import { applyDamageToEnemy } from '@/utils/damageUtils';
 
 /**
  * Power use result
@@ -67,7 +68,7 @@ export function usePowers() {
     if (!canUsePower(player, powerId)) return null;
 
     const updatedPlayer = deepClonePlayer(player);
-    const updatedEnemy = deepCloneEnemy(enemy);
+    let updatedEnemy = deepCloneEnemy(enemy);
     const logs: string[] = [];
     let damage = 0;
 
@@ -100,7 +101,8 @@ export function usePowers() {
     switch (power.effect) {
       case 'damage': {
         damage = Math.floor(updatedPlayer.currentStats.power * power.value * comboMultiplier);
-        updatedEnemy.health -= damage;
+        const damageResult = applyDamageToEnemy(updatedEnemy, damage, 'power');
+        updatedEnemy = damageResult.enemy;
         logs.push(`Dealt ${damage} magical damage!`);
 
         // Vampiric touch heals

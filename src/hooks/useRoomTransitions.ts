@@ -8,6 +8,7 @@ import { logStateTransition, logCombatEvent, logDeathEvent } from '@/utils/gameL
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
 import { applyTriggerResultToEnemy } from '@/hooks/combatActionHelpers';
+import { applyDamageToEnemy } from '@/utils/damageUtils';
 
 /**
  * Hook for room transitions and enemy spawning.
@@ -32,7 +33,7 @@ export function useRoomTransitions(
 
       const newRoom = prev.currentRoom + 1;
       // Use spread to conditionally pass floorTheme - if undefined, use default parameter
-      const enemy = prev.currentFloorTheme
+      let enemy = prev.currentFloorTheme
         ? generateEnemy(prev.currentFloor, newRoom, prev.roomsPerFloor, prev.currentFloorTheme)
         : generateEnemy(prev.currentFloor, newRoom, prev.roomsPerFloor);
       const logs: string[] = [`Room ${newRoom}: A ${enemy.name} appears!`];
@@ -118,6 +119,17 @@ export function useRoomTransitions(
       });
       Object.assign(player, { currentStats: pathCombatStartResult.player.currentStats });
       logs.push(...pathCombatStartResult.logs);
+
+      // Apply trigger damage to enemy (combat_start abilities, etc.)
+      if (pathCombatStartResult.damageAmount) {
+        const triggerDmgResult = applyDamageToEnemy(enemy, pathCombatStartResult.damageAmount, 'path_ability');
+        enemy = triggerDmgResult.enemy;
+      }
+      if (pathCombatStartResult.reflectedDamage) {
+        const reflectDmgResult = applyDamageToEnemy(enemy, pathCombatStartResult.reflectedDamage, 'reflect');
+        enemy = reflectDmgResult.enemy;
+        logs.push(...reflectDmgResult.logs);
+      }
       applyTriggerResultToEnemy(enemy, pathCombatStartResult);
 
       // Ambush: First attack against each enemy is a guaranteed critical hit

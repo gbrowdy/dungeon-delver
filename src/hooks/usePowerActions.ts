@@ -14,7 +14,7 @@ import { applyTriggerResultToEnemy } from '@/hooks/combatActionHelpers';
 import { processLevelUp } from '@/hooks/useRewardCalculation';
 import { isFeatureEnabled } from '@/constants/features';
 import { PATH_RESOURCES, getResourceDisplayName } from '@/data/pathResources';
-import { applyDamageToPlayer } from '@/utils/damageUtils';
+import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
 
 /**
  * Context for power activation - all state needed to execute a power
@@ -120,8 +120,8 @@ export function usePowerActions(context: PowerActivationContext) {
         }
       }
 
-      const player = { ...prev.player };
-      const enemy = { ...prev.currentEnemy };
+      let player = { ...prev.player };
+      let enemy = { ...prev.currentEnemy };
       const logs: string[] = [];
 
       // Track different powers used for combo system (e.g., Elemental Convergence)
@@ -225,6 +225,17 @@ export function usePowerActions(context: PowerActivationContext) {
       });
       player.currentStats = pathOnPowerResult.player.currentStats;
       logs.push(...pathOnPowerResult.logs);
+
+      // Apply trigger damage to enemy (on_power_use abilities, etc.)
+      if (pathOnPowerResult.damageAmount) {
+        const triggerDmgResult = applyDamageToEnemy(enemy, pathOnPowerResult.damageAmount, 'path_ability');
+        enemy = triggerDmgResult.enemy;
+      }
+      if (pathOnPowerResult.reflectedDamage) {
+        const reflectDmgResult = applyDamageToEnemy(enemy, pathOnPowerResult.reflectedDamage, 'reflect');
+        enemy = reflectDmgResult.enemy;
+        logs.push(...reflectDmgResult.logs);
+      }
       applyTriggerResultToEnemy(enemy, pathOnPowerResult);
 
       // Shadow Dance: Next 3 attacks after using a power are guaranteed critical hits
@@ -291,6 +302,7 @@ export function usePowerActions(context: PowerActivationContext) {
             // Multi-hit powers - divide damage across hits and proc on-hit effects
             const hitCount = power.id === 'fan-of-knives' ? 5 : 3;
             const damagePerHit = Math.floor(baseDamage / hitCount);
+            let hitsConnected = 0;
 
             for (let i = 0; i < hitCount; i++) {
               // Each hit can crit independently
@@ -309,10 +321,18 @@ export function usePowerActions(context: PowerActivationContext) {
               // Add any additional damage from on-hit effects
               hitDamage += hitResult.additionalDamage;
 
-              enemy.health -= hitDamage;
-              totalDamage += hitDamage;
+              const burstHitResult = applyDamageToEnemy(enemy, hitDamage, 'power');
+              enemy = burstHitResult.enemy;
+              if (burstHitResult.blocked) {
+                logs.push(...burstHitResult.logs);
+              } else {
+                totalDamage += burstHitResult.actualDamage;
+                hitsConnected++;
+              }
             }
-            logs.push(`Dealt ${totalDamage} damage in ${hitCount} hits!`);
+            if (hitsConnected > 0) {
+              logs.push(`Dealt ${totalDamage} damage in ${hitsConnected} hits!`);
+            }
           } else if (power.category === 'execute') {
             // Execute powers - bonus damage vs low HP enemies
             const hpPercent = enemy.health / enemy.maxHealth;
@@ -329,9 +349,14 @@ export function usePowerActions(context: PowerActivationContext) {
               logs.push(`💀 EXECUTE! Enemy below ${Math.floor(executeThreshold * 100)}% HP!`);
             }
 
-            enemy.health -= baseDamage;
-            totalDamage = baseDamage;
-            logs.push(`Dealt ${totalDamage} damage!`);
+            const executeDamageResult = applyDamageToEnemy(enemy, baseDamage, 'power');
+            enemy = executeDamageResult.enemy;
+            if (executeDamageResult.blocked) {
+              logs.push(...executeDamageResult.logs);
+            } else {
+              totalDamage = baseDamage;
+              logs.push(`Dealt ${totalDamage} damage!`);
+            }
           } else if (power.category === 'sacrifice') {
             // Sacrifice powers - spend HP for damage
             const hpCostPercent = power.id === 'reckless-swing' ? 0.15 : 0.20;
@@ -340,14 +365,24 @@ export function usePowerActions(context: PowerActivationContext) {
             player = sacrificeResult.player;
             logs.push(`🩸 Sacrificed ${sacrificeResult.actualDamage} HP!`);
 
-            enemy.health -= baseDamage;
-            totalDamage = baseDamage;
-            logs.push(`Dealt ${totalDamage} damage!`);
+            const sacrificeDamageResult = applyDamageToEnemy(enemy, baseDamage, 'power');
+            enemy = sacrificeDamageResult.enemy;
+            if (sacrificeDamageResult.blocked) {
+              logs.push(...sacrificeDamageResult.logs);
+            } else {
+              totalDamage = baseDamage;
+              logs.push(`Dealt ${totalDamage} damage!`);
+            }
           } else {
             // Strike and other damage powers
-            enemy.health -= baseDamage;
-            totalDamage = baseDamage;
-            logs.push(`Dealt ${totalDamage} magical damage!`);
+            const strikeDamageResult = applyDamageToEnemy(enemy, baseDamage, 'power');
+            enemy = strikeDamageResult.enemy;
+            if (strikeDamageResult.blocked) {
+              logs.push(...strikeDamageResult.logs);
+            } else {
+              totalDamage = baseDamage;
+              logs.push(`Dealt ${totalDamage} magical damage!`);
+            }
           }
 
           // Process path ability triggers: on_combo (for power-based combos like Elemental Convergence)
@@ -362,8 +397,9 @@ export function usePowerActions(context: PowerActivationContext) {
 
           // Apply combo bonus damage if any
           if (onComboResult.damageAmount && onComboResult.damageAmount > 0) {
-            enemy.health -= onComboResult.damageAmount;
-            totalDamage += onComboResult.damageAmount;
+            const comboDamageResult = applyDamageToEnemy(enemy, onComboResult.damageAmount, 'path_ability');
+            enemy = comboDamageResult.enemy;
+            totalDamage += comboDamageResult.actualDamage;
             logs.push(...onComboResult.logs);
 
             // Reset combo count after combo triggers
@@ -503,8 +539,13 @@ export function usePowerActions(context: PowerActivationContext) {
             if (power.id === 'frost-nova') {
               // Deal damage first
               const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
-              enemy.health -= damage;
-              logs.push(`Dealt ${damage} frost damage!`);
+              const frostResult = applyDamageToEnemy(enemy, damage, 'power');
+              enemy = frostResult.enemy;
+              if (frostResult.blocked) {
+                logs.push(...frostResult.logs);
+              } else {
+                logs.push(`Dealt ${damage} frost damage!`);
+              }
 
               // Apply slow effect
               enemy.statusEffects = enemy.statusEffects || [];
@@ -520,8 +561,13 @@ export function usePowerActions(context: PowerActivationContext) {
             } else if (power.id === 'stunning-blow') {
               // Deal damage first
               const damage = Math.floor(player.currentStats.power * power.value * comboMultiplier);
-              enemy.health -= damage;
-              logs.push(`Dealt ${damage} damage!`);
+              const stunBlowResult = applyDamageToEnemy(enemy, damage, 'power');
+              enemy = stunBlowResult.enemy;
+              if (stunBlowResult.blocked) {
+                logs.push(...stunBlowResult.logs);
+              } else {
+                logs.push(`Dealt ${damage} damage!`);
+              }
 
               // 40% chance to stun
               const stunChance = 0.4;
@@ -562,7 +608,18 @@ export function usePowerActions(context: PowerActivationContext) {
                 );
               }
 
-              // Apply results to enemy
+              // Apply trigger damage to enemy (on_status_inflict abilities, etc.)
+              if (onStatusInflictResult.damageAmount) {
+                const triggerDmgResult = applyDamageToEnemy(enemy, onStatusInflictResult.damageAmount, 'path_ability');
+                enemy = triggerDmgResult.enemy;
+              }
+              if (onStatusInflictResult.reflectedDamage) {
+                const reflectDmgResult = applyDamageToEnemy(enemy, onStatusInflictResult.reflectedDamage, 'reflect');
+                enemy = reflectDmgResult.enemy;
+                logs.push(...reflectDmgResult.logs);
+              }
+
+              // Apply results to enemy (status effects, debuffs)
               applyTriggerResultToEnemy(enemy, onStatusInflictResult);
 
               // Only add logs if there were actual effects
