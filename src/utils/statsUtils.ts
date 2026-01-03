@@ -1,5 +1,6 @@
 import type { Player } from '@/types/game';
 import { deepClonePlayer } from '@/utils/stateUtils';
+import { BUFF_STAT } from '@/constants/enums';
 
 /**
  * Result of restoring health or mana to a player.
@@ -210,6 +211,85 @@ export function generatePathResource(
   return {
     player: updatedPlayer,
     amountGenerated,
+    log,
+  };
+}
+
+/**
+ * Configuration for creating a buff.
+ */
+export interface BuffConfig {
+  name: string;
+  stat: typeof BUFF_STAT[keyof typeof BUFF_STAT];
+  multiplier: number;
+  duration: number;
+  icon?: string;
+  source?: string;
+}
+
+/**
+ * Result of adding a buff to a player.
+ */
+export interface AddBuffResult {
+  player: Player;
+  log?: string;
+}
+
+/**
+ * Get human-readable stat name for log messages.
+ */
+function getStatDisplayName(stat: typeof BUFF_STAT[keyof typeof BUFF_STAT]): string {
+  const names: Record<string, string> = {
+    [BUFF_STAT.POWER]: 'Power',
+    [BUFF_STAT.ARMOR]: 'Armor',
+    [BUFF_STAT.SPEED]: 'Speed',
+    [BUFF_STAT.FORTUNE]: 'Fortune',
+  };
+  return names[stat] || stat;
+}
+
+/**
+ * Add a temporary buff to a player.
+ *
+ * @param player - The player to add the buff to
+ * @param config - Buff configuration
+ * @returns AddBuffResult with updated player and log message
+ *
+ * @example
+ * ```typescript
+ * const result = addBuffToPlayer(player, {
+ *   name: 'Power Surge',
+ *   stat: BUFF_STAT.POWER,
+ *   multiplier: 1.25,
+ *   duration: 3,
+ * });
+ * player = result.player;
+ * if (result.log) logs.push(result.log);
+ * ```
+ */
+export function addBuffToPlayer(
+  player: Player,
+  config: BuffConfig
+): AddBuffResult {
+  const updatedPlayer = deepClonePlayer(player);
+
+  const buff = {
+    id: `buff-${config.source || config.name}-${crypto.randomUUID()}`,
+    name: config.name,
+    stat: config.stat,
+    multiplier: config.multiplier,
+    remainingTurns: config.duration,
+    ...(config.icon ? { icon: config.icon } : {}),
+  };
+
+  updatedPlayer.activeBuffs.push(buff);
+
+  const percentChange = Math.round((config.multiplier - 1) * 100);
+  const statName = getStatDisplayName(config.stat);
+  const log = `${statName} increased by ${percentChange}% for ${config.duration} turns!`;
+
+  return {
+    player: updatedPlayer,
     log,
   };
 }
