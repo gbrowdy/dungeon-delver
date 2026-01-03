@@ -17,7 +17,7 @@ import { PATH_RESOURCES, getResourceDisplayName } from '@/data/pathResources';
 import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
 import { applyStatusToEnemy } from '@/utils/statusEffectUtils';
 import { applyPathTriggerToEnemy } from '@/utils/combatUtils';
-import { restorePlayerHealth, restorePlayerMana } from '@/utils/statsUtils';
+import { restorePlayerHealth, restorePlayerMana, addBuffToPlayer } from '@/utils/statsUtils';
 
 /**
  * Context for power activation - all state needed to execute a power
@@ -469,52 +469,26 @@ export function usePowerActions(context: PowerActivationContext) {
         case 'buff': {
           // Create temporary buff with duration
           const buffDuration = COMBAT_BALANCE.DEFAULT_BUFF_DURATION;
+          let buffStat: typeof BUFF_STAT[keyof typeof BUFF_STAT] = BUFF_STAT.POWER;
 
           if (power.id === 'battle-cry') {
-            // Power buff
-            player.activeBuffs.push({
-              id: `buff-power-${Date.now()}`,
-              name: power.name,
-              stat: BUFF_STAT.POWER,
-              multiplier: 1 + power.value,
-              remainingTurns: buffDuration,
-              icon: power.icon,
-            });
-            logs.push(`Attack increased by ${Math.floor(power.value * 100)}% for ${buffDuration} turns!`);
+            buffStat = BUFF_STAT.POWER;
           } else if (power.id === 'shield-wall') {
-            // Armor buff
-            player.activeBuffs.push({
-              id: `buff-armor-${Date.now()}`,
-              name: power.name,
-              stat: BUFF_STAT.ARMOR,
-              multiplier: 1 + power.value,
-              remainingTurns: buffDuration,
-              icon: power.icon,
-            });
-            logs.push(`Defense doubled for ${buffDuration} turns!`);
+            buffStat = BUFF_STAT.ARMOR;
           } else if (power.id === 'inner-focus') {
-            // Fortune buff
-            player.activeBuffs.push({
-              id: `buff-fortune-${Date.now()}`,
-              name: power.name,
-              stat: BUFF_STAT.FORTUNE,
-              multiplier: 1 + power.value,
-              remainingTurns: buffDuration,
-              icon: power.icon,
-            });
-            logs.push(`Fortune increased by ${Math.floor(power.value * 100)}% for ${buffDuration} turns!`);
-          } else {
-            // Generic power buff for unknown buff powers
-            player.activeBuffs.push({
-              id: `buff-generic-${Date.now()}`,
-              name: power.name,
-              stat: BUFF_STAT.POWER,
-              multiplier: 1 + power.value,
-              remainingTurns: buffDuration,
-              icon: power.icon,
-            });
-            logs.push(`Stats boosted for ${buffDuration} turns!`);
+            buffStat = BUFF_STAT.FORTUNE;
           }
+
+          const buffResult = addBuffToPlayer(player, {
+            name: power.name,
+            stat: buffStat,
+            multiplier: 1 + power.value,
+            duration: buffDuration,
+            icon: power.icon,
+            source: power.id,
+          });
+          player = buffResult.player;
+          if (buffResult.log) logs.push(buffResult.log);
 
           // Recalculate stats with new buff
           player.currentStats = calculateStats(player);

@@ -38,7 +38,7 @@ import { generateEventId } from '@/utils/eventId';
 import { isFeatureEnabled } from '@/constants/features';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { pathUsesResourceSystem } from '@/hooks/usePathResource';
-import { generatePathResource } from '@/utils/statsUtils';
+import { generatePathResource, addBuffToPlayer } from '@/utils/statsUtils';
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
@@ -1117,23 +1117,23 @@ export function useCombatActions({
             player.currentStats.health = 1;
             player.usedCombatAbilities = [...usedCombat, 'undying_fury'];
             // Apply 50% power and speed buff for 5 seconds
-            player.activeBuffs = player.activeBuffs || [];
-            player.activeBuffs.push({
-              id: `undying_fury_power_${Date.now()}`,
+            const powerBuffResult = addBuffToPlayer(player, {
               name: 'Undying Fury',
-              stat: 'power',
+              stat: BUFF_STAT.POWER,
               multiplier: 1.5,
-              remainingTurns: 5,
+              duration: 5,
               icon: 'stat-power',
+              source: 'undying_fury',
             });
-            player.activeBuffs.push({
-              id: `undying_fury_speed_${Date.now()}`,
+            const speedBuffResult = addBuffToPlayer(powerBuffResult.player, {
               name: 'Undying Fury',
-              stat: 'speed',
+              stat: BUFF_STAT.SPEED,
               multiplier: 1.5,
-              remainingTurns: 5,
+              duration: 5,
               icon: 'stat-speed',
+              source: 'undying_fury',
             });
+            player = speedBuffResult.player;
             logs.push(`Undying Fury! You refuse to fall!`);
             // Continue combat, don't die
             safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:undyingFury');

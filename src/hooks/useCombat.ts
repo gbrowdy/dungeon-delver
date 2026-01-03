@@ -6,8 +6,8 @@ import { getDodgeChance } from '@/utils/fortuneUtils';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
 import { applyDamageToPlayer } from '@/utils/damageUtils';
 import { applyStatusToPlayer } from '@/utils/statusEffectUtils';
-import { restorePlayerHealth, restorePlayerMana } from '@/utils/statsUtils';
-import { STATUS_EFFECT_TYPE } from '@/constants/enums';
+import { restorePlayerHealth, restorePlayerMana, addBuffToPlayer } from '@/utils/statsUtils';
+import { STATUS_EFFECT_TYPE, BUFF_STAT } from '@/constants/enums';
 import { COMBAT_BALANCE } from '@/constants/balance';
 
 /**
@@ -80,18 +80,26 @@ export function useCombat() {
               const manaResult = restorePlayerMana(updatedPlayer, item.effect.value);
               updatedPlayer = manaResult.player;
               break;
+<<<<<<< HEAD
+            case 'buff': {
+              const buffResult = addBuffToPlayer(updatedPlayer, {
+=======
             }
             case 'buff':
               updatedPlayer.activeBuffs.push({
                 id: `${trigger}-buff-${Date.now()}`,
+>>>>>>> origin/main
                 name: 'Combat Ready',
-                stat: 'armor',
+                stat: BUFF_STAT.ARMOR,
                 multiplier: 1 + (item.effect.value / player.baseStats.armor),
-                remainingTurns: 3,
+                duration: 3,
                 icon: 'stat-armor',
+                source: trigger,
               });
+              updatedPlayer = buffResult.player;
               context.logs.push(`${item.icon} Defense boosted!`);
               break;
+            }
           }
         }
       }

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { restorePlayerHealth, restorePlayerMana, generatePathResource } from '../statsUtils';
+import { restorePlayerHealth, restorePlayerMana, generatePathResource, addBuffToPlayer } from '../statsUtils';
+import { BUFF_STAT } from '@/constants/enums';
 import { Player } from '@/types/game';
 
 const createMockPlayer = (overrides?: Partial<Player>): Player => ({
@@ -271,5 +272,79 @@ describe('generatePathResource', () => {
     generatePathResource(player, 'onHit');
 
     expect(player.pathResource?.current).toBe(originalResource);
+  });
+});
+
+describe('addBuffToPlayer', () => {
+  it('adds buff to player', () => {
+    const player = createMockPlayer();
+    const result = addBuffToPlayer(player, {
+      name: 'Power Surge',
+      stat: BUFF_STAT.POWER,
+      multiplier: 1.25,
+      duration: 3,
+    });
+
+    expect(result.player.activeBuffs).toHaveLength(1);
+    expect(result.player.activeBuffs[0].name).toBe('Power Surge');
+    expect(result.player.activeBuffs[0].multiplier).toBe(1.25);
+    expect(result.player.activeBuffs[0].remainingTurns).toBe(3);
+  });
+
+  it('generates unique ID for buff', () => {
+    const player = createMockPlayer();
+    const result1 = addBuffToPlayer(player, {
+      name: 'Buff1',
+      stat: BUFF_STAT.POWER,
+      multiplier: 1.1,
+      duration: 2,
+    });
+    const result2 = addBuffToPlayer(result1.player, {
+      name: 'Buff2',
+      stat: BUFF_STAT.ARMOR,
+      multiplier: 1.2,
+      duration: 2,
+    });
+
+    expect(result2.player.activeBuffs[0].id).not.toBe(result2.player.activeBuffs[1].id);
+  });
+
+  it('generates log message', () => {
+    const player = createMockPlayer();
+    const result = addBuffToPlayer(player, {
+      name: 'Power Surge',
+      stat: BUFF_STAT.POWER,
+      multiplier: 1.25,
+      duration: 3,
+    });
+
+    expect(result.log).toBe('Power increased by 25% for 3 turns!');
+  });
+
+  it('includes icon when provided', () => {
+    const player = createMockPlayer();
+    const result = addBuffToPlayer(player, {
+      name: 'Test',
+      stat: BUFF_STAT.POWER,
+      multiplier: 1.1,
+      duration: 2,
+      icon: 'sword',
+    });
+
+    expect(result.player.activeBuffs[0].icon).toBe('sword');
+  });
+
+  it('does not mutate original player', () => {
+    const player = createMockPlayer();
+    const originalBuffCount = player.activeBuffs.length;
+
+    addBuffToPlayer(player, {
+      name: 'Test',
+      stat: BUFF_STAT.POWER,
+      multiplier: 1.1,
+      duration: 2,
+    });
+
+    expect(player.activeBuffs.length).toBe(originalBuffCount);
   });
 });
