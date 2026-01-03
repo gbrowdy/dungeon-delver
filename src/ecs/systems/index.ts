@@ -5,6 +5,7 @@ import { AttackTimingSystem } from './attack-timing';
 import { CombatSystem } from './combat';
 import { PowerSystem } from './power';
 import { ItemEffectSystem } from './item-effect';
+import { PathAbilitySystem } from './path-ability';
 import { StatusEffectSystem } from './status-effect';
 import { RegenSystem } from './regen';
 import { DeathSystem } from './death';
@@ -22,13 +23,14 @@ export const systems: System[] = [
   CombatSystem,         // 4. Resolve attacks, apply damage
   PowerSystem,          // 5. Process power casting effects
   ItemEffectSystem,     // 6. Process item proc effects (on_hit, on_crit, etc.)
-  StatusEffectSystem,   // 7. Process DoT effects (poison, bleed, etc.)
-  RegenSystem,          // 8. Apply HP/MP regeneration
-  DeathSystem,          // 9. Check deaths (after ALL damage)
-  ProgressionSystem,    // 10. XP, level-ups (after DeathSystem awards XP)
-  FlowSystem,           // 11. Phase transitions, room advancement, enemy spawning
-  AnimationSystem,      // 12. Process animation event lifecycle
-  CleanupSystem,        // 13. Clean up consumed events and finished entities (MUST BE LAST)
+  PathAbilitySystem,    // 7. Process path ability triggers
+  StatusEffectSystem,   // 8. Process DoT effects (poison, bleed, etc.)
+  RegenSystem,          // 9. Apply HP/MP regeneration
+  DeathSystem,          // 10. Check deaths (after ALL damage)
+  ProgressionSystem,    // 11. XP, level-ups (after DeathSystem awards XP)
+  FlowSystem,           // 12. Phase transitions, room advancement, enemy spawning
+  AnimationSystem,      // 13. Process animation event lifecycle
+  CleanupSystem,        // 14. Clean up consumed events and finished entities (MUST BE LAST)
 ];
 
 export function runSystems(deltaMs: number): void {
