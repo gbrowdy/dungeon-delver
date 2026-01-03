@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyPathTriggerToEnemy } from '../combatUtils';
+import { applyPathTriggerToEnemy, getScaledDelay } from '../combatUtils';
 import { Enemy } from '@/types/game';
 
 const createMockEnemy = (overrides?: Partial<Enemy>): Enemy => ({
@@ -87,5 +87,30 @@ describe('applyPathTriggerToEnemy', () => {
     const result = applyPathTriggerToEnemy(enemy, { reflectedDamage: 30 });
     expect(result.enemy.health).toBe(70);
     expect(result.logs.some(log => log.includes('reflected'))).toBe(true);
+  });
+});
+
+describe('getScaledDelay', () => {
+  it('scales delay by combat speed 1x', () => {
+    expect(getScaledDelay(1000, 1)).toBe(1000);
+  });
+
+  it('scales delay by combat speed 2x', () => {
+    expect(getScaledDelay(1000, 2)).toBe(500);
+  });
+
+  it('scales delay by combat speed 3x', () => {
+    expect(getScaledDelay(1000, 3)).toBe(333);
+  });
+
+  it('rounds down to integer', () => {
+    expect(getScaledDelay(100, 3)).toBe(33);
+  });
+
+  it('handles typical combat delay values', () => {
+    // PLAYER_HIT_DELAY is typically 200ms
+    expect(getScaledDelay(200, 1)).toBe(200);
+    expect(getScaledDelay(200, 2)).toBe(100);
+    expect(getScaledDelay(200, 3)).toBe(66);
   });
 });

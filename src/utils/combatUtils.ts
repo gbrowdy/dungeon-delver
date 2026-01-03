@@ -79,3 +79,22 @@ export function applyPathTriggerToEnemy(
 
   return { enemy: updatedEnemy, logs };
 }
+
+/**
+ * Calculate a combat delay scaled by combat speed.
+ *
+ * This centralizes the common pattern of dividing base delays by combat speed
+ * to get the actual delay in milliseconds. Used throughout combat timing code.
+ *
+ * @param baseDelay - Base delay in milliseconds
+ * @param combatSpeed - Combat speed multiplier (1, 2, or 3)
+ * @returns Scaled delay in milliseconds (integer)
+ *
+ * @example
+ * ```typescript
+ * const scaledDelay = getScaledDelay(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY, combatSpeed);
+ * ```
+ */
+export function getScaledDelay(baseDelay: number, combatSpeed: number): number {
+  return Math.floor(baseDelay / combatSpeed);
+}

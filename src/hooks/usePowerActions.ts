@@ -16,7 +16,7 @@ import { isFeatureEnabled } from '@/constants/features';
 import { PATH_RESOURCES, getResourceDisplayName } from '@/data/pathResources';
 import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
 import { applyStatusToEnemy } from '@/utils/statusEffectUtils';
-import { applyPathTriggerToEnemy } from '@/utils/combatUtils';
+import { applyPathTriggerToEnemy, getScaledDelay } from '@/utils/combatUtils';
 
 /**
  * Context for power activation - all state needed to execute a power
@@ -408,7 +408,7 @@ export function usePowerActions(context: PowerActivationContext) {
           const enemyWillDie = enemy.health <= 0;
 
           // Emit power event for animation (with powerId for special effects)
-          const powerHitDelay = Math.floor(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY / prev.combatSpeed);
+          const powerHitDelay = getScaledDelay(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY, prev.combatSpeed);
           const playerPowerEvent: import('@/hooks/useBattleAnimation').PlayerPowerEvent = {
             type: COMBAT_EVENT_TYPE.PLAYER_POWER,
             powerId: power.id,
