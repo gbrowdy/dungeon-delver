@@ -52,7 +52,7 @@ export function useRoomTransitions(
               sourceName: debuff.sourceName,
             });
             const percentDisplay = Math.round(debuff.percentReduction * 100);
-            logs.push(`🛡️ ${debuff.sourceName}: Enemy ${debuff.stat} reduced by ${percentDisplay}%`);
+            logs.push(`${debuff.sourceName}: Enemy ${debuff.stat} reduced by ${percentDisplay}%`);
           });
         }
       }
@@ -140,7 +140,7 @@ export function useRoomTransitions(
           sourceName: 'Ambush',
         });
         Object.assign(player, updatedPlayer);
-        logs.push(`🗡️ Ambush: First attack will be a guaranteed critical hit!`);
+        logs.push(`Ambush: First attack will be a guaranteed critical hit!`);
       }
 
       // Recalculate stats with buffs
@@ -149,7 +149,7 @@ export function useRoomTransitions(
       // Show enemy abilities if any
       if (enemy.abilities.length > 0) {
         const abilityNames = enemy.abilities.map((a: EnemyAbility) => a.name).join(', ');
-        logs.push(`⚠️ ${enemy.name} knows: ${abilityNames}`);
+        logs.push(`${enemy.name} knows: ${abilityNames}`);
       }
 
       prev.combatLog?.add(logs);

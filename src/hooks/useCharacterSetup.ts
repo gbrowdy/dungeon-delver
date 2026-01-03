@@ -107,7 +107,7 @@ export function useCharacterSetup(
 
     const combatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
     combatLog.add(`${classData.name} begins their adventure!`);
-    combatLog.add(`🎯 Floor 1: ${floorTheme.name} - ${floorTheme.description}`);
+    combatLog.add(`Floor 1: ${floorTheme.name} - ${floorTheme.description}`);
 
     setState((prev: GameState) => ({
       ...prev,

@@ -85,7 +85,7 @@ it('should heal player on TURN_START trigger', () => {
   const result = processItemEffects(context);
 
   expect(result.player.currentStats.health).toBe(40);
-  expect(result.logs).toContain('🔮 Regenerated 10 HP');
+  expect(result.logs).toContain('item-crystal Regenerated 10 HP');
   expect(result.additionalDamage).toBe(0);
 });
 ```

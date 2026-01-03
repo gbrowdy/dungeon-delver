@@ -79,7 +79,7 @@ export function usePowers() {
       updatedPlayer.comboCount = Math.min(5, updatedPlayer.comboCount + 1);
       comboMultiplier = 1 + (updatedPlayer.comboCount * 0.1);
       if (updatedPlayer.comboCount >= 2) {
-        logs.push(`🔥 ${updatedPlayer.comboCount}x COMBO! (+${Math.floor((comboMultiplier - 1) * 100)}% damage)`);
+        logs.push(`${updatedPlayer.comboCount}x COMBO! (+${Math.floor((comboMultiplier - 1) * 100)}% damage)`);
       }
     } else {
       // Same power or first power = reset combo

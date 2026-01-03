@@ -82,3 +82,21 @@ export async function setPlayerInvincible(page: Page, invincible: boolean): Prom
     window.__TEST_HOOKS__?.setPlayerInvincible(inv);
   }, invincible);
 }
+
+/**
+ * Set enemy abilities by ID
+ */
+export async function setEnemyAbilities(page: Page, abilityIds: string[]): Promise<void> {
+  await page.evaluate((ids) => {
+    window.__TEST_HOOKS__?.setEnemyAbilities(ids);
+  }, abilityIds);
+}
+
+/**
+ * Get combat logs
+ */
+export async function getCombatLogs(page: Page): Promise<string[]> {
+  return await page.evaluate(() => {
+    return window.__TEST_HOOKS__?.getCombatLogs() ?? [];
+  });
+}

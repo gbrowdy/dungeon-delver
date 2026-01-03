@@ -41,6 +41,7 @@ import { getResourceGeneration, pathUsesResourceSystem } from '@/hooks/usePathRe
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
+import { applyStatusToPlayer, applyStatusToEnemy } from '@/utils/statusEffectUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities, getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
 import type { PauseReasonType } from '@/constants/enums';
@@ -176,7 +177,7 @@ export function useCombatActions({
 
       // If stunned, skip attack and return
       if (turnStartResult.isStunned) {
-        logs.push(`💫 You are stunned and cannot act!`);
+        logs.push(`You are stunned and cannot act!`);
         safeCombatLogAdd(prev.combatLog, logs, 'performHeroAttack:stunned');
         return {
           ...prev,
@@ -205,7 +206,7 @@ export function useCombatActions({
         const momentumStacks = updatedPlayer.abilityCounters?.['perfect_form_momentum'] ?? 0;
         if (momentumStacks >= 5) {
           perfectFormMultiplier = 3.0; // 300% damage (3x multiplier)
-          logs.push(`💫 Perfect Form: Maximum momentum unleashed!`);
+          logs.push(`Perfect Form: Maximum momentum unleashed!`);
         }
       }
 
@@ -229,7 +230,7 @@ export function useCombatActions({
         damageResult = {
           damage: critDamage,
           isCrit: true,
-          logs: ['💥 Guaranteed Critical Hit!'],
+          logs: ['Guaranteed Critical Hit!'],
         };
       }
 
@@ -250,7 +251,7 @@ export function useCombatActions({
       if (perfectFormMultiplier > 1.0) {
         const bonusDamage = Math.floor(finalDamage * (perfectFormMultiplier - 1.0));
         finalDamage += bonusDamage;
-        logs.push(`⚡ Perfect Form bonus: +${bonusDamage} damage!`);
+        logs.push(`Perfect Form bonus: +${bonusDamage} damage!`);
         // Reset momentum stacks after use
         playerAfterEffects = resetAbilityCounter(playerAfterEffects, 'perfect_form_momentum');
       }
@@ -259,7 +260,7 @@ export function useCombatActions({
       if (pathResourceMods.bonusDamageMultiplier > 1) {
         const bonusDamage = Math.floor(finalDamage * (pathResourceMods.bonusDamageMultiplier - 1));
         finalDamage += bonusDamage;
-        logs.push(`⚡ Divine Judgment bonus: +${bonusDamage} damage!`);
+        logs.push(`Divine Judgment bonus: +${bonusDamage} damage!`);
         // Consume the resource after the attack
         applyPathResourceAttackConsumption(playerAfterEffects, pathResourceMods);
       }
@@ -284,8 +285,17 @@ export function useCombatActions({
 
       // Apply status effect to enemy if triggered
       if (onHitResult.statusToApply) {
-        enemy.statusEffects = enemy.statusEffects || [];
-        enemy.statusEffects.push(onHitResult.statusToApply);
+        const statusResult = applyStatusToEnemy(
+          enemy,
+          {
+            type: onHitResult.statusToApply.type,
+            damage: onHitResult.statusToApply.damage,
+            value: onHitResult.statusToApply.value,
+            duration: onHitResult.statusToApply.remainingTurns,
+          },
+          'path_ability'
+        );
+        enemy = statusResult.enemy;
 
         // Process path ability triggers: on_status_inflict
         const onStatusInflictResult = processTrigger('on_status_inflict', {
@@ -349,8 +359,17 @@ export function useCombatActions({
 
         // Apply status effect to enemy if triggered
         if (onCritResult.statusToApply) {
-          enemy.statusEffects = enemy.statusEffects || [];
-          enemy.statusEffects.push(onCritResult.statusToApply);
+          const critStatusResult = applyStatusToEnemy(
+            enemy,
+            {
+              type: onCritResult.statusToApply.type,
+              damage: onCritResult.statusToApply.damage,
+              value: onCritResult.statusToApply.value,
+              duration: onCritResult.statusToApply.remainingTurns,
+            },
+            'path_ability'
+          );
+          enemy = critStatusResult.enemy;
 
           // Process path ability triggers: on_status_inflict
           const onStatusInflictResult = processTrigger('on_status_inflict', {
@@ -422,7 +441,7 @@ export function useCombatActions({
         if (executeResult.shouldExecute) {
           logs.push(...executeResult.logs);
           enemy = applyPathResourceExecute(playerAfterEffects, enemy, executeResult);
-          logs.push(`💀 ${enemy.name} executed instantly!`);
+          logs.push(`${enemy.name} executed instantly!`);
         }
       }
 
@@ -484,7 +503,7 @@ export function useCombatActions({
         playerAfterEffects = reflectResult.player;
 
         if (reflectResult.actualDamage > 0) {
-          logs.push(`🌵 Thorns reflect ${reflectResult.actualDamage} damage back to you!`);
+          logs.push(`Thorns reflect ${reflectResult.actualDamage} damage back to you!`);
         }
       }
 
@@ -571,7 +590,7 @@ export function useCombatActions({
         }
 
         if (prev.currentRoom >= prev.roomsPerFloor && deathResult.enemy.isBoss) {
-          deathResult.logs.push(`🏆 Floor ${prev.currentFloor} complete!`);
+          deathResult.logs.push(`Floor ${prev.currentFloor} complete!`);
         }
 
         // Determine pause reason based on what happened
@@ -644,7 +663,7 @@ export function useCombatActions({
         if (enemy.shieldTurnsRemaining <= 0) {
           enemy.isShielded = false;
           enemy.shieldTurnsRemaining = undefined;
-          logs.push(`🛡️ ${enemy.name}'s shield fades!`);
+          logs.push(`${enemy.name}'s shield fades!`);
         }
       }
 
@@ -658,7 +677,7 @@ export function useCombatActions({
             enemy.power = enemy.basePower;
             enemy.basePower = undefined;
           }
-          logs.push(`😤 ${enemy.name}'s rage subsides!`);
+          logs.push(`${enemy.name}'s rage subsides!`);
         }
       }
 
@@ -670,7 +689,7 @@ export function useCombatActions({
 
       if (enemyIntent?.type === 'ability' && enemyIntent.ability) {
         const ability = enemyIntent.ability;
-        logs.push(`${ability.icon} ${enemy.name} uses ${ability.name}!`);
+        logs.push(`${enemy.name} uses ${ability.name}!`);
 
         enemy.abilities = enemy.abilities.map((a: EnemyAbility) =>
           a.id === ability.id ? { ...a, currentCooldown: a.cooldown } : a
@@ -679,7 +698,7 @@ export function useCombatActions({
         // Blocking reduces damage for multi_hit, but completely negates status effects
         const statusEffectAbilities: EnemyAbilityType[] = ['poison', 'stun'];
         if (player.isBlocking && statusEffectAbilities.includes(ability.type)) {
-          logs.push(`🛡️ Block! Negated ${ability.name}!`);
+          logs.push(`Block! Negated ${ability.name}!`);
           statusEffectNegatedByBlock = true; // Block provided value, should be consumed
           // Skip the switch - status effect is fully negated
         } else switch (ability.type) {
@@ -698,12 +717,12 @@ export function useCombatActions({
                 }
                 totalDamage += hitDamage;
               } else {
-                logs.push(`💨 Dodged hit ${i + 1}!`);
+                logs.push(`Dodged hit ${i + 1}!`);
               }
             }
             if (totalDamage > 0) {
               if (player.isBlocking) {
-                logs.push(`🛡️ Block reduced multi-hit damage!`);
+                logs.push(`Block reduced multi-hit damage!`);
 
                 // Process path ability triggers: on_block
                 const pathOnBlockResult = processTrigger('on_block', {
@@ -734,7 +753,7 @@ export function useCombatActions({
                 const reducedAmount = Math.floor(totalDamage * damageReduction);
                 totalDamage = Math.max(1, totalDamage - reducedAmount);
                 if (reducedAmount > 0) {
-                  logs.push(`🛡️ Damage reduced by ${reducedAmount}!`);
+                  logs.push(`Damage reduced by ${reducedAmount}!`);
                 }
               }
 
@@ -743,10 +762,10 @@ export function useCombatActions({
               player = damageResult.player;
 
               if (damageResult.shieldAbsorbed > 0) {
-                logs.push(`🛡️ Shield absorbs ${damageResult.shieldAbsorbed} damage!`);
+                logs.push(`Shield absorbs ${damageResult.shieldAbsorbed} damage!`);
               }
               if (damageResult.shieldBroken) {
-                logs.push(`💔 Shield broken!`);
+                logs.push(`Shield broken!`);
               }
 
               if (damageResult.actualDamage > 0) {
@@ -756,42 +775,40 @@ export function useCombatActions({
                 }
               }
 
-              logs.push(`${ability.icon} ${hits} hits deal ${totalDamage} total damage!`);
+              logs.push(`${hits} hits deal ${totalDamage} total damage!`);
               enemyDamage = totalDamage;
             }
             break;
           }
           case 'poison': {
             const poisonDamage = Math.floor(ability.value * (1 + (prev.currentFloor - 1) * COMBAT_BALANCE.POISON_SCALING_PER_FLOOR));
-            player.statusEffects.push({
-              id: `poison-${Date.now()}`,
-              type: STATUS_EFFECT_TYPE.POISON,
-              damage: poisonDamage,
-              remainingTurns: COMBAT_BALANCE.DEFAULT_POISON_DURATION,
-              icon: 'status-poison',
-            });
-            logs.push(`☠️ You are poisoned! (${poisonDamage} damage/turn for ${COMBAT_BALANCE.DEFAULT_POISON_DURATION} turns)`);
+            const immunities = getStatusImmunities(player);
+            const poisonResult = applyStatusToPlayer(
+              player,
+              { type: STATUS_EFFECT_TYPE.POISON, damage: poisonDamage },
+              'enemy_ability',
+              immunities
+            );
+            player = poisonResult.player;
+            logs.push(...poisonResult.logs);
             break;
           }
           case 'stun': {
             const immunities = getStatusImmunities(player);
-            if (immunities.includes('stun')) {
-              logs.push(`🛡️ Immovable Object! You resist the stun!`);
-            } else {
-              player.statusEffects.push({
-                id: `stun-${Date.now()}`,
-                type: STATUS_EFFECT_TYPE.STUN,
-                remainingTurns: ability.value,
-                icon: 'status-stun',
-              });
-              logs.push(`💫 You are stunned for ${ability.value} turn(s)!`);
-            }
+            const stunResult = applyStatusToPlayer(
+              player,
+              { type: STATUS_EFFECT_TYPE.STUN, duration: ability.value },
+              'enemy_ability',
+              immunities
+            );
+            player = stunResult.player;
+            logs.push(...stunResult.logs);
             break;
           }
           case 'heal': {
             const healAmount = Math.floor(enemy.maxHealth * ability.value);
             enemy.health = Math.min(enemy.maxHealth, enemy.health + healAmount);
-            logs.push(`💚 ${enemy.name} heals for ${healAmount} HP!`);
+            logs.push(`${enemy.name} heals for ${healAmount} HP!`);
             break;
           }
           case 'enrage': {
@@ -800,17 +817,17 @@ export function useCombatActions({
               enemy.power = Math.floor(enemy.power * (1 + ability.value));
               enemy.isEnraged = true;
               enemy.enrageTurnsRemaining = 3;
-              logs.push(`😤 ${enemy.name} becomes enraged! Attack increased for 3 turns!`);
+              logs.push(`${enemy.name} becomes enraged! Attack increased for 3 turns!`);
             } else {
               enemy.enrageTurnsRemaining = 3;
-              logs.push(`😤 ${enemy.name}'s rage intensifies!`);
+              logs.push(`${enemy.name}'s rage intensifies!`);
             }
             break;
           }
           case 'shield': {
             enemy.isShielded = true;
             enemy.shieldTurnsRemaining = Math.ceil(ability.value) || 2;
-            logs.push(`🛡️ ${enemy.name} raises a shield for ${enemy.shieldTurnsRemaining} turn(s)!`);
+            logs.push(`${enemy.name} raises a shield for ${enemy.shieldTurnsRemaining} turn(s)!`);
             break;
           }
         }
@@ -843,9 +860,9 @@ export function useCombatActions({
           });
 
           if (uncannyDodgeTriggered) {
-            logs.push(`⚔️ Uncanny Dodge! You automatically evade ${enemy.name}'s attack!`);
+            logs.push(`Uncanny Dodge! You automatically evade ${enemy.name}'s attack!`);
           } else {
-            logs.push(`💨 You dodged ${enemy.name}'s attack!`);
+            logs.push(`You dodged ${enemy.name}'s attack!`);
           }
 
           // Process path ability triggers: on_dodge
@@ -882,7 +899,7 @@ export function useCombatActions({
               player.shieldRemainingDuration = 5;
               player.shieldMaxDuration = 5;
               player = resetAbilityCounter(player, 'blur_dodges');
-              logs.push(`✨ Blur: Shield granted after 3 consecutive dodges!`);
+              logs.push(`Blur: Shield granted after 3 consecutive dodges!`);
             }
           }
 
@@ -890,7 +907,7 @@ export function useCombatActions({
           if (hasAbility(player, 'rogue_duelist_perfect_form')) {
             const { player: updatedPlayer, newValue } = incrementAbilityCounter(player, 'perfect_form_momentum', 5);
             player = updatedPlayer;
-            logs.push(`⚡ Perfect Form: Momentum stack ${newValue}/5`);
+            logs.push(`Perfect Form: Momentum stack ${newValue}/5`);
           }
         } else {
           const effectiveEnemyPower = getEffectiveEnemyStat(enemy, 'power', enemy.power);
@@ -900,7 +917,7 @@ export function useCombatActions({
 
           if (player.isBlocking) {
             enemyDamage = Math.floor(enemyDamage * COMBAT_BALANCE.BLOCK_DAMAGE_REDUCTION);
-            logs.push(`🛡️ Block! Damage reduced to ${enemyDamage}!`);
+            logs.push(`Block! Damage reduced to ${enemyDamage}!`);
 
             // Process path ability triggers: on_block
             const pathOnBlockResult = processTrigger('on_block', {
@@ -950,7 +967,7 @@ export function useCombatActions({
             const reducedAmount = Math.floor(enemyDamage * damageReduction);
             enemyDamage = Math.max(1, enemyDamage - reducedAmount);
             if (reducedAmount > 0) {
-              logs.push(`🛡️ Damage reduced by ${reducedAmount}!`);
+              logs.push(`Damage reduced by ${reducedAmount}!`);
             }
           }
 
@@ -960,10 +977,10 @@ export function useCombatActions({
           player = damageResult.player;
 
           if (damageResult.shieldAbsorbed > 0) {
-            logs.push(`🛡️ Shield absorbs ${damageResult.shieldAbsorbed} damage!`);
+            logs.push(`Shield absorbs ${damageResult.shieldAbsorbed} damage!`);
           }
           if (damageResult.shieldBroken) {
-            logs.push(`💔 Shield broken!`);
+            logs.push(`Shield broken!`);
           }
 
           if (damageResult.actualDamage > 0) {
@@ -1008,7 +1025,7 @@ export function useCombatActions({
           if (enemy.modifiers?.some(m => m.id === 'vampiric')) {
             const vampHeal = Math.floor(enemyDamage * 0.2);
             enemy.health = Math.min(enemy.maxHealth, enemy.health + vampHeal);
-            logs.push(`🩸 ${enemy.name} drains ${vampHeal} life!`);
+            logs.push(`${enemy.name} drains ${vampHeal} life!`);
           }
 
           // Trigger on_damaged item effects using centralized processor
@@ -1131,16 +1148,16 @@ export function useCombatActions({
             case 'heal':
             case 'enrage':
             case 'shield':
-              logs.push(`🛡️ Block held - enemy used ${ability.name}!`);
+              logs.push(`Block held - enemy used ${ability.name}!`);
               break;
             case 'multi_hit':
               // All hits were dodged
-              logs.push(`🛡️ Block held - all hits dodged!`);
+              logs.push(`Block held - all hits dodged!`);
               break;
           }
         } else if (enemyDamage === 0 && enemyIntent?.type !== 'ability') {
           // Player dodged a regular attack
-          logs.push(`🛡️ Block held - you dodged!`);
+          logs.push(`Block held - you dodged!`);
         }
       }
 
@@ -1152,7 +1169,7 @@ export function useCombatActions({
           enemy.power = Math.floor(enemy.power * 1.5); // 50% damage boost
           enemy.isEnraged = true;
           enemy.enrageTurnsRemaining = 999; // Permanent enrage for berserking modifier
-          logs.push(`😡 ${enemy.name} enters a berserking rage!`);
+          logs.push(`${enemy.name} enters a berserking rage!`);
         }
       }
 
@@ -1186,12 +1203,12 @@ export function useCombatActions({
               remainingTurns: 5,
               icon: 'stat-speed',
             });
-            logs.push(`🔥 Undying Fury! You refuse to fall!`);
+            logs.push(`Undying Fury! You refuse to fall!`);
             // Continue combat, don't die
             safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:undyingFury');
             return { ...prev, player, currentEnemy: enemy };
           } else {
-            logs.push(`💀 Undying Fury already used this combat!`);
+            logs.push(`Undying Fury already used this combat!`);
           }
         }
 
@@ -1202,12 +1219,12 @@ export function useCombatActions({
             const healAmount = Math.floor(player.currentStats.maxHealth * 0.4);
             player.currentStats.health = healAmount;
             player.usedFloorAbilities = [...usedFloor, 'immortal_guardian'];
-            logs.push(`🛡️ Immortal Guardian! You are restored to ${healAmount} HP!`);
+            logs.push(`Immortal Guardian! You are restored to ${healAmount} HP!`);
             // Continue combat, don't die
             safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:immortalGuardian');
             return { ...prev, player, currentEnemy: enemy };
           } else {
-            logs.push(`💀 Immortal Guardian already used this floor!`);
+            logs.push(`Immortal Guardian already used this floor!`);
           }
         }
 
@@ -1235,7 +1252,7 @@ export function useCombatActions({
         // No survival effect - player dies
         playerDeathProcessedRef.current = true;
         player.isDying = true;
-        logs.push(`💀 You have been defeated...`);
+        logs.push(`You have been defeated...`);
 
         safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:playerDeath');
         return {
@@ -1277,7 +1294,7 @@ export function useCombatActions({
         },
       };
 
-      safeCombatLogAdd(prev.combatLog, '🛡️ Bracing for impact!', 'activateBlock');
+      safeCombatLogAdd(prev.combatLog, 'Bracing for impact!', 'activateBlock');
       return {
         ...prev,
         player,

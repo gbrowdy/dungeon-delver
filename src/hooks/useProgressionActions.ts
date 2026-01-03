@@ -200,7 +200,7 @@ export function useProgressionActions({
 
       const combatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
       combatLog.add(`Entering Floor ${nextFloor}: ${newTheme.name}... Health and Mana restored!`);
-      combatLog.add(`🎯 ${newTheme.description}`);
+      combatLog.add(newTheme.description);
 
       // Get rooms for new floor from config (0-indexed array)
       const roomsForFloor = FLOOR_CONFIG.ROOMS_PER_FLOOR[nextFloor - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
@@ -317,7 +317,7 @@ export function useProgressionActions({
       // Clear combat log and add retry message
       const combatLog = new CircularBuffer<string>(MAX_COMBAT_LOG_SIZE);
       combatLog.add(`Retrying Floor ${floorToRetry}: ${newTheme.name}... Health and Mana restored!`);
-      combatLog.add(`🎯 ${newTheme.description}`);
+      combatLog.add(newTheme.description);
 
       return {
         ...prev,

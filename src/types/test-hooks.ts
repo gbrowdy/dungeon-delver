@@ -22,6 +22,10 @@ export interface TestHooks {
   // Combat helpers
   setPlayerInvincible: (invincible: boolean) => void;
   isPlayerInvincible: () => boolean;
+
+  // Enemy manipulation
+  setEnemyAbilities: (abilityIds: string[]) => void;
+  getCombatLogs: () => string[];
 }
 
 declare global {

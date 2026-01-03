@@ -5,6 +5,9 @@ import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
 import { applyDamageToPlayer } from '@/utils/damageUtils';
+import { applyStatusToPlayer } from '@/utils/statusEffectUtils';
+import { STATUS_EFFECT_TYPE } from '@/constants/enums';
+import { COMBAT_BALANCE } from '@/constants/balance';
 
 /**
  * Combat result from a single combat tick
@@ -117,7 +120,7 @@ export function useCombat() {
       const poisonResult = applyDamageToPlayer(updatedPlayer, effect.damage!, 'status_effect');
       updatedPlayer = poisonResult.player;
       if (poisonResult.actualDamage > 0) {
-        logs.push(`☠️ Poison deals ${poisonResult.actualDamage} damage!`);
+        logs.push(`Poison deals ${poisonResult.actualDamage} damage!`);
       }
     }
 
@@ -129,7 +132,7 @@ export function useCombat() {
     // Check for stun
     const isStunned = updatedPlayer.statusEffects.some((e: StatusEffect) => e.type === 'stun');
     if (isStunned) {
-      logs.push(`💫 You are stunned and cannot act!`);
+      logs.push(`You are stunned and cannot act!`);
     }
 
     return { player: updatedPlayer, isStunned };
@@ -172,10 +175,13 @@ export function useCombat() {
     logs: string[]
   ): { enemy: Enemy; player: Player; damage: number } => {
     const updatedEnemy = deepCloneEnemy(enemy);
-    const updatedPlayer = deepClonePlayer(player);
+    // Initialize from the original player. Utility functions (applyDamageToPlayer, applyStatusToPlayer)
+    // perform their own deep cloning and return updated player instances, which we reassign to updatedPlayer.
+    // This avoids double-cloning while ensuring the original player object is not mutated.
+    let updatedPlayer = player;
     let damage = 0;
 
-    logs.push(`${ability.icon} ${enemy.name} uses ${ability.name}!`);
+    logs.push(`${enemy.name} uses ${ability.name}!`);
 
     // Put ability on cooldown
     updatedEnemy.abilities = enemy.abilities.map((a: EnemyAbility) =>
@@ -196,64 +202,62 @@ export function useCombat() {
             }
             totalDamage += hitDamage;
           } else {
-            logs.push(`💨 Dodged hit ${i + 1}!`);
+            logs.push(`Dodged hit ${i + 1}!`);
           }
         }
         if (totalDamage > 0) {
           if (player.isBlocking) {
-            logs.push(`🛡️ Block reduced multi-hit damage!`);
+            logs.push(`Block reduced multi-hit damage!`);
           }
           const multiHitResult = applyDamageToPlayer(updatedPlayer, totalDamage, 'enemy_ability');
           updatedPlayer = multiHitResult.player;
           if (multiHitResult.actualDamage > 0) {
-            logs.push(`${ability.icon} ${hits} hits deal ${multiHitResult.actualDamage} total damage!`);
+            logs.push(`${hits} hits deal ${multiHitResult.actualDamage} total damage!`);
           }
           damage = multiHitResult.actualDamage;
         }
         break;
       }
       case 'poison': {
-        const poisonDamage = Math.floor(ability.value * (1 + (floor - 1) * 0.1));
-        updatedPlayer.statusEffects.push({
-          id: `poison-${Date.now()}`,
-          type: 'poison',
-          damage: poisonDamage,
-          remainingTurns: 3,
-          icon: 'status-poison',
-        });
-        logs.push(`☠️ You are poisoned! (${poisonDamage} damage/turn for 3 turns)`);
+        const poisonDamage = Math.floor(ability.value * (1 + (floor - 1) * COMBAT_BALANCE.POISON_SCALING_PER_FLOOR));
+        const immunities = getStatusImmunities(player);
+        const poisonResult = applyStatusToPlayer(
+          updatedPlayer,
+          { type: STATUS_EFFECT_TYPE.POISON, damage: poisonDamage },
+          'enemy_ability',
+          immunities
+        );
+        updatedPlayer = poisonResult.player;
+        logs.push(...poisonResult.logs);
         break;
       }
       case 'stun': {
         const immunities = getStatusImmunities(player);
-        if (immunities.includes('stun')) {
-          logs.push(`🛡️ Immovable Object! You resist the stun!`);
-        } else {
-          updatedPlayer.statusEffects.push({
-            id: `stun-${Date.now()}`,
-            type: 'stun',
-            remainingTurns: ability.value,
-            icon: 'status-stun',
-          });
-          logs.push(`💫 You are stunned for ${ability.value} turn(s)!`);
-        }
+        const stunResult = applyStatusToPlayer(
+          updatedPlayer,
+          { type: STATUS_EFFECT_TYPE.STUN, duration: ability.value },
+          'enemy_ability',
+          immunities
+        );
+        updatedPlayer = stunResult.player;
+        logs.push(...stunResult.logs);
         break;
       }
       case 'heal': {
         const healAmount = Math.floor(enemy.maxHealth * ability.value);
         updatedEnemy.health = Math.min(enemy.maxHealth, enemy.health + healAmount);
-        logs.push(`💚 ${enemy.name} heals for ${healAmount} HP!`);
+        logs.push(`${enemy.name} heals for ${healAmount} HP!`);
         break;
       }
       case 'enrage': {
         updatedEnemy.isEnraged = true;
         updatedEnemy.power = Math.floor(enemy.power * (1 + ability.value));
-        logs.push(`😤 ${enemy.name} becomes enraged! Attack increased!`);
+        logs.push(`${enemy.name} becomes enraged! Attack increased!`);
         break;
       }
       case 'shield': {
         updatedEnemy.isShielded = true;
-        logs.push(`🛡️ ${enemy.name} raises a shield!`);
+        logs.push(`${enemy.name} raises a shield!`);
         break;
       }
     }

@@ -26,6 +26,7 @@ import {
 } from '@/types/paths';
 import { deepClonePlayer } from '@/utils/stateUtils';
 import { logError } from '@/utils/gameLogger';
+import { formatStatusTypeName } from '@/utils/statusEffectUtils';
 import { WARRIOR_PATHS } from '@/data/paths/warrior';
 import { MAGE_PATHS } from '@/data/paths/mage';
 import { ROGUE_PATHS } from '@/data/paths/rogue';
@@ -495,19 +496,19 @@ export function usePathAbilities() {
         if (effect.heal !== undefined) {
           const healValue = effect.heal;
           healAmount += healValue;
-          logs.push(`✨ ${ability.name}: Healed ${healValue} HP`);
+          logs.push(`${ability.name}: Healed ${healValue} HP`);
         }
 
         // Process damage effect
         if (effect.damage !== undefined) {
           damageAmount += effect.damage;
-          logs.push(`⚔️ ${ability.name}: +${effect.damage} damage`);
+          logs.push(`${ability.name}: +${effect.damage} damage`);
         }
 
         // Process mana restore
         if (effect.manaRestore !== undefined) {
           manaRestored += effect.manaRestore;
-          logs.push(`💙 ${ability.name}: Restored ${effect.manaRestore} mana`);
+          logs.push(`${ability.name}: Restored ${effect.manaRestore} mana`);
         }
 
         // Process damage modifier
@@ -525,7 +526,7 @@ export function usePathAbilities() {
               if (context.damage) {
                 const reflected = Math.floor(context.damage * (mod.value / 100));
                 reflectedDamage += reflected;
-                logs.push(`🛡️ ${ability.name}: Reflected ${reflected} damage`);
+                logs.push(`${ability.name}: Reflected ${reflected} damage`);
               }
               break;
             }
@@ -533,7 +534,7 @@ export function usePathAbilities() {
               if (context.damage) {
                 const lifestealAmount = Math.floor(context.damage * (mod.value / 100));
                 healAmount += lifestealAmount;
-                logs.push(`🩸 ${ability.name}: Life steal +${lifestealAmount} HP`);
+                logs.push(`${ability.name}: Life steal +${lifestealAmount} HP`);
               }
               break;
             }
@@ -546,14 +547,14 @@ export function usePathAbilities() {
                 : (context.damage || 0);
               const bonusDmg = Math.floor(baseDamage * mod.value);
               damageAmount += bonusDmg;
-              logs.push(`💥 ${ability.name}: +${bonusDmg} bonus damage`);
+              logs.push(`${ability.name}: +${bonusDmg} bonus damage`);
               break;
             }
             case 'convert_heal': {
               if (context.damage) {
                 const converted = Math.floor(context.damage * (mod.value / 100));
                 healAmount += converted;
-                logs.push(`✨ ${ability.name}: Converted ${converted} damage to healing`);
+                logs.push(`${ability.name}: Converted ${converted} damage to healing`);
               }
               break;
             }
@@ -573,7 +574,7 @@ export function usePathAbilities() {
               remainingTurns: status.duration,
               icon: getStatusIcon(status.statusType),
             };
-            logs.push(`🎯 ${ability.name}: Applied ${status.statusType}!`);
+            logs.push(`${ability.name}: Applied ${formatStatusTypeName(status.statusType)}!`);
           }
         }
 
@@ -596,7 +597,7 @@ export function usePathAbilities() {
                   };
                   enemyDebuffs.push(debuff);
                   const percentDisplay = Math.round(reduction * 100);
-                  logs.push(`🔻 ${ability.name}: Enemy ${stat} reduced by ${percentDisplay}% for ${effect.duration || 5}s`);
+                  logs.push(`${ability.name}: Enemy ${stat} reduced by ${percentDisplay}% for ${effect.duration || 5}s`);
                 }
               }
             }
@@ -624,7 +625,7 @@ export function usePathAbilities() {
                       remainingTurns: effect.duration,
                     };
                     const percentDisplay = Math.round(bonus * 100);
-                    logs.push(`🔄 ${ability.name}: ${stat} buff refreshed (+${percentDisplay}%) for ${effect.duration}s`);
+                    logs.push(`${ability.name}: ${stat} buff refreshed (+${percentDisplay}%) for ${effect.duration}s`);
                   } else {
                     // Create a new active buff
                     const buff: ActiveBuff = {
@@ -633,11 +634,11 @@ export function usePathAbilities() {
                       stat,
                       multiplier: 1 + bonus,
                       remainingTurns: effect.duration,
-                      icon: ability.icon || '✨',
+                      icon: ability.icon || 'buff',
                     };
                     updatedPlayer.activeBuffs.push(buff);
                     const percentDisplay = Math.round(bonus * 100);
-                    logs.push(`⬆️ ${ability.name}: ${stat} increased by ${percentDisplay}% for ${effect.duration}s`);
+                    logs.push(`${ability.name}: ${stat} increased by ${percentDisplay}% for ${effect.duration}s`);
                   }
                 }
               }
@@ -648,7 +649,7 @@ export function usePathAbilities() {
         // Process cleanse
         if (effect.cleanse) {
           updatedPlayer.statusEffects = [];
-          logs.push(`✨ ${ability.name}: Cleansed all status effects`);
+          logs.push(`${ability.name}: Cleansed all status effects`);
         }
 
         // Process shield
@@ -658,7 +659,7 @@ export function usePathAbilities() {
           const newDuration = effect.duration || 5;
           updatedPlayer.shieldRemainingDuration = Math.max(updatedPlayer.shieldRemainingDuration || 0, newDuration);
           updatedPlayer.shieldMaxDuration = Math.max(updatedPlayer.shieldMaxDuration || 0, newDuration);
-          logs.push(`🛡️ ${ability.name}: Gained ${effect.shield} shield`);
+          logs.push(`${ability.name}: Gained ${effect.shield} shield`);
         }
       });
     });
@@ -877,21 +878,21 @@ export function usePathAbilities() {
 }
 
 /**
- * Helper to get status effect icon
+ * Helper to get status effect icon ID (no emojis - icon rendering happens in UI components)
  */
 function getStatusIcon(type: 'poison' | 'stun' | 'slow' | 'bleed'): string {
   switch (type) {
     case 'poison':
-      return '☠️';
+      return 'status-poison';
     case 'stun':
-      return '💫';
+      return 'status-stun';
     case 'slow':
-      return '🐌';
+      return 'status-slow';
     case 'bleed':
-      return '🩸';
+      return 'status-bleed';
     default: {
       logError('Unknown status type', { type });
-      return '❓';
+      return 'status-unknown';
     }
   }
 }
