@@ -14,6 +14,7 @@ import {
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getCritChance, getCritDamage, getDropQualityBonus } from '@/utils/fortuneUtils';
 import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
+import { restorePlayerHealth, restorePlayerMana } from '@/utils/statsUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { isFeatureEnabled } from '@/constants/features';
 import type { TriggerResult } from '@/hooks/usePathAbilities';
@@ -108,17 +109,12 @@ export function processTurnStartEffects(
       const chance = item.effect.chance ?? 1;
       if (Math.random() < chance) {
         if (item.effect.type === EFFECT_TYPE.HEAL) {
-          const healAmount = item.effect.value;
-          updatedPlayer.currentStats.health = Math.min(
-            updatedPlayer.currentStats.maxHealth,
-            updatedPlayer.currentStats.health + healAmount
-          );
-          updatedLogs.push(`${item.icon} Regenerated ${healAmount} HP`);
+          const healResult = restorePlayerHealth(updatedPlayer, item.effect.value, { source: `${item.icon} ${item.name}` });
+          updatedPlayer = healResult.player;
+          if (healResult.log) updatedLogs.push(healResult.log);
         } else if (item.effect.type === EFFECT_TYPE.MANA) {
-          updatedPlayer.currentStats.mana = Math.min(
-            updatedPlayer.currentStats.maxMana,
-            updatedPlayer.currentStats.mana + item.effect.value
-          );
+          const manaResult = restorePlayerMana(updatedPlayer, item.effect.value);
+          updatedPlayer = manaResult.player;
         }
       }
     }

@@ -8,6 +8,7 @@
 import { Item, Player } from '@/types/game';
 import { ITEM_EFFECT_TRIGGER, EFFECT_TYPE } from '@/constants/enums';
 import { deepClonePlayer } from '@/utils/stateUtils';
+import { restorePlayerHealth, restorePlayerMana } from '@/utils/statsUtils';
 import { getProcChanceBonus } from '@/utils/fortuneUtils';
 import { getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
 
@@ -45,7 +46,7 @@ export function processItemEffects(context: ItemEffectContext): ItemEffectResult
   const { trigger, player, damage = 0 } = context;
 
   // Create a deep copy of player
-  const updatedPlayer: Player = deepClonePlayer(player);
+  let updatedPlayer: Player = deepClonePlayer(player);
 
   const logs: string[] = [];
   let additionalDamage = 0;
@@ -102,40 +103,39 @@ export function processItemEffects(context: ItemEffectContext): ItemEffectResult
           );
         }
 
-        updatedPlayer.currentStats.health = Math.min(
-          updatedPlayer.currentStats.maxHealth,
-          updatedPlayer.currentStats.health + healAmount
-        );
+        const healResult = restorePlayerHealth(updatedPlayer, healAmount);
+        updatedPlayer = healResult.player;
+        const actualHeal = healResult.actualAmount;
 
-        // Generate contextual log message based on trigger
+        // Generate contextual log message based on trigger (using actual healed amount)
         let logMessage = `${item.icon} `;
         switch (trigger) {
           case ITEM_EFFECT_TRIGGER.ON_DAMAGE_DEALT:
-            logMessage += `Lifesteal: +${healAmount} HP`;
+            logMessage += `Lifesteal: +${actualHeal} HP`;
             break;
           case ITEM_EFFECT_TRIGGER.TURN_START:
-            logMessage += `Regenerated ${healAmount} HP`;
+            logMessage += `Regenerated ${actualHeal} HP`;
             break;
           case ITEM_EFFECT_TRIGGER.ON_CRIT:
-            logMessage += `Healed ${healAmount} HP on crit!`;
+            logMessage += `Healed ${actualHeal} HP on crit!`;
             break;
           case ITEM_EFFECT_TRIGGER.ON_HIT:
-            logMessage += `Life steal: +${healAmount} HP`;
+            logMessage += `Life steal: +${actualHeal} HP`;
             break;
           case ITEM_EFFECT_TRIGGER.ON_KILL:
-            logMessage += `Victory heal: +${healAmount} HP`;
+            logMessage += `Victory heal: +${actualHeal} HP`;
             break;
           case ITEM_EFFECT_TRIGGER.ON_DAMAGED:
-            logMessage += `Damage absorbed: +${healAmount} HP`;
+            logMessage += `Damage absorbed: +${actualHeal} HP`;
             break;
           case ITEM_EFFECT_TRIGGER.OUT_OF_COMBAT:
-            logMessage += `Regenerated ${healAmount} HP`;
+            logMessage += `Regenerated ${actualHeal} HP`;
             break;
           case ITEM_EFFECT_TRIGGER.ON_DEATH:
-            logMessage += `Phoenix effect: Revived with ${healAmount} HP!`;
+            logMessage += `Phoenix effect: Revived with ${actualHeal} HP!`;
             break;
           default:
-            logMessage += `Healed ${healAmount} HP`;
+            logMessage += `Healed ${actualHeal} HP`;
         }
         logs.push(logMessage);
         break;
@@ -190,17 +190,20 @@ export function processItemEffects(context: ItemEffectContext): ItemEffectResult
           item.effect.value < 1
         ) {
           manaAmount = Math.floor(damage * item.effect.value);
-          logs.push(`${item.icon} Mana refunded: +${manaAmount}`);
-        } else if (trigger === ITEM_EFFECT_TRIGGER.ON_KILL) {
-          logs.push(`${item.icon} Mana restored: +${manaAmount}`);
-        } else if (trigger === ITEM_EFFECT_TRIGGER.ON_CRIT) {
-          logs.push(`${item.icon} Mana on crit: +${manaAmount}`);
         }
 
-        updatedPlayer.currentStats.mana = Math.min(
-          updatedPlayer.currentStats.maxMana,
-          updatedPlayer.currentStats.mana + manaAmount
-        );
+        const manaResult = restorePlayerMana(updatedPlayer, manaAmount);
+        updatedPlayer = manaResult.player;
+        const actualMana = manaResult.actualAmount;
+
+        // Generate contextual log message based on trigger (using actual restored amount)
+        if (trigger === ITEM_EFFECT_TRIGGER.ON_POWER_CAST && item.effect.value < 1) {
+          logs.push(`${item.icon} Mana refunded: +${actualMana}`);
+        } else if (trigger === ITEM_EFFECT_TRIGGER.ON_KILL) {
+          logs.push(`${item.icon} Mana restored: +${actualMana}`);
+        } else if (trigger === ITEM_EFFECT_TRIGGER.ON_CRIT) {
+          logs.push(`${item.icon} Mana on crit: +${actualMana}`);
+        }
         break;
       }
 

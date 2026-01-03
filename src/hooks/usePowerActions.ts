@@ -17,6 +17,7 @@ import { PATH_RESOURCES, getResourceDisplayName } from '@/data/pathResources';
 import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
 import { applyStatusToEnemy } from '@/utils/statusEffectUtils';
 import { applyPathTriggerToEnemy, getScaledDelay } from '@/utils/combatUtils';
+import { restorePlayerHealth, restorePlayerMana } from '@/utils/statsUtils';
 
 /**
  * Context for power activation - all state needed to execute a power
@@ -433,11 +434,9 @@ export function usePowerActions(context: PowerActivationContext) {
           // Vampiric touch heals
           if (power.id === 'vampiric-touch') {
             const heal = Math.floor(damage * POWER_BALANCE.VAMPIRIC_HEAL_RATIO);
-            player.currentStats.health = Math.min(
-              player.currentStats.maxHealth,
-              player.currentStats.health + heal
-            );
-            logs.push(`Healed for ${heal} HP!`);
+            const healResult = restorePlayerHealth(player, heal, { source: 'Vampiric Touch' });
+            player = healResult.player;
+            if (healResult.log) logs.push(healResult.log);
           }
           break;
         }
@@ -451,25 +450,19 @@ export function usePowerActions(context: PowerActivationContext) {
             logs.push(`Sacrificed ${sacrificeResult.actualDamage} HP!`);
 
             const manaRestored = power.value; // Flat 50 mana
-            player.currentStats.mana = Math.min(
-              player.currentStats.maxMana,
-              player.currentStats.mana + manaRestored
-            );
-            logs.push(`Restored ${manaRestored} mana!`);
+            const manaResult = restorePlayerMana(player, manaRestored, { source: 'Blood Pact' });
+            player = manaResult.player;
+            if (manaResult.log) logs.push(manaResult.log);
           } else if (power.id === 'mana-surge') {
             const manaRestored = Math.floor(player.currentStats.maxMana * power.value);
-            player.currentStats.mana = Math.min(
-              player.currentStats.maxMana,
-              player.currentStats.mana + manaRestored
-            );
-            logs.push(`Restored ${manaRestored} mana!`);
+            const manaResult = restorePlayerMana(player, manaRestored, { source: 'Mana Surge' });
+            player = manaResult.player;
+            if (manaResult.log) logs.push(manaResult.log);
           } else {
             const heal = Math.floor(player.currentStats.maxHealth * power.value);
-            player.currentStats.health = Math.min(
-              player.currentStats.maxHealth,
-              player.currentStats.health + heal
-            );
-            logs.push(`Healed for ${heal} HP!`);
+            const healResult = restorePlayerHealth(player, heal, { source: power.name });
+            player = healResult.player;
+            if (healResult.log) logs.push(healResult.log);
           }
           break;
         }
@@ -589,16 +582,12 @@ export function usePowerActions(context: PowerActivationContext) {
 
               // Apply any heal/damage/mana from on_status_inflict
               if (onStatusInflictResult.healAmount) {
-                player.currentStats.health = Math.min(
-                  player.currentStats.maxHealth,
-                  player.currentStats.health + onStatusInflictResult.healAmount
-                );
+                const healResult = restorePlayerHealth(player, onStatusInflictResult.healAmount);
+                player = healResult.player;
               }
               if (onStatusInflictResult.manaRestored) {
-                player.currentStats.mana = Math.min(
-                  player.currentStats.maxMana,
-                  player.currentStats.mana + onStatusInflictResult.manaRestored
-                );
+                const manaResult = restorePlayerMana(player, onStatusInflictResult.manaRestored);
+                player = manaResult.player;
               }
 
               // Apply trigger damage to enemy (on_status_inflict abilities, etc.)

@@ -113,4 +113,29 @@ describe('getScaledDelay', () => {
     expect(getScaledDelay(200, 2)).toBe(100);
     expect(getScaledDelay(200, 3)).toBe(66);
   });
+
+  // Edge cases for input validation
+  it('returns 0 for zero combatSpeed', () => {
+    expect(getScaledDelay(1000, 0)).toBe(0);
+  });
+
+  it('returns 0 for negative combatSpeed', () => {
+    expect(getScaledDelay(1000, -1)).toBe(0);
+  });
+
+  it('returns 0 for negative baseDelay', () => {
+    expect(getScaledDelay(-100, 2)).toBe(0);
+  });
+
+  it('returns 0 for zero baseDelay', () => {
+    expect(getScaledDelay(0, 2)).toBe(0);
+  });
+
+  it('returns 0 for Infinity combatSpeed', () => {
+    expect(getScaledDelay(1000, Infinity)).toBe(0);
+  });
+
+  it('returns 0 for NaN combatSpeed', () => {
+    expect(getScaledDelay(1000, NaN)).toBe(0);
+  });
 });
