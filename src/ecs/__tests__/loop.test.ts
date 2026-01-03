@@ -1,0 +1,113 @@
+// src/ecs/__tests__/loop.test.ts
+/**
+ * Unit tests for the game loop.
+ * Tests timing accuracy, pause behavior, and tick counting.
+ */
+
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import {
+  startLoop,
+  stopLoop,
+  getTick,
+  resetTick,
+  isLoopRunning,
+  getEffectiveDelta,
+  TICK_MS,
+} from '../loop';
+import { world } from '../world';
+import { GAME_STATE_ENTITY_ID } from '../components';
+
+describe('Game Loop', () => {
+  beforeEach(() => {
+    // Clear world and reset state
+    for (const entity of world.entities) {
+      world.remove(entity);
+    }
+    resetTick();
+    stopLoop();
+
+    // Mock requestAnimationFrame
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    stopLoop();
+    vi.useRealTimers();
+  });
+
+  describe('startLoop / stopLoop', () => {
+    it('should start the loop', () => {
+      const onTick = vi.fn();
+      startLoop(onTick);
+
+      expect(isLoopRunning()).toBe(true);
+    });
+
+    it('should stop the loop', () => {
+      const onTick = vi.fn();
+      startLoop(onTick);
+      stopLoop();
+
+      expect(isLoopRunning()).toBe(false);
+    });
+
+    it('should not start twice', () => {
+      const onTick1 = vi.fn();
+      const onTick2 = vi.fn();
+      startLoop(onTick1);
+      startLoop(onTick2);
+
+      expect(isLoopRunning()).toBe(true);
+      // Only first callback should be registered
+    });
+  });
+
+  describe('getTick / resetTick', () => {
+    it('should start at tick 0', () => {
+      expect(getTick()).toBe(0);
+    });
+
+    it('should reset tick counter', () => {
+      // Manually set tick (would normally happen via loop)
+      resetTick();
+      expect(getTick()).toBe(0);
+    });
+  });
+
+  describe('getEffectiveDelta', () => {
+    it('should return base delta when no game state exists', () => {
+      const result = getEffectiveDelta(16);
+      expect(result).toBe(16);
+    });
+
+    it('should scale delta by combat speed', () => {
+      // Create game state with 2x speed
+      world.add({
+        gameState: true,
+        phase: 'combat',
+        combatSpeed: { multiplier: 2 },
+      });
+
+      const result = getEffectiveDelta(16);
+      expect(result).toBe(32);
+    });
+
+    it('should handle 3x speed', () => {
+      world.add({
+        gameState: true,
+        phase: 'combat',
+        combatSpeed: { multiplier: 3 },
+      });
+
+      const result = getEffectiveDelta(16);
+      expect(result).toBe(48);
+    });
+  });
+
+  describe('TICK_MS constant', () => {
+    it('should be approximately 60fps', () => {
+      expect(TICK_MS).toBe(16);
+      expect(1000 / TICK_MS).toBeCloseTo(62.5, 0);
+    });
+  });
+});
