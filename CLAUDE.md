@@ -27,16 +27,21 @@ npx vitest run   # Run unit tests
 ```
 src/
 ├── components/
-│   ├── game/           # Game-specific components (21 files)
+│   ├── game/           # Game-specific components
 │   └── ui/             # shadcn/ui component library
 ├── contexts/           # React Context providers
 ├── constants/          # Configuration, balance, animations, responsive
 ├── data/               # Game content (classes, enemies, powers, items)
-├── hooks/              # Custom React hooks (18 files)
+├── hooks/              # Custom React hooks
 ├── lib/                # Utilities (utils.ts with cn())
 ├── pages/              # Page-level components
 ├── types/              # TypeScript type definitions
 └── utils/              # Utility functions
+docs/
+└── plans/              # Design documents and implementation plans
+e2e/
+├── helpers/            # Test utilities (test-utils.ts)
+└── *.spec.ts           # Playwright E2E tests
 ```
 
 ## Architecture
@@ -57,21 +62,13 @@ menu → class-select → path-select (at level 2) → combat → floor-complete
 
 ### State Management
 
-**Central State**: `useGameState()` hook (340 lines) orchestrates all game logic by composing:
+**Central State**: `useGameState()` hook orchestrates all game logic by composing smaller hooks. Key hooks include:
 - `useCombatLoop` - Attack timing with separate hero/enemy timers
-- `useBattleAnimation` - Sprite states, effects, battle phases
-- `useCombatTimers` - HP/MP regen, power cooldowns (independent 500ms tick)
-- `useCharacterSetup` - Class selection, stat calculation
-- `useRoomTransitions` - Floor/room progression, death handling
-- `useItemActions` - Item equipping, power learning
-- `useEventQueue` - Animation event scheduling (prevents setTimeout cascades)
 - `useCombatActions` - Hero attack, enemy attack, block actions
 - `usePowerActions` - Power activation and cooldown management
-- `useRewardCalculation` - XP, gold, level-up processing
-- `useItemEffects` - Centralized item effect processing
-- `usePauseControl` - Pause/unpause state management
-- `usePathActions` - Path selection, ability choices, subpath selection
 - `usePathAbilities` - Path ability trigger processing
+- `useRoomTransitions` - Floor/room progression, death handling
+- `useRewardCalculation` - XP, gold, level-up processing
 
 **Combat Context**: `CombatContext.tsx` provides typed access to combat state for UI components:
 ```tsx
@@ -82,22 +79,15 @@ const { player, enemy, combatState, actions } = useCombat();
 
 | File | Purpose |
 |------|---------|
-| `hooks/useGameState.ts` | Central game state orchestration (340 lines) |
-| `hooks/useCombatActions.ts` | Hero/enemy attack logic (497 lines) |
-| `hooks/usePowerActions.ts` | Power activation (232 lines) |
-| `hooks/useRewardCalculation.ts` | XP/gold/item drops (207 lines) |
-| `hooks/useItemEffects.ts` | Item effect processing (131 lines) |
-| `hooks/combatActionHelpers.ts` | Combat calculation helpers (322 lines) |
-| `hooks/useCombatLoop.ts` | Tick-based combat timing |
-| `hooks/useBattleAnimation.ts` | Animation state machine + CombatEvent types |
+| `hooks/useGameState.ts` | Central game state orchestration |
+| `hooks/useCombatActions.ts` | Hero/enemy attack logic |
+| `hooks/usePowerActions.ts` | Power activation |
+| `hooks/usePathAbilities.ts` | Path ability trigger processing |
+| `hooks/combatActionHelpers.ts` | Combat calculation helpers |
 | `contexts/CombatContext.tsx` | Combat UI state provider |
 | `types/game.ts` | All TypeScript interfaces |
 | `components/game/Game.tsx` | Phase router |
-| `components/game/BattleArena.tsx` | Battle visualization (220 lines) |
-| `components/game/CombatErrorBoundary.tsx` | Error recovery for combat |
-| `components/game/FloorCompleteScreen.tsx` | Power rewards UI |
-| `components/game/PathSelectionScreen.tsx` | Path choice at level 2 |
-| `components/game/AbilityChoicePopup.tsx` | Ability selection popup |
+| `components/game/BattleArena.tsx` | Battle visualization |
 
 ### Data Files
 
@@ -186,7 +176,7 @@ Each class has 2 paths:
 - `ClassSelect.tsx` - Character selection
 - `CombatScreen.tsx` - Battle container (wraps with CombatProvider)
 - `FloorCompleteScreen.tsx` - Rewards selection
-- `DeathScreen.tsx` - Upgrade purchasing
+- `DeathScreen.tsx` - Retry/abandon options
 
 ### Combat Components
 - `BattleArena.tsx` - Sprites, effects, accessibility announcements
@@ -217,7 +207,7 @@ UI components in `src/components/ui/`. Add new components:
 npx shadcn@latest add <component-name>
 ```
 
-Path aliases: `@/components`, `@/lib`, `@/hooks`, `@/types`, `@/data`, `@/constants`, `@/contexts`
+Path aliases: `@/components`, `@/lib`, `@/hooks`, `@/types`, `@/data`, `@/constants`, `@/contexts`, `@/utils`
 
 ## Code Patterns
 
@@ -242,8 +232,24 @@ Path aliases: `@/components`, `@/lib`, `@/hooks`, `@/types`, `@/data`, `@/consta
 
 ## Utility Functions
 
+### Centralized Utilities Pattern (`utils/`)
+Combat utilities follow a consistent pattern:
+- Deep clone input to prevent mutation
+- Return result object with updated entity + logs + metadata
+- See `damageUtils.ts` or `statusEffectUtils.ts` as canonical examples
+
+```typescript
+// Example: applying damage
+import { applyDamageToPlayer } from '@/utils/damageUtils';
+
+const result = applyDamageToPlayer(player, 25, 'enemy_attack');
+// result.player - updated player (cloned)
+// result.logs - combat log messages
+// result.actualDamage - damage after shields
+```
+
 ### State Cloning (`utils/stateUtils.ts`)
-Always use deep clone utilities when modifying player/enemy state to prevent mutation bugs:
+Always use deep clone utilities when modifying player/enemy state:
 ```typescript
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 
@@ -252,33 +258,31 @@ updatedPlayer.currentStats.health -= damage;
 ```
 
 ### Combat Log (`utils/circularBuffer.ts`)
-Combat log uses a circular buffer (100 entries max) to prevent unbounded memory growth:
+Combat log uses a circular buffer (100 entries max):
 ```typescript
 state.combatLog.add('Player attacks for 25 damage!');
 const logs = state.combatLog.toArray(); // For rendering
 ```
 
-### Item Effects (`hooks/useItemEffects.ts`)
-Centralized item effect processing - use `processItemEffects()` instead of inline effect handling:
-```typescript
-import { processItemEffects } from '@/hooks/useItemEffects';
-
-const result = processItemEffects({
-  player,
-  items: player.equipment,
-  trigger: ITEM_EFFECT_TRIGGER.ON_HIT,
-  enemy,
-  damage,
-});
-```
-
 ## Testing
 
-Unit tests are in `__tests__/` directories adjacent to the code they test:
-- `src/hooks/__tests__/useItemEffects.test.ts` - Item effect processing tests
-- `src/utils/__tests__/stateUtils.test.ts` - Deep clone immutability tests
+### Unit Tests
+Unit tests are in `__tests__/` directories adjacent to the code they test.
 
-Run tests with `npx vitest run` or `npx vitest` for watch mode.
+```bash
+npx vitest run    # Run all unit tests
+npx vitest        # Watch mode
+```
+
+### E2E Tests
+E2E tests use Playwright with test hooks for state manipulation.
+
+```bash
+npx playwright test              # Run all E2E tests
+npx playwright test --ui         # Interactive mode
+```
+
+**Test Hooks**: Add `?testMode=true` URL param to expose `window.__TEST_HOOKS__` for state manipulation during tests. See `e2e/helpers/test-utils.ts` for utilities.
 
 ## Task Documents
 
@@ -291,12 +295,6 @@ tasks/                           # Local only - NOT committed to git
 ├── typescript-review.md         # Code review documents
 └── ...                          # Other planning/review docs
 ```
-
-### Guidelines for Task Documents:
-1. **Never commit task documents** - They are for local development tracking only
-2. Store all improvement plans, code reviews, and task lists in `tasks/`
-3. The `tasks/` directory is in `.gitignore` and won't be pushed to remote
-4. Update CLAUDE.md if task work results in architectural changes that future sessions need to know about
 
 ## Git Conventions
 
@@ -328,180 +326,3 @@ test(hooks): add useItemEffects unit tests
 - `utils` - Utility functions
 - `types` - TypeScript types
 
-## Conductor-Swarm Workflow
-
-For complex multi-file tasks, use the **Conductor-Swarm** pattern. The **Conductor** (root/main agent) orchestrates **Swarm Agents** (subagents) to execute tasks in parallel or sequentially.
-
-**IMPORTANT**: Always use swarm agents for task document execution, even if all tasks are sequential. This ensures consistent workflow patterns and proper task isolation.
-
-**Trigger phrases**: "conductor-swarm", "work through tasks", "execute task document", "fan out agents", "parallel task execution"
-
-### Why Worktrees?
-
-**CRITICAL**: All agents share the same shell and git state. Running `git checkout branch-a` in one agent, then `git checkout branch-b` in another causes Agent 1's commits to go to branch-b. **Git worktrees solve this** by giving each parallel task its own isolated directory with independent checkout.
-
-### Roles
-
-| Role | Responsibilities |
-|------|------------------|
-| **Conductor** (root agent) | Creates feature branch, creates worktrees for parallel tasks, assigns tasks with worktree paths, merges work, cleans up worktrees |
-| **Swarm Agent** (subagent) | Works ONLY in assigned worktree directory, commits to the worktree's branch, reports completion. **NEVER creates branches or worktrees.** |
-
-### Launching Swarm Agents
-
-**IMPORTANT**: Use the Task tool with `subagent_type="swarm-agent"` to launch swarm agents. Do NOT use other subagent types (like `general-purpose`, `Explore`, or `Plan`) for conductor-swarm work—the `swarm-agent` type is specifically designed for parallelized task execution with full tool access.
-
-```
-Task tool parameters:
-  subagent_type: "swarm-agent"
-  prompt: <task details with WORKDIR instructions>
-  run_in_background: true  # For parallel execution
-```
-
-### 1. Create Task Document
-
-Create `tasks/<TASK_NAME>_TASKS.md` with the following structure:
-
-```markdown
-# Task Name
-
-## Execution Mode
-<!-- IMPORTANT: Specify how tasks should be executed -->
-
-## Wave 1: [Wave Name] (PARALLEL|SEQUENTIAL)
-| Task ID | File | Description | Status | Worktree |
-|---------|------|-------------|--------|----------|
-| **1.1** | `path/to/file.ts` | What needs to be done | [ ] | |
-| **1.2** | `path/to/other.ts` | What needs to be done | [ ] | |
-
-**Acceptance Criteria:**
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-## Wave 2: [Wave Name] (PARALLEL|SEQUENTIAL)
-...
-```
-
-#### Task Document Checklist
-
-- [ ] **Execution mode per wave** - Explicitly state PARALLEL or SEQUENTIAL
-- [ ] **Task IDs** - Unique identifiers (e.g., 1.1, 1.2, 2.1)
-- [ ] **File paths** - Exact files to modify
-- [ ] **Clear descriptions** - What needs to be done
-- [ ] **Status column** - `[ ]` not started, `[~]` in progress, `[x]` completed
-- [ ] **Worktree column** - Conductor fills in worktree path when created
-
-### 2. Setup (CONDUCTOR ONLY)
-
-```bash
-# Step 1: Create or checkout feature branch
-git checkout -b <type>/<feature-name>
-# or if it exists:
-git checkout <type>/<feature-name>
-
-# Step 2: For PARALLEL tasks, create worktrees BEFORE launching agents
-# Worktrees go in parent directory to avoid nesting issues
-git worktree add ../rogue-task-1.1 -b <feature>/task-1.1
-git worktree add ../rogue-task-1.2 -b <feature>/task-1.2
-# Example:
-git worktree add ../rogue-fix-warrior -b fix/warrior-paths
-git worktree add ../rogue-fix-mage -b fix/mage-paths
-
-# Step 3: IMPORTANT - Verify worktree paths resolve correctly
-# Use realpath to get canonical absolute paths (no double slashes)
-realpath ../rogue-task-1.1
-# Should output: /Users/gilbrowdy/rogue-task-1.1 (single leading slash)
-```
-
-**Worktree naming convention**: `../rogue-<short-task-name>`
-
-**Path verification**: Before launching agents, always verify worktree paths with `realpath` or `pwd`. Agent tool permissions may fail if paths contain formatting issues (e.g., double slashes `//Users/...`). If agents report permission errors on worktree files, the conductor should complete the work directly.
-
-### 3. Execute Tasks
-
-#### For PARALLEL Waves:
-1. Conductor creates all worktrees for the wave FIRST
-2. Conductor updates task document with worktree paths
-3. Conductor launches multiple `swarm-agent` subagents simultaneously using the Task tool with `run_in_background: true`
-4. **Each agent prompt MUST include:**
-   ```
-   WORKDIR: /Users/gilbrowdy/rogue-task-1.1
-
-   You MUST work in the directory above. Before ANY file operations:
-   1. Run: cd /Users/gilbrowdy/rogue-task-1.1 && pwd
-   2. Verify the output matches the WORKDIR
-   3. ALL file paths must be relative to or absolute within this directory
-   4. Commit your changes when done (the branch is already set up)
-   ```
-5. Agents work in isolation, commit to their worktree's branch
-6. Conductor monitors progress and updates task document status
-
-#### For SEQUENTIAL Waves:
-Sequential tasks don't need worktrees - work directly in main repo:
-1. Conductor works on task OR launches one agent at a time
-2. Complete task, commit to feature branch
-3. Update task document, move to next task
-
-**Default behavior:** If execution mode is NOT specified, **assume SEQUENTIAL**.
-
-### 4. Merge and Cleanup (CONDUCTOR ONLY)
-
-As each parallel agent completes:
-
-1. **Review the work** in the worktree directory
-2. **Merge into feature branch:**
-   ```bash
-   # From main repo directory
-   cd /Users/gilbrowdy/rogue
-   git merge <feature>/task-1.1
-   ```
-3. **Update task document** - Change status `[~]` → `[x]`
-4. **Remove worktree after merge:**
-   ```bash
-   git worktree remove ../rogue-task-1.1
-   # Branch can be deleted too:
-   git branch -d <feature>/task-1.1
-   ```
-
-### 5. Real-Time Document Updates
-
-| Event | Document Update |
-|-------|-----------------|
-| Worktree created | Fill in Worktree column with path |
-| Agent launched | Status: `[ ]` → `[~]` |
-| Agent completes | Review work before updating |
-| Work merged | Status: `[~]` → `[x]` |
-| Worktree removed | Clear Worktree column or mark "merged" |
-
-### 6. Finalize
-
-After all waves complete:
-1. Verify all worktrees removed: `git worktree list`
-2. Run full validation: `npm run build && npm run lint && npx vitest run`
-3. Update task document with completion timestamp
-4. Open PR from feature branch to main
-
-### 7. Cleanup Commands
-
-```bash
-# List all worktrees
-git worktree list
-
-# Remove a specific worktree
-git worktree remove ../rogue-task-name
-
-# Remove all task worktrees (if needed)
-git worktree list | grep "rogue-" | awk '{print $1}' | xargs -I {} git worktree remove {}
-
-# Prune stale worktree references
-git worktree prune
-```
-
-### Guidelines Summary
-
-1. **Worktrees for parallel work** - Each parallel task gets its own worktree directory
-2. **Conductor owns setup/teardown** - Agents NEVER create worktrees or branches
-3. **Absolute paths in prompts** - Always give agents the full worktree path
-4. **Sequential = no worktree** - Only parallel tasks need isolation
-5. **Merge then remove** - Clean up worktrees immediately after merging
-6. **Verify with `git worktree list`** - Ensure no orphaned worktrees remain

@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Player, Enemy, Power, Stats } from '@/types/game';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { applyDamageToEnemy } from '@/utils/damageUtils';
+import { restorePlayerHealth, restorePlayerMana } from '@/utils/statsUtils';
 
 /**
  * Power use result
@@ -67,7 +68,7 @@ export function usePowers() {
 
     if (!canUsePower(player, powerId)) return null;
 
-    const updatedPlayer = deepClonePlayer(player);
+    let updatedPlayer = deepClonePlayer(player);
     let updatedEnemy = deepCloneEnemy(enemy);
     const logs: string[] = [];
     let damage = 0;
@@ -108,29 +109,23 @@ export function usePowers() {
         // Vampiric touch heals
         if (power.id === 'vampiric-touch') {
           const heal = Math.floor(damage * 0.5);
-          updatedPlayer.currentStats.health = Math.min(
-            updatedPlayer.currentStats.maxHealth,
-            updatedPlayer.currentStats.health + heal
-          );
-          logs.push(`Healed for ${heal} HP!`);
+          const healResult = restorePlayerHealth(updatedPlayer, heal, { source: 'Vampiric Touch' });
+          updatedPlayer = healResult.player;
+          if (healResult.log) logs.push(healResult.log);
         }
         break;
       }
       case 'heal': {
         if (power.id === 'mana-surge') {
           const manaRestored = Math.floor(updatedPlayer.currentStats.maxMana * power.value);
-          updatedPlayer.currentStats.mana = Math.min(
-            updatedPlayer.currentStats.maxMana,
-            updatedPlayer.currentStats.mana + manaRestored
-          );
-          logs.push(`Restored ${manaRestored} mana!`);
+          const manaResult = restorePlayerMana(updatedPlayer, manaRestored, { source: 'Mana Surge' });
+          updatedPlayer = manaResult.player;
+          if (manaResult.log) logs.push(manaResult.log);
         } else {
           const heal = Math.floor(updatedPlayer.currentStats.maxHealth * power.value);
-          updatedPlayer.currentStats.health = Math.min(
-            updatedPlayer.currentStats.maxHealth,
-            updatedPlayer.currentStats.health + heal
-          );
-          logs.push(`Healed for ${heal} HP!`);
+          const healResult = restorePlayerHealth(updatedPlayer, heal, { source: power.name });
+          updatedPlayer = healResult.player;
+          if (healResult.log) logs.push(healResult.log);
         }
         break;
       }

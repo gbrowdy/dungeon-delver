@@ -9,6 +9,7 @@ import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
 import { applyTriggerResultToEnemy } from '@/hooks/combatActionHelpers';
 import { applyDamageToEnemy } from '@/utils/damageUtils';
+import { restorePlayerMana } from '@/utils/statsUtils';
 
 /**
  * Hook for room transitions and enemy spawning.
@@ -71,7 +72,7 @@ export function useRoomTransitions(
       });
 
       // Reset player state for new combat
-      const player: Player = {
+      let player: Player = {
         ...outOfCombatResult.player,
         statusEffects: [], // Clear status effects between rooms
         isBlocking: false,
@@ -91,11 +92,9 @@ export function useRoomTransitions(
           const chance = item.effect.chance ?? 1;
           if (Math.random() < chance) {
             if (item.effect.type === EFFECT_TYPE.MANA) {
-              player.currentStats.mana = Math.min(
-                player.currentStats.maxMana,
-                player.currentStats.mana + item.effect.value
-              );
-              logs.push(`${item.icon} ${item.name}: +${item.effect.value} mana!`);
+              const manaResult = restorePlayerMana(player, item.effect.value);
+              player = manaResult.player;
+              logs.push(`${item.icon} ${item.name}: +${manaResult.actualAmount} mana!`);
             } else if (item.effect.type === EFFECT_TYPE.BUFF) {
               // Add temporary armor buff
               player.activeBuffs.push({
