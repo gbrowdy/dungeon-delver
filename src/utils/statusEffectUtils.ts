@@ -125,7 +125,7 @@ export function applyStatusToPlayer(
   const logs: string[] = [];
 
   if (immunities.includes(config.type)) {
-    logs.push(`🛡️ Resisted ${config.type}!`);
+    logs.push(`Resisted ${config.type}!`);
     return { player: updatedPlayer, logs, applied: false };
   }
 
