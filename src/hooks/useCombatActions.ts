@@ -37,7 +37,8 @@ import { logPauseChange, logCombatEvent } from '@/utils/gameLogger';
 import { generateEventId } from '@/utils/eventId';
 import { isFeatureEnabled } from '@/constants/features';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
-import { getResourceGeneration, pathUsesResourceSystem } from '@/hooks/usePathResource';
+import { pathUsesResourceSystem } from '@/hooks/usePathResource';
+import { generatePathResource } from '@/utils/statsUtils';
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
@@ -409,29 +410,15 @@ export function useCombatActions({
       // Generate path resource on hit (Phase 6)
       const pathId = playerAfterEffects.path?.pathId;
       if (pathUsesResourceSystem(pathId) && playerAfterEffects.pathResource) {
-        const onHitGen = getResourceGeneration(pathId, 'onHit');
-        if (onHitGen > 0) {
-          playerAfterEffects.pathResource = {
-            ...playerAfterEffects.pathResource,
-            current: Math.min(
-              playerAfterEffects.pathResource.max,
-              playerAfterEffects.pathResource.current + onHitGen
-            ),
-          };
-        }
+        const onHitResult = generatePathResource(playerAfterEffects, 'onHit');
+        playerAfterEffects = onHitResult.player;
+        if (onHitResult.log) logs.push(onHitResult.log);
 
         // Generate on crit if applicable
         if (damageResult.isCrit) {
-          const onCritGen = getResourceGeneration(pathId, 'onCrit');
-          if (onCritGen > 0) {
-            playerAfterEffects.pathResource = {
-              ...playerAfterEffects.pathResource,
-              current: Math.min(
-                playerAfterEffects.pathResource.max,
-                playerAfterEffects.pathResource.current + onCritGen
-              ),
-            };
-          }
+          const onCritResult = generatePathResource(playerAfterEffects, 'onCrit');
+          playerAfterEffects = onCritResult.player;
+          if (onCritResult.log) logs.push(onCritResult.log);
         }
       }
 
@@ -559,16 +546,9 @@ export function useCombatActions({
         // Generate path resource on kill (Phase 6)
         const killPathId = playerAfterEffects.path?.pathId;
         if (pathUsesResourceSystem(killPathId) && playerAfterEffects.pathResource) {
-          const onKillGen = getResourceGeneration(killPathId, 'onKill');
-          if (onKillGen > 0) {
-            playerAfterEffects.pathResource = {
-              ...playerAfterEffects.pathResource,
-              current: Math.min(
-                playerAfterEffects.pathResource.max,
-                playerAfterEffects.pathResource.current + onKillGen
-              ),
-            };
-          }
+          const onKillResult = generatePathResource(playerAfterEffects, 'onKill');
+          playerAfterEffects = onKillResult.player;
+          if (onKillResult.log) logs.push(onKillResult.log);
         }
 
         // Process path resource on-kill effects (e.g., Berserker max Fury = full HP restore)
@@ -944,16 +924,9 @@ export function useCombatActions({
             // Generate path resource on block (Phase 6)
             const blockPathId = player.path?.pathId;
             if (pathUsesResourceSystem(blockPathId) && player.pathResource) {
-              const onBlockGen = getResourceGeneration(blockPathId, 'onBlock');
-              if (onBlockGen > 0) {
-                player.pathResource = {
-                  ...player.pathResource,
-                  current: Math.min(
-                    player.pathResource.max,
-                    player.pathResource.current + onBlockGen
-                  ),
-                };
-              }
+              const onBlockResult = generatePathResource(player, 'onBlock');
+              player = onBlockResult.player;
+              if (onBlockResult.log) logs.push(onBlockResult.log);
             }
 
             // Schedule counter-attack animation and damage for block reflect
@@ -994,16 +967,9 @@ export function useCombatActions({
             // Generate path resource on damaged (Phase 6)
             const damagedPathId = player.path?.pathId;
             if (pathUsesResourceSystem(damagedPathId) && player.pathResource) {
-              const onDamagedGen = getResourceGeneration(damagedPathId, 'onDamaged');
-              if (onDamagedGen > 0) {
-                player.pathResource = {
-                  ...player.pathResource,
-                  current: Math.min(
-                    player.pathResource.max,
-                    player.pathResource.current + onDamagedGen
-                  ),
-                };
-              }
+              const onDamagedResult = generatePathResource(player, 'onDamaged');
+              player = onDamagedResult.player;
+              if (onDamagedResult.log) logs.push(onDamagedResult.log);
             }
           }
 
