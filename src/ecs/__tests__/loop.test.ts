@@ -21,7 +21,9 @@ import { GAME_STATE_ENTITY_ID } from '../components';
 describe('Game Loop', () => {
   beforeEach(() => {
     // Clear world and reset state
-    for (const entity of world.entities) {
+    // Use spread to create a copy since removing modifies the array during iteration
+    const entities = [...world.entities];
+    for (const entity of entities) {
       world.remove(entity);
     }
     resetTick();

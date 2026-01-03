@@ -5,6 +5,7 @@
  */
 
 import { world } from './world';
+import type { Entity } from './components';
 
 // Player queries
 export const playerQuery = world.with('player', 'health', 'mana');
