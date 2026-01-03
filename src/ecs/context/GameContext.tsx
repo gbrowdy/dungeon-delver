@@ -73,8 +73,7 @@ export interface GameActions {
   purchaseShopItem: (itemId: string, cost: number) => void;
   enhanceEquippedItem: (slot: 'weapon' | 'armor' | 'accessory') => void;
 
-  // Items/Powers
-  learnPower: (powerIdOrUpgrade: string | { powerId: string }) => void;
+  // Items
   claimItem: (itemId: string) => void;
 
   // Animation callbacks
@@ -234,16 +233,7 @@ export function GameProvider({ children, enabled = true }: GameProviderProps) {
       dispatch(Commands.enhanceItem(slot));
     },
 
-    // Items/Powers
-    learnPower: (powerIdOrUpgrade: string | { powerId: string }) => {
-      if (typeof powerIdOrUpgrade === 'string') {
-        // This is a skip - handled by skip command
-        dispatch(Commands.skipPowerReward());
-      } else {
-        // This is a power upgrade
-        dispatch(Commands.claimPowerUpgrade(powerIdOrUpgrade.powerId));
-      }
-    },
+    // Items
     claimItem: (_itemId: string) => {
       // TODO: Add CLAIM_ITEM command when item drop system is migrated
       console.warn('claimItem not yet implemented in ECS');

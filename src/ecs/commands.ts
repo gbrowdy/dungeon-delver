@@ -5,8 +5,6 @@
  * This ensures deterministic execution order and prevents race conditions.
  */
 
-import type { Power } from '@/types/game';
-
 // All possible commands
 export type Command =
   // Combat actions
@@ -22,10 +20,6 @@ export type Command =
   | { type: 'SELECT_PATH'; pathId: string }
   | { type: 'SELECT_ABILITY'; abilityId: string }
   | { type: 'SELECT_SUBPATH'; subpathId: string }
-  // Rewards
-  | { type: 'CLAIM_POWER'; power: Power }
-  | { type: 'CLAIM_POWER_UPGRADE'; powerId: string }
-  | { type: 'SKIP_POWER_REWARD' }
   // Room/floor progression
   | { type: 'ADVANCE_ROOM' }
   | { type: 'GO_TO_SHOP' }
@@ -102,19 +96,6 @@ export const Commands = {
   selectSubpath: (subpathId: string): Command => ({
     type: 'SELECT_SUBPATH',
     subpathId,
-  }),
-
-  // Rewards
-  claimPower: (power: Power): Command => ({
-    type: 'CLAIM_POWER',
-    power,
-  }),
-  claimPowerUpgrade: (powerId: string): Command => ({
-    type: 'CLAIM_POWER_UPGRADE',
-    powerId,
-  }),
-  skipPowerReward: (): Command => ({
-    type: 'SKIP_POWER_REWARD',
   }),
 
   // Room/floor
