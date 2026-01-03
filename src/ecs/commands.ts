@@ -35,7 +35,10 @@ export type Command =
   | { type: 'ABANDON_RUN' }
   // UI events
   | { type: 'DISMISS_POPUP'; popupType: string }
-  | { type: 'MARK_ANIMATIONS_CONSUMED'; ids: string[] };
+  | { type: 'MARK_ANIMATIONS_CONSUMED'; ids: string[] }
+  // Shop
+  | { type: 'PURCHASE_ITEM'; itemId: string; cost: number }
+  | { type: 'ENHANCE_ITEM'; slot: 'weapon' | 'armor' | 'accessory' };
 
 // Command queue - processed at start of each tick
 export const commandQueue: Command[] = [];
@@ -141,5 +144,16 @@ export const Commands = {
   markAnimationsConsumed: (ids: string[]): Command => ({
     type: 'MARK_ANIMATIONS_CONSUMED',
     ids,
+  }),
+
+  // Shop
+  purchaseItem: (itemId: string, cost: number): Command => ({
+    type: 'PURCHASE_ITEM',
+    itemId,
+    cost,
+  }),
+  enhanceItem: (slot: 'weapon' | 'armor' | 'accessory'): Command => ({
+    type: 'ENHANCE_ITEM',
+    slot,
   }),
 };

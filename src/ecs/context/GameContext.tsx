@@ -70,8 +70,8 @@ export interface GameActions {
   // Shop
   openShop: () => void;
   closeShop: () => void;
-  purchaseShopItem: (itemId: string) => void;
-  enhanceEquippedItem: (itemId: string) => void;
+  purchaseShopItem: (itemId: string, cost: number) => void;
+  enhanceEquippedItem: (slot: 'weapon' | 'armor' | 'accessory') => void;
 
   // Items/Powers
   learnPower: (powerIdOrUpgrade: string | { powerId: string }) => void;
@@ -227,13 +227,11 @@ export function GameProvider({ children, enabled = true }: GameProviderProps) {
     closeShop: () => {
       dispatch(Commands.leaveShop());
     },
-    purchaseShopItem: (_itemId: string) => {
-      // TODO: Add PURCHASE_SHOP_ITEM command when shop system is migrated
-      console.warn('purchaseShopItem not yet implemented in ECS');
+    purchaseShopItem: (itemId: string, cost: number) => {
+      dispatch(Commands.purchaseItem(itemId, cost));
     },
-    enhanceEquippedItem: (_itemId: string) => {
-      // TODO: Add ENHANCE_ITEM command when shop system is migrated
-      console.warn('enhanceEquippedItem not yet implemented in ECS');
+    enhanceEquippedItem: (slot: 'weapon' | 'armor' | 'accessory') => {
+      dispatch(Commands.enhanceItem(slot));
     },
 
     // Items/Powers

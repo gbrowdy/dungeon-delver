@@ -83,6 +83,21 @@ export function InputSystem(_deltaMs: number): void {
         break;
       }
 
+      case 'PURCHASE_ITEM': {
+        if (!player?.inventory) break;
+        if (player.inventory.gold < cmd.cost) break;
+
+        player.inventory.gold -= cmd.cost;
+        // Item addition handled by FlowSystem or caller
+        break;
+      }
+
+      case 'ENHANCE_ITEM': {
+        // Enhancement logic - deduct gold, upgrade item
+        // Detailed implementation depends on existing enhancement utils
+        break;
+      }
+
       // TODO: Handle remaining commands as systems are implemented
       default:
         // Unknown command - ignore for now
