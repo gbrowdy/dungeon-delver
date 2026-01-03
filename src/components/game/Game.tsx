@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useGameState } from '@/hooks/useGameState';
+import { useGame } from '@/ecs/context/GameContext';
 import { MainMenu } from './MainMenu';
 import { ClassSelect } from './ClassSelect';
 import { PathSelectionScreen } from './PathSelectionScreen';
@@ -8,32 +8,42 @@ import { DeathScreen } from './DeathScreen';
 import { FloorCompleteScreen } from './FloorCompleteScreen';
 import { ShopScreen } from './ShopScreen';
 import { VictoryScreen } from './VictoryScreen';
-import { GameErrorBoundary, SimpleErrorBoundary } from '@/components/ErrorBoundary';
+import { SimpleErrorBoundary } from '@/components/ErrorBoundary';
 import { CombatErrorBoundary } from './CombatErrorBoundary';
+import { getPathById, getAbilityChoices } from '@/data/paths';
+import { generateShopState } from '@/utils/shopUtils';
 
 export function Game() {
-  const { state, shopItems, availablePowers, droppedItem, lastCombatEvent, heroProgress, enemyProgress, isHeroStunned, getAbilityChoices, getPathById, actions } = useGameState();
+  const { player, enemy, gameState, heroProgress, enemyProgress, actions } = useGame();
 
   // Get ability choices for player if they have pending ability choice
-  // Memoize to prevent re-shuffling on every render (which caused flickering)
-  // Only recalculate when pendingAbilityChoice changes or player chooses an ability
   const abilityChoices = useMemo(() => {
-    if (!state.player?.pendingAbilityChoice || !state.player?.path) {
+    if (!player?.pendingAbilityChoice || !player?.path) {
       return null;
     }
-    const pathDef = getPathById(state.player.path.pathId);
-    return pathDef ? getAbilityChoices(state.player, pathDef) : null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally omit state.player to avoid recalculating on every player state change
-  }, [
-    state.player?.pendingAbilityChoice,
-    state.player?.path?.pathId,
-    state.player?.path?.abilities.length, // Recalculate when abilities change
-    state.player?.level,
-    getPathById,
-    getAbilityChoices,
-  ]);
+    const pathDef = getPathById(player.path.pathId);
+    if (!pathDef) return null;
 
-  switch (state.gamePhase) {
+    // Convert PlayerSnapshot to minimal player object for getAbilityChoices
+    const playerForChoices = {
+      level: player.level,
+      path: player.path,
+    };
+    return getAbilityChoices(playerForChoices as any, pathDef);
+  }, [player?.pendingAbilityChoice, player?.path?.pathId, player?.path?.abilities?.length, player?.level]);
+
+  // Compute shop state when in shop phase
+  const shopState = useMemo(() => {
+    if (gameState.phase !== 'shop' || !player) return null;
+    return generateShopState(gameState.floor, player.characterClass, player.path?.pathId);
+  }, [gameState.phase, gameState.floor, player?.characterClass, player?.path?.pathId]);
+
+  // Check if hero is stunned
+  const isHeroStunned = useMemo(() => {
+    return player?.statusEffects?.some(e => e.type === 'stun') ?? false;
+  }, [player?.statusEffects]);
+
+  switch (gameState.phase) {
     case 'menu':
       return <MainMenu onStart={actions.startGame} />;
 
@@ -41,47 +51,36 @@ export function Game() {
       return <ClassSelect onSelect={actions.selectClass} />;
 
     case 'path-select':
-      if (!state.player) return null;
-      return <PathSelectionScreen characterClass={state.player.class} onSelectPath={actions.selectPath} />;
+      if (!player) return null;
+      return <PathSelectionScreen characterClass={player.characterClass} onSelectPath={actions.selectPath} />;
 
     case 'combat':
+      if (!player) return null;
       return (
         <CombatErrorBoundary
           onRetryFloor={actions.retryFloor}
           onReturnToMenu={actions.restartGame}
         >
           <CombatScreen
-            state={state}
-            droppedItem={droppedItem}
-            lastCombatEvent={lastCombatEvent}
+            player={player}
+            enemy={enemy}
+            gameState={gameState}
             heroProgress={heroProgress}
             enemyProgress={enemyProgress}
             isHeroStunned={isHeroStunned}
-            onUsePower={actions.usePower}
-            onTogglePause={actions.togglePause}
-            onSetCombatSpeed={actions.setCombatSpeed}
-            onActivateBlock={actions.activateBlock}
-            onTransitionComplete={actions.handleTransitionComplete}
-            onEnemyDeathAnimationComplete={actions.handleEnemyDeathAnimationComplete}
-            onPlayerDeathAnimationComplete={actions.handlePlayerDeathAnimationComplete}
-            onDismissLevelUp={actions.dismissLevelUp}
-            onEquipDroppedItem={actions.equipDroppedItem}
-            onDismissDroppedItem={actions.dismissDroppedItem}
             abilityChoices={abilityChoices}
             onSelectAbility={actions.selectAbility}
           />
         </CombatErrorBoundary>
       );
-      
+
     case 'floor-complete':
-      if (!state.player) return null;
+      if (!player) return null;
       return (
         <SimpleErrorBoundary>
           <FloorCompleteScreen
-            player={state.player}
-            floor={state.currentFloor}
-            availablePowers={availablePowers}
-            onLearnPower={actions.learnPower}
+            player={player}
+            floor={gameState.floor}
             onContinue={actions.continueFromFloorComplete}
             onVisitShop={actions.openShop}
           />
@@ -89,13 +88,13 @@ export function Game() {
       );
 
     case 'shop':
-      if (!state.player || !state.shopState) return null;
+      if (!player || !shopState) return null;
       return (
         <SimpleErrorBoundary>
           <ShopScreen
-            player={state.player}
-            shopState={state.shopState}
-            currentFloor={state.currentFloor}
+            player={player}
+            shopState={shopState}
+            currentFloor={gameState.floor}
             onPurchase={actions.purchaseShopItem}
             onEnhance={actions.enhanceEquippedItem}
             onClose={actions.closeShop}
@@ -104,11 +103,11 @@ export function Game() {
       );
 
     case 'defeat':
-      if (!state.player) return null;
+      if (!player) return null;
       return (
         <DeathScreen
-          player={state.player}
-          currentFloor={state.currentFloor}
+          player={player}
+          currentFloor={gameState.floor}
           onRetry={actions.retryFloor}
           onAbandon={actions.restartGame}
           onVisitShop={actions.openShop}
@@ -116,11 +115,11 @@ export function Game() {
       );
 
     case 'victory':
-      if (!state.player) return null;
+      if (!player) return null;
       return (
         <SimpleErrorBoundary>
           <VictoryScreen
-            player={state.player}
+            player={player}
             onNewRun={actions.restartGame}
             onReturnToMenu={actions.restartGame}
           />
