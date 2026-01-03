@@ -33,6 +33,7 @@ import { ROGUE_PATHS } from '@/data/paths/rogue';
 import { PALADIN_PATHS } from '@/data/paths/paladin';
 import { PATH_PLAYSTYLE_MODIFIERS, type PathPlaystyleModifiers } from '@/constants/balance';
 import { isFeatureEnabled } from '@/constants/features';
+import { restorePlayerHealth, restorePlayerMana } from '@/utils/statsUtils';
 
 // Re-export the type for consumers
 export type { PathPlaystyleModifiers } from '@/constants/balance';
@@ -445,7 +446,7 @@ export function usePathAbilities() {
     context: TriggerContext
   ): TriggerResult => {
     const abilities = getActiveAbilities(context.player);
-    const updatedPlayer = deepClonePlayer(context.player);
+    let updatedPlayer = deepClonePlayer(context.player);
     const logs: string[] = [];
 
     let healAmount = 0;
@@ -666,18 +667,14 @@ export function usePathAbilities() {
 
     // Apply heal
     if (healAmount > 0) {
-      updatedPlayer.currentStats.health = Math.min(
-        updatedPlayer.currentStats.maxHealth,
-        updatedPlayer.currentStats.health + healAmount
-      );
+      const healResult = restorePlayerHealth(updatedPlayer, healAmount);
+      updatedPlayer = healResult.player;
     }
 
     // Apply mana restore
     if (manaRestored > 0) {
-      updatedPlayer.currentStats.mana = Math.min(
-        updatedPlayer.currentStats.maxMana,
-        updatedPlayer.currentStats.mana + manaRestored
-      );
+      const manaResult = restorePlayerMana(updatedPlayer, manaRestored);
+      updatedPlayer = manaResult.player;
     }
 
     return {
