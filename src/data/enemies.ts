@@ -294,6 +294,13 @@ function getEnemyAbilities(baseName: string, floor: number, isBoss: boolean): Ab
 }
 
 /**
+ * Get an ability by its ID (for testing)
+ */
+export function getAbilityById(id: string): EnemyAbility | undefined {
+  return ENEMY_ABILITIES[id] ? { ...ENEMY_ABILITIES[id] } : undefined;
+}
+
+/**
  * Calculate enemy's next intent based on abilities and cooldowns
  */
 export function calculateEnemyIntent(enemy: Enemy): EnemyIntent {

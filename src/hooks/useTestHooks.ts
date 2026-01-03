@@ -1,8 +1,9 @@
 // src/hooks/useTestHooks.ts
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback } from 'react';
 import { GameState } from '@/types/game';
 import type { TestHooks } from '@/types/test-hooks';
+import { getAbilityById } from '@/data/enemies';
 
 interface UseTestHooksParams {
   state: GameState;
@@ -137,6 +138,26 @@ export function useTestHooks({ state, setState }: UseTestHooksParams): void {
     return isTestInvincible();
   }, []);
 
+  const setEnemyAbilities = useCallback((abilityIds: string[]) => {
+    setState(prev => {
+      if (!prev.currentEnemy) return prev;
+      const abilities = abilityIds
+        .map(id => getAbilityById(id))
+        .filter((a): a is NonNullable<typeof a> => a !== undefined);
+      return {
+        ...prev,
+        currentEnemy: {
+          ...prev.currentEnemy,
+          abilities,
+        },
+      };
+    });
+  }, [setState]);
+
+  const getCombatLogs = useCallback(() => {
+    return state.combatLog?.toArray() ?? [];
+  }, [state.combatLog]);
+
   useEffect(() => {
     if (!isTestMode) {
       // Clean up if test mode is disabled
@@ -159,6 +180,8 @@ export function useTestHooks({ state, setState }: UseTestHooksParams): void {
       setEnemyOneHitKill,
       setPlayerInvincible,
       isPlayerInvincible,
+      setEnemyAbilities,
+      getCombatLogs,
     };
 
     window.__TEST_HOOKS__ = hooks;
@@ -180,5 +203,7 @@ export function useTestHooks({ state, setState }: UseTestHooksParams): void {
     setEnemyOneHitKill,
     setPlayerInvincible,
     isPlayerInvincible,
+    setEnemyAbilities,
+    getCombatLogs,
   ]);
 }

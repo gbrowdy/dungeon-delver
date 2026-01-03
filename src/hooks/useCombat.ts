@@ -6,6 +6,7 @@ import { getDodgeChance } from '@/utils/fortuneUtils';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
 import { applyDamageToPlayer } from '@/utils/damageUtils';
 import { applyStatusToPlayer } from '@/utils/statusEffectUtils';
+import { getAbilityEmoji } from '@/utils/abilityLogUtils';
 import { STATUS_EFFECT_TYPE } from '@/constants/enums';
 import { COMBAT_BALANCE } from '@/constants/balance';
 
@@ -180,7 +181,7 @@ export function useCombat() {
     let updatedPlayer = player;
     let damage = 0;
 
-    logs.push(`${ability.icon} ${enemy.name} uses ${ability.name}!`);
+    logs.push(`${getAbilityEmoji(ability.icon)} ${enemy.name} uses ${ability.name}!`);
 
     // Put ability on cooldown
     updatedEnemy.abilities = enemy.abilities.map((a: EnemyAbility) =>
@@ -211,7 +212,7 @@ export function useCombat() {
           const multiHitResult = applyDamageToPlayer(updatedPlayer, totalDamage, 'enemy_ability');
           updatedPlayer = multiHitResult.player;
           if (multiHitResult.actualDamage > 0) {
-            logs.push(`${ability.icon} ${hits} hits deal ${multiHitResult.actualDamage} total damage!`);
+            logs.push(`${getAbilityEmoji(ability.icon)} ${hits} hits deal ${multiHitResult.actualDamage} total damage!`);
           }
           damage = multiHitResult.actualDamage;
         }

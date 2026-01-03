@@ -42,6 +42,7 @@ import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
 import { applyStatusToPlayer, applyStatusToEnemy } from '@/utils/statusEffectUtils';
+import { getAbilityEmoji } from '@/utils/abilityLogUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities, getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
 import type { PauseReasonType } from '@/constants/enums';
@@ -689,7 +690,7 @@ export function useCombatActions({
 
       if (enemyIntent?.type === 'ability' && enemyIntent.ability) {
         const ability = enemyIntent.ability;
-        logs.push(`${ability.icon} ${enemy.name} uses ${ability.name}!`);
+        logs.push(`${getAbilityEmoji(ability.icon)} ${enemy.name} uses ${ability.name}!`);
 
         enemy.abilities = enemy.abilities.map((a: EnemyAbility) =>
           a.id === ability.id ? { ...a, currentCooldown: a.cooldown } : a
@@ -775,7 +776,7 @@ export function useCombatActions({
                 }
               }
 
-              logs.push(`${ability.icon} ${hits} hits deal ${totalDamage} total damage!`);
+              logs.push(`${getAbilityEmoji(ability.icon)} ${hits} hits deal ${totalDamage} total damage!`);
               enemyDamage = totalDamage;
             }
             break;
