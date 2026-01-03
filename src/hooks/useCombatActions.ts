@@ -45,6 +45,7 @@ import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
 import { applyStatusToPlayer, applyStatusToEnemy } from '@/utils/statusEffectUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities, getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
+import { applyPathTriggerToEnemy } from '@/utils/combatUtils';
 import type { PauseReasonType } from '@/constants/enums';
 import type { CombatEvent } from '@/hooks/useBattleAnimation';
 
@@ -162,15 +163,9 @@ export function useCombatActions({
       logs.push(...pathTurnStartResult.logs);
 
       // Apply trigger damage to enemy (turn_start abilities, etc.)
-      if (pathTurnStartResult.damageAmount) {
-        const triggerDmgResult = applyDamageToEnemy(enemy, pathTurnStartResult.damageAmount, 'path_ability');
-        enemy = triggerDmgResult.enemy;
-      }
-      if (pathTurnStartResult.reflectedDamage) {
-        const reflectDmgResult = applyDamageToEnemy(enemy, pathTurnStartResult.reflectedDamage, 'reflect');
-        enemy = reflectDmgResult.enemy;
-        logs.push(...reflectDmgResult.logs);
-      }
+      const turnStartTriggerResult = applyPathTriggerToEnemy(enemy, pathTurnStartResult);
+      enemy = turnStartTriggerResult.enemy;
+      logs.push(...turnStartTriggerResult.logs);
       applyTriggerResultToEnemy(enemy, pathTurnStartResult);
 
       // NOTE: Power cooldowns are now time-based, not turn-based
@@ -278,11 +273,9 @@ export function useCombatActions({
       logs = [...logs, ...onHitResult.logs];
 
       // Apply reflected damage to enemy if any
-      if (onHitResult.reflectedDamage) {
-        const reflectResult = applyDamageToEnemy(enemy, onHitResult.reflectedDamage, 'path_ability');
-        enemy = reflectResult.enemy;
-        logs.push(...reflectResult.logs);
-      }
+      const onHitTriggerResult = applyPathTriggerToEnemy(enemy, onHitResult);
+      enemy = onHitTriggerResult.enemy;
+      logs.push(...onHitTriggerResult.logs);
 
       // Apply status effect to enemy if triggered
       if (onHitResult.statusToApply) {
@@ -306,12 +299,10 @@ export function useCombatActions({
         playerAfterEffects = onStatusInflictResult.player;
         finalDamage += onStatusInflictResult.damageAmount || 0;
 
-        // Apply reflected damage to enemy if any
-        if (onStatusInflictResult.reflectedDamage) {
-          const reflectResult = applyDamageToEnemy(enemy, onStatusInflictResult.reflectedDamage, 'path_ability');
-          enemy = reflectResult.enemy;
-          logs.push(...reflectResult.logs);
-        }
+        // Apply trigger damage to enemy if any
+        const statusInflictTriggerResult = applyPathTriggerToEnemy(enemy, onStatusInflictResult);
+        enemy = statusInflictTriggerResult.enemy;
+        logs.push(...statusInflictTriggerResult.logs);
 
         // Apply results to enemy
         applyTriggerResultToEnemy(enemy, onStatusInflictResult);
@@ -352,11 +343,9 @@ export function useCombatActions({
         logs = [...logs, ...onCritResult.logs];
 
         // Apply reflected damage to enemy if any
-        if (onCritResult.reflectedDamage) {
-          const reflectResult = applyDamageToEnemy(enemy, onCritResult.reflectedDamage, 'path_ability');
-          enemy = reflectResult.enemy;
-          logs.push(...reflectResult.logs);
-        }
+        const onCritTriggerResult = applyPathTriggerToEnemy(enemy, onCritResult);
+        enemy = onCritTriggerResult.enemy;
+        logs.push(...onCritTriggerResult.logs);
 
         // Apply status effect to enemy if triggered
         if (onCritResult.statusToApply) {
@@ -381,11 +370,9 @@ export function useCombatActions({
           finalDamage += onStatusInflictResult.damageAmount || 0;
 
           // Apply reflected damage to enemy if any
-          if (onStatusInflictResult.reflectedDamage) {
-            const reflectResult = applyDamageToEnemy(enemy, onStatusInflictResult.reflectedDamage, 'path_ability');
-            enemy = reflectResult.enemy;
-            logs.push(...reflectResult.logs);
-          }
+          const critStatusInflictTriggerResult = applyPathTriggerToEnemy(enemy, onStatusInflictResult);
+          enemy = critStatusInflictTriggerResult.enemy;
+          logs.push(...critStatusInflictTriggerResult.logs);
 
           // Apply results to enemy
           applyTriggerResultToEnemy(enemy, onStatusInflictResult);
@@ -715,15 +702,9 @@ export function useCombatActions({
                 logs.push(...pathOnBlockResult.logs);
 
                 // Apply trigger damage to enemy (block reflect, etc.)
-                if (pathOnBlockResult.damageAmount) {
-                  const triggerDmgResult = applyDamageToEnemy(enemy, pathOnBlockResult.damageAmount, 'path_ability');
-                  enemy = triggerDmgResult.enemy;
-                }
-                if (pathOnBlockResult.reflectedDamage) {
-                  const reflectDmgResult = applyDamageToEnemy(enemy, pathOnBlockResult.reflectedDamage, 'reflect');
-                  enemy = reflectDmgResult.enemy;
-                  logs.push(...reflectDmgResult.logs);
-                }
+                const blockTriggerResult = applyPathTriggerToEnemy(enemy, pathOnBlockResult);
+                enemy = blockTriggerResult.enemy;
+                logs.push(...blockTriggerResult.logs);
                 applyTriggerResultToEnemy(enemy, pathOnBlockResult);
               }
 
@@ -855,15 +836,9 @@ export function useCombatActions({
           logs.push(...pathOnDodgeResult.logs);
 
           // Apply trigger damage to enemy (Riposte counter-attack, etc.)
-          if (pathOnDodgeResult.damageAmount) {
-            const triggerDmgResult = applyDamageToEnemy(enemy, pathOnDodgeResult.damageAmount, 'path_ability');
-            enemy = triggerDmgResult.enemy;
-          }
-          if (pathOnDodgeResult.reflectedDamage) {
-            const reflectDmgResult = applyDamageToEnemy(enemy, pathOnDodgeResult.reflectedDamage, 'reflect');
-            enemy = reflectDmgResult.enemy;
-            logs.push(...reflectDmgResult.logs);
-          }
+          const dodgeTriggerResult = applyPathTriggerToEnemy(enemy, pathOnDodgeResult);
+          enemy = dodgeTriggerResult.enemy;
+          logs.push(...dodgeTriggerResult.logs);
           applyTriggerResultToEnemy(enemy, pathOnDodgeResult);
 
           // Schedule counter-attack animation for riposte
@@ -910,15 +885,9 @@ export function useCombatActions({
             logs.push(...pathOnBlockResult.logs);
 
             // Apply trigger damage to enemy (block reflect, etc.)
-            if (pathOnBlockResult.damageAmount) {
-              const triggerDmgResult = applyDamageToEnemy(enemy, pathOnBlockResult.damageAmount, 'path_ability');
-              enemy = triggerDmgResult.enemy;
-            }
-            if (pathOnBlockResult.reflectedDamage) {
-              const reflectDmgResult = applyDamageToEnemy(enemy, pathOnBlockResult.reflectedDamage, 'reflect');
-              enemy = reflectDmgResult.enemy;
-              logs.push(...reflectDmgResult.logs);
-            }
+            const blockTriggerResult2 = applyPathTriggerToEnemy(enemy, pathOnBlockResult);
+            enemy = blockTriggerResult2.enemy;
+            logs.push(...blockTriggerResult2.logs);
             applyTriggerResultToEnemy(enemy, pathOnBlockResult);
 
             // Generate path resource on block (Phase 6)
@@ -1020,12 +989,10 @@ export function useCombatActions({
           player.currentStats = pathOnDamagedResult.player.currentStats;
           logs.push(...pathOnDamagedResult.logs);
 
-          // Apply reflected damage to enemy if any
-          if (pathOnDamagedResult.reflectedDamage) {
-            const pathReflectResult = applyDamageToEnemy(enemy, pathOnDamagedResult.reflectedDamage, 'path_ability');
-            enemy = pathReflectResult.enemy;
-            logs.push(...pathReflectResult.logs);
-          }
+          // Apply trigger damage to enemy if any
+          const damagedTriggerResult = applyPathTriggerToEnemy(enemy, pathOnDamagedResult);
+          enemy = damagedTriggerResult.enemy;
+          logs.push(...damagedTriggerResult.logs);
 
           // Process path ability triggers: on_low_hp
           // This fires when HP is low (checked via hp_below condition in usePathAbilities)
@@ -1037,12 +1004,10 @@ export function useCombatActions({
           player.currentStats = pathOnLowHpResult.player.currentStats;
           logs.push(...pathOnLowHpResult.logs);
 
-          // Apply reflected damage to enemy if any
-          if (pathOnLowHpResult.reflectedDamage) {
-            const lowHpReflectResult = applyDamageToEnemy(enemy, pathOnLowHpResult.reflectedDamage, 'path_ability');
-            enemy = lowHpReflectResult.enemy;
-            logs.push(...lowHpReflectResult.logs);
-          }
+          // Apply trigger damage to enemy if any
+          const lowHpTriggerResult = applyPathTriggerToEnemy(enemy, pathOnLowHpResult);
+          enemy = lowHpTriggerResult.enemy;
+          logs.push(...lowHpTriggerResult.logs);
         }
       }
 

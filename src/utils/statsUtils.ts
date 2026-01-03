@@ -274,12 +274,12 @@ export function addBuffToPlayer(
   const updatedPlayer = deepClonePlayer(player);
 
   const buff = {
-    id: `buff-${config.source || config.name}-${Date.now()}`,
+    id: `buff-${config.source || config.name}-${crypto.randomUUID()}`,
     name: config.name,
     stat: config.stat,
     multiplier: config.multiplier,
     remainingTurns: config.duration,
-    icon: config.icon || '',
+    ...(config.icon ? { icon: config.icon } : {}),
   };
 
   updatedPlayer.activeBuffs.push(buff);

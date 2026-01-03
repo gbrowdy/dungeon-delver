@@ -10,6 +10,8 @@ import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
 import { applyTriggerResultToEnemy } from '@/hooks/combatActionHelpers';
 import { applyDamageToEnemy } from '@/utils/damageUtils';
+import { applyPathTriggerToEnemy } from '@/utils/combatUtils';
+import { restorePlayerMana } from '@/utils/statsUtils';
 
 /**
  * Hook for room transitions and enemy spawning.
@@ -92,11 +94,9 @@ export function useRoomTransitions(
           const chance = item.effect.chance ?? 1;
           if (Math.random() < chance) {
             if (item.effect.type === EFFECT_TYPE.MANA) {
-              player.currentStats.mana = Math.min(
-                player.currentStats.maxMana,
-                player.currentStats.mana + item.effect.value
-              );
-              logs.push(`${item.icon} ${item.name}: +${item.effect.value} mana!`);
+              const manaResult = restorePlayerMana(player, item.effect.value);
+              player = manaResult.player;
+              logs.push(`${item.icon} ${item.name}: +${manaResult.actualAmount} mana!`);
             } else if (item.effect.type === EFFECT_TYPE.BUFF) {
               // Add temporary armor buff
               const buffResult = addBuffToPlayer(player, {
@@ -123,15 +123,9 @@ export function useRoomTransitions(
       logs.push(...pathCombatStartResult.logs);
 
       // Apply trigger damage to enemy (combat_start abilities, etc.)
-      if (pathCombatStartResult.damageAmount) {
-        const triggerDmgResult = applyDamageToEnemy(enemy, pathCombatStartResult.damageAmount, 'path_ability');
-        enemy = triggerDmgResult.enemy;
-      }
-      if (pathCombatStartResult.reflectedDamage) {
-        const reflectDmgResult = applyDamageToEnemy(enemy, pathCombatStartResult.reflectedDamage, 'reflect');
-        enemy = reflectDmgResult.enemy;
-        logs.push(...reflectDmgResult.logs);
-      }
+      const combatStartTriggerResult = applyPathTriggerToEnemy(enemy, pathCombatStartResult);
+      enemy = combatStartTriggerResult.enemy;
+      logs.push(...combatStartTriggerResult.logs);
       applyTriggerResultToEnemy(enemy, pathCombatStartResult);
 
       // Ambush: First attack against each enemy is a guaranteed critical hit

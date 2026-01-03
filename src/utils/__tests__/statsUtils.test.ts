@@ -185,6 +185,22 @@ describe('restorePlayerMana', () => {
   });
 });
 
+// Default path resource for testing - extracted to avoid recreating mock in overrides
+const defaultPathResource = {
+  type: 'fury' as const,
+  current: 50,
+  max: 100,
+  color: '#ef4444',
+  generation: {
+    onHit: 5,
+    onCrit: 10,
+    onKill: 15,
+    onBlock: 3,
+    onDamaged: 5,
+    onPowerUse: 0,
+  },
+};
+
 // Mock player with path resource for testing
 const createMockPlayerWithPath = (overrides?: Partial<Player>): Player => ({
   ...createMockPlayer(),
@@ -196,20 +212,7 @@ const createMockPlayerWithPath = (overrides?: Partial<Player>): Player => ({
     abilities: [],
     resourceType: 'fury',
   },
-  pathResource: {
-    type: 'fury',
-    current: 50,
-    max: 100,
-    color: '#ef4444',
-    generation: {
-      onHit: 5,
-      onCrit: 10,
-      onKill: 15,
-      onBlock: 3,
-      onDamaged: 5,
-      onPowerUse: 0,
-    },
-  },
+  pathResource: defaultPathResource,
   ...overrides,
 });
 
@@ -232,7 +235,7 @@ describe('generatePathResource', () => {
 
   it('caps resource at max', () => {
     const player = createMockPlayerWithPath({
-      pathResource: { ...createMockPlayerWithPath().pathResource!, current: 95 },
+      pathResource: { ...defaultPathResource, current: 95 },
     });
     const result = generatePathResource(player, 'onKill');
 
