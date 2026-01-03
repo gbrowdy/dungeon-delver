@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Keyboard, Pause, Play, FastForward, ChevronsRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useCombat } from '@/contexts/CombatContext';
 import { KEYBOARD_SHORTCUTS } from '@/hooks/useGameKeyboard';
 import { CombatSpeed } from '@/types/game';
 import {
@@ -11,18 +10,35 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+interface CombatHeaderProps {
+  floor: number;
+  room: number;
+  totalRooms: number;
+  gold: number;
+  isPaused: boolean;
+  combatSpeed: CombatSpeed;
+  onTogglePause: () => void;
+  onSetCombatSpeed: (speed: CombatSpeed) => void;
+}
+
 /**
  * CombatHeader - Displays floor progress, gold, and combat controls.
  * Styled with pixel art / 8-bit retro aesthetic.
  */
-export function CombatHeader() {
-  const { gameState, actions } = useCombat();
-  const { currentFloor, currentRoom, roomsPerFloor, isPaused, combatSpeed, currentEnemy } = gameState;
-
+export function CombatHeader({
+  floor,
+  room,
+  totalRooms,
+  gold,
+  isPaused,
+  combatSpeed,
+  onTogglePause,
+  onSetCombatSpeed,
+}: CombatHeaderProps) {
   // Calculate enemies remaining
-  const enemiesDefeated = currentRoom > 0 ? currentRoom - (currentEnemy ? 1 : 0) : 0;
-  const enemiesRemaining = roomsPerFloor - enemiesDefeated;
-  const isLastEnemy = currentRoom === roomsPerFloor && currentEnemy;
+  const enemiesDefeated = room > 0 ? room - 1 : 0;
+  const enemiesRemaining = totalRooms - enemiesDefeated;
+  const isLastEnemy = room === totalRooms;
 
   return (
     <div className="pixel-panel rounded-lg p-2 sm:p-3">
@@ -31,14 +47,14 @@ export function CombatHeader() {
         {/* Left side: Floor info */}
         <div className="min-w-0">
           <h2 data-testid="floor-indicator" className="pixel-text text-pixel-sm xs:text-pixel-base text-primary font-bold whitespace-nowrap">
-            Floor {currentFloor}
+            Floor {floor}
           </h2>
           <div className="flex items-center gap-1 xs:gap-2 pixel-text text-pixel-2xs xs:text-pixel-xs">
             <span className="text-slate-400 hidden sm:inline">Room:</span>
             <EnemyProgressIndicators
-              total={roomsPerFloor}
+              total={totalRooms}
               defeated={enemiesDefeated}
-              hasCurrent={!!currentEnemy}
+              hasCurrent={true}
             />
             <span className="text-slate-400 whitespace-nowrap">
               {enemiesRemaining} left
@@ -53,10 +69,15 @@ export function CombatHeader() {
 
         {/* Right side: Controls - always visible */}
         <div className="flex items-center gap-1 xs:gap-2 sm:gap-3 flex-shrink-0">
+          {/* Gold display */}
+          <div className="pixel-text text-pixel-xs text-amber-400 font-bold">
+            {gold}g
+          </div>
+
           {/* Speed Controls */}
           <SpeedControls
             currentSpeed={combatSpeed}
-            onSetSpeed={actions.setCombatSpeed}
+            onSetSpeed={onSetCombatSpeed}
           />
 
           {/* Pause/Play */}
@@ -64,7 +85,7 @@ export function CombatHeader() {
             variant="outline"
             size="icon"
             onClick={(e) => {
-              actions.togglePause();
+              onTogglePause();
               e.currentTarget.blur();
             }}
             aria-label={isPaused ? "Resume combat" : "Pause combat"}
