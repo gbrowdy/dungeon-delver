@@ -6,8 +6,9 @@ import { getDodgeChance } from '@/utils/fortuneUtils';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
 import { applyDamageToPlayer } from '@/utils/damageUtils';
 import { applyStatusToPlayer } from '@/utils/statusEffectUtils';
-import { STATUS_EFFECT_TYPE } from '@/constants/enums';
+import { STATUS_EFFECT_TYPE, BUFF_STAT } from '@/constants/enums';
 import { COMBAT_BALANCE } from '@/constants/balance';
+import { addBuffToPlayer } from '@/utils/statsUtils';
 
 /**
  * Combat result from a single combat tick
@@ -54,7 +55,7 @@ export function useCombat() {
     context: { damage?: number; logs: string[] }
   ): { player: Player; bonusDamage: number } => {
     let bonusDamage = 0;
-    const updatedPlayer = deepClonePlayer(player);
+    let updatedPlayer = deepClonePlayer(player);
 
     player.equippedItems.forEach((item: Item) => {
       if (item.effect?.trigger === trigger) {
@@ -82,17 +83,19 @@ export function useCombat() {
                 updatedPlayer.currentStats.mana + item.effect.value
               );
               break;
-            case 'buff':
-              updatedPlayer.activeBuffs.push({
-                id: `${trigger}-buff-${Date.now()}`,
+            case 'buff': {
+              const buffResult = addBuffToPlayer(updatedPlayer, {
                 name: 'Combat Ready',
-                stat: 'armor',
+                stat: BUFF_STAT.ARMOR,
                 multiplier: 1 + (item.effect.value / player.baseStats.armor),
-                remainingTurns: 3,
+                duration: 3,
                 icon: 'stat-armor',
+                source: trigger,
               });
+              updatedPlayer = buffResult.player;
               context.logs.push(`${item.icon} Defense boosted!`);
               break;
+            }
           }
         }
       }

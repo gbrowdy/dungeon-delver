@@ -4,6 +4,7 @@ import { generateEnemy } from '@/data/enemies';
 import { calculateStats } from '@/hooks/useCharacterSetup';
 import { COMBAT_BALANCE } from '@/constants/balance';
 import { GAME_PHASE, ITEM_EFFECT_TRIGGER, EFFECT_TYPE, BUFF_STAT } from '@/constants/enums';
+import { addBuffToPlayer } from '@/utils/statsUtils';
 import { logStateTransition, logCombatEvent, logDeathEvent } from '@/utils/gameLogger';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
@@ -71,7 +72,7 @@ export function useRoomTransitions(
       });
 
       // Reset player state for new combat
-      const player: Player = {
+      let player: Player = {
         ...outOfCombatResult.player,
         statusEffects: [], // Clear status effects between rooms
         isBlocking: false,
@@ -98,14 +99,15 @@ export function useRoomTransitions(
               logs.push(`${item.icon} ${item.name}: +${item.effect.value} mana!`);
             } else if (item.effect.type === EFFECT_TYPE.BUFF) {
               // Add temporary armor buff
-              player.activeBuffs.push({
-                id: `combat-start-${Date.now()}`,
+              const buffResult = addBuffToPlayer(player, {
                 name: 'Combat Ready',
                 stat: BUFF_STAT.ARMOR,
                 multiplier: 1 + (item.effect.value / player.baseStats.armor),
-                remainingTurns: COMBAT_BALANCE.DEFAULT_BUFF_DURATION,
+                duration: COMBAT_BALANCE.DEFAULT_BUFF_DURATION,
                 icon: 'stat-armor',
+                source: 'combat-start',
               });
+              player = buffResult.player;
               logs.push(`${item.icon} ${item.name}: Defense boosted!`);
             }
           }
