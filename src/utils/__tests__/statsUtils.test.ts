@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { restorePlayerHealth, restorePlayerMana } from '../statsUtils';
+import { restorePlayerHealth, restorePlayerMana, generatePathResource } from '../statsUtils';
 import { Player } from '@/types/game';
 
 const createMockPlayer = (overrides?: Partial<Player>): Player => ({
@@ -181,5 +181,95 @@ describe('restorePlayerMana', () => {
     restorePlayerMana(player, 15);
 
     expect(player.currentStats.mana).toBe(originalMana);
+  });
+});
+
+// Default path resource for testing - extracted to avoid recreating mock in overrides
+const defaultPathResource = {
+  type: 'fury' as const,
+  current: 50,
+  max: 100,
+  color: '#ef4444',
+  generation: {
+    onHit: 5,
+    onCrit: 10,
+    onKill: 15,
+    onBlock: 3,
+    onDamaged: 5,
+    onPowerUse: 0,
+  },
+};
+
+// Mock player with path resource for testing
+const createMockPlayerWithPath = (overrides?: Partial<Player>): Player => ({
+  ...createMockPlayer(),
+  path: {
+    id: 'berserker',
+    name: 'Berserker',
+    description: 'Fury-based combat',
+    classId: 'warrior',
+    abilities: [],
+    resourceType: 'fury',
+  },
+  pathResource: defaultPathResource,
+  ...overrides,
+});
+
+describe('generatePathResource', () => {
+  it('generates resource on hit', () => {
+    const player = createMockPlayerWithPath();
+    const result = generatePathResource(player, 'onHit');
+
+    expect(result.player.pathResource?.current).toBe(55);
+    expect(result.amountGenerated).toBe(5);
+  });
+
+  it('generates resource on crit', () => {
+    const player = createMockPlayerWithPath();
+    const result = generatePathResource(player, 'onCrit');
+
+    expect(result.player.pathResource?.current).toBe(60);
+    expect(result.amountGenerated).toBe(10);
+  });
+
+  it('caps resource at max', () => {
+    const player = createMockPlayerWithPath({
+      pathResource: { ...defaultPathResource, current: 95 },
+    });
+    const result = generatePathResource(player, 'onKill');
+
+    expect(result.player.pathResource?.current).toBe(100);
+    expect(result.amountGenerated).toBe(5);
+  });
+
+  it('generates log with resource name', () => {
+    const player = createMockPlayerWithPath();
+    const result = generatePathResource(player, 'onHit');
+
+    expect(result.log).toBe('+5 Fury');
+  });
+
+  it('returns zero if no path resource', () => {
+    const player = createMockPlayer();
+    const result = generatePathResource(player, 'onHit');
+
+    expect(result.amountGenerated).toBe(0);
+    expect(result.log).toBeUndefined();
+  });
+
+  it('returns zero if generation is zero for trigger', () => {
+    const player = createMockPlayerWithPath();
+    const result = generatePathResource(player, 'onPowerUse');
+
+    expect(result.amountGenerated).toBe(0);
+  });
+
+  it('does not mutate the original player', () => {
+    const player = createMockPlayerWithPath();
+    const originalResource = player.pathResource?.current;
+
+    generatePathResource(player, 'onHit');
+
+    expect(player.pathResource?.current).toBe(originalResource);
   });
 });
