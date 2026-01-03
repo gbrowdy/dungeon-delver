@@ -16,6 +16,7 @@ import { isFeatureEnabled } from '@/constants/features';
 import { PATH_RESOURCES, getResourceDisplayName } from '@/data/pathResources';
 import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
 import { applyStatusToEnemy } from '@/utils/statusEffectUtils';
+import { applyPathTriggerToEnemy } from '@/utils/combatUtils';
 import { restorePlayerHealth, restorePlayerMana } from '@/utils/statsUtils';
 
 /**
@@ -229,15 +230,9 @@ export function usePowerActions(context: PowerActivationContext) {
       logs.push(...pathOnPowerResult.logs);
 
       // Apply trigger damage to enemy (on_power_use abilities, etc.)
-      if (pathOnPowerResult.damageAmount) {
-        const triggerDmgResult = applyDamageToEnemy(enemy, pathOnPowerResult.damageAmount, 'path_ability');
-        enemy = triggerDmgResult.enemy;
-      }
-      if (pathOnPowerResult.reflectedDamage) {
-        const reflectDmgResult = applyDamageToEnemy(enemy, pathOnPowerResult.reflectedDamage, 'reflect');
-        enemy = reflectDmgResult.enemy;
-        logs.push(...reflectDmgResult.logs);
-      }
+      const powerUseTriggerResult = applyPathTriggerToEnemy(enemy, pathOnPowerResult);
+      enemy = powerUseTriggerResult.enemy;
+      logs.push(...powerUseTriggerResult.logs);
       applyTriggerResultToEnemy(enemy, pathOnPowerResult);
 
       // Shadow Dance: Next 3 attacks after using a power are guaranteed critical hits
@@ -596,15 +591,9 @@ export function usePowerActions(context: PowerActivationContext) {
               }
 
               // Apply trigger damage to enemy (on_status_inflict abilities, etc.)
-              if (onStatusInflictResult.damageAmount) {
-                const triggerDmgResult = applyDamageToEnemy(enemy, onStatusInflictResult.damageAmount, 'path_ability');
-                enemy = triggerDmgResult.enemy;
-              }
-              if (onStatusInflictResult.reflectedDamage) {
-                const reflectDmgResult = applyDamageToEnemy(enemy, onStatusInflictResult.reflectedDamage, 'reflect');
-                enemy = reflectDmgResult.enemy;
-                logs.push(...reflectDmgResult.logs);
-              }
+              const statusInflictTriggerResult = applyPathTriggerToEnemy(enemy, onStatusInflictResult);
+              enemy = statusInflictTriggerResult.enemy;
+              logs.push(...statusInflictTriggerResult.logs);
 
               // Apply results to enemy (status effects, debuffs)
               applyTriggerResultToEnemy(enemy, onStatusInflictResult);
