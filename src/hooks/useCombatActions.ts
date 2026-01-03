@@ -45,7 +45,7 @@ import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
 import { applyStatusToPlayer, applyStatusToEnemy } from '@/utils/statusEffectUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities, getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
-import { applyPathTriggerToEnemy } from '@/utils/combatUtils';
+import { applyPathTriggerToEnemy, getScaledDelay } from '@/utils/combatUtils';
 import type { PauseReasonType } from '@/constants/enums';
 import type { CombatEvent } from '@/hooks/useBattleAnimation';
 
@@ -121,7 +121,7 @@ export function useCombatActions({
       id: generateEventId(),
       targetDied: enemyHealth <= 0,
     };
-    const scaledDelay = Math.floor(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY / combatSpeed);
+    const scaledDelay = getScaledDelay(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY, combatSpeed);
     scheduleCombatEvent(counterHitEvent, scaledDelay);
   }, [combatSpeed, scheduleCombatEvent, setLastCombatEvent]);
 
@@ -506,7 +506,7 @@ export function useCombatActions({
       const enemyWillDie = enemy.health <= 0;
 
       // Schedule enemy hit event after player attack starts (scaled by speed)
-      const scaledHitDelay = Math.floor(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY / combatSpeed);
+      const scaledHitDelay = getScaledDelay(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY, combatSpeed);
       const enemyHitEvent: import('@/hooks/useBattleAnimation').EnemyHitEvent = {
         type: COMBAT_EVENT_TYPE.ENEMY_HIT,
         damage: finalDamage,
@@ -1012,8 +1012,8 @@ export function useCombatActions({
       }
 
       // Schedule enemy attack animation
-      const scaledEnemyAttackDelay = Math.floor(COMBAT_EVENT_DELAYS.ENEMY_ATTACK_DELAY / combatSpeed);
-      const scaledPlayerHitDelay = Math.floor(COMBAT_EVENT_DELAYS.PLAYER_HIT_OFFSET / combatSpeed);
+      const scaledEnemyAttackDelay = getScaledDelay(COMBAT_EVENT_DELAYS.ENEMY_ATTACK_DELAY, combatSpeed);
+      const scaledPlayerHitDelay = getScaledDelay(COMBAT_EVENT_DELAYS.PLAYER_HIT_OFFSET, combatSpeed);
 
       const playerWillDie = player.currentStats.health <= 0;
 
