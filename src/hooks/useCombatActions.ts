@@ -37,13 +37,15 @@ import { logPauseChange, logCombatEvent } from '@/utils/gameLogger';
 import { generateEventId } from '@/utils/eventId';
 import { isFeatureEnabled } from '@/constants/features';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
-import { getResourceGeneration, pathUsesResourceSystem } from '@/hooks/usePathResource';
+import { pathUsesResourceSystem } from '@/hooks/usePathResource';
+import { generatePathResource, addBuffToPlayer } from '@/utils/statsUtils';
 import { safeCombatLogAdd } from '@/utils/combatLogUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
 import { applyStatusToPlayer, applyStatusToEnemy } from '@/utils/statusEffectUtils';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities, getPathPlaystyleModifiers } from '@/hooks/usePathAbilities';
+import { applyPathTriggerToEnemy, getScaledDelay } from '@/utils/combatUtils';
 import type { PauseReasonType } from '@/constants/enums';
 import type { CombatEvent } from '@/hooks/useBattleAnimation';
 
@@ -119,7 +121,7 @@ export function useCombatActions({
       id: generateEventId(),
       targetDied: enemyHealth <= 0,
     };
-    const scaledDelay = Math.floor(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY / combatSpeed);
+    const scaledDelay = getScaledDelay(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY, combatSpeed);
     scheduleCombatEvent(counterHitEvent, scaledDelay);
   }, [combatSpeed, scheduleCombatEvent, setLastCombatEvent]);
 
@@ -161,15 +163,9 @@ export function useCombatActions({
       logs.push(...pathTurnStartResult.logs);
 
       // Apply trigger damage to enemy (turn_start abilities, etc.)
-      if (pathTurnStartResult.damageAmount) {
-        const triggerDmgResult = applyDamageToEnemy(enemy, pathTurnStartResult.damageAmount, 'path_ability');
-        enemy = triggerDmgResult.enemy;
-      }
-      if (pathTurnStartResult.reflectedDamage) {
-        const reflectDmgResult = applyDamageToEnemy(enemy, pathTurnStartResult.reflectedDamage, 'reflect');
-        enemy = reflectDmgResult.enemy;
-        logs.push(...reflectDmgResult.logs);
-      }
+      const turnStartTriggerResult = applyPathTriggerToEnemy(enemy, pathTurnStartResult);
+      enemy = turnStartTriggerResult.enemy;
+      logs.push(...turnStartTriggerResult.logs);
       applyTriggerResultToEnemy(enemy, pathTurnStartResult);
 
       // NOTE: Power cooldowns are now time-based, not turn-based
@@ -277,11 +273,9 @@ export function useCombatActions({
       logs = [...logs, ...onHitResult.logs];
 
       // Apply reflected damage to enemy if any
-      if (onHitResult.reflectedDamage) {
-        const reflectResult = applyDamageToEnemy(enemy, onHitResult.reflectedDamage, 'path_ability');
-        enemy = reflectResult.enemy;
-        logs.push(...reflectResult.logs);
-      }
+      const onHitTriggerResult = applyPathTriggerToEnemy(enemy, onHitResult);
+      enemy = onHitTriggerResult.enemy;
+      logs.push(...onHitTriggerResult.logs);
 
       // Apply status effect to enemy if triggered
       if (onHitResult.statusToApply) {
@@ -305,12 +299,10 @@ export function useCombatActions({
         playerAfterEffects = onStatusInflictResult.player;
         finalDamage += onStatusInflictResult.damageAmount || 0;
 
-        // Apply reflected damage to enemy if any
-        if (onStatusInflictResult.reflectedDamage) {
-          const reflectResult = applyDamageToEnemy(enemy, onStatusInflictResult.reflectedDamage, 'path_ability');
-          enemy = reflectResult.enemy;
-          logs.push(...reflectResult.logs);
-        }
+        // Apply trigger damage to enemy if any
+        const statusInflictTriggerResult = applyPathTriggerToEnemy(enemy, onStatusInflictResult);
+        enemy = statusInflictTriggerResult.enemy;
+        logs.push(...statusInflictTriggerResult.logs);
 
         // Apply results to enemy
         applyTriggerResultToEnemy(enemy, onStatusInflictResult);
@@ -351,11 +343,9 @@ export function useCombatActions({
         logs = [...logs, ...onCritResult.logs];
 
         // Apply reflected damage to enemy if any
-        if (onCritResult.reflectedDamage) {
-          const reflectResult = applyDamageToEnemy(enemy, onCritResult.reflectedDamage, 'path_ability');
-          enemy = reflectResult.enemy;
-          logs.push(...reflectResult.logs);
-        }
+        const onCritTriggerResult = applyPathTriggerToEnemy(enemy, onCritResult);
+        enemy = onCritTriggerResult.enemy;
+        logs.push(...onCritTriggerResult.logs);
 
         // Apply status effect to enemy if triggered
         if (onCritResult.statusToApply) {
@@ -380,11 +370,9 @@ export function useCombatActions({
           finalDamage += onStatusInflictResult.damageAmount || 0;
 
           // Apply reflected damage to enemy if any
-          if (onStatusInflictResult.reflectedDamage) {
-            const reflectResult = applyDamageToEnemy(enemy, onStatusInflictResult.reflectedDamage, 'path_ability');
-            enemy = reflectResult.enemy;
-            logs.push(...reflectResult.logs);
-          }
+          const critStatusInflictTriggerResult = applyPathTriggerToEnemy(enemy, onStatusInflictResult);
+          enemy = critStatusInflictTriggerResult.enemy;
+          logs.push(...critStatusInflictTriggerResult.logs);
 
           // Apply results to enemy
           applyTriggerResultToEnemy(enemy, onStatusInflictResult);
@@ -409,29 +397,15 @@ export function useCombatActions({
       // Generate path resource on hit (Phase 6)
       const pathId = playerAfterEffects.path?.pathId;
       if (pathUsesResourceSystem(pathId) && playerAfterEffects.pathResource) {
-        const onHitGen = getResourceGeneration(pathId, 'onHit');
-        if (onHitGen > 0) {
-          playerAfterEffects.pathResource = {
-            ...playerAfterEffects.pathResource,
-            current: Math.min(
-              playerAfterEffects.pathResource.max,
-              playerAfterEffects.pathResource.current + onHitGen
-            ),
-          };
-        }
+        const onHitResult = generatePathResource(playerAfterEffects, 'onHit');
+        playerAfterEffects = onHitResult.player;
+        if (onHitResult.log) logs.push(onHitResult.log);
 
         // Generate on crit if applicable
         if (damageResult.isCrit) {
-          const onCritGen = getResourceGeneration(pathId, 'onCrit');
-          if (onCritGen > 0) {
-            playerAfterEffects.pathResource = {
-              ...playerAfterEffects.pathResource,
-              current: Math.min(
-                playerAfterEffects.pathResource.max,
-                playerAfterEffects.pathResource.current + onCritGen
-              ),
-            };
-          }
+          const onCritResult = generatePathResource(playerAfterEffects, 'onCrit');
+          playerAfterEffects = onCritResult.player;
+          if (onCritResult.log) logs.push(onCritResult.log);
         }
       }
 
@@ -532,7 +506,7 @@ export function useCombatActions({
       const enemyWillDie = enemy.health <= 0;
 
       // Schedule enemy hit event after player attack starts (scaled by speed)
-      const scaledHitDelay = Math.floor(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY / combatSpeed);
+      const scaledHitDelay = getScaledDelay(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY, combatSpeed);
       const enemyHitEvent: import('@/hooks/useBattleAnimation').EnemyHitEvent = {
         type: COMBAT_EVENT_TYPE.ENEMY_HIT,
         damage: finalDamage,
@@ -559,16 +533,9 @@ export function useCombatActions({
         // Generate path resource on kill (Phase 6)
         const killPathId = playerAfterEffects.path?.pathId;
         if (pathUsesResourceSystem(killPathId) && playerAfterEffects.pathResource) {
-          const onKillGen = getResourceGeneration(killPathId, 'onKill');
-          if (onKillGen > 0) {
-            playerAfterEffects.pathResource = {
-              ...playerAfterEffects.pathResource,
-              current: Math.min(
-                playerAfterEffects.pathResource.max,
-                playerAfterEffects.pathResource.current + onKillGen
-              ),
-            };
-          }
+          const onKillResult = generatePathResource(playerAfterEffects, 'onKill');
+          playerAfterEffects = onKillResult.player;
+          if (onKillResult.log) logs.push(onKillResult.log);
         }
 
         // Process path resource on-kill effects (e.g., Berserker max Fury = full HP restore)
@@ -735,15 +702,9 @@ export function useCombatActions({
                 logs.push(...pathOnBlockResult.logs);
 
                 // Apply trigger damage to enemy (block reflect, etc.)
-                if (pathOnBlockResult.damageAmount) {
-                  const triggerDmgResult = applyDamageToEnemy(enemy, pathOnBlockResult.damageAmount, 'path_ability');
-                  enemy = triggerDmgResult.enemy;
-                }
-                if (pathOnBlockResult.reflectedDamage) {
-                  const reflectDmgResult = applyDamageToEnemy(enemy, pathOnBlockResult.reflectedDamage, 'reflect');
-                  enemy = reflectDmgResult.enemy;
-                  logs.push(...reflectDmgResult.logs);
-                }
+                const blockTriggerResult = applyPathTriggerToEnemy(enemy, pathOnBlockResult);
+                enemy = blockTriggerResult.enemy;
+                logs.push(...blockTriggerResult.logs);
                 applyTriggerResultToEnemy(enemy, pathOnBlockResult);
               }
 
@@ -875,15 +836,9 @@ export function useCombatActions({
           logs.push(...pathOnDodgeResult.logs);
 
           // Apply trigger damage to enemy (Riposte counter-attack, etc.)
-          if (pathOnDodgeResult.damageAmount) {
-            const triggerDmgResult = applyDamageToEnemy(enemy, pathOnDodgeResult.damageAmount, 'path_ability');
-            enemy = triggerDmgResult.enemy;
-          }
-          if (pathOnDodgeResult.reflectedDamage) {
-            const reflectDmgResult = applyDamageToEnemy(enemy, pathOnDodgeResult.reflectedDamage, 'reflect');
-            enemy = reflectDmgResult.enemy;
-            logs.push(...reflectDmgResult.logs);
-          }
+          const dodgeTriggerResult = applyPathTriggerToEnemy(enemy, pathOnDodgeResult);
+          enemy = dodgeTriggerResult.enemy;
+          logs.push(...dodgeTriggerResult.logs);
           applyTriggerResultToEnemy(enemy, pathOnDodgeResult);
 
           // Schedule counter-attack animation for riposte
@@ -930,30 +885,17 @@ export function useCombatActions({
             logs.push(...pathOnBlockResult.logs);
 
             // Apply trigger damage to enemy (block reflect, etc.)
-            if (pathOnBlockResult.damageAmount) {
-              const triggerDmgResult = applyDamageToEnemy(enemy, pathOnBlockResult.damageAmount, 'path_ability');
-              enemy = triggerDmgResult.enemy;
-            }
-            if (pathOnBlockResult.reflectedDamage) {
-              const reflectDmgResult = applyDamageToEnemy(enemy, pathOnBlockResult.reflectedDamage, 'reflect');
-              enemy = reflectDmgResult.enemy;
-              logs.push(...reflectDmgResult.logs);
-            }
+            const blockTriggerResult2 = applyPathTriggerToEnemy(enemy, pathOnBlockResult);
+            enemy = blockTriggerResult2.enemy;
+            logs.push(...blockTriggerResult2.logs);
             applyTriggerResultToEnemy(enemy, pathOnBlockResult);
 
             // Generate path resource on block (Phase 6)
             const blockPathId = player.path?.pathId;
             if (pathUsesResourceSystem(blockPathId) && player.pathResource) {
-              const onBlockGen = getResourceGeneration(blockPathId, 'onBlock');
-              if (onBlockGen > 0) {
-                player.pathResource = {
-                  ...player.pathResource,
-                  current: Math.min(
-                    player.pathResource.max,
-                    player.pathResource.current + onBlockGen
-                  ),
-                };
-              }
+              const onBlockResult = generatePathResource(player, 'onBlock');
+              player = onBlockResult.player;
+              if (onBlockResult.log) logs.push(onBlockResult.log);
             }
 
             // Schedule counter-attack animation and damage for block reflect
@@ -994,16 +936,9 @@ export function useCombatActions({
             // Generate path resource on damaged (Phase 6)
             const damagedPathId = player.path?.pathId;
             if (pathUsesResourceSystem(damagedPathId) && player.pathResource) {
-              const onDamagedGen = getResourceGeneration(damagedPathId, 'onDamaged');
-              if (onDamagedGen > 0) {
-                player.pathResource = {
-                  ...player.pathResource,
-                  current: Math.min(
-                    player.pathResource.max,
-                    player.pathResource.current + onDamagedGen
-                  ),
-                };
-              }
+              const onDamagedResult = generatePathResource(player, 'onDamaged');
+              player = onDamagedResult.player;
+              if (onDamagedResult.log) logs.push(onDamagedResult.log);
             }
           }
 
@@ -1054,12 +989,10 @@ export function useCombatActions({
           player.currentStats = pathOnDamagedResult.player.currentStats;
           logs.push(...pathOnDamagedResult.logs);
 
-          // Apply reflected damage to enemy if any
-          if (pathOnDamagedResult.reflectedDamage) {
-            const pathReflectResult = applyDamageToEnemy(enemy, pathOnDamagedResult.reflectedDamage, 'path_ability');
-            enemy = pathReflectResult.enemy;
-            logs.push(...pathReflectResult.logs);
-          }
+          // Apply trigger damage to enemy if any
+          const damagedTriggerResult = applyPathTriggerToEnemy(enemy, pathOnDamagedResult);
+          enemy = damagedTriggerResult.enemy;
+          logs.push(...damagedTriggerResult.logs);
 
           // Process path ability triggers: on_low_hp
           // This fires when HP is low (checked via hp_below condition in usePathAbilities)
@@ -1071,18 +1004,16 @@ export function useCombatActions({
           player.currentStats = pathOnLowHpResult.player.currentStats;
           logs.push(...pathOnLowHpResult.logs);
 
-          // Apply reflected damage to enemy if any
-          if (pathOnLowHpResult.reflectedDamage) {
-            const lowHpReflectResult = applyDamageToEnemy(enemy, pathOnLowHpResult.reflectedDamage, 'path_ability');
-            enemy = lowHpReflectResult.enemy;
-            logs.push(...lowHpReflectResult.logs);
-          }
+          // Apply trigger damage to enemy if any
+          const lowHpTriggerResult = applyPathTriggerToEnemy(enemy, pathOnLowHpResult);
+          enemy = lowHpTriggerResult.enemy;
+          logs.push(...lowHpTriggerResult.logs);
         }
       }
 
       // Schedule enemy attack animation
-      const scaledEnemyAttackDelay = Math.floor(COMBAT_EVENT_DELAYS.ENEMY_ATTACK_DELAY / combatSpeed);
-      const scaledPlayerHitDelay = Math.floor(COMBAT_EVENT_DELAYS.PLAYER_HIT_OFFSET / combatSpeed);
+      const scaledEnemyAttackDelay = getScaledDelay(COMBAT_EVENT_DELAYS.ENEMY_ATTACK_DELAY, combatSpeed);
+      const scaledPlayerHitDelay = getScaledDelay(COMBAT_EVENT_DELAYS.PLAYER_HIT_OFFSET, combatSpeed);
 
       const playerWillDie = player.currentStats.health <= 0;
 
@@ -1186,23 +1117,23 @@ export function useCombatActions({
             player.currentStats.health = 1;
             player.usedCombatAbilities = [...usedCombat, 'undying_fury'];
             // Apply 50% power and speed buff for 5 seconds
-            player.activeBuffs = player.activeBuffs || [];
-            player.activeBuffs.push({
-              id: `undying_fury_power_${Date.now()}`,
+            const powerBuffResult = addBuffToPlayer(player, {
               name: 'Undying Fury',
-              stat: 'power',
+              stat: BUFF_STAT.POWER,
               multiplier: 1.5,
-              remainingTurns: 5,
+              duration: 5,
               icon: 'stat-power',
+              source: 'undying_fury',
             });
-            player.activeBuffs.push({
-              id: `undying_fury_speed_${Date.now()}`,
+            const speedBuffResult = addBuffToPlayer(powerBuffResult.player, {
               name: 'Undying Fury',
-              stat: 'speed',
+              stat: BUFF_STAT.SPEED,
               multiplier: 1.5,
-              remainingTurns: 5,
+              duration: 5,
               icon: 'stat-speed',
+              source: 'undying_fury',
             });
+            player = speedBuffResult.player;
             logs.push(`Undying Fury! You refuse to fall!`);
             // Continue combat, don't die
             safeCombatLogAdd(prev.combatLog, logs, 'performEnemyAttack:undyingFury');

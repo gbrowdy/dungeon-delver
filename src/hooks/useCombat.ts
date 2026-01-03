@@ -6,7 +6,8 @@ import { getDodgeChance } from '@/utils/fortuneUtils';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
 import { applyDamageToPlayer } from '@/utils/damageUtils';
 import { applyStatusToPlayer } from '@/utils/statusEffectUtils';
-import { STATUS_EFFECT_TYPE } from '@/constants/enums';
+import { restorePlayerHealth, restorePlayerMana, addBuffToPlayer } from '@/utils/statsUtils';
+import { STATUS_EFFECT_TYPE, BUFF_STAT } from '@/constants/enums';
 import { COMBAT_BALANCE } from '@/constants/balance';
 
 /**
@@ -54,20 +55,19 @@ export function useCombat() {
     context: { damage?: number; logs: string[] }
   ): { player: Player; bonusDamage: number } => {
     let bonusDamage = 0;
-    const updatedPlayer = deepClonePlayer(player);
+    let updatedPlayer = deepClonePlayer(player);
 
     player.equippedItems.forEach((item: Item) => {
       if (item.effect?.trigger === trigger) {
         const chance = item.effect.chance ?? 1;
         if (Math.random() < chance) {
           switch (item.effect.type) {
-            case 'heal':
-              updatedPlayer.currentStats.health = Math.min(
-                updatedPlayer.currentStats.maxHealth,
-                updatedPlayer.currentStats.health + item.effect.value
-              );
-              context.logs.push(`${item.icon} +${item.effect.value} HP`);
+            case 'heal': {
+              const healResult = restorePlayerHealth(updatedPlayer, item.effect.value, { source: item.name });
+              updatedPlayer = healResult.player;
+              context.logs.push(`${item.icon} +${healResult.actualAmount} HP`);
               break;
+            }
             case 'damage':
               if (trigger === 'on_crit' && context.damage) {
                 bonusDamage += context.damage * item.effect.value;
@@ -76,23 +76,30 @@ export function useCombat() {
                 context.logs.push(`${item.icon} Bonus damage: +${item.effect.value}`);
               }
               break;
-            case 'mana':
-              updatedPlayer.currentStats.mana = Math.min(
-                updatedPlayer.currentStats.maxMana,
-                updatedPlayer.currentStats.mana + item.effect.value
-              );
+            case 'mana': {
+              const manaResult = restorePlayerMana(updatedPlayer, item.effect.value);
+              updatedPlayer = manaResult.player;
               break;
+<<<<<<< HEAD
+            case 'buff': {
+              const buffResult = addBuffToPlayer(updatedPlayer, {
+=======
+            }
             case 'buff':
               updatedPlayer.activeBuffs.push({
                 id: `${trigger}-buff-${Date.now()}`,
+>>>>>>> origin/main
                 name: 'Combat Ready',
-                stat: 'armor',
+                stat: BUFF_STAT.ARMOR,
                 multiplier: 1 + (item.effect.value / player.baseStats.armor),
-                remainingTurns: 3,
+                duration: 3,
                 icon: 'stat-armor',
+                source: trigger,
               });
+              updatedPlayer = buffResult.player;
               context.logs.push(`${item.icon} Defense boosted!`);
               break;
+            }
           }
         }
       }

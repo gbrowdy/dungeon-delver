@@ -16,6 +16,8 @@ import { isFeatureEnabled } from '@/constants/features';
 import { PATH_RESOURCES, getResourceDisplayName } from '@/data/pathResources';
 import { applyDamageToPlayer, applyDamageToEnemy } from '@/utils/damageUtils';
 import { applyStatusToEnemy } from '@/utils/statusEffectUtils';
+import { applyPathTriggerToEnemy, getScaledDelay } from '@/utils/combatUtils';
+import { restorePlayerHealth, restorePlayerMana, addBuffToPlayer } from '@/utils/statsUtils';
 
 /**
  * Context for power activation - all state needed to execute a power
@@ -228,15 +230,9 @@ export function usePowerActions(context: PowerActivationContext) {
       logs.push(...pathOnPowerResult.logs);
 
       // Apply trigger damage to enemy (on_power_use abilities, etc.)
-      if (pathOnPowerResult.damageAmount) {
-        const triggerDmgResult = applyDamageToEnemy(enemy, pathOnPowerResult.damageAmount, 'path_ability');
-        enemy = triggerDmgResult.enemy;
-      }
-      if (pathOnPowerResult.reflectedDamage) {
-        const reflectDmgResult = applyDamageToEnemy(enemy, pathOnPowerResult.reflectedDamage, 'reflect');
-        enemy = reflectDmgResult.enemy;
-        logs.push(...reflectDmgResult.logs);
-      }
+      const powerUseTriggerResult = applyPathTriggerToEnemy(enemy, pathOnPowerResult);
+      enemy = powerUseTriggerResult.enemy;
+      logs.push(...powerUseTriggerResult.logs);
       applyTriggerResultToEnemy(enemy, pathOnPowerResult);
 
       // Shadow Dance: Next 3 attacks after using a power are guaranteed critical hits
@@ -413,7 +409,7 @@ export function usePowerActions(context: PowerActivationContext) {
           const enemyWillDie = enemy.health <= 0;
 
           // Emit power event for animation (with powerId for special effects)
-          const powerHitDelay = Math.floor(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY / prev.combatSpeed);
+          const powerHitDelay = getScaledDelay(COMBAT_EVENT_DELAYS.PLAYER_HIT_DELAY, prev.combatSpeed);
           const playerPowerEvent: import('@/hooks/useBattleAnimation').PlayerPowerEvent = {
             type: COMBAT_EVENT_TYPE.PLAYER_POWER,
             powerId: power.id,
@@ -438,11 +434,9 @@ export function usePowerActions(context: PowerActivationContext) {
           // Vampiric touch heals
           if (power.id === 'vampiric-touch') {
             const heal = Math.floor(damage * POWER_BALANCE.VAMPIRIC_HEAL_RATIO);
-            player.currentStats.health = Math.min(
-              player.currentStats.maxHealth,
-              player.currentStats.health + heal
-            );
-            logs.push(`Healed for ${heal} HP!`);
+            const healResult = restorePlayerHealth(player, heal, { source: 'Vampiric Touch' });
+            player = healResult.player;
+            if (healResult.log) logs.push(healResult.log);
           }
           break;
         }
@@ -456,77 +450,45 @@ export function usePowerActions(context: PowerActivationContext) {
             logs.push(`Sacrificed ${sacrificeResult.actualDamage} HP!`);
 
             const manaRestored = power.value; // Flat 50 mana
-            player.currentStats.mana = Math.min(
-              player.currentStats.maxMana,
-              player.currentStats.mana + manaRestored
-            );
-            logs.push(`Restored ${manaRestored} mana!`);
+            const manaResult = restorePlayerMana(player, manaRestored, { source: 'Blood Pact' });
+            player = manaResult.player;
+            if (manaResult.log) logs.push(manaResult.log);
           } else if (power.id === 'mana-surge') {
             const manaRestored = Math.floor(player.currentStats.maxMana * power.value);
-            player.currentStats.mana = Math.min(
-              player.currentStats.maxMana,
-              player.currentStats.mana + manaRestored
-            );
-            logs.push(`Restored ${manaRestored} mana!`);
+            const manaResult = restorePlayerMana(player, manaRestored, { source: 'Mana Surge' });
+            player = manaResult.player;
+            if (manaResult.log) logs.push(manaResult.log);
           } else {
             const heal = Math.floor(player.currentStats.maxHealth * power.value);
-            player.currentStats.health = Math.min(
-              player.currentStats.maxHealth,
-              player.currentStats.health + heal
-            );
-            logs.push(`Healed for ${heal} HP!`);
+            const healResult = restorePlayerHealth(player, heal, { source: power.name });
+            player = healResult.player;
+            if (healResult.log) logs.push(healResult.log);
           }
           break;
         }
         case 'buff': {
           // Create temporary buff with duration
           const buffDuration = COMBAT_BALANCE.DEFAULT_BUFF_DURATION;
+          let buffStat: typeof BUFF_STAT[keyof typeof BUFF_STAT] = BUFF_STAT.POWER;
 
           if (power.id === 'battle-cry') {
-            // Power buff
-            player.activeBuffs.push({
-              id: `buff-power-${Date.now()}`,
-              name: power.name,
-              stat: BUFF_STAT.POWER,
-              multiplier: 1 + power.value,
-              remainingTurns: buffDuration,
-              icon: power.icon,
-            });
-            logs.push(`Attack increased by ${Math.floor(power.value * 100)}% for ${buffDuration} turns!`);
+            buffStat = BUFF_STAT.POWER;
           } else if (power.id === 'shield-wall') {
-            // Armor buff
-            player.activeBuffs.push({
-              id: `buff-armor-${Date.now()}`,
-              name: power.name,
-              stat: BUFF_STAT.ARMOR,
-              multiplier: 1 + power.value,
-              remainingTurns: buffDuration,
-              icon: power.icon,
-            });
-            logs.push(`Defense doubled for ${buffDuration} turns!`);
+            buffStat = BUFF_STAT.ARMOR;
           } else if (power.id === 'inner-focus') {
-            // Fortune buff
-            player.activeBuffs.push({
-              id: `buff-fortune-${Date.now()}`,
-              name: power.name,
-              stat: BUFF_STAT.FORTUNE,
-              multiplier: 1 + power.value,
-              remainingTurns: buffDuration,
-              icon: power.icon,
-            });
-            logs.push(`Fortune increased by ${Math.floor(power.value * 100)}% for ${buffDuration} turns!`);
-          } else {
-            // Generic power buff for unknown buff powers
-            player.activeBuffs.push({
-              id: `buff-generic-${Date.now()}`,
-              name: power.name,
-              stat: BUFF_STAT.POWER,
-              multiplier: 1 + power.value,
-              remainingTurns: buffDuration,
-              icon: power.icon,
-            });
-            logs.push(`Stats boosted for ${buffDuration} turns!`);
+            buffStat = BUFF_STAT.FORTUNE;
           }
+
+          const buffResult = addBuffToPlayer(player, {
+            name: power.name,
+            stat: buffStat,
+            multiplier: 1 + power.value,
+            duration: buffDuration,
+            icon: power.icon,
+            source: power.id,
+          });
+          player = buffResult.player;
+          if (buffResult.log) logs.push(buffResult.log);
 
           // Recalculate stats with new buff
           player.currentStats = calculateStats(player);
@@ -594,28 +556,18 @@ export function usePowerActions(context: PowerActivationContext) {
 
               // Apply any heal/damage/mana from on_status_inflict
               if (onStatusInflictResult.healAmount) {
-                player.currentStats.health = Math.min(
-                  player.currentStats.maxHealth,
-                  player.currentStats.health + onStatusInflictResult.healAmount
-                );
+                const healResult = restorePlayerHealth(player, onStatusInflictResult.healAmount);
+                player = healResult.player;
               }
               if (onStatusInflictResult.manaRestored) {
-                player.currentStats.mana = Math.min(
-                  player.currentStats.maxMana,
-                  player.currentStats.mana + onStatusInflictResult.manaRestored
-                );
+                const manaResult = restorePlayerMana(player, onStatusInflictResult.manaRestored);
+                player = manaResult.player;
               }
 
               // Apply trigger damage to enemy (on_status_inflict abilities, etc.)
-              if (onStatusInflictResult.damageAmount) {
-                const triggerDmgResult = applyDamageToEnemy(enemy, onStatusInflictResult.damageAmount, 'path_ability');
-                enemy = triggerDmgResult.enemy;
-              }
-              if (onStatusInflictResult.reflectedDamage) {
-                const reflectDmgResult = applyDamageToEnemy(enemy, onStatusInflictResult.reflectedDamage, 'reflect');
-                enemy = reflectDmgResult.enemy;
-                logs.push(...reflectDmgResult.logs);
-              }
+              const statusInflictTriggerResult = applyPathTriggerToEnemy(enemy, onStatusInflictResult);
+              enemy = statusInflictTriggerResult.enemy;
+              logs.push(...statusInflictTriggerResult.logs);
 
               // Apply results to enemy (status effects, debuffs)
               applyTriggerResultToEnemy(enemy, onStatusInflictResult);

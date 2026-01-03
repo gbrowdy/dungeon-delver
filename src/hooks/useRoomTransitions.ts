@@ -4,11 +4,14 @@ import { generateEnemy } from '@/data/enemies';
 import { calculateStats } from '@/hooks/useCharacterSetup';
 import { COMBAT_BALANCE } from '@/constants/balance';
 import { GAME_PHASE, ITEM_EFFECT_TRIGGER, EFFECT_TYPE, BUFF_STAT } from '@/constants/enums';
+import { addBuffToPlayer } from '@/utils/statsUtils';
 import { logStateTransition, logCombatEvent, logDeathEvent } from '@/utils/gameLogger';
 import { processItemEffects } from '@/hooks/useItemEffects';
 import { usePathAbilities } from '@/hooks/usePathAbilities';
 import { applyTriggerResultToEnemy } from '@/hooks/combatActionHelpers';
 import { applyDamageToEnemy } from '@/utils/damageUtils';
+import { applyPathTriggerToEnemy } from '@/utils/combatUtils';
+import { restorePlayerMana } from '@/utils/statsUtils';
 
 /**
  * Hook for room transitions and enemy spawning.
@@ -71,7 +74,7 @@ export function useRoomTransitions(
       });
 
       // Reset player state for new combat
-      const player: Player = {
+      let player: Player = {
         ...outOfCombatResult.player,
         statusEffects: [], // Clear status effects between rooms
         isBlocking: false,
@@ -91,21 +94,20 @@ export function useRoomTransitions(
           const chance = item.effect.chance ?? 1;
           if (Math.random() < chance) {
             if (item.effect.type === EFFECT_TYPE.MANA) {
-              player.currentStats.mana = Math.min(
-                player.currentStats.maxMana,
-                player.currentStats.mana + item.effect.value
-              );
-              logs.push(`${item.icon} ${item.name}: +${item.effect.value} mana!`);
+              const manaResult = restorePlayerMana(player, item.effect.value);
+              player = manaResult.player;
+              logs.push(`${item.icon} ${item.name}: +${manaResult.actualAmount} mana!`);
             } else if (item.effect.type === EFFECT_TYPE.BUFF) {
               // Add temporary armor buff
-              player.activeBuffs.push({
-                id: `combat-start-${Date.now()}`,
+              const buffResult = addBuffToPlayer(player, {
                 name: 'Combat Ready',
                 stat: BUFF_STAT.ARMOR,
                 multiplier: 1 + (item.effect.value / player.baseStats.armor),
-                remainingTurns: COMBAT_BALANCE.DEFAULT_BUFF_DURATION,
+                duration: COMBAT_BALANCE.DEFAULT_BUFF_DURATION,
                 icon: 'stat-armor',
+                source: 'combat-start',
               });
+              player = buffResult.player;
               logs.push(`${item.icon} ${item.name}: Defense boosted!`);
             }
           }
@@ -121,15 +123,9 @@ export function useRoomTransitions(
       logs.push(...pathCombatStartResult.logs);
 
       // Apply trigger damage to enemy (combat_start abilities, etc.)
-      if (pathCombatStartResult.damageAmount) {
-        const triggerDmgResult = applyDamageToEnemy(enemy, pathCombatStartResult.damageAmount, 'path_ability');
-        enemy = triggerDmgResult.enemy;
-      }
-      if (pathCombatStartResult.reflectedDamage) {
-        const reflectDmgResult = applyDamageToEnemy(enemy, pathCombatStartResult.reflectedDamage, 'reflect');
-        enemy = reflectDmgResult.enemy;
-        logs.push(...reflectDmgResult.logs);
-      }
+      const combatStartTriggerResult = applyPathTriggerToEnemy(enemy, pathCombatStartResult);
+      enemy = combatStartTriggerResult.enemy;
+      logs.push(...combatStartTriggerResult.logs);
       applyTriggerResultToEnemy(enemy, pathCombatStartResult);
 
       // Ambush: First attack against each enemy is a guaranteed critical hit

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Player, Stats } from '@/types/game';
 import { deepClonePlayer } from '@/utils/stateUtils';
+import { restorePlayerHealth, restorePlayerMana } from '@/utils/statsUtils';
 import { LEVEL_UP_BONUSES } from '@/constants/game';
 
 /**
@@ -78,23 +79,19 @@ export function useProgression() {
   ): Player | null => {
     if (player.gold < cost) return null;
 
-    const updatedPlayer = deepClonePlayer(player);
+    let updatedPlayer = deepClonePlayer(player);
     updatedPlayer.gold -= cost;
     updatedPlayer.baseStats[stat] += value;
     updatedPlayer.currentStats = calculateStats(updatedPlayer);
 
     // For HP/MP upgrades, also restore the added amount
     if (stat === 'maxHealth') {
-      updatedPlayer.currentStats.health = Math.min(
-        updatedPlayer.currentStats.maxHealth,
-        updatedPlayer.currentStats.health + value
-      );
+      const healResult = restorePlayerHealth(updatedPlayer, value);
+      updatedPlayer = healResult.player;
     }
     if (stat === 'maxMana') {
-      updatedPlayer.currentStats.mana = Math.min(
-        updatedPlayer.currentStats.maxMana,
-        updatedPlayer.currentStats.mana + value
-      );
+      const manaResult = restorePlayerMana(updatedPlayer, value);
+      updatedPlayer = manaResult.player;
     }
 
     return updatedPlayer;
