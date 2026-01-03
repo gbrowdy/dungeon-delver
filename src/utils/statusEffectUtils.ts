@@ -62,6 +62,14 @@ function generateStatusId(type: StatusEffectType): string {
   return `${type}-${Date.now()}`;
 }
 
+/**
+ * Format status effect type for display in log messages.
+ * Converts 'poison' -> 'Poison', 'slow' -> 'Slow', etc.
+ */
+export function formatStatusTypeName(type: StatusEffectType): string {
+  return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
 // ============================================================================
 // CORE LOGIC
 // ============================================================================
@@ -125,7 +133,7 @@ export function applyStatusToPlayer(
   const logs: string[] = [];
 
   if (immunities.includes(config.type)) {
-    logs.push(`Resisted ${config.type}!`);
+    logs.push(`Resisted ${formatStatusTypeName(config.type)}!`);
     return { player: updatedPlayer, logs, applied: false };
   }
 
@@ -163,7 +171,7 @@ function formatStatusLogMessage(
     case STATUS_EFFECT_TYPE.BLEED:
       return `${targetName} ${beVerb} bleeding! (${effect.damage} damage/turn for ${effect.remainingTurns} turns)`;
     default:
-      return `${targetName} ${beVerb} affected by ${type}!`;
+      return `${targetName} ${beVerb} affected by ${formatStatusTypeName(type)}!`;
   }
 }
 

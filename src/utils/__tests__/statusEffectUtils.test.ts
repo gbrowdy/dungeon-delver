@@ -3,6 +3,7 @@ import {
   applyStatusToPlayer,
   applyStatusToEnemy,
   hasStatusEffect,
+  formatStatusTypeName,
 } from '../statusEffectUtils';
 import { Player, Enemy, StatusEffect } from '@/types/game';
 import { STATUS_EFFECT_TYPE } from '@/constants/enums';
@@ -285,5 +286,94 @@ describe('applyStatusToEnemy', () => {
     expect(result.enemy.statusEffects![0].remainingTurns).toBe(COMBAT_BALANCE.DEFAULT_POISON_DURATION);
     expect(result.enemy.statusEffects![0].icon).toBe('status-bleed');
     expect(result.logs[0]).toContain('bleeding');
+  });
+});
+
+describe('formatStatusTypeName', () => {
+  it('capitalizes poison', () => {
+    expect(formatStatusTypeName(STATUS_EFFECT_TYPE.POISON)).toBe('Poison');
+  });
+
+  it('capitalizes stun', () => {
+    expect(formatStatusTypeName(STATUS_EFFECT_TYPE.STUN)).toBe('Stun');
+  });
+
+  it('capitalizes slow', () => {
+    expect(formatStatusTypeName(STATUS_EFFECT_TYPE.SLOW)).toBe('Slow');
+  });
+
+  it('capitalizes bleed', () => {
+    expect(formatStatusTypeName(STATUS_EFFECT_TYPE.BLEED)).toBe('Bleed');
+  });
+});
+
+describe('log message formats', () => {
+  it('immunity log uses title case status name', () => {
+    const player = createMockPlayer();
+    const result = applyStatusToPlayer(
+      player,
+      { type: STATUS_EFFECT_TYPE.POISON },
+      'enemy_ability',
+      [STATUS_EFFECT_TYPE.POISON]
+    );
+
+    expect(result.logs[0]).toBe('Resisted Poison!');
+  });
+
+  it('poison log uses proper grammar for player', () => {
+    const player = createMockPlayer();
+    const result = applyStatusToPlayer(
+      player,
+      { type: STATUS_EFFECT_TYPE.POISON, damage: 5 },
+      'enemy_ability'
+    );
+
+    expect(result.logs[0]).toMatch(/^You are poisoned!/);
+    expect(result.logs[0]).toContain('5 damage/turn');
+  });
+
+  it('stun log uses proper grammar for player', () => {
+    const player = createMockPlayer();
+    const result = applyStatusToPlayer(
+      player,
+      { type: STATUS_EFFECT_TYPE.STUN },
+      'enemy_ability'
+    );
+
+    expect(result.logs[0]).toMatch(/^You are stunned/);
+  });
+
+  it('poison log uses proper grammar for enemy', () => {
+    const enemy = createMockEnemy({ name: 'Goblin' });
+    const result = applyStatusToEnemy(
+      enemy,
+      { type: STATUS_EFFECT_TYPE.POISON, damage: 5 },
+      'power'
+    );
+
+    expect(result.logs[0]).toMatch(/^Goblin is poisoned!/);
+  });
+
+  it('slow log includes percentage for enemy', () => {
+    const enemy = createMockEnemy({ name: 'Orc' });
+    const result = applyStatusToEnemy(
+      enemy,
+      { type: STATUS_EFFECT_TYPE.SLOW, value: 0.3 },
+      'power'
+    );
+
+    expect(result.logs[0]).toMatch(/^Orc is slowed by 30%/);
+  });
+
+  it('bleed log uses proper grammar for player', () => {
+    const player = createMockPlayer();
+    const result = applyStatusToPlayer(
+      player,
+      { type: STATUS_EFFECT_TYPE.BLEED, damage: 8 },
+      'enemy_ability'
+    );
+
+    expect(result.logs[0]).toMatch(/^You are bleeding!/);
+    expect(result.logs[0]).toContain('8 damage/turn');
   });
 });

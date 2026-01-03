@@ -26,6 +26,7 @@ import {
 } from '@/types/paths';
 import { deepClonePlayer } from '@/utils/stateUtils';
 import { logError } from '@/utils/gameLogger';
+import { formatStatusTypeName } from '@/utils/statusEffectUtils';
 import { WARRIOR_PATHS } from '@/data/paths/warrior';
 import { MAGE_PATHS } from '@/data/paths/mage';
 import { ROGUE_PATHS } from '@/data/paths/rogue';
@@ -573,7 +574,7 @@ export function usePathAbilities() {
               remainingTurns: status.duration,
               icon: getStatusIcon(status.statusType),
             };
-            logs.push(`🎯 ${ability.name}: Applied ${status.statusType}!`);
+            logs.push(`🎯 ${ability.name}: Applied ${formatStatusTypeName(status.statusType)}!`);
           }
         }
 
