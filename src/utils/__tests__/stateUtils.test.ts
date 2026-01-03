@@ -42,7 +42,7 @@ describe('stateUtils', () => {
             currentCooldown: 0,
             effect: 'damage',
             value: 25,
-            icon: '🔥',
+            icon: 'power-fireball',
             upgradeLevel: 1,
           },
         ],
@@ -55,7 +55,7 @@ describe('stateUtils', () => {
             rarity: 'common',
             statBonus: { power: 5 },
             description: 'A basic sword',
-            icon: '⚔️',
+            icon: 'item-sword',
             effect: {
               trigger: 'on_hit',
               type: 'damage',
@@ -72,7 +72,7 @@ describe('stateUtils', () => {
             stat: 'power',
             multiplier: 1.5,
             remainingTurns: 3,
-            icon: '💪',
+            icon: 'buff-power',
           },
         ],
         statusEffects: [
@@ -81,7 +81,7 @@ describe('stateUtils', () => {
             type: 'poison',
             damage: 5,
             remainingTurns: 2,
-            icon: '☠️',
+            icon: 'status-poison',
           },
         ],
         isBlocking: false,
@@ -210,8 +210,8 @@ describe('stateUtils', () => {
         equippedItems: [],
         activeBuffs: [],
         statusEffects: [
-          { id: 'poison-1', type: 'poison', damage: 5, remainingTurns: 3, icon: '☠️' },
-          { id: 'stun-1', type: 'stun', damage: 0, remainingTurns: 1, icon: '💫' },
+          { id: 'poison-1', type: 'poison', damage: 5, remainingTurns: 3, icon: 'status-poison' },
+          { id: 'stun-1', type: 'stun', damage: 0, remainingTurns: 1, icon: 'status-stun' },
         ],
         isBlocking: false,
         comboCount: 0,
@@ -237,7 +237,7 @@ describe('stateUtils', () => {
       // Modify clone's status effects
       clonedPlayer.statusEffects[0].remainingTurns = 999;
       clonedPlayer.statusEffects.push({
-        id: 'bleed-1', type: 'bleed', damage: 10, remainingTurns: 5, icon: '🩸',
+        id: 'bleed-1', type: 'bleed', damage: 10, remainingTurns: 5, icon: 'status-bleed',
       });
 
       // Verify original is unchanged
@@ -278,7 +278,7 @@ describe('stateUtils', () => {
             rarity: 'rare',
             statBonus: { power: 10, fortune: 0.05 },
             description: 'A magical weapon',
-            icon: '⚔️',
+            icon: 'item-sword',
             effect: {
               trigger: 'on_crit',
               type: 'damage',
@@ -350,8 +350,8 @@ describe('stateUtils', () => {
         inventory: [],
         equippedItems: [],
         activeBuffs: [
-          { id: 'buff-1', name: 'Strength', stat: 'power', multiplier: 1.5, remainingTurns: 3, icon: '💪' },
-          { id: 'buff-2', name: 'Speed', stat: 'speed', multiplier: 1.2, remainingTurns: 2, icon: '⚡' },
+          { id: 'buff-1', name: 'Strength', stat: 'power', multiplier: 1.5, remainingTurns: 3, icon: 'buff-power' },
+          { id: 'buff-2', name: 'Speed', stat: 'speed', multiplier: 1.2, remainingTurns: 2, icon: 'buff-speed' },
         ],
         statusEffects: [],
         isBlocking: false,
@@ -416,7 +416,7 @@ describe('stateUtils', () => {
             currentCooldown: 2,
             effect: 'damage',
             value: 25,
-            icon: '🔥',
+            icon: 'power-fireball',
             upgradeLevel: 2,
           },
         ],
@@ -585,14 +585,14 @@ describe('stateUtils', () => {
             cooldown: 3,
             currentCooldown: 0,
             chance: 0.3,
-            icon: '⚔️',
+            icon: 'ability-multi_hit',
             description: 'Attacks twice',
           },
         ],
         intent: {
           type: 'attack',
           damage: 8,
-          icon: '⚔️',
+          icon: 'ability-attack',
         },
         statusEffects: [
           {
@@ -600,7 +600,7 @@ describe('stateUtils', () => {
             type: 'poison',
             damage: 3,
             remainingTurns: 2,
-            icon: '☠️',
+            icon: 'status-poison',
           },
         ],
         isShielded: false,
@@ -644,7 +644,7 @@ describe('stateUtils', () => {
             cooldown: 4,
             currentCooldown: 2,
             chance: 0.5,
-            icon: '☠️',
+            icon: 'ability-poison',
             description: 'Poisons the enemy',
           },
           {
@@ -655,7 +655,7 @@ describe('stateUtils', () => {
             cooldown: 5,
             currentCooldown: 0,
             chance: 0.3,
-            icon: '💚',
+            icon: 'ability-heal',
             description: 'Heals self',
           },
         ],
@@ -682,7 +682,7 @@ describe('stateUtils', () => {
         cooldown: 3,
         currentCooldown: 0,
         chance: 0.2,
-        icon: '💫',
+        icon: 'ability-stun',
         description: 'Stuns',
       });
 
@@ -720,10 +720,10 @@ describe('stateUtils', () => {
             cooldown: 3,
             currentCooldown: 0,
             chance: 1,
-            icon: '💥',
+            icon: 'ability-special',
             description: 'Special attack',
           },
-          icon: '💥',
+          icon: 'ability-special',
         },
         statusEffects: [],
         isShielded: false,
@@ -786,7 +786,7 @@ describe('stateUtils', () => {
       clonedEnemy.intent = {
         type: 'attack',
         damage: 15,
-        icon: '⚔️',
+        icon: 'ability-attack',
       };
 
       // Verify original is still null
@@ -808,8 +808,8 @@ describe('stateUtils', () => {
         abilities: [],
         intent: null,
         statusEffects: [
-          { id: 'poison-1', type: 'poison', damage: 5, remainingTurns: 3, icon: '☠️' },
-          { id: 'slow-1', type: 'slow', damage: 0, remainingTurns: 2, icon: '🐌' },
+          { id: 'poison-1', type: 'poison', damage: 5, remainingTurns: 3, icon: 'status-poison' },
+          { id: 'slow-1', type: 'slow', damage: 0, remainingTurns: 2, icon: 'status-slow' },
         ],
         isShielded: false,
         shieldTurnsRemaining: 0,
@@ -824,7 +824,7 @@ describe('stateUtils', () => {
       // Modify clone's status effects
       clonedEnemy.statusEffects[0].remainingTurns = 999;
       clonedEnemy.statusEffects.push({
-        id: 'bleed-1', type: 'bleed', damage: 10, remainingTurns: 5, icon: '🩸',
+        id: 'bleed-1', type: 'bleed', damage: 10, remainingTurns: 5, icon: 'status-bleed',
       });
 
       // Verify original is unchanged

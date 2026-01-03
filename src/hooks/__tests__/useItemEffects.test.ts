@@ -87,7 +87,7 @@ function createTestItem(
     rarity: 'rare',
     statBonus: {},
     description: 'Test item with effect',
-    icon: '🔮',
+    icon: 'item-crystal',
     effect: {
       trigger: trigger as ItemEffectTriggerType,
       type: effectType as EffectType,
@@ -118,7 +118,7 @@ describe('processItemEffects', () => {
       const result = processItemEffects(context);
 
       expect(result.player.currentStats.health).toBe(40);
-      expect(result.logs).toContain('🔮 Regenerated 10 HP');
+      expect(result.logs).toContain('item-crystal Regenerated 10 HP');
       expect(result.additionalDamage).toBe(0);
     });
 
@@ -137,7 +137,7 @@ describe('processItemEffects', () => {
       const result = processItemEffects(context);
 
       expect(result.player.currentStats.health).toBe(35);
-      expect(result.logs).toContain('🔮 Life steal: +5 HP');
+      expect(result.logs).toContain('item-crystal Life steal: +5 HP');
     });
 
     it('should heal player on ON_CRIT trigger', () => {
@@ -155,7 +155,7 @@ describe('processItemEffects', () => {
       const result = processItemEffects(context);
 
       expect(result.player.currentStats.health).toBe(38);
-      expect(result.logs).toContain('🔮 Healed 8 HP on crit!');
+      expect(result.logs).toContain('item-crystal Healed 8 HP on crit!');
     });
 
     it('should heal player on ON_KILL trigger', () => {
@@ -173,7 +173,7 @@ describe('processItemEffects', () => {
       const result = processItemEffects(context);
 
       expect(result.player.currentStats.health).toBe(45);
-      expect(result.logs).toContain('🔮 Victory heal: +15 HP');
+      expect(result.logs).toContain('item-crystal Victory heal: +15 HP');
     });
 
     it('should heal player on ON_DAMAGED trigger', () => {
@@ -191,7 +191,7 @@ describe('processItemEffects', () => {
       const result = processItemEffects(context);
 
       expect(result.player.currentStats.health).toBe(33);
-      expect(result.logs).toContain('🔮 Damage absorbed: +3 HP');
+      expect(result.logs).toContain('item-crystal Damage absorbed: +3 HP');
     });
 
     it('should not exceed max health when healing', () => {
@@ -228,7 +228,7 @@ describe('processItemEffects', () => {
       const result = processItemEffects(context);
 
       expect(result.additionalDamage).toBe(5);
-      expect(result.logs).toContain('🔮 Bonus damage: +5');
+      expect(result.logs).toContain('item-crystal Bonus damage: +5');
     });
 
     it('should multiply damage on ON_CRIT trigger', () => {
@@ -284,7 +284,7 @@ describe('processItemEffects', () => {
       const result = processItemEffects(context);
 
       expect(result.player.currentStats.mana).toBe(30);
-      expect(result.logs).toContain('🔮 Mana restored: +10');
+      expect(result.logs).toContain('item-crystal Mana restored: +10');
     });
 
     it('should restore mana on TURN_START trigger without log', () => {
@@ -474,7 +474,7 @@ describe('processItemEffects', () => {
         rarity: 'common',
         statBonus: { power: 5 },
         description: 'No effect item',
-        icon: '⚔️',
+        icon: 'item-sword',
         enhancementLevel: 0,
         maxEnhancement: 3,
         tier: undefined,
@@ -558,7 +558,7 @@ describe('processItemEffects', () => {
       const healItem = createTestItem(ITEM_EFFECT_TRIGGER.TURN_START, EFFECT_TYPE.HEAL, 10);
       const manaItem = createTestItem(ITEM_EFFECT_TRIGGER.TURN_START, EFFECT_TYPE.MANA, 5);
       manaItem.id = 'test-item-2';
-      manaItem.icon = '💎';
+      manaItem.icon = 'item-gem';
       player.equippedItems = [healItem, manaItem];
 
       const context: ItemEffectContext = {

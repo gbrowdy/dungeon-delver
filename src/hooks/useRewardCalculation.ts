@@ -110,7 +110,7 @@ export function processLevelUp(player: Player): {
 
     updatedPlayer.currentStats = calculateStats(updatedPlayer);
     // Don't restore HP/Mana on level up - only increase the max values
-    logs.push(`🎉 Level up! Now level ${updatedPlayer.level}`);
+    logs.push(`Level up! Now level ${updatedPlayer.level}`);
     leveledUp = true;
   }
 
@@ -176,13 +176,13 @@ export function calculateItemDrop(
         name: baseDrop.name.replace(/^(Iron|Wooden|Simple|Basic|Steel|Reinforced|Quality|Fine|Enchanted|Magical|Glowing|Mystic|Ancient|Legendary|Divine|Celestial)/, 'Godforged'),
       };
       droppedItem = legendaryDrop;
-      dropLog = `✨ ${enemy.name} dropped a LEGENDARY ${legendaryDrop.icon} ${legendaryDrop.name}!`;
+      dropLog = `${enemy.name} dropped a LEGENDARY ${legendaryDrop.icon} ${legendaryDrop.name}!`;
       // Legendary always resets pity
       newPityCounter = 0;
       itemDropped = true;
     } else {
       droppedItem = dropped;
-      dropLog = `💎 ${enemy.name} dropped ${dropped.icon} ${dropped.name}!`;
+      dropLog = `${enemy.name} dropped ${dropped.icon} ${dropped.name}!`;
       // Update pity counter based on rarity
       if (isRareOrBetter(dropped)) {
         newPityCounter = 0; // Reset on rare+ drop

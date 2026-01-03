@@ -90,7 +90,7 @@ export function processTurnStartEffects(
     const poisonResult = applyDamageToPlayer(updatedPlayer, effect.damage!, 'status_effect');
     updatedPlayer = poisonResult.player;
     if (poisonResult.actualDamage > 0) {
-      updatedLogs.push(`☠️ Poison deals ${poisonResult.actualDamage} damage!`);
+      updatedLogs.push(`Poison deals ${poisonResult.actualDamage} damage!`);
     }
   }
 
@@ -172,7 +172,7 @@ export function calculateAttackDamage(
   if (isCrit) {
     const critMultiplier = getCritDamage(playerStats.fortune);
     damage *= critMultiplier;
-    logs.push(`💥 Critical hit! (${Math.floor(critMultiplier * 100)}%)`);
+    logs.push(`Critical hit! (${Math.floor(critMultiplier * 100)}%)`);
   }
 
   return {
@@ -434,7 +434,7 @@ export function processPathResourceOnKill(
     const healAmount = player.currentStats.maxHealth - player.currentStats.health;
     if (healAmount > 0) {
       player.currentStats.health = player.currentStats.maxHealth;
-      updatedLogs.push(`🔥 BLOODLUST! Max Fury kill restores full HP! (+${healAmount} HP)`);
+      updatedLogs.push(`BLOODLUST! Max Fury kill restores full HP! (+${healAmount} HP)`);
     }
   }
 
@@ -479,7 +479,7 @@ export function getPathResourceAttackModifiers(
     result.forceCrit = true;
     result.bonusDamageMultiplier = 1.5; // 50% bonus damage
     result.consumeResource = true;
-    result.logs.push(`✨ DIVINE JUDGMENT! Max Zeal unleashes guaranteed critical strike!`);
+    result.logs.push(`DIVINE JUDGMENT! Max Zeal unleashes guaranteed critical strike!`);
   }
 
   return result;
@@ -545,7 +545,7 @@ export function checkPathResourceExecute(
     if (hpPercent <= 0.20 && hpPercent > 0) {
       result.shouldExecute = true;
       result.resetCooldowns = true;
-      result.logs.push(`⚡ DEATH MARK! Max Momentum executes low HP target!`);
+      result.logs.push(`DEATH MARK! Max Momentum executes low HP target!`);
     }
   }
 

@@ -90,7 +90,7 @@ export function usePowerActions(context: PowerActivationContext) {
 
       if (power.currentCooldown > 0) {
         // Power is on cooldown - provide feedback
-        const newLog = `⏳ ${power.name} is on cooldown (${power.currentCooldown.toFixed(1)}s)`;
+        const newLog = `${power.name} is on cooldown (${power.currentCooldown.toFixed(1)}s)`;
         safeCombatLogAdd(prev.combatLog, newLog, 'usePower:onCooldown');
         return prev;
       }
@@ -100,7 +100,7 @@ export function usePowerActions(context: PowerActivationContext) {
         const hpCost = Math.floor(effectiveManaCost * 0.5);
         // Need at least hpCost + 1 HP to use power (can't kill yourself)
         if (prev.player.currentStats.health <= hpCost) {
-          const newLog = `❌ Not enough HP for ${power.name} (need ${hpCost + 1} HP)`;
+          const newLog = `Not enough HP for ${power.name} (need ${hpCost + 1} HP)`;
           safeCombatLogAdd(prev.combatLog, newLog, 'usePower:notEnoughHP');
           return prev;
         }
@@ -108,14 +108,14 @@ export function usePowerActions(context: PowerActivationContext) {
         // Path resource check
         if (pathResource.current < effectiveManaCost) {
           const resourceName = getResourceDisplayName(pathResource.type);
-          const newLog = `❌ Not enough ${resourceName} for ${power.name} (${Math.floor(pathResource.current)}/${effectiveManaCost})`;
+          const newLog = `Not enough ${resourceName} for ${power.name} (${Math.floor(pathResource.current)}/${effectiveManaCost})`;
           safeCombatLogAdd(prev.combatLog, newLog, 'usePower:notEnoughResource');
           return prev;
         }
       } else {
         // Normal mana check
         if (prev.player.currentStats.mana < effectiveManaCost) {
-          const newLog = `❌ Not enough mana for ${power.name} (${prev.player.currentStats.mana}/${effectiveManaCost})`;
+          const newLog = `Not enough mana for ${power.name} (${prev.player.currentStats.mana}/${effectiveManaCost})`;
           safeCombatLogAdd(prev.combatLog, newLog, 'usePower:notEnoughMana');
           return prev;
         }
@@ -146,7 +146,7 @@ export function usePowerActions(context: PowerActivationContext) {
       if (playerHasCombo && player.comboCount >= 2) {
         comboMultiplier = 1 + (Math.min(player.comboCount - 1, COMBAT_BALANCE.MAX_COMBO_COUNT - 1) * COMBAT_BALANCE.COMBO_DAMAGE_BONUS_PER_LEVEL);
         if (comboMultiplier > 1) {
-          logs.push(`🔥 ${player.comboCount}x COMBO! (+${Math.floor((comboMultiplier - 1) * 100)}% damage)`);
+          logs.push(`${player.comboCount}x COMBO! (+${Math.floor((comboMultiplier - 1) * 100)}% damage)`);
         }
       }
 
@@ -159,7 +159,7 @@ export function usePowerActions(context: PowerActivationContext) {
         const hpCost = Math.floor(effectiveManaCost * 0.5);
         const hpCostResult = applyDamageToPlayer(player, hpCost, 'hp_cost', { minHealth: 1 });
         player = hpCostResult.player;
-        logs.push(`💔 Reckless Fury: Paid ${hpCostResult.actualDamage} HP for ${power.name}`);
+        logs.push(`Reckless Fury: Paid ${hpCostResult.actualDamage} HP for ${power.name}`);
       } else if (usesPathResource && player.pathResource) {
         // Deduct from path resource
         const resourceName = getResourceDisplayName(player.pathResource.type);
@@ -169,7 +169,7 @@ export function usePowerActions(context: PowerActivationContext) {
         };
         // Log cost reduction if applicable
         if (powerMods.costReduction > 0 || (pathResource?.thresholds?.some(t => pathResource.current >= t.value && t.effect.type === 'cost_reduction'))) {
-          logs.push(`✨ Cost reduced: ${power.manaCost} → ${effectiveManaCost} ${resourceName}`);
+          logs.push(`Cost reduced: ${power.manaCost} → ${effectiveManaCost} ${resourceName}`);
         }
         // Generate resource on power use if applicable
         const onPowerUseGen = player.pathResource.generation.onPowerUse ?? 0;
@@ -178,13 +178,13 @@ export function usePowerActions(context: PowerActivationContext) {
             ...player.pathResource,
             current: Math.min(player.pathResource.max, player.pathResource.current + onPowerUseGen),
           };
-          logs.push(`⚡ +${onPowerUseGen} ${resourceName} from power use`);
+          logs.push(`+${onPowerUseGen} ${resourceName} from power use`);
         }
       } else {
         player.currentStats.mana -= effectiveManaCost;
         // Log mana cost reduction if applicable
         if (powerMods.costReduction > 0) {
-          logs.push(`✨ Efficient Casting: ${power.manaCost} → ${effectiveManaCost} mana`);
+          logs.push(`Efficient Casting: ${power.manaCost} → ${effectiveManaCost} mana`);
         }
       }
 
@@ -247,7 +247,7 @@ export function usePowerActions(context: PowerActivationContext) {
           sourceName: 'Shadow Dance',
         });
         Object.assign(player, updatedPlayer);
-        logs.push(`🗡️ Shadow Dance: Next 3 attacks will be guaranteed critical hits!`);
+        logs.push(`Shadow Dance: Next 3 attacks will be guaranteed critical hits!`);
       }
 
       // Get path playstyle modifiers for power damage scaling (Phase 2)
@@ -270,7 +270,7 @@ export function usePowerActions(context: PowerActivationContext) {
             // Use the value BEFORE deduction for damage calculation
             pathResourceDamageMultiplier += (chargeBonus.effect.value ?? 0) * pathResourceCurrentBeforeDeduction;
             if (pathResourceCurrentBeforeDeduction > 0) {
-              logs.push(`⚡ Arcane Charges: +${Math.floor((chargeBonus.effect.value ?? 0) * pathResourceCurrentBeforeDeduction * 100)}% spell damage`);
+              logs.push(`Arcane Charges: +${Math.floor((chargeBonus.effect.value ?? 0) * pathResourceCurrentBeforeDeduction * 100)}% spell damage`);
             }
           }
         } else {
@@ -280,7 +280,7 @@ export function usePowerActions(context: PowerActivationContext) {
           }
           if (pathResourceDamageMultiplier > 1) {
             const resourceName = getResourceDisplayName(player.pathResource.type);
-            logs.push(`🔥 ${resourceName} bonus: +${Math.floor((pathResourceDamageMultiplier - 1) * 100)}% damage`);
+            logs.push(`${resourceName} bonus: +${Math.floor((pathResourceDamageMultiplier - 1) * 100)}% damage`);
           }
         }
       }
@@ -347,7 +347,7 @@ export function usePowerActions(context: PowerActivationContext) {
 
             if (hpPercent < executeThreshold) {
               baseDamage = Math.floor(baseDamage * executeMultiplier);
-              logs.push(`💀 EXECUTE! Enemy below ${Math.floor(executeThreshold * 100)}% HP!`);
+              logs.push(`EXECUTE! Enemy below ${Math.floor(executeThreshold * 100)}% HP!`);
             }
 
             const executeDamageResult = applyDamageToEnemy(enemy, baseDamage, 'power');
@@ -364,7 +364,7 @@ export function usePowerActions(context: PowerActivationContext) {
             const hpCost = Math.floor(player.currentStats.maxHealth * hpCostPercent);
             const sacrificeResult = applyDamageToPlayer(player, hpCost, 'hp_cost', { minHealth: 1 });
             player = sacrificeResult.player;
-            logs.push(`🩸 Sacrificed ${sacrificeResult.actualDamage} HP!`);
+            logs.push(`Sacrificed ${sacrificeResult.actualDamage} HP!`);
 
             const sacrificeDamageResult = applyDamageToEnemy(enemy, baseDamage, 'power');
             enemy = sacrificeDamageResult.enemy;
@@ -453,7 +453,7 @@ export function usePowerActions(context: PowerActivationContext) {
             const hpCost = Math.floor(player.currentStats.maxHealth * hpCostPercent);
             const sacrificeResult = applyDamageToPlayer(player, hpCost, 'hp_cost', { minHealth: 1 });
             player = sacrificeResult.player;
-            logs.push(`🩸 Sacrificed ${sacrificeResult.actualDamage} HP!`);
+            logs.push(`Sacrificed ${sacrificeResult.actualDamage} HP!`);
 
             const manaRestored = power.value; // Flat 50 mana
             player.currentStats.mana = Math.min(

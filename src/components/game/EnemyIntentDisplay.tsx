@@ -6,24 +6,24 @@ interface EnemyIntentDisplayProps {
   isDying: boolean;
 }
 
-// Legacy emoji mapping to Lucide icon names
-const EMOJI_TO_ICON: Record<string, string> = {
-  '⚔️': ABILITY_ICONS.ATTACK,
-  '⚔️⚔️': ABILITY_ICONS.MULTI_HIT,
-  '⚔️⚔️⚔️': ABILITY_ICONS.TRIPLE_STRIKE,
-  '🐍': ABILITY_ICONS.POISON,
-  '💫': ABILITY_ICONS.STUN,
-  '💚': ABILITY_ICONS.HEAL,
-  '😤': ABILITY_ICONS.ENRAGE,
-  '🛡️': ABILITY_ICONS.SHIELD,
+// Icon ID mapping to Lucide icon names
+const ICON_ID_TO_ABILITY: Record<string, string> = {
+  'ability-attack': ABILITY_ICONS.ATTACK,
+  'ability-multi_hit': ABILITY_ICONS.MULTI_HIT,
+  'ability-triple_strike': ABILITY_ICONS.TRIPLE_STRIKE,
+  'ability-poison': ABILITY_ICONS.POISON,
+  'ability-stun': ABILITY_ICONS.STUN,
+  'ability-heal': ABILITY_ICONS.HEAL,
+  'ability-enrage': ABILITY_ICONS.ENRAGE,
+  'ability-shield': ABILITY_ICONS.SHIELD,
 };
 
 /**
- * Maps emoji icons to Lucide icon components.
- * Fallback to Sword for unknown emojis.
+ * Maps icon IDs to Lucide icon components.
+ * Fallback to Sword for unknown icon IDs.
  */
 function getAbilityIcon(icon: string): React.ComponentType<{ className?: string }> {
-  const iconName = EMOJI_TO_ICON[icon] || ABILITY_ICONS.ATTACK;
+  const iconName = ICON_ID_TO_ABILITY[icon] || ABILITY_ICONS.ATTACK;
   return getIcon(iconName, 'Sword');
 }
 

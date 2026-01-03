@@ -135,7 +135,7 @@ export function useCombatTimers(
         const updatedEnemy = deepCloneEnemy(enemy);
         updatedEnemy.health = newHealth;
 
-        safeCombatLogAdd(prev.combatLog, `💚 ${enemy.name} regenerates ${regenAmount} HP!`, 'useCombatTimers:enemyRegen');
+        safeCombatLogAdd(prev.combatLog, `${enemy.name} regenerates ${regenAmount} HP!`, 'useCombatTimers:enemyRegen');
 
         return {
           ...prev,
@@ -353,7 +353,7 @@ export function useCombatTimers(
           // Normalize state: if shield exists without duration, clear it
           if (hasShield && !hasDuration) {
             updatedPlayer.shield = 0;
-            logs.push('🛡️ Shield cleared (no duration)');
+            logs.push('Shield cleared (no duration)');
             needsUpdate = true;
           }
         }
@@ -366,7 +366,7 @@ export function useCombatTimers(
           if (updatedPlayer.shieldRemainingDuration <= 0) {
             updatedPlayer.shield = 0;
             updatedPlayer.shieldRemainingDuration = 0;
-            logs.push('🛡️ Shield expired');
+            logs.push('Shield expired');
           }
         }
 
@@ -389,7 +389,7 @@ export function useCombatTimers(
 
           if (expiredBuffs.length > 0) {
             expiredBuffs.forEach(buffName => {
-              logs.push(`⏰ ${buffName} buff expired`);
+              logs.push(`${buffName} buff expired`);
             });
           }
         }

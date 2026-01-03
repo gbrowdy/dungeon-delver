@@ -149,15 +149,46 @@ export function applyStatusToPlayer(
 }
 
 /**
+ * Determine correct "be" verb conjugation for a subject.
+ * Uses simple heuristics: "You" and plural-looking names use "are", others use "is".
+ *
+ * Examples:
+ * - "You" -> "are" (second person)
+ * - "Goblin" -> "is" (singular)
+ * - "Goblins" -> "are" (ends in 's')
+ * - "Skeleton Warriors" -> "are" (ends in 's')
+ */
+function getBeVerbForSubject(subject: string): 'is' | 'are' {
+  const normalized = subject.trim().toLowerCase();
+
+  if (!normalized) {
+    return 'is';
+  }
+
+  // Second person always uses "are"
+  if (normalized === 'you') {
+    return 'are';
+  }
+
+  // Plural indicators: ends in 's' (but not possessive 's)
+  // This is a simple heuristic that works for most enemy names
+  if (normalized.endsWith('s') && !normalized.endsWith("'s")) {
+    return 'are';
+  }
+
+  return 'is';
+}
+
+/**
  * Generate a combat log message for status application.
- * Uses proper verb conjugation: "You are" vs "Enemy is"
+ * Uses proper verb conjugation: "You are" vs "Enemy is" vs "Enemies are"
  */
 function formatStatusLogMessage(
   targetName: string,
   type: StatusEffectType,
   effect: StatusEffect
 ): string {
-  const beVerb = targetName === 'You' ? 'are' : 'is';
+  const beVerb = getBeVerbForSubject(targetName);
 
   switch (type) {
     case STATUS_EFFECT_TYPE.POISON:
