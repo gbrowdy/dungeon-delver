@@ -175,7 +175,9 @@ export function useCombat() {
     logs: string[]
   ): { enemy: Enemy; player: Player; damage: number } => {
     const updatedEnemy = deepCloneEnemy(enemy);
-    let updatedPlayer = deepClonePlayer(player);
+    // Start with original player - utility functions (applyDamageToPlayer, applyStatusToPlayer)
+    // handle their own deep cloning, so we avoid double-cloning
+    let updatedPlayer = player;
     let damage = 0;
 
     logs.push(`${ability.icon} ${enemy.name} uses ${ability.name}!`);

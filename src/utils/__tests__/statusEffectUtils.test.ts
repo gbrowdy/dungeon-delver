@@ -187,6 +187,23 @@ describe('applyStatusToPlayer', () => {
 
     expect(player.statusEffects.length).toBe(originalEffectsLength);
   });
+
+  it('applies bleed with correct duration and icon', () => {
+    const player = createMockPlayer();
+    const result = applyStatusToPlayer(
+      player,
+      { type: STATUS_EFFECT_TYPE.BLEED, damage: 8 },
+      'enemy_ability'
+    );
+
+    expect(result.applied).toBe(true);
+    expect(result.player.statusEffects).toHaveLength(1);
+    expect(result.player.statusEffects[0].type).toBe('bleed');
+    expect(result.player.statusEffects[0].damage).toBe(8);
+    expect(result.player.statusEffects[0].remainingTurns).toBe(COMBAT_BALANCE.DEFAULT_POISON_DURATION);
+    expect(result.player.statusEffects[0].icon).toBe('status-bleed');
+    expect(result.logs[0]).toContain('bleeding');
+  });
 });
 
 describe('applyStatusToEnemy', () => {
@@ -251,5 +268,22 @@ describe('applyStatusToEnemy', () => {
     );
 
     expect(enemy.statusEffects?.length ?? 0).toBe(originalEffectsLength);
+  });
+
+  it('applies bleed with correct duration and icon', () => {
+    const enemy = createMockEnemy();
+    const result = applyStatusToEnemy(
+      enemy,
+      { type: STATUS_EFFECT_TYPE.BLEED, damage: 6 },
+      'path_ability'
+    );
+
+    expect(result.applied).toBe(true);
+    expect(result.enemy.statusEffects).toHaveLength(1);
+    expect(result.enemy.statusEffects![0].type).toBe('bleed');
+    expect(result.enemy.statusEffects![0].damage).toBe(6);
+    expect(result.enemy.statusEffects![0].remainingTurns).toBe(COMBAT_BALANCE.DEFAULT_POISON_DURATION);
+    expect(result.enemy.statusEffects![0].icon).toBe('status-bleed');
+    expect(result.logs[0]).toContain('bleeding');
   });
 });

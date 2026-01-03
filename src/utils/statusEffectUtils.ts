@@ -129,36 +129,41 @@ export function applyStatusToPlayer(
     return { player: updatedPlayer, logs, applied: false };
   }
 
-  const { effect, refreshed } = applyOrRefreshStatus(
+  const { effect } = applyOrRefreshStatus(
     updatedPlayer.statusEffects,
     config
   );
 
-  const logMessage = getStatusLogMessage('You', config.type, effect, refreshed);
+  const logMessage = formatStatusLogMessage('You', config.type, effect);
   logs.push(logMessage);
 
   return { player: updatedPlayer, logs, applied: true };
 }
 
-function getStatusLogMessage(
+/**
+ * Generate a combat log message for status application.
+ * Uses proper verb conjugation: "You are" vs "Enemy is"
+ */
+function formatStatusLogMessage(
   targetName: string,
   type: StatusEffectType,
-  effect: StatusEffect,
-  refreshed: boolean
+  effect: StatusEffect
 ): string {
+  const beVerb = targetName === 'You' ? 'are' : 'is';
+
   switch (type) {
     case STATUS_EFFECT_TYPE.POISON:
-      return `${targetName} are poisoned! (${effect.damage} damage/turn for ${effect.remainingTurns} turns)`;
+      return `${targetName} ${beVerb} poisoned! (${effect.damage} damage/turn for ${effect.remainingTurns} turns)`;
     case STATUS_EFFECT_TYPE.STUN:
-      return `${targetName} are stunned for ${effect.remainingTurns} turn(s)!`;
+      return `${targetName} ${beVerb} stunned for ${effect.remainingTurns} turn(s)!`;
     case STATUS_EFFECT_TYPE.SLOW: {
       const slowPercent = Math.round((effect.value ?? 0) * 100);
-      return `${targetName} are slowed by ${slowPercent}% for ${effect.remainingTurns} turns!`;
+      return `${targetName} ${beVerb} slowed by ${slowPercent}% for ${effect.remainingTurns} turns!`;
     }
     case STATUS_EFFECT_TYPE.BLEED:
-      return `${targetName} are bleeding! (${effect.damage} damage/turn for ${effect.remainingTurns} turns)`;
+      return `${targetName} ${beVerb} bleeding! (${effect.damage} damage/turn for ${effect.remainingTurns} turns)`;
     default:
-      return `${targetName} affected by ${type}!`;
+      return `${targetName} ${beVerb} affected by ${type}!`;
   }
 }
 
@@ -174,40 +179,17 @@ export function applyStatusToEnemy(
     updatedEnemy.statusEffects = [];
   }
 
-  const { effect, refreshed } = applyOrRefreshStatus(
+  const { effect } = applyOrRefreshStatus(
     updatedEnemy.statusEffects,
     config
   );
 
-  const logMessage = getEnemyStatusLogMessage(
+  const logMessage = formatStatusLogMessage(
     updatedEnemy.name,
     config.type,
-    effect,
-    refreshed
+    effect
   );
   logs.push(logMessage);
 
   return { enemy: updatedEnemy, logs, applied: true };
-}
-
-function getEnemyStatusLogMessage(
-  enemyName: string,
-  type: StatusEffectType,
-  effect: StatusEffect,
-  refreshed: boolean
-): string {
-  switch (type) {
-    case STATUS_EFFECT_TYPE.POISON:
-      return `${enemyName} is poisoned! (${effect.damage} damage/turn for ${effect.remainingTurns} turns)`;
-    case STATUS_EFFECT_TYPE.STUN:
-      return `${enemyName} is stunned for ${effect.remainingTurns} turn(s)!`;
-    case STATUS_EFFECT_TYPE.SLOW: {
-      const slowPercent = Math.round((effect.value ?? 0) * 100);
-      return `${enemyName} is slowed by ${slowPercent}% for ${effect.remainingTurns} turns!`;
-    }
-    case STATUS_EFFECT_TYPE.BLEED:
-      return `${enemyName} is bleeding! (${effect.damage} damage/turn for ${effect.remainingTurns} turns)`;
-    default:
-      return `${enemyName} affected by ${type}!`;
-  }
 }
