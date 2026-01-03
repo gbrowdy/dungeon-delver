@@ -2,6 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+---
+
+## ⚠️ CRITICAL: Branch Policy
+
+**ALL WORK MUST BE DONE IN FEATURE BRANCHES. NEVER COMMIT DIRECTLY TO MAIN.**
+
+- Create a feature branch before starting any work: `git checkout -b feature/your-feature-name`
+- Commit all changes to the feature branch
+- Main branch is protected - only updated via merged PRs
+- If you find yourself on main with uncommitted work, create a branch immediately
+
+---
+
 ## Build & Development Commands
 
 ```bash
