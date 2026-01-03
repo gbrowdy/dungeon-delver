@@ -12,6 +12,7 @@ import {
   resetTick,
   isLoopRunning,
   getEffectiveDelta,
+  subscribeToTick,
   TICK_MS,
 } from '../loop';
 import { world } from '../world';
@@ -37,28 +38,47 @@ describe('Game Loop', () => {
 
   describe('startLoop / stopLoop', () => {
     it('should start the loop', () => {
-      const onTick = vi.fn();
-      startLoop(onTick);
+      startLoop();
 
       expect(isLoopRunning()).toBe(true);
     });
 
     it('should stop the loop', () => {
-      const onTick = vi.fn();
-      startLoop(onTick);
+      startLoop();
       stopLoop();
 
       expect(isLoopRunning()).toBe(false);
     });
 
     it('should not start twice', () => {
-      const onTick1 = vi.fn();
-      const onTick2 = vi.fn();
-      startLoop(onTick1);
-      startLoop(onTick2);
+      startLoop();
+      startLoop();
 
       expect(isLoopRunning()).toBe(true);
-      // Only first callback should be registered
+    });
+  });
+
+  describe('subscribeToTick', () => {
+    it('should return an unsubscribe function', () => {
+      const callback = vi.fn();
+      const unsubscribe = subscribeToTick(callback);
+
+      expect(typeof unsubscribe).toBe('function');
+
+      // Clean up
+      unsubscribe();
+    });
+
+    it('should allow multiple subscribers', () => {
+      const callback1 = vi.fn();
+      const callback2 = vi.fn();
+
+      const unsubscribe1 = subscribeToTick(callback1);
+      const unsubscribe2 = subscribeToTick(callback2);
+
+      // Clean up
+      unsubscribe1();
+      unsubscribe2();
     });
   });
 

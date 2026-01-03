@@ -24,20 +24,39 @@ let accumulator = 0;
 let tick = 0;
 let animationFrameId: number | null = null;
 
-// Callback for React updates
-let onTickCallback: (() => void) | null = null;
+// Subscribers for tick updates (allows multiple React components to subscribe)
+const tickSubscribers = new Set<() => void>();
+
+/**
+ * Subscribe to tick updates.
+ * Called once per frame (after all ticks for that frame have run).
+ * @returns Unsubscribe function
+ */
+export function subscribeToTick(callback: () => void): () => void {
+  tickSubscribers.add(callback);
+  return () => {
+    tickSubscribers.delete(callback);
+  };
+}
+
+/**
+ * Notify all tick subscribers.
+ */
+function notifyTickSubscribers(): void {
+  for (const callback of tickSubscribers) {
+    callback();
+  }
+}
 
 /**
  * Start the game loop.
- * @param onTick - Called after each frame (not each tick) to update React
  */
-export function startLoop(onTick: () => void): void {
+export function startLoop(): void {
   if (running) return;
 
   running = true;
   lastTime = performance.now();
   accumulator = 0;
-  onTickCallback = onTick;
 
   const loop = (timestamp: number) => {
     if (!running) {
@@ -81,9 +100,9 @@ export function startLoop(onTick: () => void): void {
       tickedThisFrame = true;
     }
 
-    // Notify React (once per frame, not per tick)
-    if (tickedThisFrame && onTickCallback) {
-      onTickCallback();
+    // Notify subscribers (once per frame, not per tick)
+    if (tickedThisFrame) {
+      notifyTickSubscribers();
     }
 
     animationFrameId = requestAnimationFrame(loop);
@@ -101,7 +120,6 @@ export function stopLoop(): void {
     cancelAnimationFrame(animationFrameId);
     animationFrameId = null;
   }
-  onTickCallback = null;
 }
 
 /**
