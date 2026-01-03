@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { restorePlayerHealth } from '../statsUtils';
+import { restorePlayerHealth, restorePlayerMana } from '../statsUtils';
 import { Player } from '@/types/game';
 
 const createMockPlayer = (overrides?: Partial<Player>): Player => ({
@@ -120,5 +120,66 @@ describe('restorePlayerHealth', () => {
 
     expect(result.actualAmount).toBe(0);
     expect(result.log).toContain('(full health)');
+  });
+});
+
+describe('restorePlayerMana', () => {
+  it('restores mana up to max', () => {
+    const player = createMockPlayer({
+      currentStats: { ...createMockPlayer().currentStats, mana: 25, maxMana: 50 },
+    });
+    const result = restorePlayerMana(player, 15);
+
+    expect(result.player.currentStats.mana).toBe(40);
+    expect(result.actualAmount).toBe(15);
+  });
+
+  it('caps mana at maxMana', () => {
+    const player = createMockPlayer({
+      currentStats: { ...createMockPlayer().currentStats, mana: 45, maxMana: 50 },
+    });
+    const result = restorePlayerMana(player, 20);
+
+    expect(result.player.currentStats.mana).toBe(50);
+    expect(result.actualAmount).toBe(5);
+  });
+
+  it('generates log with source when provided', () => {
+    const player = createMockPlayer({
+      currentStats: { ...createMockPlayer().currentStats, mana: 25, maxMana: 50 },
+    });
+    const result = restorePlayerMana(player, 10, { source: 'Mana Potion' });
+
+    expect(result.log).toBe('Mana Potion restores 10 MP');
+  });
+
+  it('generates log without source', () => {
+    const player = createMockPlayer({
+      currentStats: { ...createMockPlayer().currentStats, mana: 25, maxMana: 50 },
+    });
+    const result = restorePlayerMana(player, 10);
+
+    expect(result.log).toBe('Restored 10 MP');
+  });
+
+  it('notes full mana in log when capped', () => {
+    const player = createMockPlayer({
+      currentStats: { ...createMockPlayer().currentStats, mana: 48, maxMana: 50 },
+    });
+    const result = restorePlayerMana(player, 10);
+
+    expect(result.log).toContain('(full mana)');
+    expect(result.actualAmount).toBe(2);
+  });
+
+  it('does not mutate the original player', () => {
+    const player = createMockPlayer({
+      currentStats: { ...createMockPlayer().currentStats, mana: 25, maxMana: 50 },
+    });
+    const originalMana = player.currentStats.mana;
+
+    restorePlayerMana(player, 15);
+
+    expect(player.currentStats.mana).toBe(originalMana);
   });
 });
