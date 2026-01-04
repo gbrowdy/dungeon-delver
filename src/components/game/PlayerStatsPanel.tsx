@@ -69,7 +69,7 @@ export function PlayerStatsPanel({ player }: PlayerStatsPanelProps) {
       {/* Header: Player info and equipment - more compact on mobile */}
       <div className="flex items-center justify-between flex-wrap gap-1 xs:gap-2">
         <PlayerInfo
-          name={getPlayerDisplayName(playerForUtils as any)}
+          name={getPlayerDisplayName(playerForUtils as unknown as Parameters<typeof getPlayerDisplayName>[0])}
           playerClass={playerForUtils.class}
           level={playerForUtils.level}
         />

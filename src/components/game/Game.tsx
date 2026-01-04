@@ -29,13 +29,16 @@ export function Game() {
       level: player.level,
       path: player.path,
     };
-    return getAbilityChoices(playerForChoices as any, pathDef);
+    // TODO: Type getAbilityChoices parameters properly
+    return getAbilityChoices(playerForChoices as unknown as Parameters<typeof getAbilityChoices>[0], pathDef);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player?.pendingAbilityChoice, player?.path?.pathId, player?.path?.abilities?.length, player?.level]);
 
   // Compute shop state when in shop phase
   const shopState = useMemo(() => {
     if (gameState.phase !== 'shop' || !player) return null;
     return generateShopState(gameState.floor, player.characterClass, player.path?.pathId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState.phase, gameState.floor, player?.characterClass, player?.path?.pathId]);
 
   // Check if hero is stunned

@@ -80,15 +80,10 @@ export function useCombat() {
               const manaResult = restorePlayerMana(updatedPlayer, item.effect.value);
               updatedPlayer = manaResult.player;
               break;
-<<<<<<< HEAD
+            }
             case 'buff': {
               const buffResult = addBuffToPlayer(updatedPlayer, {
-=======
-            }
-            case 'buff':
-              updatedPlayer.activeBuffs.push({
                 id: `${trigger}-buff-${Date.now()}`,
->>>>>>> origin/main
                 name: 'Combat Ready',
                 stat: BUFF_STAT.ARMOR,
                 multiplier: 1 + (item.effect.value / player.baseStats.armor),

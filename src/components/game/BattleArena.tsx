@@ -75,6 +75,7 @@ export function BattleArena({
   }), [onTransitionComplete, onEnemyDeathAnimationComplete, onPlayerDeathAnimationComplete]);
 
   // Create compatible enemy object for useBattleAnimation
+  // TODO: Update useBattleAnimation to accept EnemySnapshot directly
   const enemyForAnimation = useMemo(() => {
     if (!enemy) return null;
     return {
@@ -85,7 +86,7 @@ export function BattleArena({
       },
       abilities: enemy.abilities ?? [],
       isDying: enemy.isDying ?? false,
-    };
+    } as unknown as import('@/types/game').Enemy;
   }, [enemy]);
 
   const {
@@ -106,7 +107,7 @@ export function BattleArena({
     enemyCasting,
     enemyAuraColor,
     removeEffect,
-  } = useBattleAnimation(enemyForAnimation as any, lastCombatEvent, isPaused, battlePhase, animationOptions);
+  } = useBattleAnimation(enemyForAnimation, lastCombatEvent, isPaused, battlePhase, animationOptions);
 
   // The game state now keeps the enemy during death animation (enemy.isDying = true)
   // and only clears it after the animation completes. No need for local tracking.

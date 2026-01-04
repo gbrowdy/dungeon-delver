@@ -234,10 +234,14 @@ export function GameProvider({ children, enabled = true }: GameProviderProps) {
       dispatch(Commands.enhanceItem(slot));
     },
 
-    // Items
+    // Items/Powers
     claimItem: (_itemId: string) => {
       // TODO: Add CLAIM_ITEM command when item drop system is migrated
       console.warn('claimItem not yet implemented in ECS');
+    },
+    learnPower: (_powerId: string) => {
+      // TODO: Add LEARN_POWER command when power learning is migrated
+      console.warn('learnPower not yet implemented in ECS');
     },
 
     // Animation callbacks

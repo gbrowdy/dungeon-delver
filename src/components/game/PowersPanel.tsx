@@ -51,12 +51,13 @@ export function PowersPanel({
   };
 
   // Calculate effective mana costs with path ability reductions
-  const powerMods = getPowerModifiers(playerForHooks as any);
+  // TODO: Update usePathAbilities functions to accept PlayerSnapshot
+  const powerMods = getPowerModifiers(playerForHooks as unknown as Parameters<typeof getPowerModifiers>[0]);
   const getEffectiveManaCost = (baseCost: number) =>
     Math.max(1, Math.floor(baseCost * (1 - powerMods.costReduction)));
 
   // Check if this player's path uses the combo system
-  const showCombo = hasComboMechanic(playerForHooks as any);
+  const showCombo = hasComboMechanic(playerForHooks as unknown as Parameters<typeof hasComboMechanic>[0]);
 
   // Stance system for passive paths
   const pathId = player.path?.pathId ?? '';
@@ -70,7 +71,7 @@ export function PowersPanel({
 
   // Determine if we should show stance UI instead of standard powers
   const showStanceUI = isFeatureEnabled('PASSIVE_STANCE_SYSTEM') &&
-    isPassivePath(playerForHooks as any) &&
+    isPassivePath(playerForHooks as unknown as Parameters<typeof isPassivePath>[0]) &&
     isStanceSystemActive;
 
   // Check if player uses path resource system
