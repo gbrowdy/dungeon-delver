@@ -212,6 +212,7 @@ export function createEnemyEntity(options: CreateEnemyOptions): Entity {
   return {
     // Enemy tag with metadata
     enemy: {
+      id: `enemy-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       tier,
       name: enemy.name,
       isBoss: enemy.isBoss,
