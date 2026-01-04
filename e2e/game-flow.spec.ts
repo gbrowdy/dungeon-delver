@@ -58,8 +58,11 @@ test.describe('Game Flow - Core Loop', () => {
     await page.waitForTimeout(500);
 
     // Verify boosted stats are applied by checking specific stat values
-    await expect(page.locator('text=PWR').locator('..').filter({ hasText: '50' }).first()).toBeVisible();
-    await expect(page.locator('text=ARM').locator('..').filter({ hasText: '20' }).first()).toBeVisible();
+    // Note: Stats render twice (mobile/desktop versions) - use nth(1) for visible desktop version
+    const pwrStat = page.locator('text=PWR').locator('..').filter({ hasText: '50' }).nth(1);
+    const armStat = page.locator('text=ARM').locator('..').filter({ hasText: '20' }).nth(1);
+    await expect(pwrStat).toBeVisible();
+    await expect(armStat).toBeVisible();
   });
 
   test.skip('combat plays out to an outcome (enemy dies or player dies)', async ({ page }) => {
