@@ -243,7 +243,7 @@ export function PowerSystem(_deltaMs: number): void {
     const power = entity.powers?.find(p => p.id === castingData.powerId);
     if (!power) {
       // Power not found - clear casting and continue
-      delete entity.casting;
+      world.removeComponent(entity, 'casting');
       continue;
     }
 
@@ -251,7 +251,7 @@ export function PowerSystem(_deltaMs: number): void {
     if (entity.mana && entity.mana.current < power.manaCost) {
       // Not enough mana - clear casting
       addCombatLog(`Not enough mana to cast ${power.name}`);
-      delete entity.casting;
+      world.removeComponent(entity, 'casting');
       continue;
     }
 
@@ -290,6 +290,6 @@ export function PowerSystem(_deltaMs: number): void {
     setCooldown(entity, power);
 
     // Clear the casting component
-    delete entity.casting;
+    world.removeComponent(entity, 'casting');
   }
 }

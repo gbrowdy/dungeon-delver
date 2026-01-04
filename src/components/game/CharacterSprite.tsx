@@ -232,10 +232,13 @@ export function CharacterSprite({
           </div>
 
           {/* HP text */}
-          <div className={cn(
-            "pixel-text text-pixel-2xs xs:text-pixel-xs text-center mt-0.5 font-bold drop-shadow-lg",
-            isHero && healthPercent <= 0.25 ? "text-health" : "text-white"
-          )}>
+          <div
+            data-testid={isHero ? "player-health" : "enemy-health"}
+            className={cn(
+              "pixel-text text-pixel-2xs xs:text-pixel-xs text-center mt-0.5 font-bold drop-shadow-lg",
+              isHero && healthPercent <= 0.25 ? "text-health" : "text-white"
+            )}
+          >
             {Math.max(0, Math.floor(currentHealth))}/{maxHealth}
           </div>
 

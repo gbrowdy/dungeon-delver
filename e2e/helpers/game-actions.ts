@@ -38,16 +38,13 @@ export async function selectClassAndBegin(
  * Set combat speed to maximum (3x)
  */
 export async function setSpeedToMax(page: Page): Promise<void> {
-  // Look for speed button showing current speed, click until at 3x
-  const speedButton = page.locator('[aria-label*="speed"]').or(page.locator('button:has-text("1x")'));
+  // Click the 3x speed button directly
+  const speed3Button = page.getByRole('button', { name: 'Set combat speed to 3x' });
+  await speed3Button.click();
+  await expect(speed3Button).toHaveAttribute('aria-pressed', 'true');
 
-  // Click speed button until we see 3x (may need multiple clicks)
-  for (let i = 0; i < 3; i++) {
-    const currentText = await speedButton.first().textContent();
-    if (currentText?.includes('3x')) break;
-    await speedButton.first().click();
-    await page.waitForTimeout(100);
-  }
+  // Small wait to ensure combat has started processing at new speed
+  await page.waitForTimeout(500);
 }
 
 /**

@@ -65,11 +65,11 @@ export function DeathSystem(_deltaMs: number): void {
   // Check all entities with health for death
   for (const entity of world.with('health').without('dying')) {
     if (entity.health!.current <= 0) {
-      // Mark as dying
-      entity.dying = {
+      // Mark as dying - MUST use addComponent for query reactivity
+      world.addComponent(entity, 'dying', {
         startedAtTick: getTick(),
         duration: DEATH_ANIMATION_MS,
-      };
+      });
 
       const isPlayer = !!entity.player;
 

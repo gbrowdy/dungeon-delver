@@ -44,7 +44,8 @@ export function CleanupSystem(_deltaMs: number): void {
   // 3. Clear one-frame flags (attackReady)
   // These are set by AttackTimingSystem and consumed by CombatSystem
   // Must be cleared after all systems have had a chance to read them
-  for (const entity of entitiesWithAttackReady) {
-    delete entity.attackReady;
+  // Copy array to avoid mutation during iteration
+  for (const entity of [...entitiesWithAttackReady]) {
+    world.removeComponent(entity, 'attackReady');
   }
 }
