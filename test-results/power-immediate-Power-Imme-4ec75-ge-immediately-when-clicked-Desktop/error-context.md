@@ -1,0 +1,122 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - heading "Floor 1" [level=2] [ref=e8]
+        - generic [ref=e9]:
+          - generic [ref=e10]: "Room:"
+          - img "0 of 4 enemies defeated" [ref=e11]
+          - generic [ref=e16]: 4 left
+      - generic [ref=e17]:
+        - generic [ref=e18]: 40g
+        - group "Combat speed controls" [ref=e19]:
+          - button "Set combat speed to 1x" [pressed] [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]:
+              - img
+            - generic [ref=e22]: 1x
+          - button "Set combat speed to 2x" [ref=e23] [cursor=pointer]:
+            - generic [ref=e24]:
+              - img
+            - generic [ref=e25]: 2x
+          - button "Set combat speed to 3x" [ref=e26] [cursor=pointer]:
+            - generic [ref=e27]:
+              - img
+            - generic [ref=e28]: 3x
+        - button "Resume combat" [ref=e29] [cursor=pointer]:
+          - img
+        - generic "Keyboard shortcuts" [ref=e31]:
+          - img [ref=e32]
+    - generic [ref=e34]:
+      - status [ref=e35]
+      - alert [ref=e36]
+      - generic [ref=e37]:
+        - img [ref=e40]
+        - generic [ref=e46]:
+          - generic [ref=e57]: 60/60
+          - generic [ref=e63]:
+            - generic [ref=e68]: 25/25
+            - generic [ref=e70]:
+              - img [ref=e71]
+              - generic [ref=e76]: Attack
+        - generic:
+          - generic:
+            - text: Warrior
+            - generic: Lv.1
+          - generic [ref=e77]:
+            - generic [ref=e79]: Zombie
+            - generic [ref=e80]: PWR:8 ARM:1
+        - generic [ref=e82]: PAUSED
+    - generic [ref=e83]:
+      - generic [ref=e84]:
+        - heading "Powers" [level=3] [ref=e85]
+        - generic [ref=e86]:
+          - generic [ref=e87]: MP
+          - 'progressbar "Mana: 40 of 40" [ref=e88]'
+          - generic [ref=e90]: 40/40
+      - generic [ref=e91]:
+        - 'button "Block: Reduce damage by 50% from next attack. Costs 15 mana." [disabled] [ref=e92]':
+          - img [ref=e93]
+          - generic [ref=e95]: Block
+          - generic [ref=e96]: 15 MP
+        - 'button "Berserker Rage: Deal damage. Ready. Costs 20 mana." [disabled] [ref=e97]':
+          - img [ref=e99]
+          - generic [ref=e102]: Berserker Rage
+          - generic [ref=e103]: 20 MP
+    - generic [ref=e104]:
+      - generic [ref=e105]:
+        - generic [ref=e106]:
+          - img [ref=e108]
+          - generic [ref=e113]:
+            - generic [ref=e114]: Warrior
+            - generic [ref=e115]: Level 1
+        - generic [ref=e116]:
+          - generic [ref=e117]:
+            - generic "Empty Weapon slot" [ref=e118]:
+              - img [ref=e119]
+            - generic [ref=e124]: Empty
+          - generic [ref=e125]:
+            - generic "Empty Armor slot" [ref=e126]:
+              - img [ref=e127]
+            - generic [ref=e129]: Empty
+          - generic [ref=e130]:
+            - generic "Empty Accessory slot" [ref=e131]:
+              - img [ref=e132]
+            - generic [ref=e135]: Empty
+      - generic [ref=e136]:
+        - generic [ref=e138]:
+          - img [ref=e139]
+          - generic [ref=e141]: PWR
+          - generic [ref=e142]: "100"
+        - generic [ref=e144]:
+          - img [ref=e145]
+          - generic [ref=e147]: ARM
+          - generic [ref=e148]: "4"
+        - generic [ref=e150]:
+          - img [ref=e151]
+          - generic [ref=e155]: SPD
+          - generic [ref=e156]: "8"
+        - generic [ref=e158]:
+          - img [ref=e159]
+          - generic [ref=e161]: FOR
+          - generic [ref=e162]: "5"
+      - generic [ref=e163]:
+        - generic [ref=e164]:
+          - generic [ref=e165]: "Gold:"
+          - generic [ref=e166]:
+            - text: "40"
+            - img [ref=e167]
+        - generic [ref=e172]:
+          - generic [ref=e173]:
+            - generic [ref=e174]: XP
+            - generic [ref=e175]: 0/100
+          - 'progressbar "Experience: 0 of 100" [ref=e176]'
+    - generic [ref=e177]:
+      - heading "Combat Log" [level=3] [ref=e179]
+      - log "Combat log" [ref=e180]
+```
