@@ -12,6 +12,7 @@ import { createPlayerEntity, createEnemyEntity } from '../factories';
 import { COMBAT_BALANCE } from '@/constants/balance';
 import { FLOOR_CONFIG } from '@/constants/game';
 import type { CharacterClass } from '@/types/game';
+import { getDevModeParams } from '@/utils/devMode';
 
 export function InputSystem(_deltaMs: number): void {
   const commands = drainCommands();
@@ -125,18 +126,30 @@ export function InputSystem(_deltaMs: number): void {
           world.remove(existingPlayer);
         }
 
+        // Get dev mode overrides
+        const devParams = getDevModeParams();
+        const devOverrides = devParams.enabled
+          ? {
+              attackOverride: devParams.attackOverride,
+              defenseOverride: devParams.defenseOverride,
+              goldOverride: devParams.goldOverride,
+            }
+          : undefined;
+
         // Create new player with selected class
         const playerEntity = createPlayerEntity({
           name: 'Hero',
           characterClass: cmd.classId as CharacterClass,
+          devOverrides,
         });
         world.add(playerEntity);
 
-        // Set up floor state
+        // Set up floor state (with possible startFloor override)
+        const startFloor = devParams.enabled && devParams.startFloor ? devParams.startFloor : 1;
         gameState.floor = {
-          number: 1,
+          number: startFloor,
           room: 0,
-          totalRooms: FLOOR_CONFIG.ROOMS_PER_FLOOR[0] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR,
+          totalRooms: FLOOR_CONFIG.ROOMS_PER_FLOOR[startFloor - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR,
           theme: undefined,
         };
 
