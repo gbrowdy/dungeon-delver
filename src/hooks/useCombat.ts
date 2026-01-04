@@ -3,7 +3,7 @@ import { Player, Enemy, Item, StatusEffect, ActiveBuff, EnemyAbility } from '@/t
 import { calculateEnemyIntent } from '@/data/enemies';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 import { getDodgeChance } from '@/utils/fortuneUtils';
-import { usePathAbilities } from '@/hooks/usePathAbilities';
+import { getStatusImmunities } from '@/utils/pathUtils';
 import { applyDamageToPlayer } from '@/utils/damageUtils';
 import { applyStatusToPlayer } from '@/utils/statusEffectUtils';
 import { restorePlayerHealth, restorePlayerMana, addBuffToPlayer } from '@/utils/statsUtils';
@@ -30,8 +30,6 @@ export interface CombatTickResult {
  * Separates combat logic from state management.
  */
 export function useCombat() {
-  // Initialize path abilities hook for status immunity checks
-  const { getStatusImmunities } = usePathAbilities();
   /**
    * Calculate damage dealt by attacker to defender
    */
@@ -222,7 +220,7 @@ export function useCombat() {
       }
       case 'poison': {
         const poisonDamage = Math.floor(ability.value * (1 + (floor - 1) * COMBAT_BALANCE.POISON_SCALING_PER_FLOOR));
-        const immunities = getStatusImmunities(player);
+        const immunities = getStatusImmunities({ path: player.path ?? null });
         const poisonResult = applyStatusToPlayer(
           updatedPlayer,
           { type: STATUS_EFFECT_TYPE.POISON, damage: poisonDamage },
@@ -234,7 +232,7 @@ export function useCombat() {
         break;
       }
       case 'stun': {
-        const immunities = getStatusImmunities(player);
+        const immunities = getStatusImmunities({ path: player.path ?? null });
         const stunResult = applyStatusToPlayer(
           updatedPlayer,
           { type: STATUS_EFFECT_TYPE.STUN, duration: ability.value },
@@ -265,7 +263,7 @@ export function useCombat() {
     }
 
     return { enemy: updatedEnemy, player: updatedPlayer, damage };
-  }, [getStatusImmunities]);
+  }, []);
 
   /**
    * Calculate and update enemy intent for next turn

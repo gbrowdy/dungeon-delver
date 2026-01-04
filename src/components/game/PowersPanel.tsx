@@ -4,7 +4,7 @@ import { PowerButton } from './PowerButton';
 import { StanceToggle } from './StanceToggle';
 import { ResourceBar } from './ResourceBar';
 import { COMBAT_BALANCE } from '@/constants/balance';
-import { usePathAbilities } from '@/hooks/usePathAbilities';
+import { getPowerModifiers, hasComboMechanic, isPassivePath } from '@/utils/pathUtils';
 import { useStanceSystem } from '@/hooks/useStanceSystem';
 import { getStancesForPath } from '@/data/stances';
 import { isFeatureEnabled } from '@/constants/features';
@@ -35,29 +35,13 @@ export function PowersPanel({
   onUsePower,
   onActivateBlock,
 }: PowersPanelProps) {
-  const { getPowerModifiers, hasComboMechanic, isPassivePath } = usePathAbilities();
-
-  // Create a minimal player object for path ability hooks
-  const playerForHooks = {
-    path: player.path,
-    powers: player.powers,
-    comboCount: player.comboCount ?? 0,
-    currentStats: {
-      mana: player.mana.current,
-      maxMana: player.mana.max,
-    },
-    isBlocking: player.isBlocking,
-    pathResource: player.pathResource,
-  };
-
   // Calculate effective mana costs with path ability reductions
-  // TODO: Update usePathAbilities functions to accept PlayerSnapshot
-  const powerMods = getPowerModifiers(playerForHooks as unknown as Parameters<typeof getPowerModifiers>[0]);
+  const powerMods = getPowerModifiers({ path: player.path });
   const getEffectiveManaCost = (baseCost: number) =>
     Math.max(1, Math.floor(baseCost * (1 - powerMods.costReduction)));
 
   // Check if this player's path uses the combo system
-  const showCombo = hasComboMechanic(playerForHooks as unknown as Parameters<typeof hasComboMechanic>[0]);
+  const showCombo = hasComboMechanic({ path: player.path });
 
   // Stance system for passive paths
   const pathId = player.path?.pathId ?? '';
@@ -71,7 +55,7 @@ export function PowersPanel({
 
   // Determine if we should show stance UI instead of standard powers
   const showStanceUI = isFeatureEnabled('PASSIVE_STANCE_SYSTEM') &&
-    isPassivePath(playerForHooks as unknown as Parameters<typeof isPassivePath>[0]) &&
+    isPassivePath({ path: player.path }) &&
     isStanceSystemActive;
 
   // Check if player uses path resource system

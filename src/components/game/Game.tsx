@@ -10,7 +10,7 @@ import { ShopScreen } from './ShopScreen';
 import { VictoryScreen } from './VictoryScreen';
 import { SimpleErrorBoundary } from '@/components/ErrorBoundary';
 import { CombatErrorBoundary } from './CombatErrorBoundary';
-import { getPathById, getAbilityChoices } from '@/data/paths';
+import { getPathById, getAbilityChoices } from '@/utils/pathUtils';
 import { generateShopState } from '@/utils/shopUtils';
 
 export function Game() {
