@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Player } from '@/types/game';
+import type { PlayerSnapshot } from '@/ecs/snapshot';
 import { Button } from '@/components/ui/button';
 import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 interface DeathScreenProps {
-  player: Player;
+  player: PlayerSnapshot;
   currentFloor: number;
   onRetry: () => void;
   onAbandon: () => void;
@@ -73,7 +73,7 @@ export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitS
         <div className="flex justify-center">
           <div className="relative pixel-panel-dark rounded-lg p-4 sm:p-6">
             <PixelSprite
-              type={player.path?.pathId || player.class}
+              type={player.path?.pathId || player.characterClass}
               state="idle"
               direction="right"
               scale={5}
@@ -139,12 +139,12 @@ export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitS
                     This will permanently abandon your current progress:
                   </p>
                   <ul className="space-y-1 pixel-text text-pixel-2xs text-slate-300">
-                    <li>Level {player.level} {player.class}</li>
+                    <li>Level {player.level} {player.characterClass}</li>
                     <li>Floor {currentFloor}</li>
                     <li className="text-gold">{player.gold} gold</li>
                     <li>{player.powers.length} powers learned</li>
-                    {player.equippedItems.length > 0 && (
-                      <li>{player.equippedItems.length} equipped items</li>
+                    {[player.equipment.weapon, player.equipment.armor, player.equipment.accessory].filter(Boolean).length > 0 && (
+                      <li>{[player.equipment.weapon, player.equipment.armor, player.equipment.accessory].filter(Boolean).length} equipped items</li>
                     )}
                   </ul>
                   <p className="pixel-text text-pixel-2xs text-red-400 pt-2">
