@@ -59,7 +59,7 @@ export async function waitForCombatOutcome(
   // Race between: death screen, floor complete, or enemy health disappearing
   const result = await Promise.race([
     page.getByTestId('death-screen').waitFor({ state: 'visible', timeout }).then(() => 'player_died' as const),
-    page.getByText('FLOOR COMPLETE!').waitFor({ state: 'visible', timeout }).then(() => 'floor_complete' as const),
+    page.getByText(/Floor \d+ Complete!/).waitFor({ state: 'visible', timeout }).then(() => 'floor_complete' as const),
     waitForEnemyDeath(page, { timeout }).then(() => 'enemy_died' as const),
   ]);
 
