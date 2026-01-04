@@ -10,7 +10,6 @@
  */
 
 import { runSystems } from './systems';
-import { drainCommands } from './commands';
 import { getGameState } from './queries';
 
 // Timing constants
@@ -82,18 +81,13 @@ export function startLoop(): void {
       const isPaused = gameState?.paused ?? false;
 
       if (!isPaused) {
-        // Process commands at start of tick
-        const commands = drainCommands();
-        // Commands will be handled by InputSystem (to be implemented)
-        // For now, just drain them
-        void commands;
-
-        // Run all systems
+        // Run all systems (InputSystem handles drainCommands internally)
         runSystems(TICK_MS);
         tick++;
       } else {
-        // Even when paused, drain commands (some commands work while paused)
-        drainCommands();
+        // Even when paused, process commands (some commands work while paused)
+        // InputSystem will handle them
+        runSystems(0);
       }
 
       accumulator -= TICK_MS;

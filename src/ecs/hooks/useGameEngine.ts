@@ -6,7 +6,7 @@
  * when the ECS state changes (after each tick).
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   startLoop,
   stopLoop,
@@ -14,6 +14,9 @@ import {
   isLoopRunning,
   subscribeToTick,
 } from '../loop';
+import { world } from '../world';
+import { createGameStateEntity } from '../factories';
+import { getGameState } from '../queries';
 
 export interface UseGameEngineOptions {
   /** Whether the game loop should be running */
@@ -55,6 +58,18 @@ export function useGameEngine({
 }: UseGameEngineOptions): UseGameEngineResult {
   const [tick, setTick] = useState(() => getTick());
   const [isRunning, setIsRunning] = useState(() => isLoopRunning());
+  const initializedRef = useRef(false);
+
+  // Initialize the ECS world with game state entity (only once)
+  useEffect(() => {
+    if (!initializedRef.current) {
+      // Check if game state entity already exists
+      if (!getGameState()) {
+        world.add(createGameStateEntity());
+      }
+      initializedRef.current = true;
+    }
+  }, []);
 
   // Handle enabled prop changes
   useEffect(() => {
