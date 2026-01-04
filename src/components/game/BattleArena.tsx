@@ -1,5 +1,4 @@
 import { useEffect, useMemo } from 'react';
-import { Player, Enemy } from '@/types/game';
 import { EffectsLayer, ScreenShake, BossDeathEffect } from './BattleEffects';
 import { useBattleAnimation, CombatEvent } from '@/hooks/useBattleAnimation';
 import { cn } from '@/lib/utils';
@@ -12,17 +11,20 @@ import { getPlayerDisplayName } from '@/utils/powerSynergies';
 import { getIcon, ABILITY_ICONS } from '@/lib/icons';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Star } from 'lucide-react';
+import type { PlayerSnapshot, EnemySnapshot, AnimationEvent } from '@/ecs/snapshot';
 
 /** Maximum number of enemy abilities to display in the battle arena UI */
 const MAX_DISPLAYED_ABILITIES = 4;
 
+type BattlePhase = 'entering' | 'combat' | 'victory' | 'defeat' | 'transitioning';
+
 interface BattleArenaProps {
-  player: Player;
-  enemy: Enemy | null;
+  player: PlayerSnapshot;
+  enemy: EnemySnapshot | null;
   isPaused: boolean;
-  lastCombatEvent: CombatEvent | null;
-  gamePhase: string;
-  onPhaseChange?: (phase: BattlePhaseType) => void;
+  animationEvents: AnimationEvent[];
+  battlePhase: BattlePhase;
+  onPhaseChange?: (phase: BattlePhase) => void;
   onTransitionComplete?: () => void;
   onEnemyDeathAnimationComplete?: () => void;
   onPlayerDeathAnimationComplete?: () => void;
@@ -36,8 +38,8 @@ export function BattleArena({
   player,
   enemy,
   isPaused,
-  lastCombatEvent,
-  gamePhase,
+  animationEvents,
+  battlePhase,
   onPhaseChange,
   onTransitionComplete,
   onEnemyDeathAnimationComplete,
@@ -47,12 +49,44 @@ export function BattleArena({
   enemyProgress = 0,
   isStunned = false,
 }: BattleArenaProps) {
+  // Convert animation events to the format expected by useBattleAnimation
+  // Take the most recent unconsumed event as lastCombatEvent
+  const lastCombatEvent = useMemo((): CombatEvent | null => {
+    const unconsumed = animationEvents.filter(e => !e.consumed);
+    if (unconsumed.length === 0) return null;
+    const latest = unconsumed[unconsumed.length - 1];
+    // Map AnimationEvent to CombatEvent format
+    return {
+      type: latest.type as CombatEvent['type'],
+      source: latest.source,
+      target: latest.target,
+      value: latest.value,
+      isCritical: latest.isCritical,
+      powerId: latest.powerId,
+      timestamp: latest.timestamp,
+    };
+  }, [animationEvents]);
+
   // Memoize animation options to prevent unnecessary re-renders of useBattleAnimation
   const animationOptions = useMemo(() => ({
     onTransitionComplete,
     onEnemyDeathAnimationComplete,
     onPlayerDeathAnimationComplete,
   }), [onTransitionComplete, onEnemyDeathAnimationComplete, onPlayerDeathAnimationComplete]);
+
+  // Create compatible enemy object for useBattleAnimation
+  const enemyForAnimation = useMemo(() => {
+    if (!enemy) return null;
+    return {
+      ...enemy,
+      currentStats: {
+        health: enemy.health.current,
+        maxHealth: enemy.health.max,
+      },
+      abilities: enemy.abilities ?? [],
+      isDying: enemy.isDying ?? false,
+    };
+  }, [enemy]);
 
   const {
     heroState,
@@ -72,7 +106,7 @@ export function BattleArena({
     enemyCasting,
     enemyAuraColor,
     removeEffect,
-  } = useBattleAnimation(enemy, lastCombatEvent, isPaused, gamePhase, animationOptions);
+  } = useBattleAnimation(enemyForAnimation as any, lastCombatEvent, isPaused, battlePhase, animationOptions);
 
   // The game state now keeps the enemy during death animation (enemy.isDying = true)
   // and only clears it after the animation completes. No need for local tracking.
