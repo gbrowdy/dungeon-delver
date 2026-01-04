@@ -98,6 +98,20 @@ export function InputSystem(_deltaMs: number): void {
         break;
       }
 
+      case 'START_GAME': {
+        if (gameState) {
+          gameState.phase = 'class-select';
+        }
+        break;
+      }
+
+      case 'RESTART_GAME': {
+        if (gameState) {
+          gameState.phase = 'menu';
+        }
+        break;
+      }
+
       // TODO: Handle remaining commands as systems are implemented
       default:
         // Unknown command - ignore for now
