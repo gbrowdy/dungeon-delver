@@ -1,6 +1,5 @@
 import { Shield, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useCombat } from '@/contexts/CombatContext';
 import { PowerButton } from './PowerButton';
 import { StanceToggle } from './StanceToggle';
 import { ResourceBar } from './ResourceBar';
@@ -10,6 +9,7 @@ import { useStanceSystem } from '@/hooks/useStanceSystem';
 import { getStancesForPath } from '@/data/stances';
 import { isFeatureEnabled } from '@/constants/features';
 import { pathUsesResourceSystem } from '@/hooks/usePathResource';
+import type { PlayerSnapshot } from '@/ecs/snapshot';
 import {
   Tooltip,
   TooltipContent,
@@ -17,23 +17,46 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+interface PowersPanelProps {
+  player: PlayerSnapshot;
+  canUsePowers: boolean;
+  onUsePower: (powerId: string) => void;
+  onActivateBlock: () => void;
+}
+
 /**
  * PowersPanel - Displays mana bar, block button, power buttons, and combo indicator.
  * For passive paths with PASSIVE_STANCE_SYSTEM enabled, shows stance toggle UI.
  * Styled with pixel art / 8-bit retro aesthetic.
  */
-export function PowersPanel() {
-  const { player, combatState, actions } = useCombat();
-  const { canUsePowers, isPaused } = combatState;
+export function PowersPanel({
+  player,
+  canUsePowers,
+  onUsePower,
+  onActivateBlock,
+}: PowersPanelProps) {
   const { getPowerModifiers, hasComboMechanic, isPassivePath } = usePathAbilities();
 
+  // Create a minimal player object for path ability hooks
+  const playerForHooks = {
+    path: player.path,
+    powers: player.powers,
+    comboCount: player.comboCount ?? 0,
+    currentStats: {
+      mana: player.mana.current,
+      maxMana: player.mana.max,
+    },
+    isBlocking: player.isBlocking,
+    pathResource: player.pathResource,
+  };
+
   // Calculate effective mana costs with path ability reductions
-  const powerMods = getPowerModifiers(player);
+  const powerMods = getPowerModifiers(playerForHooks as any);
   const getEffectiveManaCost = (baseCost: number) =>
     Math.max(1, Math.floor(baseCost * (1 - powerMods.costReduction)));
 
   // Check if this player's path uses the combo system
-  const showCombo = hasComboMechanic(player);
+  const showCombo = hasComboMechanic(playerForHooks as any);
 
   // Stance system for passive paths
   const pathId = player.path?.pathId ?? '';
@@ -43,14 +66,14 @@ export function PowersPanel() {
     switchStance,
     cooldownRemaining,
     isStanceSystemActive,
-  } = useStanceSystem(availableStances, availableStances[0]?.id, isPaused);
+  } = useStanceSystem(availableStances, availableStances[0]?.id, false);
 
   // Determine if we should show stance UI instead of standard powers
   const showStanceUI = isFeatureEnabled('PASSIVE_STANCE_SYSTEM') &&
-    isPassivePath(player) &&
+    isPassivePath(playerForHooks as any) &&
     isStanceSystemActive;
 
-  // Check if player uses path resource system (Phase 6)
+  // Check if player uses path resource system
   const usesPathResource = pathUsesResourceSystem(pathId) && player.pathResource;
 
   return (
@@ -67,8 +90,8 @@ export function PowersPanel() {
         </div>
       ) : (
         <ManaBar
-          current={player.currentStats.mana}
-          max={player.currentStats.maxMana}
+          current={player.mana.current}
+          max={player.mana.max}
         />
       )}
 
@@ -79,7 +102,7 @@ export function PowersPanel() {
           currentStanceId={currentStance?.id}
           onSwitch={switchStance}
           cooldownRemaining={cooldownRemaining}
-          isPaused={isPaused}
+          isPaused={false}
         />
       ) : (
         /* Standard powers UI for active paths */
@@ -89,9 +112,9 @@ export function PowersPanel() {
             {/* Block Button */}
             <BlockButton
               isBlocking={player.isBlocking}
-              currentMana={player.currentStats.mana}
+              currentMana={player.mana.current}
               canUse={canUsePowers}
-              onActivate={actions.activateBlock}
+              onActivate={onActivateBlock}
             />
 
             {/* Power buttons */}
@@ -99,9 +122,9 @@ export function PowersPanel() {
               <PowerButton
                 key={power.id}
                 power={power}
-                currentMana={player.currentStats.mana}
+                currentMana={player.mana.current}
                 effectiveManaCost={getEffectiveManaCost(power.manaCost)}
-                onUse={() => actions.usePower(power.id)}
+                onUse={() => onUsePower(power.id)}
                 disabled={!canUsePowers}
                 playerPathId={player.path?.pathId ?? null}
               />
@@ -109,8 +132,8 @@ export function PowersPanel() {
           </div>
 
           {/* Combo indicator - only show for active paths */}
-          {showCombo && player.comboCount > 0 && (
-            <ComboIndicator count={player.comboCount} />
+          {showCombo && (player.comboCount ?? 0) > 0 && (
+            <ComboIndicator count={player.comboCount ?? 0} />
           )}
         </>
       )}
