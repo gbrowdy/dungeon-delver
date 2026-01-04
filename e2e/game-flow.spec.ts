@@ -23,6 +23,15 @@ test.describe('Game Flow - Core Loop', () => {
     await expect(page.getByRole('button', { name: 'Pause combat' })).toBeVisible();
   });
 
+  test('enemy stats display correctly', async ({ page }) => {
+    await navigateToGame(page);
+    await selectClassAndBegin(page, 'Warrior');
+
+    // Enemy stats panel should show PWR and ARM values from EnemySnapshot
+    // Format is "PWR:X ARM:Y" where X = attack.baseDamage, Y = defense.value
+    await expect(page.locator('text=/PWR:\\d+ ARM:\\d+/')).toBeVisible();
+  });
+
   test('combat speed controls work', async ({ page }) => {
     await navigateToGame(page);
     await selectClassAndBegin(page, 'Warrior');

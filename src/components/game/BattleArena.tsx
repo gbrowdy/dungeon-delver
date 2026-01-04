@@ -254,7 +254,7 @@ export function BattleArena({
 
               {/* Row 2: Stats */}
               <div className="pixel-text text-pixel-2xs text-gray-400">
-                PWR:{displayEnemy.power} ARM:{displayEnemy.armor}
+                PWR:{displayEnemy.attack.baseDamage} ARM:{displayEnemy.defense.value}
               </div>
 
               {/* Row 3: Abilities with names */}
