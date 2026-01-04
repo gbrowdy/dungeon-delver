@@ -7,6 +7,7 @@
 
 import { attackersQuery, getGameState } from '../queries';
 import { getEffectiveDelta } from '../loop';
+import { world } from '../world';
 import type { Entity } from '../components';
 
 // Check if entity is stunned
@@ -35,6 +36,7 @@ function calculateAttackDamage(entity: Entity): { damage: number; isCrit: boolea
 
 export function AttackTimingSystem(deltaMs: number): void {
   const gameState = getGameState();
+
   if (gameState?.phase !== 'combat') return;
 
   const effectiveDelta = getEffectiveDelta(deltaMs);
@@ -54,7 +56,8 @@ export function AttackTimingSystem(deltaMs: number): void {
       const { damage, isCrit } = calculateAttackDamage(entity);
 
       // Mark as ready to attack - CombatSystem will process
-      entity.attackReady = { damage, isCrit };
+      // Must use world.addComponent for miniplex queries to detect the new component
+      world.addComponent(entity, 'attackReady', { damage, isCrit });
 
       // Carry over excess time (prevents drift)
       speed.accumulated -= speed.attackInterval;

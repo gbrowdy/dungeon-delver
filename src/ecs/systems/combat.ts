@@ -85,7 +85,7 @@ export function CombatSystem(_deltaMs: number): void {
     const target = getTarget(entity);
     if (!target || target.dying) {
       // No valid target - clear attack
-      delete entity.attackReady;
+      world.removeComponent(entity, 'attackReady');
       continue;
     }
 
@@ -147,6 +147,6 @@ export function CombatSystem(_deltaMs: number): void {
     );
 
     // Clear attack ready
-    delete entity.attackReady;
+    world.removeComponent(entity, 'attackReady');
   }
 }
