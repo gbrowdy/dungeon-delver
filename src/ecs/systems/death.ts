@@ -9,6 +9,7 @@ import { world } from '../world';
 import { dyingEntities, getGameState, getPlayer } from '../queries';
 import { getTick, TICK_MS } from '../loop';
 import type { Entity, AnimationEvent, AnimationPayload } from '../components';
+import { getDevModeParams } from '@/utils/devMode';
 
 const DEATH_ANIMATION_MS = 500;
 
@@ -90,16 +91,20 @@ export function DeathSystem(_deltaMs: number): void {
         const xpReward = entity.rewards?.xp ?? 10;
         const goldReward = entity.rewards?.gold ?? 5;
 
+        // Apply XP multiplier from dev mode
+        const devParams = getDevModeParams();
+        const xpToAward = xpReward * devParams.xpMultiplier;
+
         // Apply rewards to player
         const player = getPlayer();
         if (player) {
           if (player.progression) {
-            player.progression.xp += xpReward;
+            player.progression.xp += xpToAward;
           }
           if (player.inventory) {
             player.inventory.gold += goldReward;
           }
-          addCombatLog(`Gained ${xpReward} XP and ${goldReward} gold!`);
+          addCombatLog(`Gained ${xpToAward} XP and ${goldReward} gold!`);
         }
 
         // Check for floor complete or spawn next enemy
