@@ -119,14 +119,16 @@ test.describe('Game Flow - Progression', () => {
   });
 
   test('selecting a path returns to combat', async ({ page }) => {
+    test.setTimeout(90000); // 90 seconds for this test
+
     await navigateToGame(page, 'devMode=true&xpMultiplier=10&playerAttack=40&playerDefense=25');
     await selectClassAndBegin(page, 'Warrior');
     await setSpeedToMax(page);
 
-    // Kill enemies until level up
+    // Kill enemies until level up and path selection appears
     let foundPathSelection = false;
     for (let i = 0; i < 15 && !foundPathSelection; i++) {
-      const outcome = await waitForCombatOutcome(page, { timeout: 60000 });
+      const outcome = await waitForCombatOutcome(page, { timeout: 30000 });
 
       if (outcome === 'player_died') {
         await waitForDeathAndRetry(page);
@@ -134,14 +136,19 @@ test.describe('Game Flow - Progression', () => {
         continue;
       }
 
-      // Check for level up
+      // Check for level up popup
       const levelUpVisible = await page.getByTestId('level-up-popup').isVisible();
       if (levelUpVisible) {
         const closeButton = page.getByRole('button', { name: /continue|close|ok/i }).first();
         await closeButton.click();
 
-        // Check for path selection
-        foundPathSelection = await page.getByTestId('path-selection').isVisible().catch(() => false);
+        // Wait for path selection to appear (with timeout)
+        try {
+          await page.getByTestId('path-selection').waitFor({ state: 'visible', timeout: 3000 });
+          foundPathSelection = true;
+        } catch {
+          // Path selection didn't appear, continue combat
+        }
       }
 
       if (!foundPathSelection && outcome === 'enemy_died') {
@@ -149,20 +156,20 @@ test.describe('Game Flow - Progression', () => {
       }
     }
 
-    if (foundPathSelection) {
-      // Select first path
-      const pathCards = page.locator('[data-testid="path-selection"] button, [data-testid="path-selection"] [role="button"]');
-      await pathCards.first().click();
+    // Assert we found path selection
+    expect(foundPathSelection).toBe(true);
 
-      // Confirm if needed
-      const confirmButton = page.getByTestId('path-confirm-button');
-      if (await confirmButton.isVisible()) {
-        await confirmButton.click();
-      }
+    // Select first path by clicking "Select Path" button
+    const selectPathButton = page.getByRole('button', { name: /Select Path/i }).first();
+    await selectPathButton.click();
 
-      // Should be back in combat
-      await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
-    }
+    // Click confirm button to finalize selection
+    const confirmButton = page.getByTestId('path-confirm-button');
+    await expect(confirmButton).toBeEnabled({ timeout: 2000 });
+    await confirmButton.click();
+
+    // Should be back in combat
+    await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
   });
 });
 
