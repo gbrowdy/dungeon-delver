@@ -11,7 +11,9 @@ import { getTick, TICK_MS } from '../loop';
 import type { Entity, AnimationEvent, AnimationPayload } from '../components';
 import { getDevModeParams } from '@/utils/devMode';
 
-const DEATH_ANIMATION_MS = 500;
+// Player death needs longer animation than enemy death
+const ENEMY_DEATH_ANIMATION_MS = 500;
+const PLAYER_DEATH_ANIMATION_MS = 2300; // 800ms animation + 1500ms pause for dramatic effect
 
 function queueAnimationEvent(
   type: AnimationEvent['type'],
@@ -65,24 +67,25 @@ export function DeathSystem(_deltaMs: number): void {
   // Check all entities with health for death
   for (const entity of world.with('health').without('dying')) {
     if (entity.health!.current <= 0) {
+      const isPlayer = !!entity.player;
+      const deathDuration = isPlayer ? PLAYER_DEATH_ANIMATION_MS : ENEMY_DEATH_ANIMATION_MS;
+
       // Mark as dying - MUST use addComponent for query reactivity
       world.addComponent(entity, 'dying', {
         startedAtTick: getTick(),
-        duration: DEATH_ANIMATION_MS,
+        duration: deathDuration,
       });
-
-      const isPlayer = !!entity.player;
 
       // Queue death animation
       queueAnimationEvent('death', {
         type: 'death',
         isPlayer,
-      }, Math.ceil(DEATH_ANIMATION_MS / TICK_MS));
+      }, Math.ceil(deathDuration / TICK_MS));
 
       if (isPlayer) {
-        // Player death
+        // Player death - longer transition for dramatic effect
         addCombatLog('You have been defeated!');
-        scheduleTransition('defeat', DEATH_ANIMATION_MS);
+        scheduleTransition('defeat', PLAYER_DEATH_ANIMATION_MS);
       } else if (entity.enemy) {
         // Enemy death
         addCombatLog(`${entity.enemy.name} has been defeated!`);
@@ -111,13 +114,13 @@ export function DeathSystem(_deltaMs: number): void {
         const floor = gameState.floor;
         if (floor && floor.room >= floor.totalRooms) {
           // Floor complete
-          scheduleTransition('floor-complete', DEATH_ANIMATION_MS + 500);
+          scheduleTransition('floor-complete', ENEMY_DEATH_ANIMATION_MS + 500);
         } else {
           // Schedule next enemy spawn (handled by FlowSystem)
           if (!gameState.scheduledSpawns) {
             gameState.scheduledSpawns = [];
           }
-          gameState.scheduledSpawns.push({ delay: DEATH_ANIMATION_MS + 300 });
+          gameState.scheduledSpawns.push({ delay: ENEMY_DEATH_ANIMATION_MS + 300 });
         }
       }
     }

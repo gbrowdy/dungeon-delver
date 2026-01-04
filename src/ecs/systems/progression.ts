@@ -118,5 +118,9 @@ export function ProgressionSystem(_deltaMs: number): void {
       gameState.popups = {};
     }
     gameState.popups.levelUp = { level: player.progression.level };
+
+    // PAUSE combat during level-up
+    // IMPORTANT: Field is 'paused' not 'isPaused' - loop.ts checks gameState?.paused
+    gameState.paused = true;
   }
 }

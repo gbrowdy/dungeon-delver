@@ -55,16 +55,45 @@ export function BattleArena({
     const unconsumed = animationEvents.filter(e => !e.consumed);
     if (unconsumed.length === 0) return null;
     const latest = unconsumed[unconsumed.length - 1];
-    // Map AnimationEvent to CombatEvent format
-    return {
-      type: latest.type as CombatEvent['type'],
-      source: latest.source,
-      target: latest.target,
-      value: latest.value,
-      isCritical: latest.isCritical,
-      powerId: latest.powerId,
-      timestamp: latest.timestamp,
+
+    // Extract damage/crit from payload based on type
+    const payload = latest.payload;
+    const hasDamageData = payload.type === 'damage' || payload.type === 'spell';
+    const damage = hasDamageData && 'value' in payload ? payload.value : 0;
+    const isCrit = hasDamageData && 'isCrit' in payload ? payload.isCrit : false;
+    const powerId = payload.type === 'spell' && 'powerId' in payload ? payload.powerId : undefined;
+
+    // Map AnimationEventType to CombatEvent type
+    // AnimationEvent types use snake_case: 'player_attack', 'enemy_hit', etc.
+    // CombatEvent types use camelCase values from COMBAT_EVENT_TYPE enum
+    // Import values: playerAttack, enemyAttack, playerHit, enemyHit, playerPower
+    const baseEvent = {
+      id: latest.id,
+      timestamp: latest.createdAtTick,
     };
+
+    // Map based on animation event type to correct CombatEvent
+    switch (latest.type) {
+      case 'player_attack':
+        return { ...baseEvent, type: 'playerAttack' as const, damage, isCrit };
+      case 'enemy_attack':
+        return { ...baseEvent, type: 'enemyAttack' as const, damage, isCrit };
+      case 'player_hit':
+        return { ...baseEvent, type: 'playerHit' as const, damage, isCrit };
+      case 'enemy_hit':
+        return { ...baseEvent, type: 'enemyHit' as const, damage, isCrit };
+      case 'power_used':
+      case 'spell_cast':
+        return { ...baseEvent, type: 'playerPower' as const, powerId: powerId || '', damage, isCrit };
+      case 'player_dodge':
+        return { ...baseEvent, type: 'playerDodge' as const };
+      case 'enemy_ability':
+        // Extract ability info for enemy non-attack abilities (heal, enrage, shield)
+        const abilityType = 'abilityType' in payload ? payload.abilityType : undefined;
+        return { ...baseEvent, type: 'enemyAbility' as const, abilityType: abilityType || 'unknown' };
+      default:
+        return { ...baseEvent, type: 'playerAttack' as const, damage, isCrit };
+    }
   }, [animationEvents]);
 
   // Memoize animation options to prevent unnecessary re-renders of useBattleAnimation
@@ -107,7 +136,7 @@ export function BattleArena({
     enemyCasting,
     enemyAuraColor,
     removeEffect,
-  } = useBattleAnimation(enemyForAnimation, lastCombatEvent, isPaused, battlePhase, animationOptions);
+  } = useBattleAnimation(enemyForAnimation, lastCombatEvent, isPaused, battlePhase, animationOptions, player.isDying);
 
   // The game state now keeps the enemy during death animation (enemy.isDying = true)
   // and only clears it after the animation completes. No need for local tracking.

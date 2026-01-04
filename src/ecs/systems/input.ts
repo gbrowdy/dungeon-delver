@@ -35,10 +35,11 @@ export function InputSystem(_deltaMs: number): void {
         if (!player.mana || player.mana.current < power.manaCost) break;
 
         // Mark as casting - PowerSystem will handle the effect
-        player.casting = {
+        // IMPORTANT: Use world.addComponent for miniplex query reactivity
+        world.addComponent(player, 'casting', {
           powerId: cmd.powerId,
           startedAtTick: getTick(),
-        };
+        });
         break;
       }
 
@@ -73,6 +74,25 @@ export function InputSystem(_deltaMs: number): void {
           if (popupKey in gameState.popups) {
             delete gameState.popups[popupKey];
           }
+
+          // After dismissing level-up, check if player needs to select a path
+          if (cmd.popupType === 'levelUp' && player) {
+            const level = player.progression?.level ?? 1;
+            const hasPath = !!player.path;
+
+            // At level 2+, if player hasn't selected a path yet, go to path selection
+            if (level >= 2 && !hasPath) {
+              gameState.phase = 'path-select';
+              // Clear pendingLevelUp so popup doesn't show again
+              if (gameState.pendingLevelUp !== undefined) {
+                gameState.pendingLevelUp = null;
+              }
+            }
+
+            // IMPORTANT: Unpause combat after level-up popup is dismissed
+            // (ProgressionSystem pauses when level-up occurs)
+            gameState.paused = false;
+          }
         }
         break;
       }
@@ -92,14 +112,115 @@ export function InputSystem(_deltaMs: number): void {
         if (!player?.inventory) break;
         if (player.inventory.gold < cmd.cost) break;
 
+        // Deduct gold
         player.inventory.gold -= cmd.cost;
-        // Item addition handled by FlowSystem or caller
+
+        // Initialize equipment if needed
+        if (!player.equipment) {
+          player.equipment = { weapon: null, armor: null, accessory: null };
+        }
+
+        // Add item to appropriate equipment slot (replacing existing)
+        const item = cmd.item;
+        if (item.type === 'weapon') {
+          player.equipment.weapon = item;
+        } else if (item.type === 'armor') {
+          player.equipment.armor = item;
+        } else if (item.type === 'accessory') {
+          player.equipment.accessory = item;
+        }
+
+        // Apply item stat bonuses to player stats
+        if (item.statBonus) {
+          if (player.health && item.statBonus.maxHealth) {
+            player.health.max += item.statBonus.maxHealth;
+            player.health.current += item.statBonus.maxHealth;
+          }
+          if (player.attack && item.statBonus.power) {
+            player.attack.baseDamage += item.statBonus.power;
+          }
+          if (player.defense && item.statBonus.armor) {
+            player.defense.value += item.statBonus.armor;
+          }
+          if (player.speed && item.statBonus.speed) {
+            player.speed.value += item.statBonus.speed;
+            // Recalculate attack interval
+            player.speed.attackInterval = Math.floor(2500 * (10 / player.speed.value));
+          }
+          if (player.mana && item.statBonus.maxMana) {
+            player.mana.max += item.statBonus.maxMana;
+            player.mana.current += item.statBonus.maxMana;
+          }
+        }
         break;
       }
 
       case 'ENHANCE_ITEM': {
-        // Enhancement logic - deduct gold, upgrade item
-        // Detailed implementation depends on existing enhancement utils
+        if (!player?.equipment || !player.inventory) break;
+
+        // Get the item in the specified slot
+        const equippedItem = player.equipment[cmd.slot];
+        if (!equippedItem) break;
+
+        // Check if can enhance (not at max level)
+        if (equippedItem.enhancementLevel >= (equippedItem.maxEnhancement ?? 3)) break;
+
+        // Calculate enhancement cost
+        // Import logic from enhancementUtils - use tier-based pricing
+        const tier = equippedItem.tier || 'starter';
+        const SHOP_PRICE_RANGES: Record<string, { min: number; max: number }> = {
+          starter: { min: 30, max: 60 },
+          class: { min: 100, max: 150 },
+          specialty: { min: 180, max: 280 },
+          legendary: { min: 350, max: 500 },
+        };
+        const ENHANCEMENT_COST_PERCENT = 0.2;
+        const priceRange = SHOP_PRICE_RANGES[tier] ?? SHOP_PRICE_RANGES.starter;
+        const basePrice = Math.floor((priceRange.min + priceRange.max) / 2);
+        const rawCost = Math.floor(basePrice * ENHANCEMENT_COST_PERCENT);
+        const enhancementCost = Math.max(5, Math.round(rawCost / 5) * 5);
+
+        // Check if player can afford
+        if (player.inventory.gold < enhancementCost) break;
+
+        // Deduct gold
+        player.inventory.gold -= enhancementCost;
+
+        // Get the stat bonus per enhancement (tier-based)
+        const ENHANCEMENT_BONUSES: Record<string, { perStatPerLevel: number }> = {
+          starter: { perStatPerLevel: 1 },
+          class: { perStatPerLevel: 2 },
+          specialty: { perStatPerLevel: 3 },
+          legendary: { perStatPerLevel: 4 },
+        };
+        const enhancementConfig = ENHANCEMENT_BONUSES[tier] ?? ENHANCEMENT_BONUSES.starter;
+        const bonusPerStat = enhancementConfig.perStatPerLevel;
+
+        // Apply stat bonuses to player (one level's worth)
+        if (equippedItem.statBonus) {
+          if (player.health && equippedItem.statBonus.maxHealth) {
+            player.health.max += bonusPerStat;
+            player.health.current += bonusPerStat;
+          }
+          if (player.attack && equippedItem.statBonus.power) {
+            player.attack.baseDamage += bonusPerStat;
+          }
+          if (player.defense && equippedItem.statBonus.armor) {
+            player.defense.value += bonusPerStat;
+          }
+          if (player.speed && equippedItem.statBonus.speed) {
+            player.speed.value += bonusPerStat;
+            // Recalculate attack interval
+            player.speed.attackInterval = Math.floor(2500 * (10 / player.speed.value));
+          }
+          if (player.mana && equippedItem.statBonus.maxMana) {
+            player.mana.max += bonusPerStat;
+            player.mana.current += bonusPerStat;
+          }
+        }
+
+        // Upgrade the item's enhancement level
+        equippedItem.enhancementLevel = (equippedItem.enhancementLevel ?? 0) + 1;
         break;
       }
 
@@ -172,25 +293,22 @@ export function InputSystem(_deltaMs: number): void {
       case 'SELECT_PATH': {
         if (!player || !gameState) break;
         // Store the selected path on player
-        if (!player.pathProgress) {
-          player.pathProgress = {
-            pathId: cmd.pathId,
-            subpathId: null,
-            unlockedAbilities: [],
-          };
-        } else {
-          player.pathProgress.pathId = cmd.pathId;
-        }
+        // IMPORTANT: Use 'path' field (not 'pathProgress') - this is what the snapshot system reads
+        player.path = {
+          pathId: cmd.pathId,
+          subpathId: undefined,
+          abilities: [],
+        };
         // Transition back to combat
         gameState.phase = 'combat';
         break;
       }
 
       case 'SELECT_ABILITY': {
-        if (!player?.pathProgress || !gameState) break;
+        if (!player?.path || !gameState) break;
         // Add ability to unlocked list
-        if (!player.pathProgress.unlockedAbilities.includes(cmd.abilityId)) {
-          player.pathProgress.unlockedAbilities.push(cmd.abilityId);
+        if (!player.path.abilities.includes(cmd.abilityId)) {
+          player.path.abilities.push(cmd.abilityId);
         }
         // Transition back to combat
         gameState.phase = 'combat';
@@ -198,8 +316,8 @@ export function InputSystem(_deltaMs: number): void {
       }
 
       case 'SELECT_SUBPATH': {
-        if (!player?.pathProgress || !gameState) break;
-        player.pathProgress.subpathId = cmd.subpathId;
+        if (!player?.path || !gameState) break;
+        player.path.subpathId = cmd.subpathId;
         // Transition back to combat
         gameState.phase = 'combat';
         break;
@@ -214,6 +332,24 @@ export function InputSystem(_deltaMs: number): void {
         const currentEnemy = getActiveEnemy();
         if (currentEnemy) {
           world.remove(currentEnemy);
+        }
+
+        // If already on floor-complete, advance to next floor (same as leaving shop)
+        if (gameState.phase === 'floor-complete') {
+          floor.number += 1;
+          floor.room = 1;
+          floor.totalRooms = FLOOR_CONFIG.ROOMS_PER_FLOOR[floor.number - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
+
+          // Spawn first enemy of new floor
+          const enemy = createEnemyEntity({
+            floor: floor.number,
+            room: floor.room,
+            roomsPerFloor: floor.totalRooms,
+          });
+          world.add(enemy);
+
+          gameState.phase = 'combat';
+          break;
         }
 
         // Check if floor is complete
@@ -244,21 +380,61 @@ export function InputSystem(_deltaMs: number): void {
 
       case 'GO_TO_SHOP': {
         if (gameState) {
+          // Track where we came from (for proper exit behavior)
+          gameState.shopEnteredFrom = gameState.phase === 'defeat' ? 'defeat' : 'floor-complete';
           gameState.phase = 'shop';
         }
         break;
       }
 
       case 'LEAVE_SHOP': {
-        if (!gameState?.floor) break;
+        if (!gameState?.floor || !player) break;
 
-        // Advance to next floor
         const floor = gameState.floor;
-        floor.number += 1;
-        floor.room = 1;
-        floor.totalRooms = FLOOR_CONFIG.ROOMS_PER_FLOOR[floor.number - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
+        const cameFromDefeat = gameState.shopEnteredFrom === 'defeat';
 
-        // Spawn first enemy of new floor
+        // Clear the tracking field
+        gameState.shopEnteredFrom = undefined;
+
+        // Remove any existing enemy (including dying ones)
+        for (const e of world.with('enemy')) {
+          world.remove(e);
+        }
+
+        if (cameFromDefeat) {
+          // CRITICAL: Remove dying component so player can attack again
+          if (player.dying) {
+            world.removeComponent(player, 'dying');
+          }
+
+          // Came from defeat: retry floor (reset health/mana, stay on same floor)
+          if (player.health) {
+            player.health.current = player.health.max;
+          }
+          if (player.mana) {
+            player.mana.current = player.mana.max;
+          }
+
+          // Reset attack timing so player starts fresh
+          if (player.speed) {
+            player.speed.accumulated = 0;
+          }
+
+          // Clear cooldowns
+          if (player.cooldowns) {
+            player.cooldowns.clear();
+          }
+
+          player.statusEffects = [];
+          floor.room = 1;
+        } else {
+          // Came from floor-complete: advance to next floor
+          floor.number += 1;
+          floor.room = 1;
+          floor.totalRooms = FLOOR_CONFIG.ROOMS_PER_FLOOR[floor.number - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
+        }
+
+        // Spawn first enemy
         const enemy = createEnemyEntity({
           floor: floor.number,
           room: floor.room,
@@ -275,6 +451,12 @@ export function InputSystem(_deltaMs: number): void {
 
         const floor = gameState.floor;
 
+        // CRITICAL: Remove dying component so player can attack again
+        // The dying component excludes entities from attackersQuery
+        if (player.dying) {
+          world.removeComponent(player, 'dying');
+        }
+
         // Reset player health/mana
         if (player.health) {
           player.health.current = player.health.max;
@@ -283,16 +465,25 @@ export function InputSystem(_deltaMs: number): void {
           player.mana.current = player.mana.max;
         }
 
+        // Reset attack timing so player starts fresh
+        if (player.speed) {
+          player.speed.accumulated = 0;
+        }
+
+        // Clear cooldowns
+        if (player.cooldowns) {
+          player.cooldowns.clear();
+        }
+
         // Clear status effects
         player.statusEffects = [];
 
         // Reset room to 1
         floor.room = 1;
 
-        // Remove any existing enemy
-        const oldEnemy = getActiveEnemy();
-        if (oldEnemy) {
-          world.remove(oldEnemy);
+        // Remove any existing enemy (including dying ones)
+        for (const e of world.with('enemy')) {
+          world.remove(e);
         }
 
         // Spawn first enemy of floor

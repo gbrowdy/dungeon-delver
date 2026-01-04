@@ -121,7 +121,8 @@ export function useBattleAnimation(
   lastCombatEvent: CombatEvent | null,
   isPaused: boolean,
   gamePhase: string,
-  options: UseBattleAnimationOptions = {}
+  options: UseBattleAnimationOptions = {},
+  playerIsDying: boolean = false
 ): UseBattleAnimationReturn {
   const { onTransitionComplete, onEnemyDeathAnimationComplete, onPlayerDeathAnimationComplete } = options;
   const [phase, setPhase] = useState<BattlePhaseType>(BATTLE_PHASE.ENTERING);
@@ -288,6 +289,39 @@ export function useBattleAnimation(
     }, ANIMATION_TIMING.DEATH_ANIMATION);
   }, [enemy?.isDying, enemy?.id, onTransitionComplete, onEnemyDeathAnimationComplete, createTrackedTimeout]);
 
+  // Handle player death - react to playerIsDying becoming true
+  // Similar to enemy death, this is a separate source of truth for player death animations
+  const playerDeathTriggeredRef = useRef(false);
+  useEffect(() => {
+    if (!playerIsDying) {
+      playerDeathTriggeredRef.current = false;
+      return;
+    }
+
+    // Only trigger death animation once
+    if (playerDeathTriggeredRef.current) return;
+    playerDeathTriggeredRef.current = true;
+
+    // Player is dying - play death animation sequence
+    // 1. First set the death sprite and phase
+    setHeroState({ state: SPRITE_STATE.DIE, frame: 0 });
+    setPhase(BATTLE_PHASE.DEFEAT);
+    setPlayerDeathEffect(true);
+
+    // 2. After death animation completes, start the dramatic pause
+    createTrackedTimeout(() => {
+      // Death animation complete - keep the effect but start the pause
+      // The effect stays visible during the pause for dramatic effect
+    }, ANIMATION_TIMING.PLAYER_DEATH_ANIMATION);
+
+    // 3. After animation + pause, transition to defeat screen
+    // Total time = PLAYER_DEATH_ANIMATION + PLAYER_DEATH_PAUSE
+    createTrackedTimeout(() => {
+      setPlayerDeathEffect(false);
+      onPlayerDeathAnimationComplete?.();
+    }, ANIMATION_TIMING.PLAYER_DEATH_ANIMATION + ANIMATION_TIMING.PLAYER_DEATH_PAUSE);
+  }, [playerIsDying, onPlayerDeathAnimationComplete, createTrackedTimeout]);
+
   // Handle combat events (attacks, hits, but NOT death - that's handled above)
   useEffect(() => {
     if (!lastCombatEvent) return;
@@ -331,26 +365,44 @@ export function useBattleAnimation(
       }
 
       case COMBAT_EVENT_TYPE.ENEMY_HIT: {
-        // Enemy takes damage - show hit state, flash, hit-stop, and damage number
+        // Enemy takes damage - show BOTH player attack AND enemy hit reaction
         // NOTE: Death animation is NOT triggered here - it's handled by the isDying effect above
-        setEnemyState({ state: SPRITE_STATE.HIT, frame: 0 });
-        setEnemyFlash(true);
-        setHitStop(true);
-        addEffect({
-          type: 'damage',
-          x: ENEMY_DAMAGE_X,
-          y: 30,
-          value: lastCombatEvent.damage,
-          isCrit: lastCombatEvent.isCrit,
-        });
+
+        // 1. Player attack animation
+        const anticipation = ANIMATION_TIMING.HERO_ATTACK_ANTICIPATION;
+        const attackDuration = ANIMATION_TIMING.HERO_ATTACK_DURATION;
+        setHeroState({ state: SPRITE_STATE.IDLE, frame: 1 }); // Wind-up pose
+        createTrackedTimeout(() => {
+          setHeroAttacking(true);
+          setHeroState({ state: SPRITE_STATE.ATTACK, frame: 0 });
+        }, anticipation);
+        createTrackedTimeout(() => {
+          setHeroAttacking(false);
+          setHeroState(prev => prev.state === SPRITE_STATE.ATTACK ? { state: SPRITE_STATE.IDLE, frame: 0 } : prev);
+        }, anticipation + attackDuration);
+
+        // 2. Enemy hit reaction (after attack lands)
+        createTrackedTimeout(() => {
+          setEnemyState({ state: SPRITE_STATE.HIT, frame: 0 });
+          setEnemyFlash(true);
+          setHitStop(true);
+          addEffect({
+            type: 'damage',
+            x: ENEMY_DAMAGE_X,
+            y: 30,
+            value: lastCombatEvent.damage,
+            isCrit: lastCombatEvent.isCrit,
+          });
+        }, anticipation + attackDuration / 2); // Hit lands mid-attack
+
         // Hit-stop: brief freeze for impact
         createTrackedTimeout(() => {
           setHitStop(false);
-        }, ANIMATION_TIMING.HIT_STOP);
+        }, anticipation + attackDuration / 2 + ANIMATION_TIMING.HIT_STOP);
         // Flash duration
         createTrackedTimeout(() => {
           setEnemyFlash(false);
-        }, ANIMATION_TIMING.HIT_FLASH);
+        }, anticipation + attackDuration / 2 + ANIMATION_TIMING.HIT_FLASH);
         // After hit animation, return to idle (if not dying)
         createTrackedTimeout(() => {
           setEnemyState(prev => {
@@ -359,7 +411,7 @@ export function useBattleAnimation(
             if (prev.state === SPRITE_STATE.HIT) return { state: SPRITE_STATE.IDLE, frame: 0 };
             return prev;
           });
-        }, ANIMATION_TIMING.HIT_REACTION);
+        }, anticipation + attackDuration / 2 + ANIMATION_TIMING.HIT_REACTION);
         break;
       }
 
@@ -400,43 +452,65 @@ export function useBattleAnimation(
       }
 
       case COMBAT_EVENT_TYPE.PLAYER_HIT: {
-        // Hero takes damage - show hit state, flash, hit-stop, damage number, and shake
-        setHeroState({ state: SPRITE_STATE.HIT, frame: 0 });
-        setHeroFlash(true);
-        setHitStop(true);
-        setIsShaking(true);
-        addEffect({
-          type: 'damage',
-          x: HERO_DAMAGE_X,
-          y: 20,
-          value: lastCombatEvent.damage,
-          isCrit: lastCombatEvent.isCrit,
-        });
+        // Hero takes damage - show BOTH enemy attack AND player hit reaction
+
+        // 1. Enemy attack animation
+        const anticipation = ANIMATION_TIMING.ENEMY_ATTACK_ANTICIPATION;
+        const attackDuration = ANIMATION_TIMING.ENEMY_ATTACK_DURATION;
+        setEnemyState({ state: SPRITE_STATE.IDLE, frame: 1 }); // Wind-up pose
+        createTrackedTimeout(() => {
+          setEnemyAttacking(true);
+          setEnemyState({ state: SPRITE_STATE.ATTACK, frame: 0 });
+        }, anticipation);
+        createTrackedTimeout(() => {
+          setEnemyAttacking(false);
+          setEnemyState(prev => prev.state === SPRITE_STATE.ATTACK ? { state: SPRITE_STATE.IDLE, frame: 0 } : prev);
+        }, anticipation + attackDuration);
+
+        // 2. Player hit reaction (after attack lands)
+        const hitTime = anticipation + attackDuration / 2;
+        createTrackedTimeout(() => {
+          setHeroState({ state: SPRITE_STATE.HIT, frame: 0 });
+          setHeroFlash(true);
+          setHitStop(true);
+          setIsShaking(true);
+          addEffect({
+            type: 'damage',
+            x: HERO_DAMAGE_X,
+            y: 20,
+            value: lastCombatEvent.damage,
+            isCrit: lastCombatEvent.isCrit,
+          });
+        }, hitTime);
+
         // Hit-stop: brief freeze for impact
         createTrackedTimeout(() => {
           setHitStop(false);
-        }, ANIMATION_TIMING.HIT_STOP);
+        }, hitTime + ANIMATION_TIMING.HIT_STOP);
         // Flash duration
         createTrackedTimeout(() => {
           setHeroFlash(false);
-        }, ANIMATION_TIMING.HIT_FLASH);
+        }, hitTime + ANIMATION_TIMING.HIT_FLASH);
         // After hit animation completes, check if player died
         createTrackedTimeout(() => {
           setIsShaking(false);
           if (lastCombatEvent.targetDied) {
             // Player died - trigger death animation with dramatic effect
+            // 1. First set the death sprite and phase
             setHeroState({ state: SPRITE_STATE.DIE, frame: 0 });
             setPhase(BATTLE_PHASE.DEFEAT);
             setPlayerDeathEffect(true);
-            // Extended pause with death effect before transitioning to defeat screen
+
+            // 2. After animation + pause, transition to defeat screen
+            // Total time = PLAYER_DEATH_ANIMATION + PLAYER_DEATH_PAUSE
             createTrackedTimeout(() => {
               setPlayerDeathEffect(false);
               onPlayerDeathAnimationComplete?.();
-            }, ANIMATION_TIMING.PLAYER_DEATH_PAUSE);
+            }, ANIMATION_TIMING.PLAYER_DEATH_ANIMATION + ANIMATION_TIMING.PLAYER_DEATH_PAUSE);
           } else {
             setHeroState(prev => prev.state === SPRITE_STATE.HIT ? { state: SPRITE_STATE.IDLE, frame: 0 } : prev);
           }
-        }, ANIMATION_TIMING.PLAYER_HIT_SHAKE);
+        }, hitTime + ANIMATION_TIMING.PLAYER_HIT_SHAKE);
         break;
       }
 

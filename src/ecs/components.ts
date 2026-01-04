@@ -41,13 +41,15 @@ export type AnimationEventType =
   | 'player_hit'
   | 'enemy_hit'
   | 'player_block'
+  | 'player_dodge'
   | 'spell_cast'
   | 'death'
   | 'level_up'
   | 'status_applied'
   | 'status_removed'
   | 'item_proc'
-  | 'power_used';
+  | 'power_used'
+  | 'enemy_ability';
 
 // Animation event payload types
 export type AnimationPayload =
@@ -58,7 +60,9 @@ export type AnimationPayload =
   | { type: 'status'; effectType: string; applied: boolean }
   | { type: 'item'; itemName: string; effectDescription: string }
   | { type: 'block'; reduction: number }
-  | { type: 'level_up'; newLevel: number };
+  | { type: 'level_up'; newLevel: number }
+  | { type: 'dodge' }
+  | { type: 'enemy_ability'; abilityType: string; abilityName: string };
 
 // Animation event
 export interface AnimationEvent {
@@ -242,6 +246,8 @@ export interface Entity {
   };
   paused?: boolean;
   isTransitioning?: boolean;
+  /** Tracks what phase we entered shop from (for proper exit behavior) */
+  shopEnteredFrom?: 'defeat' | 'floor-complete';
 
   // === ANIMATION (game state entity only) ===
   animationEvents?: AnimationEvent[];

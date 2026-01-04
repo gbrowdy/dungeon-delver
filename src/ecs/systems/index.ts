@@ -2,6 +2,7 @@
 import { InputSystem } from './input';
 import { CooldownSystem } from './cooldown';
 import { AttackTimingSystem } from './attack-timing';
+import { EnemyAbilitySystem } from './enemy-ability';
 import { CombatSystem } from './combat';
 import { PowerSystem } from './power';
 import { ItemEffectSystem } from './item-effect';
@@ -20,7 +21,8 @@ export const systems: System[] = [
   InputSystem,          // 1. Process player commands first
   CooldownSystem,       // 2. Advance cooldowns
   AttackTimingSystem,   // 3. Accumulate attack progress, trigger attacks
-  CombatSystem,         // 4. Resolve attacks, apply damage
+  EnemyAbilitySystem,   // 4. Process enemy abilities (before combat, intercepts ability attacks)
+  CombatSystem,         // 5. Resolve attacks, apply damage
   PowerSystem,          // 5. Process power casting effects
   ItemEffectSystem,     // 6. Process item proc effects (on_hit, on_crit, etc.)
   PathAbilitySystem,    // 7. Process path ability triggers

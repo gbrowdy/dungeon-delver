@@ -8,6 +8,7 @@ import { world } from '../world';
 import { entitiesWithAttackReady, getPlayer, getActiveEnemy, getGameState } from '../queries';
 import { getTick } from '../loop';
 import type { Entity, AnimationEvent, AnimationPayload } from '../components';
+import { getDodgeChance } from '@/utils/fortuneUtils';
 
 let nextAnimationId = 0;
 
@@ -89,9 +90,29 @@ export function CombatSystem(_deltaMs: number): void {
       continue;
     }
 
-    let damage = attackData.damage;
     const attackerName = getEntityName(entity);
     const targetName = getEntityName(target);
+
+    // Check for dodge (only player can dodge enemy attacks)
+    if (entity.enemy && target.player) {
+      // Fortune is stored as critChance (fortune / 100), so multiply back to get fortune value
+      // Also check identity for base fortune stat
+      const critChance = target.attack?.critChance ?? 0;
+      const baseFortune = target.identity?.class?.baseStats?.fortune ?? 0;
+      // Use the higher of derived fortune or base fortune
+      const playerFortune = Math.max(critChance * 100, baseFortune);
+      const dodgeChance = getDodgeChance(playerFortune);
+
+      if (Math.random() < dodgeChance) {
+        // Player dodged!
+        addCombatLog(`${targetName} dodges ${attackerName}'s attack!`);
+        queueAnimationEvent('player_dodge', { type: 'dodge' });
+        world.removeComponent(entity, 'attackReady');
+        continue;
+      }
+    }
+
+    let damage = attackData.damage;
 
     // Apply defense
     const defense = target.defense?.value ?? 0;
@@ -130,7 +151,7 @@ export function CombatSystem(_deltaMs: number): void {
       target.health.current = Math.max(0, target.health.current - damage);
     }
 
-    // Queue damage animation
+    // Queue combat animation event (hit event triggers both attack and hit animations)
     const isPlayerAttacking = !!entity.player;
     queueAnimationEvent(isPlayerAttacking ? 'enemy_hit' : 'player_hit', {
       type: 'damage',
