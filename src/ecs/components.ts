@@ -107,6 +107,7 @@ export interface Entity {
   player?: true;
   /** Marks this entity as an enemy with metadata */
   enemy?: {
+    id: string;
     tier: EnemyTier;
     name: string;
     isBoss: boolean;

@@ -54,6 +54,7 @@ function addEnemyEntity(
   // Create enemy entity with ECS components
   const entity = world.add({
     enemy: {
+      id: `enemy-${floor}-${room}-${Date.now()}`,
       tier,
       name: enemy.name,
       isBoss: enemy.isBoss,

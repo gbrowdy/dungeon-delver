@@ -102,6 +102,7 @@ export interface PlayerSnapshot {
  */
 export interface EnemySnapshot {
   // Identity
+  id: string;
   name: string;
   tier: 'common' | 'uncommon' | 'rare' | 'boss';
   isBoss: boolean;
@@ -269,6 +270,7 @@ export function createEnemySnapshot(entity: Entity): EnemySnapshot | null {
 
   return {
     // Identity
+    id: entity.enemy.id,
     name: entity.enemy.name,
     tier: entity.enemy.tier,
     isBoss: entity.enemy.isBoss,
