@@ -11,22 +11,44 @@ test.describe('Start Game Flow', () => {
     const startButton = page.getByRole('button', { name: /start game/i });
     await expect(startButton).toBeVisible({ timeout: 5000 });
 
-    // Take screenshot before clicking
-    await page.screenshot({ path: 'e2e/screenshots/before-start.png' });
-
     // Click Start Game
     await startButton.click();
 
     // Wait a moment for any transitions
     await page.waitForTimeout(1000);
 
-    // Take screenshot after clicking
-    await page.screenshot({ path: 'e2e/screenshots/after-start.png' });
-
     // Check for class selection screen
     // Look for any class name text
     const classText = page.locator('text=WARRIOR').or(page.locator('text=Warrior'));
     await expect(classText.first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('selecting a class starts combat', async ({ page }) => {
+    // Navigate to game
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Click Start Game
+    const startButton = page.getByRole('button', { name: /start game/i });
+    await startButton.click();
+    await page.waitForTimeout(500);
+
+    // Click on Warrior class
+    const warriorButton = page.locator('text=Warrior').first();
+    await expect(warriorButton).toBeVisible({ timeout: 5000 });
+    await warriorButton.click();
+
+    // Click the "Begin as Warrior" button
+    const selectButton = page.getByRole('button', { name: /begin as/i });
+    await expect(selectButton).toBeVisible({ timeout: 3000 });
+    await selectButton.click();
+
+    // Wait for combat screen
+    await page.waitForTimeout(1000);
+
+    // Verify we're in combat - should see floor/room info or enemy
+    const combatIndicator = page.locator('text=Floor').or(page.locator('text=Room')).or(page.locator('[data-testid="battle-arena"]'));
+    await expect(combatIndicator.first()).toBeVisible({ timeout: 5000 });
   });
 
   test('debug: check console for errors on start', async ({ page }) => {

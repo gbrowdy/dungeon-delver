@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { CircularBuffer } from '@/utils/circularBuffer';
 import { getIcon, type LucideIconName } from '@/lib/icons';
 
 // Map log entry types to Lucide icon names
@@ -22,7 +21,7 @@ const LOG_ICONS: Record<string, LucideIconName> = {
  * Props for the CombatLog component.
  */
 interface CombatLogProps {
-  logs: CircularBuffer<string>;
+  logs: string[];
 }
 
 interface LogEntry {
@@ -104,7 +103,7 @@ export function CombatLog({ logs }: CombatLogProps) {
   if (!logs) {
     console.error('[CombatLog] logs prop is undefined - this indicates state corruption during combat');
   }
-  const logsArray = logs?.toArray() ?? [];
+  const logsArray = logs ?? [];
 
   useEffect(() => {
     // Scroll within the container only, don't use scrollIntoView which can jump the page
