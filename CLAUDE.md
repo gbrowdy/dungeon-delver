@@ -29,41 +29,131 @@ npx vitest run   # Run unit tests
 
 - **Framework**: React 18.3 + TypeScript 5.8 + Vite 5.4
 - **Styling**: Tailwind CSS 3.4 with shadcn/ui components (40+ components)
-- **State**: React hooks + Context API (`useGameState` orchestrates, `CombatContext` for UI)
+- **State**: ECS (Entity Component System) using miniplex + React Context for UI
 - **Routing**: react-router-dom v6
 - **Forms**: React Hook Form + Zod validation
 - **Icons**: Lucide React
-- **Testing**: Vitest + jsdom
+- **Testing**: Vitest + jsdom + Playwright E2E
 
 ## Project Structure
 
 ```
 src/
+├── ecs/                # ECS (Entity Component System) - CORE GAME LOGIC
+│   ├── components.ts   # Component type definitions
+│   ├── world.ts        # miniplex world instance
+│   ├── queries.ts      # Entity queries (player, enemy, gameState)
+│   ├── loop.ts         # Game loop (tick system, pause, speed)
+│   ├── snapshot.ts     # Immutable snapshots for React
+│   ├── systems/        # Game systems (combat, death, flow, etc.)
+│   ├── factories/      # Entity creation functions
+│   ├── context/        # GameContext.tsx - React bridge
+│   └── hooks/          # useGameEngine, useGameActions
 ├── components/
-│   ├── game/           # Game-specific components
+│   ├── game/           # Game-specific UI components
 │   └── ui/             # shadcn/ui component library
-├── contexts/           # React Context providers
 ├── constants/          # Configuration, balance, animations, responsive
 ├── data/               # Game content (classes, enemies, powers, items)
-├── hooks/              # Custom React hooks
+├── hooks/              # Animation/UI hooks (useBattleAnimation, etc.)
 ├── lib/                # Utilities (utils.ts with cn())
-├── pages/              # Page-level components
 ├── types/              # TypeScript type definitions
 └── utils/              # Utility functions
 docs/
 └── plans/              # Design documents and implementation plans
 e2e/
-├── helpers/            # Test utilities (test-utils.ts)
+├── helpers/            # Test utilities (test-utils.ts, game-actions.ts)
 └── *.spec.ts           # Playwright E2E tests
 ```
 
 ## Architecture
 
-This is a roguelike browser game with auto-combat mechanics and a path-based progression system.
+This is a roguelike browser game with auto-combat mechanics and a path-based progression system, built on an **Entity Component System (ECS)** architecture using miniplex.
+
+### ECS Overview
+
+The game uses ECS to separate data (components) from behavior (systems):
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Game Loop (loop.ts)                      │
+│   Runs at ~60fps, calls systems in order, manages tick/pause     │
+└─────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                         Systems (systems/)                       │
+│   AttackTiming → Combat → Power → StatusEffect → Death → Flow   │
+│   Each system queries entities and modifies component data       │
+└─────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     World + Entities (world.ts)                  │
+│   Player entity, Enemy entity, GameState entity                  │
+│   Each entity is a bag of components (health, attack, speed...)  │
+└─────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Snapshots (snapshot.ts)                       │
+│   Immutable copies of entity data for React rendering            │
+│   Created each tick, passed via GameContext                      │
+└─────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    React UI (components/game/)                   │
+│   Reads snapshots, dispatches actions via useGameActions()       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Key ECS Files
+
+| File | Purpose |
+|------|---------|
+| `ecs/world.ts` | miniplex World instance - stores all entities |
+| `ecs/components.ts` | Component type definitions (Entity interface) |
+| `ecs/queries.ts` | Entity queries (`getPlayer()`, `getActiveEnemy()`, etc.) |
+| `ecs/loop.ts` | Game loop - tick management, pause, combat speed |
+| `ecs/snapshot.ts` | Creates immutable snapshots for React |
+| `ecs/context/GameContext.tsx` | React provider - bridges ECS to UI |
+| `ecs/hooks/useGameActions.ts` | Action dispatchers for UI |
+
+### ECS Systems (run order)
+
+| System | Responsibility |
+|--------|----------------|
+| `input.ts` | Processes pending user actions (class select, power use) |
+| `attack-timing.ts` | Accumulates attack timers, sets `attackReady` flag |
+| `combat.ts` | Processes attacks when `attackReady`, applies damage |
+| `power.ts` | Executes power casts, applies effects |
+| `path-ability.ts` | Triggers path abilities on combat events |
+| `status-effect.ts` | Ticks status effects (poison, stun, etc.) |
+| `regen.ts` | Health/mana regeneration |
+| `cooldown.ts` | Ticks down power cooldowns |
+| `death.ts` | Handles entity death, rewards, phase transitions |
+| `flow.ts` | Room advancement, enemy spawning, game phase changes |
+| `cleanup.ts` | Clears one-frame flags, removes dead entities |
+
+### ⚠️ CRITICAL: miniplex Reactivity
+
+**Direct property assignment does NOT notify miniplex queries!**
+
+```typescript
+// ❌ WRONG - query won't update
+entity.dying = { ... };
+delete entity.attackReady;
+
+// ✅ CORRECT - query updates properly
+world.addComponent(entity, 'dying', { ... });
+world.removeComponent(entity, 'attackReady');
+```
+
+This is critical for queries like `world.with('health').without('dying')`.
 
 ### Game Flow
 
-Phases defined in `GameState.gamePhase`:
+Phases defined in `GameState.phase`:
 ```
 menu → class-select → path-select (at level 2) → combat → floor-complete → combat → ... → victory/defeat
 ```
@@ -73,34 +163,15 @@ menu → class-select → path-select (at level 2) → combat → floor-complete
 - On death: `defeat` screen, then retry (same floor) or abandon (restart)
 - On Floor 10 boss defeat: `victory` screen
 
-### State Management
-
-**Central State**: `useGameState()` hook orchestrates all game logic by composing smaller hooks. Key hooks include:
-- `useCombatLoop` - Attack timing with separate hero/enemy timers
-- `useCombatActions` - Hero attack, enemy attack, block actions
-- `usePowerActions` - Power activation and cooldown management
-- `usePathAbilities` - Path ability trigger processing
-- `useRoomTransitions` - Floor/room progression, death handling
-- `useRewardCalculation` - XP, gold, level-up processing
-
-**Combat Context**: `CombatContext.tsx` provides typed access to combat state for UI components:
-```tsx
-const { player, enemy, combatState, actions } = useCombat();
-```
-
-### Key Files
+### UI Key Files
 
 | File | Purpose |
 |------|---------|
-| `hooks/useGameState.ts` | Central game state orchestration |
-| `hooks/useCombatActions.ts` | Hero/enemy attack logic |
-| `hooks/usePowerActions.ts` | Power activation |
-| `hooks/usePathAbilities.ts` | Path ability trigger processing |
-| `hooks/combatActionHelpers.ts` | Combat calculation helpers |
-| `contexts/CombatContext.tsx` | Combat UI state provider |
-| `types/game.ts` | All TypeScript interfaces |
-| `components/game/Game.tsx` | Phase router |
-| `components/game/BattleArena.tsx` | Battle visualization |
+| `components/game/Game.tsx` | Phase router, connects to GameContext |
+| `components/game/BattleArena.tsx` | Battle visualization with sprites |
+| `components/game/CombatScreen.tsx` | Combat UI container |
+| `hooks/useBattleAnimation.ts` | Animation state machine for combat |
+| `types/game.ts` | TypeScript interfaces for game types |
 
 ### Data Files
 
@@ -243,41 +314,62 @@ Path aliases: `@/components`, `@/lib`, `@/hooks`, `@/types`, `@/data`, `@/consta
 3. Use `cn()` from `@/lib/utils` for conditional classes
 4. Follow responsive patterns from `constants/responsive.ts`
 
-## Utility Functions
+## Code Patterns
 
-### Centralized Utilities Pattern (`utils/`)
-Combat utilities follow a consistent pattern:
-- Deep clone input to prevent mutation
-- Return result object with updated entity + logs + metadata
-- See `damageUtils.ts` or `statusEffectUtils.ts` as canonical examples
+### Adding/Modifying ECS Components
+
+When adding new game functionality:
+
+1. **Add component type** to `ecs/components.ts` (Entity interface)
+2. **Create/update systems** in `ecs/systems/` to process the component
+3. **Update snapshots** in `ecs/snapshot.ts` if UI needs the data
+4. **Add queries** to `ecs/queries.ts` if systems need to find entities
+
+### Entity Modification in Systems
 
 ```typescript
-// Example: applying damage
-import { applyDamageToPlayer } from '@/utils/damageUtils';
+// Get entities via queries
+const player = getPlayer();
+const enemy = getActiveEnemy();
 
-const result = applyDamageToPlayer(player, 25, 'enemy_attack');
-// result.player - updated player (cloned)
-// result.logs - combat log messages
-// result.actualDamage - damage after shields
+// Modify component data directly (for existing components)
+player.health.current -= damage;
+
+// Add/remove components (MUST use world methods for query reactivity)
+world.addComponent(entity, 'dying', { startedAtTick: getTick() });
+world.removeComponent(entity, 'attackReady');
 ```
 
-### State Cloning (`utils/stateUtils.ts`)
-Always use deep clone utilities when modifying player/enemy state:
-```typescript
-import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+### Dispatching Actions from UI
 
-const updatedPlayer = deepClonePlayer(player);
-updatedPlayer.currentStats.health -= damage;
-```
-
-### Combat Log (`utils/circularBuffer.ts`)
-Combat log uses a circular buffer (100 entries max):
 ```typescript
-state.combatLog.add('Player attacks for 25 damage!');
-const logs = state.combatLog.toArray(); // For rendering
+// In React components
+const actions = useGameActions();
+
+// Dispatch actions (processed by InputSystem next tick)
+actions.selectClass('warrior');
+actions.usePower('fireball');
+actions.togglePause();
 ```
 
 ## Testing
+
+### ⚠️ CRITICAL: Browser Validation Required
+
+**ALL functionality changes MUST be validated in the browser using Playwright before being considered complete.**
+
+- Unit tests alone are NOT sufficient for game functionality
+- You MUST run Playwright tests or write new ones to verify changes work in the actual browser
+- Screenshots and console logs from Playwright tests serve as proof of functionality
+- If you cannot demonstrate the fix works in a browser test, the fix is NOT done
+
+```bash
+# Start dev server (required for E2E tests)
+npm run dev
+
+# Run E2E tests in another terminal
+npx playwright test --project="Desktop"
+```
 
 ### Unit Tests
 Unit tests are in `__tests__/` directories adjacent to the code they test.
@@ -293,9 +385,12 @@ E2E tests use Playwright with test hooks for state manipulation.
 ```bash
 npx playwright test              # Run all E2E tests
 npx playwright test --ui         # Interactive mode
+npx playwright test --project="Desktop"  # Run specific project
 ```
 
 **Test Hooks**: Add `?testMode=true` URL param to expose `window.__TEST_HOOKS__` for state manipulation during tests. See `e2e/helpers/test-utils.ts` for utilities.
+
+**Game Action Helpers**: `e2e/helpers/game-actions.ts` provides reusable functions for common test flows (starting combat, waiting for phases, etc.).
 
 ## Task Documents
 
