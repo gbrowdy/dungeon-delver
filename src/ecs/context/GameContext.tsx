@@ -73,8 +73,9 @@ export interface GameActions {
   purchaseShopItem: (itemId: string, cost: number) => void;
   enhanceEquippedItem: (slot: 'weapon' | 'armor' | 'accessory') => void;
 
-  // Items
+  // Items/Powers
   claimItem: (itemId: string) => void;
+  learnPower: (powerId: string) => void;
 
   // Animation callbacks
   handleTransitionComplete: () => void;
