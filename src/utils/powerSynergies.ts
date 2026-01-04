@@ -4,9 +4,10 @@
  * Helper functions for working with power synergies and player paths.
  */
 
-import { Player, Power } from '@/types/game';
+import { Player, Power, CharacterClass } from '@/types/game';
 import { PowerSynergy } from '@/types/powers';
 import { CLASS_DATA } from '@/data/classes';
+import type { PlayerSnapshot } from '@/ecs/snapshot';
 
 /**
  * Extended Power interface with synergies
@@ -91,8 +92,10 @@ export function getPathName(pathId: string): string {
  * Returns "PathName ClassName" when path is selected, otherwise just "ClassName".
  * Example: "Berserker Warrior", "Archmage Mage", or just "Warrior" if no path selected.
  */
-export function getPlayerDisplayName(player: Player): string {
-  const className = CLASS_DATA[player.class].name;
+export function getPlayerDisplayName(player: Player | PlayerSnapshot): string {
+  // Support both old Player (class) and new PlayerSnapshot (characterClass)
+  const playerClass = 'characterClass' in player ? player.characterClass : player.class;
+  const className = CLASS_DATA[playerClass].name;
 
   if (player.path) {
     const pathName = getPathName(player.path.pathId);

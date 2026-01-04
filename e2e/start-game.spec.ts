@@ -51,6 +51,50 @@ test.describe('Start Game Flow', () => {
     await expect(combatIndicator.first()).toBeVisible({ timeout: 5000 });
   });
 
+  test('combat screen renders without errors', async ({ page }) => {
+    const consoleErrors: string[] = [];
+
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    page.on('pageerror', (err) => {
+      consoleErrors.push(`Page error: ${err.message}`);
+    });
+
+    // Navigate to game
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Start game
+    const startButton = page.getByRole('button', { name: /start game/i });
+    await startButton.click();
+    await page.waitForTimeout(500);
+
+    // Select Warrior
+    const warriorButton = page.locator('text=Warrior').first();
+    await warriorButton.click();
+    const selectButton = page.getByRole('button', { name: /begin as/i });
+    await selectButton.click();
+
+    // Wait for combat to fully render
+    await page.waitForTimeout(2000);
+
+    // Verify combat screen rendered (floor indicator visible)
+    const floorIndicator = page.locator('text=Floor');
+    await expect(floorIndicator.first()).toBeVisible({ timeout: 5000 });
+
+    // Filter out expected warnings (favicon, etc)
+    const realErrors = consoleErrors.filter(
+      e => !e.includes('favicon') && !e.includes('404')
+    );
+
+    // Fail if any console errors occurred
+    expect(realErrors).toHaveLength(0);
+  });
+
   test('debug: check console for errors on start', async ({ page }) => {
     const consoleLogs: string[] = [];
     const consoleErrors: string[] = [];

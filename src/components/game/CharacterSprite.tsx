@@ -1,4 +1,4 @@
-import { Player, Enemy, ActiveBuff, StatusEffect, EnemyIntent } from '@/types/game';
+import { ActiveBuff, StatusEffect, EnemyIntent } from '@/types/game';
 import { PixelSprite } from './PixelSprite';
 import { PixelSlash, PixelSpell, PixelShield } from './BattleEffects';
 import { BATTLE_PHASE } from '@/constants/enums';
@@ -12,17 +12,18 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { SpriteType } from '@/data/sprites';
+import type { PlayerSnapshot, EnemySnapshot } from '@/ecs/snapshot';
 
 // Shared positioning classes for HP bars above sprites (keeps hero and enemy in sync)
 const HP_BAR_POSITION = "-top-10 xs:-top-12 sm:-top-10";
 
 interface CharacterSpriteProps {
   type: 'hero' | 'enemy';
-  character: Player | Enemy;
+  character: PlayerSnapshot | EnemySnapshot;
   spriteState: SpriteStateType;
   spriteFrame: number;
   phase: BattlePhaseType;
-  displayEnemy?: Enemy | null;
+  displayEnemy?: EnemySnapshot | null;
 
   // Animation states
   isAttacking?: boolean;
@@ -70,8 +71,8 @@ export function CharacterSprite({
   const positionClass = isHero ? 'left-[25%]' : 'left-[75%]';
 
   // Type-specific properties
-  const player = isHero ? (character as Player) : null;
-  const enemy = !isHero ? (character as Enemy) : null;
+  const player = isHero ? (character as PlayerSnapshot) : null;
+  const enemy = !isHero ? (character as EnemySnapshot) : null;
   const isDying = enemy?.isDying ?? false;
   const isBoss = enemy?.isBoss ?? false;
 
@@ -83,7 +84,7 @@ export function CharacterSprite({
         return player.path.pathId;
       }
       // Otherwise use base class sprite
-      return player.class as SpriteType;
+      return player.characterClass as SpriteType;
     }
     // For enemies, use enemy name
     return enemy!.name;
@@ -91,15 +92,15 @@ export function CharacterSprite({
   const spriteType = getSpriteType();
   const scale = isBoss ? 6 : 5;
 
-  // HP calculation
-  const currentHealth = 'health' in character ? character.health : character.currentStats.health;
-  const maxHealth = 'maxHealth' in character ? character.maxHealth : character.currentStats.maxHealth;
+  // HP calculation - snapshots have health: { current, max }
+  const currentHealth = character.health.current;
+  const maxHealth = character.health.max;
   const healthPercent = currentHealth / maxHealth;
 
   // Weapon variant for hero attacks
   const getWeaponVariant = (): 'sword' | 'dagger' | 'staff' | 'mace' => {
     if (!player) return 'sword';
-    switch (player.class) {
+    switch (player.characterClass) {
       case 'warrior': return 'sword';
       case 'rogue': return 'dagger';
       case 'mage': return 'staff';
@@ -182,7 +183,7 @@ export function CharacterSprite({
         {/* Block/Defense shield effect - hero only */}
         {isHero && player && (
           <PixelShield
-            active={player.isBlocking || player.activeBuffs.some(buff => buff.stat === 'armor')}
+            active={player.isBlocking || player.buffs.some(buff => buff.stat === 'armor')}
             variant="block"
           />
         )}
