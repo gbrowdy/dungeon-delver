@@ -5,6 +5,8 @@
  * This ensures deterministic execution order and prevents race conditions.
  */
 
+import type { Item } from '@/types/game';
+
 // All possible commands
 export type Command =
   // Combat actions
@@ -31,7 +33,7 @@ export type Command =
   | { type: 'DISMISS_POPUP'; popupType: string }
   | { type: 'MARK_ANIMATIONS_CONSUMED'; ids: string[] }
   // Shop
-  | { type: 'PURCHASE_ITEM'; itemId: string; cost: number }
+  | { type: 'PURCHASE_ITEM'; item: Item; cost: number }
   | { type: 'ENHANCE_ITEM'; slot: 'weapon' | 'armor' | 'accessory' };
 
 // Command queue - processed at start of each tick
@@ -128,9 +130,9 @@ export const Commands = {
   }),
 
   // Shop
-  purchaseItem: (itemId: string, cost: number): Command => ({
+  purchaseItem: (item: Item, cost: number): Command => ({
     type: 'PURCHASE_ITEM',
-    itemId,
+    item,
     cost,
   }),
   enhanceItem: (slot: 'weapon' | 'armor' | 'accessory'): Command => ({

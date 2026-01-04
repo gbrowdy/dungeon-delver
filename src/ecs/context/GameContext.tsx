@@ -23,7 +23,7 @@ import {
   useMemo,
   ReactNode,
 } from 'react';
-import type { CharacterClass } from '@/types/game';
+import type { CharacterClass, Item } from '@/types/game';
 import { useGameEngine } from '../hooks/useGameEngine';
 import { dispatch, Commands } from '../commands';
 import { getPlayer, getActiveEnemy, getGameState } from '../queries';
@@ -70,7 +70,7 @@ export interface GameActions {
   // Shop
   openShop: () => void;
   closeShop: () => void;
-  purchaseShopItem: (itemId: string, cost: number) => void;
+  purchaseShopItem: (item: Item, cost: number) => void;
   enhanceEquippedItem: (slot: 'weapon' | 'armor' | 'accessory') => void;
 
   // Items/Powers
@@ -227,8 +227,8 @@ export function GameProvider({ children, enabled = true }: GameProviderProps) {
     closeShop: () => {
       dispatch(Commands.leaveShop());
     },
-    purchaseShopItem: (itemId: string, cost: number) => {
-      dispatch(Commands.purchaseItem(itemId, cost));
+    purchaseShopItem: (item: Item, cost: number) => {
+      dispatch(Commands.purchaseItem(item, cost));
     },
     enhanceEquippedItem: (slot: 'weapon' | 'armor' | 'accessory') => {
       dispatch(Commands.enhanceItem(slot));
