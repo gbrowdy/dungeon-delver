@@ -415,3 +415,41 @@ describe('createGameStateEntity', () => {
     expect(gameState.combatSpeed!.multiplier).toBe(1);
   });
 });
+
+describe('createPlayerEntity with dev mode overrides', () => {
+  it('applies attack override', () => {
+    const entity = createPlayerEntity({
+      name: 'Hero',
+      characterClass: 'warrior',
+      devOverrides: { attackOverride: 50 },
+    });
+    expect(entity.attack?.baseDamage).toBe(50);
+  });
+
+  it('applies defense override', () => {
+    const entity = createPlayerEntity({
+      name: 'Hero',
+      characterClass: 'warrior',
+      devOverrides: { defenseOverride: 20 },
+    });
+    expect(entity.defense?.value).toBe(20);
+  });
+
+  it('applies gold override', () => {
+    const entity = createPlayerEntity({
+      name: 'Hero',
+      characterClass: 'warrior',
+      devOverrides: { goldOverride: 500 },
+    });
+    expect(entity.inventory?.gold).toBe(500);
+  });
+
+  it('does not apply overrides when not provided', () => {
+    const entity = createPlayerEntity({
+      name: 'Hero',
+      characterClass: 'warrior',
+    });
+    // Should use class base stats (warrior has 9 attack)
+    expect(entity.attack?.baseDamage).toBe(9);
+  });
+});

@@ -40,6 +40,11 @@ export function calculateAttackInterval(
 export interface CreatePlayerOptions {
   name: string;
   characterClass: CharacterClass;
+  devOverrides?: {
+    attackOverride?: number | null;
+    defenseOverride?: number | null;
+    goldOverride?: number | null;
+  };
 }
 
 /**
@@ -54,7 +59,7 @@ export function createPlayerEntity(options: CreatePlayerOptions): Entity {
   // Deep clone the starting power to avoid mutation
   const startingPower: Power = { ...classData.startingPower };
 
-  return {
+  const entity: Entity = {
     // Identity tag
     player: true,
 
@@ -134,6 +139,22 @@ export function createPlayerEntity(options: CreatePlayerOptions): Entity {
       abilityCounters: {},
     },
   };
+
+  // Apply dev mode overrides if provided
+  const overrides = options.devOverrides;
+  if (overrides) {
+    if (overrides.attackOverride != null && entity.attack) {
+      entity.attack.baseDamage = overrides.attackOverride;
+    }
+    if (overrides.defenseOverride != null && entity.defense) {
+      entity.defense.value = overrides.defenseOverride;
+    }
+    if (overrides.goldOverride != null && entity.inventory) {
+      entity.inventory.gold = overrides.goldOverride;
+    }
+  }
+
+  return entity;
 }
 
 // ============================================================================
