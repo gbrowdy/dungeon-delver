@@ -376,33 +376,10 @@ describe('AnimationSystem', () => {
     });
   });
 
-  describe('animation expiry', () => {
-    it('should clear combatAnimation after duration expires', () => {
-      const enemy = world.add({
-        enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
-        health: { current: 50, max: 50 },
-        combatAnimation: {
-          type: COMBAT_ANIMATION.HIT,
-          startedAtTick: 0,
-          duration: 100, // 100ms
-        },
-      });
-
-      world.add({
-        gameState: true,
-        phase: 'combat',
-      });
-
-      // Simulate time passing (100ms = ~6 ticks at 16ms/tick)
-      // Set current tick to 10 (160ms elapsed)
-      for (let i = 0; i < 10; i++) {
-        AnimationSystem(16);
-      }
-
-      // Animation should be cleared after duration
-      // Note: This test may need adjustment based on actual tick timing
-    });
-  });
+  // Note: Animation expiry logic (clearing combatAnimation after duration) is not currently
+  // implemented in AnimationSystem. The system only processes animation events and marks them
+  // as consumed. Actual animation clearing based on duration is future work.
+  // See implementation plan Task 3.2 for the originally planned expireAnimations() function.
 
   describe('edge cases', () => {
     it('should not process events if no game state', () => {
