@@ -1,6 +1,6 @@
 import { BattlePhaseType } from '@/constants/enums';
 import { BATTLE_PHASE } from '@/constants/enums';
-import { Enemy } from '@/types/game';
+import type { EnemySnapshot } from '@/ecs/snapshot';
 import { Trophy, Skull } from 'lucide-react';
 
 interface BattleOverlayProps {
@@ -8,7 +8,7 @@ interface BattleOverlayProps {
   playerDeathEffect: boolean;
   isFloorComplete: boolean;
   phase: BattlePhaseType;
-  enemy: Enemy | null;
+  enemy: EnemySnapshot | null;
 }
 
 export function BattleOverlay({
