@@ -56,11 +56,12 @@ export function BattleArena({
     if (unconsumed.length === 0) return null;
     const latest = unconsumed[unconsumed.length - 1];
 
-    // Extract damage/crit from payload based on type
+    // Extract damage/crit/targetDied from payload based on type
     const payload = latest.payload;
     const hasDamageData = payload.type === 'damage' || payload.type === 'spell';
     const damage = hasDamageData && 'value' in payload ? payload.value : 0;
     const isCrit = hasDamageData && 'isCrit' in payload ? payload.isCrit : false;
+    const targetDied = payload.type === 'damage' && 'targetDied' in payload ? payload.targetDied : false;
     const powerId = payload.type === 'spell' && 'powerId' in payload ? payload.powerId : undefined;
 
     // Map AnimationEventType to CombatEvent type
@@ -79,9 +80,9 @@ export function BattleArena({
       case 'enemy_attack':
         return { ...baseEvent, type: 'enemyAttack' as const, damage, isCrit };
       case 'player_hit':
-        return { ...baseEvent, type: 'playerHit' as const, damage, isCrit };
+        return { ...baseEvent, type: 'playerHit' as const, damage, isCrit, targetDied };
       case 'enemy_hit':
-        return { ...baseEvent, type: 'enemyHit' as const, damage, isCrit };
+        return { ...baseEvent, type: 'enemyHit' as const, damage, isCrit, targetDied };
       case 'power_used':
       case 'spell_cast':
         return { ...baseEvent, type: 'playerPower' as const, powerId: powerId || '', damage, isCrit };

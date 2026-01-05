@@ -291,6 +291,9 @@ export function useBattleAnimation(
 
   // Handle player death - react to playerIsDying becoming true
   // Similar to enemy death, this is a separate source of truth for player death animations
+  // NOTE: This ref is shared with PLAYER_HIT handler to coordinate death animations
+  // PLAYER_HIT handler sets this when it sees targetDied=true, preventing this useEffect
+  // from triggering death immediately (which would cut off the enemy attack animation)
   const playerDeathTriggeredRef = useRef(false);
   useEffect(() => {
     if (!playerIsDying) {
@@ -300,6 +303,21 @@ export function useBattleAnimation(
 
     // Only trigger death animation once
     if (playerDeathTriggeredRef.current) return;
+
+    // Check if there's a PLAYER_HIT event with targetDied=true that will handle the death animation
+    // If so, defer to that handler so the enemy attack animation plays first
+    if (
+      lastCombatEvent &&
+      lastCombatEvent.type === COMBAT_EVENT_TYPE.PLAYER_HIT &&
+      'targetDied' in lastCombatEvent &&
+      lastCombatEvent.targetDied &&
+      lastCombatEvent.id !== lastEventIdRef.current // This event hasn't been processed yet
+    ) {
+      // PLAYER_HIT handler will handle death animation after showing enemy attack
+      // Don't trigger death immediately - let the combat event handler take over
+      return;
+    }
+
     playerDeathTriggeredRef.current = true;
 
     // Player is dying - play death animation sequence
@@ -320,7 +338,7 @@ export function useBattleAnimation(
       setPlayerDeathEffect(false);
       onPlayerDeathAnimationComplete?.();
     }, ANIMATION_TIMING.PLAYER_DEATH_ANIMATION + ANIMATION_TIMING.PLAYER_DEATH_PAUSE);
-  }, [playerIsDying, onPlayerDeathAnimationComplete, createTrackedTimeout]);
+  }, [playerIsDying, lastCombatEvent, onPlayerDeathAnimationComplete, createTrackedTimeout]);
 
   // Handle combat events (attacks, hits, but NOT death - that's handled above)
   useEffect(() => {
@@ -491,6 +509,12 @@ export function useBattleAnimation(
         createTrackedTimeout(() => {
           setHeroFlash(false);
         }, hitTime + ANIMATION_TIMING.HIT_FLASH);
+        // Check if this hit will kill the player - mark ref IMMEDIATELY to prevent
+        // playerIsDying useEffect from triggering death prematurely (which cuts off enemy attack animation)
+        if (lastCombatEvent.targetDied) {
+          playerDeathTriggeredRef.current = true;
+        }
+
         // After hit animation completes, check if player died
         createTrackedTimeout(() => {
           setIsShaking(false);

@@ -151,6 +151,41 @@ world.removeComponent(entity, 'attackReady');
 
 This is critical for queries like `world.with('health').without('dying')`.
 
+### ⚠️ CRITICAL: Query Filtering for UI vs Game Logic
+
+**Filtered queries can hide entities that should still be visible for animations.**
+
+```typescript
+// queries.ts defines two enemy queries:
+export const enemyQuery = world.with('enemy', 'health');           // ALL enemies
+export const activeEnemyQuery = world.with('enemy', 'health').without('dying');  // Excludes dying
+```
+
+**Use the RIGHT query for the context:**
+
+| Context | Query to Use | Reason |
+|---------|--------------|--------|
+| **React snapshots** (GameContext.tsx) | `enemyQuery.first` | Dying enemies need to be visible for death animation |
+| **Combat targeting** (combat.ts, power.ts) | `getActiveEnemy()` | Don't attack/target dying enemies |
+| **Cleanup/removal** (input.ts) | `world.with('enemy')` | Remove ALL enemies including dying ones |
+
+**Anti-pattern that caused a bug:**
+```typescript
+// ❌ WRONG in GameContext.tsx - enemy disappears instantly on death
+const enemy = useMemo(() => {
+  const entity = getActiveEnemy();  // Excludes dying enemies!
+  return entity ? createEnemySnapshot(entity) : null;
+}, [tick]);
+
+// ✅ CORRECT - enemy stays visible during 500ms death animation
+const enemy = useMemo(() => {
+  const entity = enemyQuery.first;  // Includes dying enemies
+  return entity ? createEnemySnapshot(entity) : null;
+}, [tick]);
+```
+
+**Rule of thumb:** When you see `.without('dying')` or similar filters, ask: "Should this filtered state still be *visible* or *cleanable*?"
+
 ### Game Flow
 
 Phases defined in `GameState.phase`:
@@ -391,6 +426,41 @@ npx playwright test --project="Desktop"  # Run specific project
 **Test Hooks**: Add `?testMode=true` URL param to expose `window.__TEST_HOOKS__` for state manipulation during tests. See `e2e/helpers/test-utils.ts` for utilities.
 
 **Game Action Helpers**: `e2e/helpers/game-actions.ts` provides reusable functions for common test flows (starting combat, waiting for phases, etc.).
+
+## Debugging Principles
+
+### ⚠️ CRITICAL: Observe Before Fixing
+
+**Add console.logs FIRST, before writing any fix.** Mental code tracing is not debugging - runtime observation is debugging.
+
+### Verify the Actual Failure Case
+
+1. **Write a failing test first** - If you can't reproduce the bug in a test, you don't understand it
+2. **Test the specific scenario** - Passing unrelated tests proves nothing about your fix
+3. **Don't declare victory early** - If a fix seems too easy, verify it actually works
+
+### Follow Data, Not Code
+
+When debugging, trace actual values at runtime, not code paths in your head:
+
+| Wrong Approach | Right Approach |
+|----------------|----------------|
+| "Combat system runs before Death system, so..." | "What event ID is actually in the queue?" |
+| "This useEffect should fire first because..." | "Add a log - which effect actually runs first?" |
+| "The data should flow from A to B to C..." | "Log at A, B, and C - what values appear?" |
+
+### Multiple Systems = Multiple Event Sources
+
+When a bug involves timing or event handling, check if multiple systems are producing overlapping events. Ensure single source of truth for each event type - don't let multiple systems queue overlapping events that can override each other.
+
+### Common Debugging Failures
+
+| Failure Mode | Fix |
+|--------------|-----|
+| "I traced the code mentally and it should work" | Add console.logs and observe actual runtime |
+| "Tests pass so the bug is fixed" | Write a test for the specific failure case |
+| "The fix worked on first try" | Be suspicious - verify with targeted logging |
+| "I understand the system architecture" | Architecture docs show intent; logs show reality |
 
 ## Task Documents
 

@@ -117,6 +117,8 @@ export function CharacterSprite({
         !isHero && phase === BATTLE_PHASE.ENTERING && "animate-enemy-enter"
       )}
       style={{ left: isHero ? '25%' : '75%', transform: 'translateX(-50%)' }}
+      data-testid={isHero ? 'hero-sprite' : 'enemy-sprite'}
+      data-dying={isDying ? 'true' : undefined}
     >
       {/* Shadow */}
       <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-12 sm:w-14 h-3 bg-black/30 rounded-full blur-sm" />

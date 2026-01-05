@@ -76,11 +76,11 @@ export function DeathSystem(_deltaMs: number): void {
         duration: deathDuration,
       });
 
-      // Queue death animation
-      queueAnimationEvent('death', {
-        type: 'death',
-        isPlayer,
-      }, Math.ceil(deathDuration / TICK_MS));
+      // NOTE: We do NOT queue a death animation event here anymore!
+      // The combat system already queues player_hit/enemy_hit events with targetDied=true,
+      // and those events handle death animations properly (showing the killing blow first).
+      // Creating a separate 'death' event would override the combat event and skip
+      // the attack animation that dealt the killing blow.
 
       if (isPlayer) {
         // Player death - longer transition for dramatic effect
