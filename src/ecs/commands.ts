@@ -22,6 +22,7 @@ export type Command =
   | { type: 'SELECT_PATH'; pathId: string }
   | { type: 'SELECT_ABILITY'; abilityId: string }
   | { type: 'SELECT_SUBPATH'; subpathId: string }
+  | { type: 'SWITCH_STANCE'; stanceId: string }
   // Room/floor progression
   | { type: 'ADVANCE_ROOM' }
   | { type: 'GO_TO_SHOP' }
@@ -98,6 +99,10 @@ export const Commands = {
   selectSubpath: (subpathId: string): Command => ({
     type: 'SELECT_SUBPATH',
     subpathId,
+  }),
+  switchStance: (stanceId: string): Command => ({
+    type: 'SWITCH_STANCE',
+    stanceId,
   }),
 
   // Room/floor

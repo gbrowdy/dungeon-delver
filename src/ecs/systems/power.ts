@@ -10,6 +10,7 @@ import { getPlayer, getActiveEnemy, getGameState } from '../queries';
 import { getTick } from '../loop';
 import type { Entity, AnimationEvent, AnimationPayload } from '../components';
 import type { Power, StatusEffect } from '@/types/game';
+import { recordPathTrigger } from './path-ability';
 
 // Query for entities that are casting
 const castingQuery = world.with('casting', 'powers', 'mana');
@@ -295,6 +296,11 @@ export function PowerSystem(_deltaMs: number): void {
 
     // Set cooldown on the power
     setCooldown(entity, power);
+
+    // Record path ability trigger for power usage (player only)
+    if (entity.player) {
+      recordPathTrigger('on_power_use', { powerId: power.id });
+    }
 
     // Clear the casting component
     world.removeComponent(entity, 'casting');

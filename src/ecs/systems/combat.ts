@@ -9,6 +9,8 @@ import { entitiesWithAttackReady, getPlayer, getActiveEnemy, getGameState } from
 import { getTick } from '../loop';
 import type { Entity, AnimationEvent, AnimationPayload } from '../components';
 import { getDodgeChance } from '@/utils/fortuneUtils';
+import { recordPathTrigger } from './path-ability';
+import { getStanceDamageMultiplier, getStanceBehavior, getStanceStatModifier } from '@/utils/stanceUtils';
 
 let nextAnimationId = 0;
 
@@ -83,6 +85,12 @@ export function CombatSystem(_deltaMs: number): void {
     const attackData = entity.attackReady;
     if (!attackData) continue;
 
+    // Skip if attacker is dying or already dead (prevents posthumous attacks)
+    if (entity.dying || (entity.health && entity.health.current <= 0)) {
+      world.removeComponent(entity, 'attackReady');
+      continue;
+    }
+
     const target = getTarget(entity);
     if (!target || target.dying) {
       // No valid target - clear attack
@@ -107,6 +115,17 @@ export function CombatSystem(_deltaMs: number): void {
         // Player dodged!
         addCombatLog(`${targetName} dodges ${attackerName}'s attack!`);
         queueAnimationEvent('player_dodge', { type: 'dodge' });
+        recordPathTrigger('on_dodge', { isDodge: true });
+        world.removeComponent(entity, 'attackReady');
+        continue;
+      }
+
+      // Check for stance auto-block (passive paths)
+      const autoBlockChance = getStanceBehavior(target, 'auto_block');
+      if (autoBlockChance > 0 && Math.random() < autoBlockChance) {
+        addCombatLog(`${targetName} auto-blocks ${attackerName}'s attack!`);
+        queueAnimationEvent('player_block', { type: 'block', reduction: 1 });
+        recordPathTrigger('on_block', { isBlock: true });
         world.removeComponent(entity, 'attackReady');
         continue;
       }
@@ -114,10 +133,40 @@ export function CombatSystem(_deltaMs: number): void {
 
     let damage = attackData.damage;
 
+    // Apply stance power modifier to outgoing damage (player attacking)
+    if (entity.player) {
+      const powerMod = getStanceStatModifier(entity, 'power');
+      if (powerMod !== 0) {
+        damage = Math.round(damage * (1 + powerMod));
+      }
+      // Apply outgoing damage multiplier
+      const outgoingMult = getStanceDamageMultiplier(entity, 'outgoing');
+      if (outgoingMult !== 1) {
+        damage = Math.round(damage * outgoingMult);
+      }
+    }
+
     // Apply defense
     const defense = target.defense?.value ?? 0;
-    damage -= defense;
+    // Apply stance armor modifier to defense (when player is target)
+    let effectiveDefense = defense;
+    if (target.player) {
+      const armorMod = getStanceStatModifier(target, 'armor');
+      if (armorMod !== 0) {
+        effectiveDefense = Math.round(defense * (1 + armorMod));
+      }
+    }
+    damage -= effectiveDefense;
     damage = Math.max(1, damage); // Minimum 1 damage
+
+    // Apply stance incoming damage reduction (when player is target)
+    if (target.player) {
+      const incomingMult = getStanceDamageMultiplier(target, 'incoming');
+      if (incomingMult !== 1) {
+        damage = Math.round(damage * incomingMult);
+        damage = Math.max(1, damage); // Still minimum 1
+      }
+    }
 
     // Check for block
     let blocked = false;
@@ -131,6 +180,11 @@ export function CombatSystem(_deltaMs: number): void {
         type: 'block',
         reduction: target.blocking?.reduction ?? 0.4,
       });
+
+      // Record path ability trigger for blocking
+      if (target.player) {
+        recordPathTrigger('on_block', { isBlock: true });
+      }
     }
 
     // Apply shield first (if target has shield)
@@ -151,6 +205,9 @@ export function CombatSystem(_deltaMs: number): void {
       target.health.current = Math.max(0, target.health.current - damage);
     }
 
+    // Check if this attack killed the target
+    const targetDied = target.health ? target.health.current <= 0 : false;
+
     // Queue combat animation event (hit event triggers both attack and hit animations)
     const isPlayerAttacking = !!entity.player;
     queueAnimationEvent(isPlayerAttacking ? 'enemy_hit' : 'player_hit', {
@@ -158,6 +215,7 @@ export function CombatSystem(_deltaMs: number): void {
       value: damage,
       isCrit: attackData.isCrit,
       blocked,
+      targetDied,
     });
 
     // Combat log
@@ -166,6 +224,58 @@ export function CombatSystem(_deltaMs: number): void {
     addCombatLog(
       `${attackerName} attacks ${targetName} for ${damage} damage${critText}${blockText}`
     );
+
+    // Record path ability triggers
+    if (isPlayerAttacking) {
+      // Player hit enemy
+      recordPathTrigger('on_hit', { damage, isCrit: attackData.isCrit });
+
+      // Player crit
+      if (attackData.isCrit) {
+        recordPathTrigger('on_crit', { damage, isCrit: true });
+      }
+
+      // Player killed enemy
+      if (targetDied) {
+        recordPathTrigger('on_kill', { damage });
+      }
+
+      // Apply lifesteal from stance
+      const lifestealPercent = getStanceBehavior(entity, 'lifesteal');
+      if (lifestealPercent > 0 && entity.health) {
+        const healAmount = Math.round(damage * lifestealPercent);
+        if (healAmount > 0) {
+          entity.health.current = Math.min(
+            entity.health.max,
+            entity.health.current + healAmount
+          );
+          addCombatLog(`${attackerName} heals for ${healAmount} HP (lifesteal)`);
+        }
+      }
+    } else {
+      // Enemy hit player
+      recordPathTrigger('on_damaged', { damage });
+
+      // Apply reflect damage from stance
+      const reflectPercent = getStanceBehavior(target, 'reflect_damage');
+      if (reflectPercent > 0 && entity.health) {
+        const reflectDamage = Math.round(damage * reflectPercent);
+        if (reflectDamage > 0) {
+          entity.health.current = Math.max(0, entity.health.current - reflectDamage);
+          addCombatLog(`${targetName} reflects ${reflectDamage} damage!`);
+        }
+      }
+
+      // Check for counter-attack from stance
+      const counterChance = getStanceBehavior(target, 'counter_attack');
+      if (counterChance > 0 && Math.random() < counterChance && target.attack) {
+        const counterDamage = Math.round(target.attack.baseDamage * 0.5);
+        if (counterDamage > 0 && entity.health) {
+          entity.health.current = Math.max(0, entity.health.current - counterDamage);
+          addCombatLog(`${targetName} counter-attacks for ${counterDamage} damage!`);
+        }
+      }
+    }
 
     // Clear attack ready
     world.removeComponent(entity, 'attackReady');

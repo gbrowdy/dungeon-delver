@@ -7,8 +7,8 @@
 
 import type { Entity, GamePhase, PopupState, PendingReward, AnimationEvent } from './components';
 import type { CharacterClass, Power, Item, ActiveBuff, StatusEffect, PathResource, AttackModifier, EnemyAbility, EnemyIntent, ModifierEffect, EnemyStatDebuff } from '@/types/game';
-import type { PlayerPath } from '@/types/paths';
-import { getPlayer, getActiveEnemy, getGameState } from './queries';
+import type { PlayerPath, PlayerStanceState } from '@/types/paths';
+import { getPlayer, getGameState, enemyQuery } from './queries';
 
 // ============================================================================
 // UTILITY TYPES
@@ -77,6 +77,7 @@ export interface PlayerSnapshot {
   // Path
   path: PlayerPath | null;
   pathResource: PathResource | null;
+  stanceState: PlayerStanceState | null;
   pendingAbilityChoice: boolean;
 
   // Combat modifiers
@@ -238,6 +239,7 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
     // Path
     path: entity.path ?? null,
     pathResource: entity.pathResource ?? null,
+    stanceState: entity.stanceState ?? null,
     pendingAbilityChoice: entity.pendingAbilityChoice ?? false,
 
     // Combat modifiers
@@ -364,7 +366,9 @@ export function createDefaultGameStateSnapshot(): GameStateSnapshot {
  */
 export function createCombatSnapshot(): CombatSnapshot {
   const playerEntity = getPlayer();
-  const enemyEntity = getActiveEnemy();
+  // Use enemyQuery.first to include dying enemies (for death animation)
+  // instead of getActiveEnemy() which excludes them
+  const enemyEntity = enemyQuery.first;
   const gameStateEntity = getGameState();
 
   // Calculate attack progress (0-1, clamped)

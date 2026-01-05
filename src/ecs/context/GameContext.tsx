@@ -26,7 +26,7 @@ import {
 import type { CharacterClass, Item } from '@/types/game';
 import { useGameEngine } from '../hooks/useGameEngine';
 import { dispatch, Commands } from '../commands';
-import { getPlayer, getActiveEnemy, getGameState } from '../queries';
+import { getPlayer, getGameState, enemyQuery } from '../queries';
 import {
   PlayerSnapshot,
   EnemySnapshot,
@@ -52,6 +52,7 @@ export interface GameActions {
   selectPath: (pathId: string) => void;
   selectAbility: (abilityId: string) => void;
   selectSubpath: (subpathId: string) => void;
+  switchStance: (stanceId: string) => void;
 
   // Combat
   usePower: (powerId: string) => void;
@@ -146,7 +147,9 @@ export function GameProvider({ children, enabled = true }: GameProviderProps) {
   }, [tick]);
 
   const enemy = useMemo(() => {
-    const entity = getActiveEnemy();
+    // Use enemyQuery.first to include dying enemies (for death animation)
+    // instead of getActiveEnemy() which excludes them
+    const entity = enemyQuery.first;
     return entity ? createEnemySnapshot(entity) : null;
   }, [tick]);
 
@@ -164,7 +167,7 @@ export function GameProvider({ children, enabled = true }: GameProviderProps) {
   }, [tick]);
 
   const enemyProgress = useMemo(() => {
-    const entity = getActiveEnemy();
+    const entity = enemyQuery.first;
     if (!entity?.speed) return 0;
     const progress = entity.speed.accumulated / entity.speed.attackInterval;
     return Math.min(1, Math.max(0, progress));
@@ -188,6 +191,9 @@ export function GameProvider({ children, enabled = true }: GameProviderProps) {
     },
     selectSubpath: (subpathId: string) => {
       dispatch(Commands.selectSubpath(subpathId));
+    },
+    switchStance: (stanceId: string) => {
+      dispatch(Commands.switchStance(stanceId));
     },
 
     // Combat

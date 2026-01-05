@@ -5,11 +5,11 @@ import { StanceToggle } from './StanceToggle';
 import { ResourceBar } from './ResourceBar';
 import { COMBAT_BALANCE } from '@/constants/balance';
 import { getPowerModifiers, hasComboMechanic, isPassivePath } from '@/utils/pathUtils';
-import { useStanceSystem } from '@/hooks/useStanceSystem';
 import { getStancesForPath } from '@/data/stances';
 import { isFeatureEnabled } from '@/constants/features';
 import { pathUsesResourceSystem } from '@/hooks/usePathResource';
 import type { PlayerSnapshot } from '@/ecs/snapshot';
+import { useGameActions } from '@/ecs/context/GameContext';
 import {
   Tooltip,
   TooltipContent,
@@ -43,20 +43,21 @@ export function PowersPanel({
   // Check if this player's path uses the combo system
   const showCombo = hasComboMechanic({ path: player.path });
 
-  // Stance system for passive paths
+  // Get game actions for stance switching
+  const actions = useGameActions();
+
+  // Stance system for passive paths - now uses ECS state
   const pathId = player.path?.pathId ?? '';
   const availableStances = getStancesForPath(pathId);
-  const {
-    currentStance,
-    switchStance,
-    cooldownRemaining,
-    isStanceSystemActive,
-  } = useStanceSystem(availableStances, availableStances[0]?.id, false);
+  const stanceState = player.stanceState;
+  const currentStanceId = stanceState?.activeStanceId;
+  const cooldownRemaining = stanceState?.stanceCooldownRemaining ?? 0;
 
   // Determine if we should show stance UI instead of standard powers
   const showStanceUI = isFeatureEnabled('PASSIVE_STANCE_SYSTEM') &&
     isPassivePath({ path: player.path }) &&
-    isStanceSystemActive;
+    !!stanceState &&
+    availableStances.length > 0;
 
   // Check if player uses path resource system
   const usesPathResource = pathUsesResourceSystem(pathId) && player.pathResource;
@@ -84,8 +85,8 @@ export function PowersPanel({
         /* Stance UI for passive paths */
         <StanceToggle
           stances={availableStances}
-          currentStanceId={currentStance?.id}
-          onSwitch={switchStance}
+          currentStanceId={currentStanceId}
+          onSwitch={actions.switchStance}
           cooldownRemaining={cooldownRemaining}
           isPaused={false}
         />

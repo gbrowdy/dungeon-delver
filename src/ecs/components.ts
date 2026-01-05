@@ -18,7 +18,7 @@ import type {
   EnemyStatDebuff,
   ModifierEffect,
 } from '@/types/game';
-import type { PlayerPath } from '@/types/paths';
+import type { PlayerPath, PlayerStanceState } from '@/types/paths';
 
 // Game phases
 export type GamePhase =
@@ -53,7 +53,7 @@ export type AnimationEventType =
 
 // Animation event payload types
 export type AnimationPayload =
-  | { type: 'damage'; value: number; isCrit: boolean; blocked: boolean }
+  | { type: 'damage'; value: number; isCrit: boolean; blocked: boolean; targetDied?: boolean }
   | { type: 'heal'; value: number; source: string }
   | { type: 'spell'; powerId: string; value: number }
   | { type: 'death'; isPlayer: boolean }
@@ -220,6 +220,8 @@ export interface Entity {
   };
   /** Path resource for active paths */
   pathResource?: PathResource;
+  /** Stance state for passive paths */
+  stanceState?: PlayerStanceState;
   /** Ability tracking */
   abilityTracking?: {
     usedCombatAbilities: string[];

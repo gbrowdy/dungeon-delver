@@ -5,7 +5,7 @@
  */
 
 import { drainCommands, type Command } from '../commands';
-import { getPlayer, getGameState, getActiveEnemy } from '../queries';
+import { getPlayer, getGameState } from '../queries';
 import { getTick } from '../loop';
 import { world } from '../world';
 import { createPlayerEntity, createEnemyEntity } from '../factories';
@@ -13,6 +13,9 @@ import { COMBAT_BALANCE } from '@/constants/balance';
 import { FLOOR_CONFIG } from '@/constants/game';
 import type { CharacterClass } from '@/types/game';
 import { getDevModeParams } from '@/utils/devMode';
+import { getPathResource, PATH_RESOURCES } from '@/data/pathResources';
+import { getPathById } from '@/utils/pathUtils';
+import { getStancesForPath, getDefaultStanceId } from '@/data/stances';
 
 export function InputSystem(_deltaMs: number): void {
   const commands = drainCommands();
@@ -292,13 +295,36 @@ export function InputSystem(_deltaMs: number): void {
 
       case 'SELECT_PATH': {
         if (!player || !gameState) break;
+
+        // Get the path definition to check if it's active
+        const pathDef = getPathById(cmd.pathId);
+
         // Store the selected path on player
         // IMPORTANT: Use 'path' field (not 'pathProgress') - this is what the snapshot system reads
         player.path = {
           pathId: cmd.pathId,
           subpathId: undefined,
           abilities: [],
+          abilityCooldowns: {}, // Initialize cooldowns map
         };
+
+        // Initialize pathResource for active paths
+        if (pathDef?.type === 'active' && PATH_RESOURCES[cmd.pathId]) {
+          player.pathResource = getPathResource(cmd.pathId);
+        }
+
+        // Initialize stance state for passive paths
+        if (pathDef?.type === 'passive') {
+          const defaultStanceId = getDefaultStanceId(cmd.pathId);
+          if (defaultStanceId) {
+            player.stanceState = {
+              activeStanceId: defaultStanceId,
+              stanceCooldownRemaining: 0,
+              triggerCooldowns: {},
+            };
+          }
+        }
+
         // Transition back to combat
         gameState.phase = 'combat';
         break;
@@ -323,15 +349,34 @@ export function InputSystem(_deltaMs: number): void {
         break;
       }
 
+      case 'SWITCH_STANCE': {
+        if (!player?.stanceState || !player.path) break;
+
+        // Check if on cooldown
+        if (player.stanceState.stanceCooldownRemaining > 0) break;
+
+        // Check if switching to same stance
+        if (player.stanceState.activeStanceId === cmd.stanceId) break;
+
+        // Get stance definition to validate and get cooldown
+        const stances = getStancesForPath(player.path.pathId);
+        const newStance = stances.find(s => s.id === cmd.stanceId);
+        if (!newStance) break;
+
+        // Switch stance and set cooldown
+        player.stanceState.activeStanceId = cmd.stanceId;
+        player.stanceState.stanceCooldownRemaining = newStance.switchCooldown;
+        break;
+      }
+
       case 'ADVANCE_ROOM': {
         if (!gameState?.floor) break;
 
         const floor = gameState.floor;
 
-        // Remove current enemy
-        const currentEnemy = getActiveEnemy();
-        if (currentEnemy) {
-          world.remove(currentEnemy);
+        // Remove any existing enemy (including dying ones)
+        for (const e of world.with('enemy')) {
+          world.remove(e);
         }
 
         // If already on floor-complete, advance to next floor (same as leaving shop)
@@ -501,14 +546,13 @@ export function InputSystem(_deltaMs: number): void {
       case 'ABANDON_RUN': {
         if (!gameState) break;
 
-        // Remove player and enemy
+        // Remove player and enemy (including dying ones)
         const oldPlayer = getPlayer();
         if (oldPlayer) {
           world.remove(oldPlayer);
         }
-        const oldEnemy = getActiveEnemy();
-        if (oldEnemy) {
-          world.remove(oldEnemy);
+        for (const e of world.with('enemy')) {
+          world.remove(e);
         }
 
         // Reset to menu
