@@ -4,10 +4,9 @@ import { PowerButton } from './PowerButton';
 import { StanceToggle } from './StanceToggle';
 import { ResourceBar } from './ResourceBar';
 import { COMBAT_BALANCE } from '@/constants/balance';
-import { getPowerModifiers, hasComboMechanic, isPassivePath } from '@/utils/pathUtils';
+import { getPowerModifiers, hasComboMechanic, isPassivePath, pathUsesResourceSystem } from '@/utils/pathUtils';
 import { getStancesForPath } from '@/data/stances';
 import { isFeatureEnabled } from '@/constants/features';
-import { pathUsesResourceSystem } from '@/hooks/usePathResource';
 import type { PlayerSnapshot } from '@/ecs/snapshot';
 import { useGameActions } from '@/ecs/context/GameContext';
 import {

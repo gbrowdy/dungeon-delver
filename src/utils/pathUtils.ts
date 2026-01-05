@@ -10,6 +10,8 @@ import { WARRIOR_PATHS } from '@/data/paths/warrior';
 import { MAGE_PATHS } from '@/data/paths/mage';
 import { ROGUE_PATHS } from '@/data/paths/rogue';
 import { PALADIN_PATHS } from '@/data/paths/paladin';
+import { PATH_RESOURCES } from '@/data/pathResources';
+import { isFeatureEnabled } from '@/constants/features';
 
 /**
  * Get all path definitions as a flat array
@@ -166,4 +168,12 @@ export function getStatusImmunities(player: { path: PlayerPath | null }): string
   // This can be expanded when status immunity effects are added to path abilities
   if (!player.path) return [];
   return [];
+}
+
+/**
+ * Check if a path uses the resource system.
+ */
+export function pathUsesResourceSystem(pathId: string | undefined): boolean {
+  if (!isFeatureEnabled('ACTIVE_RESOURCE_SYSTEM')) return false;
+  return pathId !== undefined && pathId in PATH_RESOURCES;
 }
