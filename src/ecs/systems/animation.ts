@@ -131,10 +131,20 @@ function processAnimationEvent(event: AnimationEvent): void {
     case 'enemy_hit': {
       const enemy = enemyQuery.first;
       if (enemy && event.payload.type === 'damage') {
+        // Hit animation is quick - 100ms matches CSS animate-sprite-hit
+        const hitDurationMs = 100;
         enemy.combatAnimation = {
           type: COMBAT_ANIMATION.HIT,
           startedAtTick: currentTick,
-          duration: durationMs,
+          duration: hitDurationMs,
+        };
+
+        // Add visual flash effect (2-3 frames for quick flash)
+        if (!enemy.visualEffects) {
+          enemy.visualEffects = {};
+        }
+        enemy.visualEffects.flash = {
+          untilTick: currentTick + 2, // ~32ms flash (2 ticks)
         };
 
         // Add floating damage effect
@@ -145,18 +155,23 @@ function processAnimationEvent(event: AnimationEvent): void {
     case 'player_hit': {
       const player = getPlayer();
       if (player && event.payload.type === 'damage') {
+        // Hit animation is quick - 100ms matches CSS animate-sprite-hit
+        const hitDurationMs = 100;
         player.combatAnimation = {
           type: COMBAT_ANIMATION.HIT,
           startedAtTick: currentTick,
-          duration: durationMs,
+          duration: hitDurationMs,
         };
 
-        // Add visual shake effect
+        // Add visual effects (flash and shake)
         if (!player.visualEffects) {
           player.visualEffects = {};
         }
+        player.visualEffects.flash = {
+          untilTick: currentTick + 2, // ~32ms flash (2 ticks)
+        };
         player.visualEffects.shake = {
-          untilTick: currentTick + Math.ceil(durationMs / TICK_MS),
+          untilTick: currentTick + Math.ceil(durationMs / TICK_MS), // shake lasts longer
         };
 
         // Add floating damage effect

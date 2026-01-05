@@ -290,6 +290,14 @@ export function InputSystem(_deltaMs: number): void {
         });
         world.add(enemy);
 
+        // Start entering animation phase
+        gameState.battlePhase = {
+          phase: 'entering',
+          startedAtTick: getTick(),
+          duration: 800, // matches CSS --anim-entering-phase
+        };
+        gameState.groundScrolling = true;
+
         break;
       }
 
@@ -393,6 +401,14 @@ export function InputSystem(_deltaMs: number): void {
           });
           world.add(enemy);
 
+          // Start entering animation phase
+          gameState.battlePhase = {
+            phase: 'entering',
+            startedAtTick: getTick(),
+            duration: 800,
+          };
+          gameState.groundScrolling = true;
+
           gameState.phase = 'combat';
           break;
         }
@@ -418,6 +434,14 @@ export function InputSystem(_deltaMs: number): void {
           roomsPerFloor: floor.totalRooms,
         });
         world.add(nextEnemy);
+
+        // Start entering animation phase
+        gameState.battlePhase = {
+          phase: 'entering',
+          startedAtTick: getTick(),
+          duration: 800,
+        };
+        gameState.groundScrolling = true;
 
         gameState.phase = 'combat';
         break;
@@ -480,12 +504,20 @@ export function InputSystem(_deltaMs: number): void {
         }
 
         // Spawn first enemy
-        const enemy = createEnemyEntity({
+        const shopEnemy = createEnemyEntity({
           floor: floor.number,
           room: floor.room,
           roomsPerFloor: floor.totalRooms,
         });
-        world.add(enemy);
+        world.add(shopEnemy);
+
+        // Start entering animation phase
+        gameState.battlePhase = {
+          phase: 'entering',
+          startedAtTick: getTick(),
+          duration: 800,
+        };
+        gameState.groundScrolling = true;
 
         gameState.phase = 'combat';
         break;
@@ -532,12 +564,20 @@ export function InputSystem(_deltaMs: number): void {
         }
 
         // Spawn first enemy of floor
-        const enemy = createEnemyEntity({
+        const retryEnemy = createEnemyEntity({
           floor: floor.number,
           room: floor.room,
           roomsPerFloor: floor.totalRooms,
         });
-        world.add(enemy);
+        world.add(retryEnemy);
+
+        // Start entering animation phase
+        gameState.battlePhase = {
+          phase: 'entering',
+          startedAtTick: getTick(),
+          duration: 800,
+        };
+        gameState.groundScrolling = true;
 
         gameState.phase = 'combat';
         break;

@@ -12,10 +12,13 @@
 
 import { world } from '../world';
 import { getGameState, getPlayer } from '../queries';
-import { getEffectiveDelta } from '../loop';
+import { getEffectiveDelta, getTick, TICK_MS } from '../loop';
 import { generateEnemy } from '@/data/enemies';
 import { FLOOR_CONFIG } from '@/constants/game';
 import type { Entity, GamePhase, EnemyTier, ScheduledTransition, ScheduledSpawn } from '../components';
+
+// Duration for enemy entering animation (matches CSS --anim-entering-phase)
+const ENTERING_PHASE_DURATION_MS = 800;
 
 /**
  * Add a message to the combat log.
@@ -213,8 +216,40 @@ function spawnNextEnemy(): void {
     addCombatLog(`Room ${floor.room}: A ${enemy.enemy.name} appears!`);
   }
 
+  // Start entering animation phase
+  gameState.battlePhase = {
+    phase: 'entering',
+    startedAtTick: getTick(),
+    duration: ENTERING_PHASE_DURATION_MS,
+  };
+  gameState.groundScrolling = true;
+
   // Clear transitioning flag
   gameState.isTransitioning = false;
+}
+
+/**
+ * Process battle phase transitions (entering -> combat).
+ */
+function processBattlePhase(): void {
+  const gameState = getGameState();
+  if (!gameState?.battlePhase) return;
+
+  const { phase, startedAtTick, duration } = gameState.battlePhase;
+
+  // Only process entering phase transitions
+  if (phase === 'entering' && duration) {
+    const elapsed = (getTick() - startedAtTick) * TICK_MS;
+
+    if (elapsed >= duration) {
+      // Transition to combat phase
+      gameState.battlePhase = {
+        phase: 'combat',
+        startedAtTick: getTick(),
+      };
+      gameState.groundScrolling = false;
+    }
+  }
 }
 
 /**
@@ -238,6 +273,9 @@ export function FlowSystem(deltaMs: number): void {
   }
 
   const effectiveDelta = getEffectiveDelta(deltaMs);
+
+  // Process battle phase (entering -> combat)
+  processBattlePhase();
 
   // Process scheduled transitions first
   processScheduledTransitions(effectiveDelta);
