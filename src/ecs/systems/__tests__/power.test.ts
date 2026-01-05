@@ -544,4 +544,59 @@ describe('PowerSystem', () => {
       expect(player.casting).toBeUndefined();
     });
   });
+
+  describe('amplify threshold effects', () => {
+    it('should apply +30% damage when Fury >= 80', () => {
+      const gameState = world.add({
+        gameState: true,
+        phase: 'combat',
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        animationEvents: [],
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero' },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 100, variance: { min: 1, max: 1 } }, // Fixed variance for test
+        powers: [{
+          id: 'test-power',
+          name: 'Strike',
+          description: 'Test',
+          manaCost: 20,
+          resourceCost: 30,
+          cooldown: 5,
+          effect: 'damage',
+          value: 1.0, // 100% damage = 100 base
+          icon: 'test',
+        }],
+        pathResource: {
+          type: 'fury',
+          current: 80, // At threshold
+          max: 100,
+          color: '#dc2626',
+          resourceBehavior: 'spend',
+          generation: { onHit: 8 },
+          thresholds: [{
+            value: 80,
+            effect: { type: 'damage_bonus', value: 0.3, description: '+30% damage' },
+          }],
+        },
+        casting: { powerId: 'test-power', startedAtTick: 0 },
+        cooldowns: new Map(),
+      });
+
+      const enemy = world.add({
+        enemy: { name: 'Goblin', experienceReward: 10, goldReward: 5 },
+        health: { current: 200, max: 200 },
+        defense: { value: 0 },
+      });
+
+      PowerSystem(16);
+
+      // Base 100 damage * 1.3 amplify = 130 damage
+      // Enemy should have 200 - 130 = 70 HP
+      expect(enemy.health?.current).toBe(70);
+    });
+  });
 });

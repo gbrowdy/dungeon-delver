@@ -73,8 +73,17 @@ function getEntityName(entity: Entity): string {
 /**
  * Calculate damage for a power based on the caster's attack stats.
  * Similar to combat damage calculation but uses power value as multiplier.
+ *
+ * @param resourceValueForThreshold - The resource value to use for threshold checks.
+ *   For spend-type resources (Fury), this should be the value BEFORE spending.
+ *   For gain-type resources (Arcane Charges), this should be the value AFTER gaining.
  */
-function calculatePowerDamage(caster: Entity, power: Power, target: Entity): number {
+function calculatePowerDamage(
+  caster: Entity,
+  power: Power,
+  target: Entity,
+  resourceValueForThreshold?: number
+): number {
   const baseDamage = caster.attack?.baseDamage ?? 10;
   const multiplier = power.value;
 
@@ -83,6 +92,24 @@ function calculatePowerDamage(caster: Entity, power: Power, target: Entity): num
   const varianceMultiplier = variance.min + Math.random() * (variance.max - variance.min);
 
   let damage = Math.round(baseDamage * multiplier * varianceMultiplier);
+
+  // Apply amplify threshold bonuses from pathResource
+  if (caster.pathResource?.thresholds && resourceValueForThreshold !== undefined) {
+    for (const threshold of caster.pathResource.thresholds) {
+      if (resourceValueForThreshold >= threshold.value) {
+        if (threshold.effect.type === 'damage_bonus') {
+          // For arcane_charges, bonus is per-charge (0.5% per charge)
+          if (caster.pathResource.type === 'arcane_charges') {
+            const bonus = resourceValueForThreshold * threshold.effect.value;
+            damage = Math.round(damage * (1 + bonus));
+          } else {
+            // Fixed bonus (e.g., 30% for Fury at 80+)
+            damage = Math.round(damage * (1 + threshold.effect.value));
+          }
+        }
+      }
+    }
+  }
 
   // Apply target defense
   const defense = target.defense?.value ?? 0;
@@ -94,8 +121,13 @@ function calculatePowerDamage(caster: Entity, power: Power, target: Entity): num
 /**
  * Apply a damage power effect to the target enemy.
  */
-function applyDamagePower(caster: Entity, power: Power, target: Entity): void {
-  const damage = calculatePowerDamage(caster, power, target);
+function applyDamagePower(
+  caster: Entity,
+  power: Power,
+  target: Entity,
+  resourceValueForThreshold?: number
+): void {
+  const damage = calculatePowerDamage(caster, power, target, resourceValueForThreshold);
 
   if (target.health) {
     target.health.current = Math.max(0, target.health.current - damage);
@@ -177,13 +209,18 @@ function applyBuffPower(caster: Entity, power: Power): void {
 /**
  * Apply a debuff power effect to the target enemy.
  */
-function applyDebuffPower(caster: Entity, power: Power, target: Entity): void {
+function applyDebuffPower(
+  caster: Entity,
+  power: Power,
+  target: Entity,
+  resourceValueForThreshold?: number
+): void {
   if (!target.statusEffects) {
     target.statusEffects = [];
   }
 
   // Also deal damage for debuff powers (they typically do damage + debuff)
-  const damage = calculatePowerDamage(caster, power, target);
+  const damage = calculatePowerDamage(caster, power, target, resourceValueForThreshold);
 
   if (target.health) {
     target.health.current = Math.max(0, target.health.current - damage);
@@ -245,8 +282,10 @@ export function PowerSystem(_deltaMs: number): void {
       continue;
     }
 
-    // Check resource requirements
+    // Check resource requirements and track value for threshold calculations
     // Priority: pathResource (active paths) > mana (pre-level-2)
+    let resourceValueForThreshold: number | undefined;
+
     if (entity.pathResource && entity.pathResource.type !== 'mana') {
       const resource = entity.pathResource;
       const cost = power.resourceCost ?? power.manaCost;
@@ -260,8 +299,13 @@ export function PowerSystem(_deltaMs: number): void {
           continue;
         }
         resource.current = newValue;
+        // For gain-type, use value AFTER gaining
+        resourceValueForThreshold = newValue;
       } else {
         // Fury/Momentum/Zeal: casting COSTS resource
+        // Save value BEFORE spending for threshold check
+        resourceValueForThreshold = resource.current;
+
         if (resource.current < cost) {
           const resourceName = resource.type.replace('_', ' ');
           addCombatLog(`Not enough ${resourceName} to cast ${power.name}`);
@@ -287,7 +331,7 @@ export function PowerSystem(_deltaMs: number): void {
     switch (power.effect) {
       case 'damage':
         if (target && !target.dying) {
-          applyDamagePower(entity, power, target);
+          applyDamagePower(entity, power, target, resourceValueForThreshold);
         }
         break;
 
@@ -301,7 +345,7 @@ export function PowerSystem(_deltaMs: number): void {
 
       case 'debuff':
         if (target && !target.dying) {
-          applyDebuffPower(entity, power, target);
+          applyDebuffPower(entity, power, target, resourceValueForThreshold);
         }
         break;
     }
