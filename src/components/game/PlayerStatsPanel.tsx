@@ -52,8 +52,8 @@ export function PlayerStatsPanel({ player }: PlayerStatsPanelProps) {
       armor: player.defense.value,
       speed: player.speed.value,
       fortune: player.attack.critChance * 100, // Convert back to fortune approximation
-      mana: player.mana.current,
-      maxMana: player.mana.max,
+      mana: player.mana?.current ?? 0, // null after path selection
+      maxMana: player.mana?.max ?? 0,
     },
     experience: player.xp,
     experienceToNext: player.xpToNext,

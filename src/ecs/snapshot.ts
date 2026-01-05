@@ -47,7 +47,7 @@ export interface PlayerSnapshot {
 
   // Combat stats
   health: { current: number; max: number };
-  mana: { current: number; max: number };
+  mana: { current: number; max: number } | null; // null after path selection (replaced by pathResource)
   attack: {
     baseDamage: number;
     critChance: number;
@@ -231,7 +231,8 @@ export interface CombatSnapshot {
  * Returns null if the entity doesn't have required player components.
  */
 export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
-  if (!entity.player || !entity.health || !entity.mana || !entity.identity) {
+  // Note: mana is optional - it's removed when player selects a path (replaced by pathResource)
+  if (!entity.player || !entity.health || !entity.identity) {
     return null;
   }
 
@@ -242,7 +243,7 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
 
     // Combat stats
     health: { ...entity.health },
-    mana: { ...entity.mana },
+    mana: entity.mana ? { ...entity.mana } : null,
     attack: entity.attack ? { ...entity.attack } : {
       baseDamage: 0,
       critChance: 0,

@@ -54,7 +54,8 @@ describe('Snapshot Types', () => {
       expect(snapshot).toBeNull();
     });
 
-    it('should return null if entity lacks mana component', () => {
+    it('should create snapshot with null mana when entity lacks mana component', () => {
+      // Mana is optional - it's removed when player selects a path (replaced by pathResource)
       const entity: Entity = {
         player: true,
         health: { current: 100, max: 100 },
@@ -63,7 +64,8 @@ describe('Snapshot Types', () => {
       world.add(entity);
 
       const snapshot = createPlayerSnapshot(entity);
-      expect(snapshot).toBeNull();
+      expect(snapshot).not.toBeNull();
+      expect(snapshot!.mana).toBeNull();
     });
 
     it('should return null if entity lacks identity component', () => {

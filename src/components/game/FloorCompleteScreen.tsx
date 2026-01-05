@@ -169,12 +169,14 @@ export function FloorCompleteScreen({
                   max={player.health.max}
                   color="red"
                 />
-                <PixelStatBar
-                  label="MP"
-                  current={player.mana.max}
-                  max={player.mana.max}
-                  color="blue"
-                />
+                {player.mana && (
+                  <PixelStatBar
+                    label="MP"
+                    current={player.mana.max}
+                    max={player.mana.max}
+                    color="blue"
+                  />
+                )}
               </div>
 
               {/* Stat Boxes - Core Stats */}

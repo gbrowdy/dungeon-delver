@@ -63,7 +63,7 @@ export function PowersPanel({
 
   return (
     <div className="pixel-panel rounded-lg p-2 sm:p-3">
-      {/* Resource bar header - show path resource OR mana */}
+      {/* Resource bar header - show path resource OR mana (passive paths have neither) */}
       {usesPathResource && player.pathResource ? (
         <div className="mb-2">
           <h3 className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400 mb-1">Powers</h3>
@@ -73,12 +73,12 @@ export function PowersPanel({
             showLabel={true}
           />
         </div>
-      ) : (
+      ) : player.mana ? (
         <ManaBar
           current={player.mana.current}
           max={player.mana.max}
         />
-      )}
+      ) : null}
 
       {showStanceUI ? (
         /* Stance UI for passive paths */
@@ -94,27 +94,36 @@ export function PowersPanel({
         <>
           {/* Powers grid */}
           <div className="flex flex-wrap gap-1.5">
-            {/* Block Button */}
-            <BlockButton
-              isBlocking={player.isBlocking}
-              currentMana={player.mana.current}
-              canUse={canUsePowers}
-              onActivate={onActivateBlock}
-            />
+            {/* Block Button - only show if player has mana (not for pathResource users) */}
+            {player.mana && (
+              <BlockButton
+                isBlocking={player.isBlocking}
+                currentMana={player.mana.current}
+                canUse={canUsePowers}
+                onActivate={onActivateBlock}
+              />
+            )}
 
             {/* Power buttons */}
-            {player.powers.map(power => (
-              <PowerButton
-                key={power.id}
-                power={power}
-                cooldownRemaining={player.cooldowns.get(power.id)?.remaining ?? 0}
-                currentMana={player.mana.current}
-                effectiveManaCost={getEffectiveManaCost(power.manaCost)}
-                onUse={() => onUsePower(power.id)}
-                disabled={!canUsePowers}
-                playerPathId={player.path?.pathId ?? null}
-              />
-            ))}
+            {player.powers.map(power => {
+              // Use pathResource for active paths, mana for pre-level-2
+              const currentResource = player.pathResource?.current ?? player.mana?.current ?? 0;
+              const resourceCost = player.pathResource
+                ? (power.resourceCost ?? power.manaCost)
+                : power.manaCost;
+              return (
+                <PowerButton
+                  key={power.id}
+                  power={power}
+                  cooldownRemaining={player.cooldowns.get(power.id)?.remaining ?? 0}
+                  currentMana={currentResource}
+                  effectiveManaCost={getEffectiveManaCost(resourceCost)}
+                  onUse={() => onUsePower(power.id)}
+                  disabled={!canUsePowers}
+                  playerPathId={player.path?.pathId ?? null}
+                />
+              );
+            })}
           </div>
 
           {/* Combo indicator - only show for active paths */}
