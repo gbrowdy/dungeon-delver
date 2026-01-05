@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Enemy } from '@/types/game';
+import { Enemy, CombatEvent } from '@/types/game';
 import { BattleEffect } from '@/components/game/BattleEffects';
 import { ANIMATION_TIMING } from '@/constants/animation';
 import {
@@ -9,74 +9,10 @@ import {
   SPRITE_STATE,
   BattlePhaseType,
   SpriteStateType,
-  CombatEventType,
 } from '@/constants/enums';
 
-// Base fields shared by all combat events
-interface BaseCombatEvent {
-  timestamp: number;
-  id: string; // Unique ID for deduplication
-}
-
-// Player attack event
-export interface PlayerAttackEvent extends BaseCombatEvent {
-  type: typeof COMBAT_EVENT_TYPE.PLAYER_ATTACK;
-  damage: number;
-  isCrit: boolean;
-}
-
-// Player power/ability event
-export interface PlayerPowerEvent extends BaseCombatEvent {
-  type: typeof COMBAT_EVENT_TYPE.PLAYER_POWER;
-  powerId: string;
-  damage: number;
-  isCrit: boolean;
-}
-
-// Player dodge event
-export interface PlayerDodgeEvent extends BaseCombatEvent {
-  type: typeof COMBAT_EVENT_TYPE.PLAYER_DODGE;
-  isMiss: true;
-}
-
-// Enemy attack event
-export interface EnemyAttackEvent extends BaseCombatEvent {
-  type: typeof COMBAT_EVENT_TYPE.ENEMY_ATTACK;
-  damage: number;
-  isCrit: boolean;
-}
-
-// Enemy ability event (non-attack abilities: heal, enrage, shield)
-export interface EnemyAbilityEvent extends BaseCombatEvent {
-  type: typeof COMBAT_EVENT_TYPE.ENEMY_ABILITY;
-  abilityType: 'heal' | 'enrage' | 'shield';
-}
-
-// Enemy hit event
-export interface EnemyHitEvent extends BaseCombatEvent {
-  type: typeof COMBAT_EVENT_TYPE.ENEMY_HIT;
-  damage: number;
-  isCrit: boolean;
-  targetDied?: boolean; // Flag indicating the enemy died from this hit
-}
-
-// Player hit event
-export interface PlayerHitEvent extends BaseCombatEvent {
-  type: typeof COMBAT_EVENT_TYPE.PLAYER_HIT;
-  damage: number;
-  isCrit: boolean;
-  targetDied?: boolean; // Flag indicating the player died from this hit
-}
-
-// Discriminated union of all combat events
-export type CombatEvent =
-  | PlayerAttackEvent
-  | PlayerPowerEvent
-  | PlayerDodgeEvent
-  | EnemyAttackEvent
-  | EnemyAbilityEvent
-  | EnemyHitEvent
-  | PlayerHitEvent;
+// Re-export CombatEvent for backwards compatibility
+export type { CombatEvent } from '@/types/game';
 
 interface SpriteState {
   state: SpriteStateType;

@@ -348,3 +348,91 @@ export interface ClassData {
   icon: string;
   hpRegen?: number; // Base HP regen per second (e.g., Paladin has 0.5)
 }
+
+// ============================================================================
+// COMBAT EVENT TYPES (for animations and screen reader announcements)
+// ============================================================================
+
+/**
+ * Base fields shared by all combat events
+ */
+interface BaseCombatEvent {
+  timestamp: number;
+  id: string; // Unique ID for deduplication
+}
+
+/**
+ * Player attack event
+ */
+export interface PlayerAttackEvent extends BaseCombatEvent {
+  type: 'playerAttack';
+  damage: number;
+  isCrit: boolean;
+}
+
+/**
+ * Player power/ability event
+ */
+export interface PlayerPowerEvent extends BaseCombatEvent {
+  type: 'playerPower';
+  powerId: string;
+  damage: number;
+  isCrit: boolean;
+}
+
+/**
+ * Player dodge event
+ */
+export interface PlayerDodgeEvent extends BaseCombatEvent {
+  type: 'playerDodge';
+}
+
+/**
+ * Enemy attack event
+ */
+export interface EnemyAttackEvent extends BaseCombatEvent {
+  type: 'enemyAttack';
+  damage: number;
+  isCrit: boolean;
+}
+
+/**
+ * Enemy ability event (non-attack abilities: heal, enrage, shield)
+ */
+export interface EnemyAbilityEvent extends BaseCombatEvent {
+  type: 'enemyAbility';
+  abilityType: 'heal' | 'enrage' | 'shield' | 'unknown';
+}
+
+/**
+ * Enemy hit event
+ */
+export interface EnemyHitEvent extends BaseCombatEvent {
+  type: 'enemyHit';
+  damage: number;
+  isCrit: boolean;
+  targetDied?: boolean; // Flag indicating the enemy died from this hit
+}
+
+/**
+ * Player hit event
+ */
+export interface PlayerHitEvent extends BaseCombatEvent {
+  type: 'playerHit';
+  damage: number;
+  isCrit: boolean;
+  targetDied?: boolean; // Flag indicating the player died from this hit
+}
+
+/**
+ * Discriminated union of all combat events
+ * Used for battle animations and screen reader announcements
+ */
+export type CombatEvent =
+  | PlayerAttackEvent
+  | PlayerPowerEvent
+  | PlayerDodgeEvent
+  | EnemyAttackEvent
+  | EnemyAbilityEvent
+  | EnemyHitEvent
+  | PlayerHitEvent;

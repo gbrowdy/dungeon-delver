@@ -92,9 +92,10 @@ export function BattleArena({
         return { ...baseEvent, type: 'playerPower' as const, powerId: powerId || '', damage, isCrit };
       case 'player_dodge':
         return { ...baseEvent, type: 'playerDodge' as const };
-      case 'enemy_ability':
+      case 'enemy_ability': {
         const abilityType = 'abilityType' in payload ? payload.abilityType : undefined;
         return { ...baseEvent, type: 'enemyAbility' as const, abilityType: abilityType || 'unknown' };
+      }
       default:
         return { ...baseEvent, type: 'playerAttack' as const, damage, isCrit };
     }

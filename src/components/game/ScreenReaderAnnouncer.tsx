@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CombatEvent } from '@/hooks/useBattleAnimation';
+import { CombatEvent } from '@/types/game';
 import { COMBAT_EVENT_TYPE } from '@/constants/enums';
 import { getPlayerDisplayName } from '@/utils/powerSynergies';
 import type { PlayerSnapshot, EnemySnapshot } from '@/ecs/snapshot';
@@ -69,12 +69,12 @@ export function ScreenReaderAnnouncer({
   // Low health warning for screen readers
   useEffect(() => {
     const healthPercent = player.health.current / player.health.max;
-    if (healthPercent <= 0.25 && !lowHealthWarning) {
-      setLowHealthWarning(true);
-    } else if (healthPercent > 0.25 && lowHealthWarning) {
-      setLowHealthWarning(false);
+    const isLowHealth = healthPercent <= 0.25;
+
+    if (isLowHealth !== lowHealthWarning) {
+      setLowHealthWarning(isLowHealth);
     }
-  }, [player.health.current, player.health.max, lowHealthWarning]);
+  }, [player.health, lowHealthWarning]);
 
   return (
     <>
