@@ -34,8 +34,23 @@ export function InputSystem(_deltaMs: number): void {
         const cooldown = player.cooldowns?.get(cmd.powerId);
         if (cooldown && cooldown.remaining > 0) break;
 
-        // Check mana
-        if (!player.mana || player.mana.current < power.manaCost) break;
+        // Check resource - pathResource takes priority over mana
+        if (player.pathResource && player.pathResource.type !== 'mana') {
+          const cost = power.resourceCost ?? power.manaCost;
+          if (player.pathResource.resourceBehavior === 'spend') {
+            // Fury/Momentum/Zeal: check if enough resource to spend
+            if (player.pathResource.current < cost) break;
+          } else {
+            // Arcane Charges: check if would overflow
+            if (player.pathResource.current + cost > player.pathResource.max) break;
+          }
+        } else if (player.mana) {
+          // Pre-level-2: use mana
+          if (player.mana.current < power.manaCost) break;
+        } else {
+          // No resource system - can't cast (passive paths shouldn't have powers)
+          break;
+        }
 
         // Mark as casting - PowerSystem will handle the effect
         // IMPORTANT: Use world.addComponent for miniplex query reactivity

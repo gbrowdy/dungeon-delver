@@ -183,4 +183,208 @@ describe('InputSystem - Path Selection', () => {
       expect(playerAfterPath?.stanceState?.activeStanceId).toBe(firstStance);
     }
   });
+
+  describe('Power Activation with pathResource', () => {
+    it('should allow power activation with sufficient pathResource (spend-type)', () => {
+      const gameState = createGameStateEntity();
+      gameState.phase = 'combat';
+      gameState.floor = { number: 1, room: 1, totalRooms: 5 };
+      world.add(gameState);
+
+      const player: Entity = {
+        player: true,
+        identity: { name: 'Hero' },
+        health: { current: 100, max: 100 },
+        powers: [{
+          id: 'strike',
+          name: 'Strike',
+          description: '',
+          manaCost: 20,
+          resourceCost: 30,
+          cooldown: 5,
+          effect: 'damage',
+          value: 1.5,
+          icon: '',
+        }],
+        pathResource: {
+          type: 'fury',
+          current: 50,
+          max: 100,
+          color: '#dc2626',
+          resourceBehavior: 'spend',
+          generation: { onHit: 8 },
+        },
+        cooldowns: new Map(),
+      };
+      world.add(player);
+
+      dispatch(Commands.activatePower('strike'));
+      InputSystem(16);
+
+      // Should set casting component
+      expect(player.casting).toBeDefined();
+      expect(player.casting?.powerId).toBe('strike');
+    });
+
+    it('should reject power activation with insufficient pathResource (spend-type)', () => {
+      const gameState = createGameStateEntity();
+      gameState.phase = 'combat';
+      gameState.floor = { number: 1, room: 1, totalRooms: 5 };
+      world.add(gameState);
+
+      const player: Entity = {
+        player: true,
+        identity: { name: 'Hero' },
+        health: { current: 100, max: 100 },
+        powers: [{
+          id: 'strike',
+          name: 'Strike',
+          description: '',
+          manaCost: 20,
+          resourceCost: 30,
+          cooldown: 5,
+          effect: 'damage',
+          value: 1.5,
+          icon: '',
+        }],
+        pathResource: {
+          type: 'fury',
+          current: 20, // Not enough
+          max: 100,
+          color: '#dc2626',
+          resourceBehavior: 'spend',
+          generation: { onHit: 8 },
+        },
+        cooldowns: new Map(),
+      };
+      world.add(player);
+
+      dispatch(Commands.activatePower('strike'));
+      InputSystem(16);
+
+      // Should NOT set casting component
+      expect(player.casting).toBeUndefined();
+    });
+
+    it('should allow power activation with gain-type resource below max', () => {
+      const gameState = createGameStateEntity();
+      gameState.phase = 'combat';
+      gameState.floor = { number: 1, room: 1, totalRooms: 5 };
+      world.add(gameState);
+
+      const player: Entity = {
+        player: true,
+        identity: { name: 'Hero' },
+        health: { current: 100, max: 100 },
+        powers: [{
+          id: 'arcane_bolt',
+          name: 'Arcane Bolt',
+          description: '',
+          manaCost: 1,
+          resourceCost: 1,
+          cooldown: 0,
+          effect: 'damage',
+          value: 1.2,
+          icon: '',
+        }],
+        pathResource: {
+          type: 'arcane_charges',
+          current: 2,
+          max: 5,
+          color: '#3b82f6',
+          resourceBehavior: 'gain',
+          generation: {},
+        },
+        cooldowns: new Map(),
+      };
+      world.add(player);
+
+      dispatch(Commands.activatePower('arcane_bolt'));
+      InputSystem(16);
+
+      // Should set casting component (2 + 1 = 3, which is <= 5)
+      expect(player.casting).toBeDefined();
+      expect(player.casting?.powerId).toBe('arcane_bolt');
+    });
+
+    it('should reject power activation with gain-type resource at max', () => {
+      const gameState = createGameStateEntity();
+      gameState.phase = 'combat';
+      gameState.floor = { number: 1, room: 1, totalRooms: 5 };
+      world.add(gameState);
+
+      const player: Entity = {
+        player: true,
+        identity: { name: 'Hero' },
+        health: { current: 100, max: 100 },
+        powers: [{
+          id: 'arcane_bolt',
+          name: 'Arcane Bolt',
+          description: '',
+          manaCost: 1,
+          resourceCost: 1,
+          cooldown: 0,
+          effect: 'damage',
+          value: 1.2,
+          icon: '',
+        }],
+        pathResource: {
+          type: 'arcane_charges',
+          current: 5,
+          max: 5,
+          color: '#3b82f6',
+          resourceBehavior: 'gain',
+          generation: {},
+        },
+        cooldowns: new Map(),
+      };
+      world.add(player);
+
+      dispatch(Commands.activatePower('arcane_bolt'));
+      InputSystem(16);
+
+      // Should NOT set casting component (5 + 1 = 6, which is > 5)
+      expect(player.casting).toBeUndefined();
+    });
+
+    it('should respect cooldown even with sufficient pathResource', () => {
+      const gameState = createGameStateEntity();
+      gameState.phase = 'combat';
+      gameState.floor = { number: 1, room: 1, totalRooms: 5 };
+      world.add(gameState);
+
+      const player: Entity = {
+        player: true,
+        identity: { name: 'Hero' },
+        health: { current: 100, max: 100 },
+        powers: [{
+          id: 'strike',
+          name: 'Strike',
+          description: '',
+          manaCost: 20,
+          resourceCost: 30,
+          cooldown: 5,
+          effect: 'damage',
+          value: 1.5,
+          icon: '',
+        }],
+        pathResource: {
+          type: 'fury',
+          current: 50,
+          max: 100,
+          color: '#dc2626',
+          resourceBehavior: 'spend',
+          generation: { onHit: 8 },
+        },
+        cooldowns: new Map([['strike', { remaining: 3, base: 5 }]]),
+      };
+      world.add(player);
+
+      dispatch(Commands.activatePower('strike'));
+      InputSystem(16);
+
+      // Should NOT set casting component (on cooldown)
+      expect(player.casting).toBeUndefined();
+    });
+  });
 });
