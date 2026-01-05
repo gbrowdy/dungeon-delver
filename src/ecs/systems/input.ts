@@ -62,12 +62,22 @@ export function InputSystem(_deltaMs: number): void {
       }
 
       case 'BLOCK': {
-        if (!player || !player.mana) break;
-        if (player.mana.current < COMBAT_BALANCE.BLOCK_MANA_COST) break;
+        if (!player) break;
         if (player.blocking) break; // Already blocking
 
-        player.blocking = { reduction: COMBAT_BALANCE.BLOCK_DAMAGE_REDUCTION };
-        player.mana.current -= COMBAT_BALANCE.BLOCK_MANA_COST;
+        // Active paths (pathResource): Block is FREE
+        // Pre-level-2 (mana): Block costs mana
+        // Passive paths (no mana, no pathResource): Cannot block
+        if (player.pathResource && player.pathResource.type !== 'mana') {
+          // Active path - free block
+          player.blocking = { reduction: COMBAT_BALANCE.BLOCK_DAMAGE_REDUCTION };
+        } else if (player.mana) {
+          // Pre-level-2 - costs mana
+          if (player.mana.current < COMBAT_BALANCE.BLOCK_MANA_COST) break;
+          player.blocking = { reduction: COMBAT_BALANCE.BLOCK_DAMAGE_REDUCTION };
+          player.mana.current -= COMBAT_BALANCE.BLOCK_MANA_COST;
+        }
+        // Passive paths have no block ability
         break;
       }
 

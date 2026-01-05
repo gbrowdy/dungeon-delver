@@ -7,6 +7,7 @@ import { COMBAT_BALANCE } from '@/constants/balance';
 import { getPowerModifiers, hasComboMechanic, isPassivePath, pathUsesResourceSystem } from '@/utils/pathUtils';
 import { getStancesForPath } from '@/data/stances';
 import { isFeatureEnabled } from '@/constants/features';
+import { getResourceDisplayName } from '@/data/pathResources';
 import type { PlayerSnapshot } from '@/ecs/snapshot';
 import { useGameActions } from '@/ecs/context/GameContext';
 import {
@@ -94,13 +95,15 @@ export function PowersPanel({
         <>
           {/* Powers grid */}
           <div className="flex flex-wrap gap-1.5">
-            {/* Block Button - only show if player has mana (not for pathResource users) */}
-            {player.mana && (
+            {/* Block Button - show for mana users (pre-level-2) and active path users (free) */}
+            {/* Passive paths have no Block - they use stances for defense */}
+            {(player.mana || (player.pathResource && player.pathResource.type !== 'mana')) && (
               <BlockButton
                 isBlocking={player.isBlocking}
-                currentMana={player.mana.current}
+                currentMana={player.mana?.current ?? 0}
                 canUse={canUsePowers}
                 onActivate={onActivateBlock}
+                isFree={!!player.pathResource && player.pathResource.type !== 'mana'}
               />
             )}
 
@@ -111,6 +114,11 @@ export function PowersPanel({
               const resourceCost = player.pathResource
                 ? (power.resourceCost ?? power.manaCost)
                 : power.manaCost;
+              const resourceBehavior = player.pathResource?.resourceBehavior ?? 'spend';
+              const resourceMax = player.pathResource?.max ?? player.mana?.max ?? 100;
+              const resourceLabel = player.pathResource
+                ? getResourceDisplayName(player.pathResource.type)
+                : 'MP';
               return (
                 <PowerButton
                   key={power.id}
@@ -121,6 +129,9 @@ export function PowersPanel({
                   onUse={() => onUsePower(power.id)}
                   disabled={!canUsePowers}
                   playerPathId={player.path?.pathId ?? null}
+                  resourceBehavior={resourceBehavior}
+                  resourceMax={resourceMax}
+                  resourceLabel={resourceLabel}
                 />
               );
             })}
@@ -184,10 +195,12 @@ interface BlockButtonProps {
   currentMana: number;
   canUse: boolean;
   onActivate: () => void;
+  /** If true, block is free (active paths) */
+  isFree?: boolean;
 }
 
-function BlockButton({ isBlocking, currentMana, canUse, onActivate }: BlockButtonProps) {
-  const canAfford = currentMana >= COMBAT_BALANCE.BLOCK_MANA_COST;
+function BlockButton({ isBlocking, currentMana, canUse, onActivate, isFree = false }: BlockButtonProps) {
+  const canAfford = isFree || currentMana >= COMBAT_BALANCE.BLOCK_MANA_COST;
   const isDisabled = !canUse || isBlocking || !canAfford;
   const canActivate = !isDisabled;
 
@@ -204,18 +217,18 @@ function BlockButton({ isBlocking, currentMana, canUse, onActivate }: BlockButto
             )}
             onClick={onActivate}
             disabled={isDisabled}
-            aria-label={`Block: Reduce damage by 50% from next attack. Costs ${COMBAT_BALANCE.BLOCK_MANA_COST} mana.${isBlocking ? ' Currently active.' : ''}`}
+            aria-label={`Block: Reduce damage by 50% from next attack.${isFree ? ' Free.' : ` Costs ${COMBAT_BALANCE.BLOCK_MANA_COST} mana.`}${isBlocking ? ' Currently active.' : ''}`}
           >
             <Shield className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-info" aria-hidden="true" />
             <span className="pixel-text text-pixel-2xs font-medium text-slate-200">Block</span>
             <span className="pixel-text text-pixel-2xs text-mana">
-              {COMBAT_BALANCE.BLOCK_MANA_COST} MP
+              {isFree ? 'Free' : `${COMBAT_BALANCE.BLOCK_MANA_COST} MP`}
             </span>
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" className="pixel-panel">
           <p className="pixel-text text-pixel-xs">Reduce damage by 50% from next attack</p>
-          <p className="pixel-text text-pixel-2xs text-mana mt-1">{COMBAT_BALANCE.BLOCK_MANA_COST} MP</p>
+          <p className="pixel-text text-pixel-2xs text-mana mt-1">{isFree ? 'Free' : `${COMBAT_BALANCE.BLOCK_MANA_COST} MP`}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
