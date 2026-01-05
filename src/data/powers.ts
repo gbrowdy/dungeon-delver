@@ -45,6 +45,7 @@ interface PowerDefinition {
   description: string;
   icon: string;
   manaCost: number;
+  resourceCost?: number; // For active path resources
   cooldown: number;
   category: 'strike' | 'burst' | 'execute' | 'control' | 'buff' | 'sacrifice' | 'heal';
   effect: 'damage' | 'heal' | 'buff' | 'debuff';
@@ -352,6 +353,7 @@ export const UNLOCKABLE_POWERS: Power[] = POWER_DEFINITIONS.map(def => ({
   name: def.name,
   description: def.description,
   manaCost: def.manaCost,
+  resourceCost: def.resourceCost, // Pass through
   cooldown: def.cooldown,
   effect: def.effect,
   value: def.value,
