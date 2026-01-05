@@ -12,6 +12,7 @@
 
 import { getGameState } from '../queries';
 import { getTick, TICK_MS } from '../loop';
+import { enemyQuery } from '../queries';
 import type { AnimationEvent, AnimationEventType, AnimationPayload } from '../components';
 
 // Animation ID counter for unique event identification
@@ -79,7 +80,8 @@ export function queueAnimationEvent(
  * AnimationSystem - processes animation event lifecycle each tick.
  *
  * Responsibilities:
- * 1. Mark events as consumed when displayUntilTick is reached
+ * 1. Process animation events and set combatAnimation components on entities
+ * 2. Mark events as consumed when displayUntilTick is reached
  *
  * Note: Does NOT remove consumed events - that's CleanupSystem's job.
  * This separation allows React to potentially animate "consumed" events
@@ -94,10 +96,40 @@ export function AnimationSystem(_deltaMs: number): void {
 
   const currentTick = getTick();
 
+  // Process unconsumed events and set combatAnimation on entities
+  for (const event of events) {
+    if (!event.consumed) {
+      processAnimationEvent(event);
+    }
+  }
+
   // Mark events as consumed when their display duration has passed
   for (const event of events) {
     if (!event.consumed && currentTick >= event.displayUntilTick) {
       event.consumed = true;
     }
+  }
+}
+
+/**
+ * Process an animation event and set combatAnimation on the target entity.
+ */
+function processAnimationEvent(event: AnimationEvent): void {
+  const currentTick = getTick();
+  const durationMs = (event.displayUntilTick - event.createdAtTick) * TICK_MS;
+
+  switch (event.type) {
+    case 'enemy_hit': {
+      const enemy = enemyQuery.first;
+      if (enemy) {
+        enemy.combatAnimation = {
+          type: 'hit',
+          startedAtTick: currentTick,
+          duration: durationMs,
+        };
+      }
+      break;
+    }
+    // Add more event types as needed
   }
 }
