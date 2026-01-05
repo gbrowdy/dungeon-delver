@@ -5,7 +5,7 @@
  * then applies regen values.
  */
 
-import { entitiesWithRegen, getGameState } from '../queries';
+import { entitiesWithRegen, getGameState, getPlayer } from '../queries';
 import { getEffectiveDelta } from '../loop';
 
 const REGEN_TICK_MS = 1000; // Apply regen every 1 second
@@ -16,6 +16,7 @@ export function RegenSystem(deltaMs: number): void {
   if (gameState?.phase !== 'combat') return;
 
   const effectiveDelta = getEffectiveDelta(deltaMs);
+  const inCombat = gameState?.phase === 'combat';
 
   for (const entity of entitiesWithRegen) {
     // Skip dying entities
@@ -46,6 +47,16 @@ export function RegenSystem(deltaMs: number): void {
 
       // Reset accumulated time (keeping overflow for precision)
       regen.accumulated -= REGEN_TICK_MS;
+    }
+  }
+
+  // Path resource decay (out of combat only)
+  const player = getPlayer();
+  if (player?.pathResource?.decay) {
+    const decay = player.pathResource.decay;
+    if (!decay.outOfCombatOnly || !inCombat) {
+      const decayAmount = decay.rate * (effectiveDelta / decay.tickInterval);
+      player.pathResource.current = Math.max(0, player.pathResource.current - decayAmount);
     }
   }
 }
