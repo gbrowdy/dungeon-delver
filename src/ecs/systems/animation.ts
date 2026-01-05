@@ -10,10 +10,11 @@
  * Note: Events are NOT removed by this system - that's CleanupSystem's responsibility.
  */
 
-import { getGameState } from '../queries';
+import { getGameState, getPlayer } from '../queries';
 import { getTick, TICK_MS } from '../loop';
 import { enemyQuery } from '../queries';
 import type { AnimationEvent, AnimationEventType, AnimationPayload } from '../components';
+import { COMBAT_ANIMATION } from '@/constants/enums';
 
 // Animation ID counter for unique event identification
 let nextAnimationId = 0;
@@ -113,23 +114,89 @@ export function AnimationSystem(_deltaMs: number): void {
 
 /**
  * Process an animation event and set combatAnimation on the target entity.
+ * Only processes each event once (on the tick it's created).
  */
 function processAnimationEvent(event: AnimationEvent): void {
   const currentTick = getTick();
+
+  // Only process events on the tick they're created to avoid re-processing
+  if (event.createdAtTick !== currentTick) {
+    return;
+  }
+
   const durationMs = (event.displayUntilTick - event.createdAtTick) * TICK_MS;
+  const gameState = getGameState();
 
   switch (event.type) {
     case 'enemy_hit': {
       const enemy = enemyQuery.first;
-      if (enemy) {
+      if (enemy && event.payload.type === 'damage') {
         enemy.combatAnimation = {
-          type: 'hit',
+          type: COMBAT_ANIMATION.HIT,
           startedAtTick: currentTick,
           duration: durationMs,
         };
+
+        // Add floating damage effect
+        addFloatingEffect(gameState, event.payload, 'enemy');
+      }
+      break;
+    }
+    case 'player_hit': {
+      const player = getPlayer();
+      if (player && event.payload.type === 'damage') {
+        player.combatAnimation = {
+          type: COMBAT_ANIMATION.HIT,
+          startedAtTick: currentTick,
+          duration: durationMs,
+        };
+
+        // Add visual shake effect
+        if (!player.visualEffects) {
+          player.visualEffects = {};
+        }
+        player.visualEffects.shake = {
+          untilTick: currentTick + Math.ceil(durationMs / TICK_MS),
+        };
+
+        // Add floating damage effect
+        addFloatingEffect(gameState, event.payload, 'player');
       }
       break;
     }
     // Add more event types as needed
   }
+}
+
+/**
+ * Add a floating damage/heal effect to the game state.
+ */
+function addFloatingEffect(
+  gameState: ReturnType<typeof getGameState>,
+  payload: AnimationPayload,
+  target: 'player' | 'enemy'
+): void {
+  if (!gameState) return;
+  if (payload.type !== 'damage' && payload.type !== 'heal') return;
+
+  if (!gameState.floatingEffects) {
+    gameState.floatingEffects = [];
+  }
+
+  const currentTick = getTick();
+
+  // Position based on target (these are relative positions that UI will use)
+  const x = target === 'enemy' ? 0.7 : 0.3; // 70% right for enemy, 30% for player
+  const y = 0.5; // Middle vertically
+
+  gameState.floatingEffects.push({
+    id: getNextAnimationId(),
+    type: payload.type === 'damage' ? 'damage' : 'heal',
+    value: payload.value,
+    x,
+    y,
+    createdAtTick: currentTick,
+    duration: 1000, // 1 second float animation
+    isCrit: payload.type === 'damage' ? payload.isCrit : false,
+  });
 }
