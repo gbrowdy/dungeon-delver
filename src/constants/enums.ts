@@ -166,3 +166,34 @@ export const PAUSE_REASON = {
 } as const;
 
 export type PauseReasonType = typeof PAUSE_REASON[keyof typeof PAUSE_REASON];
+
+// Combat animation states for ECS
+export const COMBAT_ANIMATION = {
+  IDLE: 'idle',
+  ATTACK: 'attack',
+  HIT: 'hit',
+  CAST: 'cast',
+  DIE: 'die',
+} as const;
+
+export type CombatAnimationType = typeof COMBAT_ANIMATION[keyof typeof COMBAT_ANIMATION];
+
+// Visual effect types
+export const VISUAL_EFFECT = {
+  FLASH: 'flash',
+  SHAKE: 'shake',
+  HIT_STOP: 'hitStop',
+  AURA: 'aura',
+} as const;
+
+export type VisualEffectType = typeof VISUAL_EFFECT[keyof typeof VISUAL_EFFECT];
+
+// Floating effect types
+export const FLOATING_EFFECT = {
+  DAMAGE: 'damage',
+  HEAL: 'heal',
+  MISS: 'miss',
+  CRIT: 'crit',
+} as const;
+
+export type FloatingEffectType = typeof FLOATING_EFFECT[keyof typeof FLOATING_EFFECT];
