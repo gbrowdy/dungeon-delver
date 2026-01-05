@@ -318,4 +318,230 @@ describe('PowerSystem', () => {
     // Enemy should not take damage (dying)
     expect(enemy.health?.current).toBe(50);
   });
+
+  describe('path resource consumption', () => {
+    it('should deduct spend-type resource when casting power', () => {
+      // Create game state entity
+      const gameState = world.add({
+        gameState: true,
+        phase: 'combat',
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatSpeed: { multiplier: 1 },
+        animationEvents: [],
+        combatLog: [],
+      });
+
+      // Create player with Fury (spend-type resource)
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'warrior' },
+        health: { current: 100, max: 100 },
+        attack: {
+          baseDamage: 10,
+          critChance: 0,
+          critMultiplier: 2,
+          variance: { min: 1, max: 1 },
+        },
+        defense: { value: 5, blockReduction: 0.4 },
+        speed: { value: 10, attackInterval: 2500, accumulated: 0 },
+        powers: [{
+          id: 'test-power',
+          name: 'Test Power',
+          description: 'Test',
+          manaCost: 20,
+          resourceCost: 30,
+          cooldown: 5,
+          effect: 'damage',
+          value: 1.5,
+          icon: 'test',
+        }],
+        pathResource: {
+          type: 'fury',
+          current: 50,
+          max: 100,
+          color: '#dc2626',
+          resourceBehavior: 'spend',
+          generation: { onHit: 8 },
+        },
+        casting: { powerId: 'test-power', startedAtTick: 0 },
+        cooldowns: new Map(),
+      });
+
+      // Create enemy target
+      const enemy = world.add({
+        enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+        health: { current: 50, max: 50 },
+        defense: { value: 0, blockReduction: 0 },
+        speed: { value: 8, attackInterval: 3000, accumulated: 0 },
+      });
+
+      // Run PowerSystem
+      PowerSystem(16);
+
+      // Fury should be deducted
+      expect(player.pathResource?.current).toBe(20); // 50 - 30 = 20
+    });
+
+    it('should reject cast if not enough spend-type resource', () => {
+      const gameState = world.add({
+        gameState: true,
+        phase: 'combat',
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatSpeed: { multiplier: 1 },
+        animationEvents: [],
+        combatLog: [],
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'warrior' },
+        health: { current: 100, max: 100 },
+        attack: {
+          baseDamage: 10,
+          critChance: 0,
+          critMultiplier: 2,
+          variance: { min: 1, max: 1 },
+        },
+        defense: { value: 5, blockReduction: 0.4 },
+        speed: { value: 10, attackInterval: 2500, accumulated: 0 },
+        powers: [{
+          id: 'test-power',
+          name: 'Test Power',
+          description: 'Test',
+          manaCost: 20,
+          resourceCost: 30,
+          cooldown: 5,
+          effect: 'damage',
+          value: 1.5,
+          icon: 'test',
+        }],
+        pathResource: {
+          type: 'fury',
+          current: 20, // Not enough (need 30)
+          max: 100,
+          color: '#dc2626',
+          resourceBehavior: 'spend',
+          generation: { onHit: 8 },
+        },
+        casting: { powerId: 'test-power', startedAtTick: 0 },
+        cooldowns: new Map(),
+      });
+
+      PowerSystem(16);
+
+      // Fury should NOT be deducted, casting should be cleared
+      expect(player.pathResource?.current).toBe(20);
+      expect(player.casting).toBeUndefined();
+    });
+
+    it('should add gain-type resource when casting power', () => {
+      const gameState = world.add({
+        gameState: true,
+        phase: 'combat',
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatSpeed: { multiplier: 1 },
+        animationEvents: [],
+        combatLog: [],
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'mage' },
+        health: { current: 100, max: 100 },
+        attack: {
+          baseDamage: 10,
+          critChance: 0,
+          critMultiplier: 2,
+          variance: { min: 1, max: 1 },
+        },
+        defense: { value: 5, blockReduction: 0.4 },
+        speed: { value: 10, attackInterval: 2500, accumulated: 0 },
+        powers: [{
+          id: 'test-power',
+          name: 'Test Power',
+          description: 'Test',
+          manaCost: 20,
+          resourceCost: 30,
+          cooldown: 5,
+          effect: 'damage',
+          value: 1.5,
+          icon: 'test',
+        }],
+        pathResource: {
+          type: 'arcane_charges',
+          current: 50,
+          max: 100,
+          color: '#3b82f6',
+          resourceBehavior: 'gain',
+          generation: { onPowerUse: 10 },
+        },
+        casting: { powerId: 'test-power', startedAtTick: 0 },
+        cooldowns: new Map(),
+      });
+
+      const enemy = world.add({
+        enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+        health: { current: 50, max: 50 },
+        defense: { value: 0, blockReduction: 0 },
+        speed: { value: 8, attackInterval: 3000, accumulated: 0 },
+      });
+
+      PowerSystem(16);
+
+      // Arcane charges should be added
+      expect(player.pathResource?.current).toBe(80); // 50 + 30 = 80
+    });
+
+    it('should reject cast if gain-type resource would overflow', () => {
+      const gameState = world.add({
+        gameState: true,
+        phase: 'combat',
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatSpeed: { multiplier: 1 },
+        animationEvents: [],
+        combatLog: [],
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'mage' },
+        health: { current: 100, max: 100 },
+        attack: {
+          baseDamage: 10,
+          critChance: 0,
+          critMultiplier: 2,
+          variance: { min: 1, max: 1 },
+        },
+        defense: { value: 5, blockReduction: 0.4 },
+        speed: { value: 10, attackInterval: 2500, accumulated: 0 },
+        powers: [{
+          id: 'test-power',
+          name: 'Test Power',
+          description: 'Test',
+          manaCost: 20,
+          resourceCost: 30,
+          cooldown: 5,
+          effect: 'damage',
+          value: 1.5,
+          icon: 'test',
+        }],
+        pathResource: {
+          type: 'arcane_charges',
+          current: 85, // 85 + 30 = 115 > 100 max
+          max: 100,
+          color: '#3b82f6',
+          resourceBehavior: 'gain',
+          generation: { onPowerUse: 10 },
+        },
+        casting: { powerId: 'test-power', startedAtTick: 0 },
+        cooldowns: new Map(),
+      });
+
+      PowerSystem(16);
+
+      // Arcane charges should NOT be added, casting should be cleared
+      expect(player.pathResource?.current).toBe(85);
+      expect(player.casting).toBeUndefined();
+    });
+  });
 });

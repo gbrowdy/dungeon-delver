@@ -13,7 +13,7 @@ import type { Power, StatusEffect } from '@/types/game';
 import { recordPathTrigger } from './path-ability';
 
 // Query for entities that are casting
-const castingQuery = world.with('casting', 'powers', 'mana');
+const castingQuery = world.with('casting', 'powers');
 
 let nextAnimationId = 0;
 
@@ -245,16 +245,38 @@ export function PowerSystem(_deltaMs: number): void {
       continue;
     }
 
-    // Check if entity has enough mana
-    if (entity.mana && entity.mana.current < power.manaCost) {
-      // Not enough mana - clear casting
-      addCombatLog(`Not enough mana to cast ${power.name}`);
-      world.removeComponent(entity, 'casting');
-      continue;
-    }
+    // Check resource requirements
+    // Priority: pathResource (active paths) > mana (pre-level-2)
+    if (entity.pathResource && entity.pathResource.type !== 'mana') {
+      const resource = entity.pathResource;
+      const cost = power.resourceCost ?? power.manaCost;
 
-    // Deduct mana cost
-    if (entity.mana) {
+      if (resource.resourceBehavior === 'gain') {
+        // Arcane Charges: casting ADDS to resource
+        const newValue = resource.current + cost;
+        if (newValue > resource.max) {
+          addCombatLog(`Arcane overload! Cannot cast ${power.name}`);
+          world.removeComponent(entity, 'casting');
+          continue;
+        }
+        resource.current = newValue;
+      } else {
+        // Fury/Momentum/Zeal: casting COSTS resource
+        if (resource.current < cost) {
+          const resourceName = resource.type.replace('_', ' ');
+          addCombatLog(`Not enough ${resourceName} to cast ${power.name}`);
+          world.removeComponent(entity, 'casting');
+          continue;
+        }
+        resource.current -= cost;
+      }
+    } else if (entity.mana) {
+      // Pre-level-2: use mana
+      if (entity.mana.current < power.manaCost) {
+        addCombatLog(`Not enough mana to cast ${power.name}`);
+        world.removeComponent(entity, 'casting');
+        continue;
+      }
       entity.mana.current = Math.max(0, entity.mana.current - power.manaCost);
     }
 
