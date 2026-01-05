@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import { CombatSpeed } from '@/types/game';
 import { PathAbility } from '@/types/paths';
 import { BattleArena } from './BattleArena';
@@ -11,8 +11,6 @@ import { AbilityChoicePopup } from './AbilityChoicePopup';
 import { useGameKeyboard } from '@/hooks/useGameKeyboard';
 import { useGameActions } from '@/ecs/context/GameContext';
 import type { PlayerSnapshot, EnemySnapshot, GameStateSnapshot } from '@/ecs/snapshot';
-
-type BattlePhase = 'entering' | 'combat' | 'victory' | 'defeat' | 'transitioning';
 
 interface CombatScreenProps {
   player: PlayerSnapshot;
@@ -36,14 +34,9 @@ export function CombatScreen({
   onSelectAbility,
 }: CombatScreenProps) {
   const actions = useGameActions();
-  const [battlePhase, setBattlePhase] = useState<BattlePhase>('entering');
-
-  const handlePhaseChange = useCallback((phase: BattlePhase) => {
-    setBattlePhase(phase);
-  }, []);
 
   // Powers are only usable when in active combat
-  const canUsePowers = !!enemy && battlePhase === 'combat' && !gameState.isPaused;
+  const canUsePowers = !!enemy && gameState.battlePhase === 'combat' && !gameState.isPaused;
 
   // Keyboard shortcut handlers
   const keyboardHandlers = useMemo(() => ({
@@ -64,7 +57,7 @@ export function CombatScreen({
 
   useGameKeyboard({
     ...keyboardHandlers,
-    enabled: battlePhase === 'combat',
+    enabled: gameState.battlePhase === 'combat',
   });
 
   // Scroll to top on mount
@@ -104,8 +97,10 @@ export function CombatScreen({
           enemy={enemy}
           isPaused={gameState.isPaused}
           animationEvents={gameState.animationEvents}
-          battlePhase={battlePhase}
-          onPhaseChange={handlePhaseChange}
+          battlePhase={gameState.battlePhase}
+          groundScrolling={gameState.groundScrolling}
+          floatingEffects={gameState.floatingEffects}
+          onPhaseChange={useCallback(() => {}, [])}
           onTransitionComplete={actions.handleTransitionComplete}
           onEnemyDeathAnimationComplete={actions.handleEnemyDeathAnimationComplete}
           onPlayerDeathAnimationComplete={actions.handlePlayerDeathAnimationComplete}
