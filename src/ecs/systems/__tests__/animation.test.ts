@@ -254,6 +254,38 @@ describe('AnimationSystem', () => {
     });
   });
 
+  describe('event processing', () => {
+    it('should set combatAnimation on enemy when enemy_hit event is processed', () => {
+      // Setup: player, enemy, gameState with enemy_hit event
+      const player = world.add({
+        player: true,
+        health: { current: 100, max: 100 },
+        mana: { current: 50, max: 50 },
+        identity: { name: 'Hero', class: 'warrior' },
+      });
+
+      const enemy = world.add({
+        enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+        health: { current: 50, max: 50 },
+      });
+
+      const gameState = world.with('gameState').first!;
+      gameState.animationEvents = [{
+        id: 'test-1',
+        type: 'enemy_hit',
+        payload: { type: 'damage', value: 10, isCrit: false, blocked: false },
+        createdAtTick: getTick(),
+        displayUntilTick: getTick() + 30,
+        consumed: false,
+      }];
+
+      AnimationSystem(16);
+
+      expect(enemy.combatAnimation).toBeDefined();
+      expect(enemy.combatAnimation?.type).toBe('hit');
+    });
+  });
+
   describe('edge cases', () => {
     it('should not process events if no game state', () => {
       // Remove all entities
