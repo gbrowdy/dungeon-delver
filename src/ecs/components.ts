@@ -19,6 +19,7 @@ import type {
   ModifierEffect,
 } from '@/types/game';
 import type { PlayerPath, PlayerStanceState } from '@/types/paths';
+import type { CombatAnimationType, FloatingEffectType } from '@/constants/enums';
 
 // Game phases
 export type GamePhase =
@@ -254,6 +255,45 @@ export interface Entity {
   // === ANIMATION (game state entity only) ===
   animationEvents?: AnimationEvent[];
   combatLog?: string[];
+
+  // Animation state (for player/enemy entities)
+  combatAnimation?: {
+    type: CombatAnimationType;
+    startedAtTick: number;
+    duration: number; // ms
+    powerId?: string; // for cast animations
+    anticipation?: number; // wind-up time in ms
+  };
+
+  // Visual effects overlay
+  visualEffects?: {
+    flash?: { untilTick: number };
+    shake?: { untilTick: number };
+    hitStop?: { untilTick: number };
+    aura?: { color: 'red' | 'blue' | 'green'; untilTick: number };
+  };
+
+  // Floating text effects (on gameState entity)
+  floatingEffects?: Array<{
+    id: string;
+    type: FloatingEffectType;
+    value?: number;
+    x: number;
+    y: number;
+    createdAtTick: number;
+    duration: number; // ms
+    isCrit?: boolean;
+  }>;
+
+  // Battle phase (on gameState entity)
+  battlePhase?: {
+    phase: 'entering' | 'combat' | 'transitioning' | 'defeat';
+    startedAtTick: number;
+    duration?: number; // ms, for timed phases
+  };
+
+  // Ground scrolling state
+  groundScrolling?: boolean;
 
   // === UI STATE (game state entity only) ===
   popups?: PopupState;
