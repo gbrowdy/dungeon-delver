@@ -20,6 +20,15 @@ export function CooldownSystem(deltaMs: number): void {
         // Convert ms to seconds for cooldown (powers use seconds)
         const deltaSeconds = effectiveDelta / 1000;
         cooldown.remaining = Math.max(0, cooldown.remaining - deltaSeconds);
+
+        // Sync power.currentCooldown for UI display
+        // (PowerButton reads from power.currentCooldown, not the Map)
+        if (entity.powers) {
+          const power = entity.powers.find(p => p.id === powerId);
+          if (power) {
+            power.currentCooldown = cooldown.remaining;
+          }
+        }
       }
     }
   }
