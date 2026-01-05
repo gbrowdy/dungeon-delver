@@ -52,7 +52,10 @@ describe('DeathSystem', () => {
     expect(eventCountAfter).toBe(eventCountBefore); // No new events
   });
 
-  it('should queue death animation event', () => {
+  it('should NOT queue death animation event (combat system handles this via targetDied)', () => {
+    // DeathSystem no longer queues 'death' animation events.
+    // Death animations are now handled by combat events (player_hit/enemy_hit)
+    // with targetDied=true, so the killing blow animation plays before death.
     world.add({
       enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
       health: { current: 0, max: 50 },
@@ -63,8 +66,8 @@ describe('DeathSystem', () => {
 
     const gameState = world.with('gameState').first!;
     const deathEvents = gameState.animationEvents?.filter((e) => e.type === 'death');
-    expect(deathEvents?.length).toBe(1);
-    expect((deathEvents?.[0]?.payload as { isPlayer: boolean }).isPlayer).toBe(false);
+    // No death events should be queued - combat system handles death animations
+    expect(deathEvents?.length ?? 0).toBe(0);
   });
 
   it('should apply rewards to player on enemy death', () => {

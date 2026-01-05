@@ -219,7 +219,10 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
 
     // Abilities
     powers: entity.powers ? [...entity.powers] : [],
-    cooldowns: entity.cooldowns ? new Map(entity.cooldowns) : new Map(),
+    // Deep-copy cooldowns Map so mutations to entity don't affect snapshot
+    cooldowns: entity.cooldowns
+      ? new Map(Array.from(entity.cooldowns.entries()).map(([k, v]) => [k, { ...v }]))
+      : new Map(),
 
     // Equipment
     equipment: entity.equipment ? {

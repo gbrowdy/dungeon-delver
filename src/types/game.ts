@@ -187,7 +187,8 @@ export interface Power {
   description: string;
   manaCost: number;
   cooldown: number; // Cooldown duration in seconds
-  currentCooldown: number; // Remaining cooldown in seconds (can be fractional)
+  // NOTE: Cooldown state is tracked in entity.cooldowns Map, not on the Power object
+  // Use cooldowns.get(power.id)?.remaining to get current cooldown
   effect: 'damage' | 'heal' | 'buff' | 'debuff';
   value: number;
   icon: string;
@@ -235,6 +236,12 @@ export interface EnemyStatDebuff {
   sourceName: string; // ability name for combat log
 }
 
+/**
+ * @deprecated Legacy type - use ECS entities with enemy component instead.
+ * The ECS stores enemy data as entities in world.ts with health, attack, defense, etc. components.
+ * This type remains for backward compatibility with generateEnemy() and legacy systems.
+ * Prefer using EnemySnapshot from ecs/snapshot.ts for UI components.
+ */
 export interface Enemy {
   id: string;
   name: string;
@@ -260,6 +267,12 @@ export interface Enemy {
   modifiers?: ModifierEffect[]; // Optional elite/rare enemy modifiers
 }
 
+/**
+ * @deprecated Legacy type - use ECS entities with player component instead.
+ * The ECS stores player data as entities in world.ts with health, mana, attack, etc. components.
+ * This type remains for backward compatibility with legacy systems.
+ * Prefer using PlayerSnapshot from ecs/snapshot.ts for UI components.
+ */
 export interface Player {
   name: string;
   class: CharacterClass;
@@ -299,6 +312,12 @@ export interface Player {
   pathResource?: PathResource; // Active path resource (Phase 6) - replaces mana for active paths
 }
 
+/**
+ * @deprecated Legacy type - use ECS gameState entity instead.
+ * The ECS stores game state in an entity with phase, floor, popups, etc. components.
+ * This type remains for backward compatibility with legacy systems.
+ * Prefer using GameStateSnapshot from ecs/snapshot.ts for UI components.
+ */
 export interface GameState {
   player: Player | null;
   currentEnemy: Enemy | null;

@@ -353,7 +353,6 @@ export const UNLOCKABLE_POWERS: Power[] = POWER_DEFINITIONS.map(def => ({
   description: def.description,
   manaCost: def.manaCost,
   cooldown: def.cooldown,
-  currentCooldown: 0,
   effect: def.effect,
   value: def.value,
   icon: def.icon,
@@ -367,7 +366,7 @@ export function getRandomPower(existingPowerIds: string[]): Power | null {
   const randomIndex = Math.floor(Math.random() * available.length);
   const selectedPower = available[randomIndex];
   if (!selectedPower) return null;
-  return { ...selectedPower, currentCooldown: 0 };
+  return { ...selectedPower };
 }
 
 /**
@@ -380,7 +379,7 @@ export function getRandomPowers(existingPowerIds: string[], count: number = 2): 
 
   // Shuffle and take up to `count` powers
   const shuffled = [...available].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(count, available.length)).map(p => ({ ...p, currentCooldown: 0 }));
+  return shuffled.slice(0, Math.min(count, available.length)).map(p => ({ ...p }));
 }
 
 /**
@@ -492,7 +491,7 @@ export function getPowerChoices(existingPowers: Power[], count: number = 2): Pow
     for (let i = 0; i < remainingSlots && i < shuffledNew.length; i++) {
       const power = shuffledNew[i];
       if (power) {
-        choices.push({ ...power, currentCooldown: 0, upgradeLevel: 1 });
+        choices.push({ ...power, upgradeLevel: 1 });
       }
     }
   }

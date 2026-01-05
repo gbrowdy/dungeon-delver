@@ -219,19 +219,9 @@ function applyDebuffPower(caster: Entity, power: Power, target: Entity): void {
 
 /**
  * Set the cooldown on a power after casting.
- * Updates both the power's currentCooldown AND the entity's cooldowns Map.
+ * Cooldown state is stored in entity.cooldowns Map (single source of truth).
  */
 function setCooldown(entity: Entity, power: Power): void {
-  // Find the power in the entity's powers array and set its cooldown
-  const powers = entity.powers;
-  if (!powers) return;
-
-  const powerIndex = powers.findIndex(p => p.id === power.id);
-  if (powerIndex !== -1) {
-    powers[powerIndex].currentCooldown = power.cooldown;
-  }
-
-  // ALSO set cooldown in the entity's cooldowns Map (used by InputSystem and CooldownSystem)
   if (!entity.cooldowns) {
     entity.cooldowns = new Map();
   }

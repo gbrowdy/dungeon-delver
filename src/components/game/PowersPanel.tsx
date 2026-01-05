@@ -108,6 +108,7 @@ export function PowersPanel({
               <PowerButton
                 key={power.id}
                 power={power}
+                cooldownRemaining={player.cooldowns.get(power.id)?.remaining ?? 0}
                 currentMana={player.mana.current}
                 effectiveManaCost={getEffectiveManaCost(power.manaCost)}
                 onUse={() => onUsePower(power.id)}

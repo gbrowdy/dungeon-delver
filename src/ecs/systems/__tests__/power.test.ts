@@ -11,7 +11,6 @@ function createDamagePower(): Power {
     description: 'Deals fire damage',
     manaCost: 20,
     cooldown: 5,
-    currentCooldown: 0,
     effect: 'damage',
     value: 1.5, // 150% damage
     icon: 'fireball',
@@ -25,7 +24,6 @@ function createHealPower(): Power {
     description: 'Restores health',
     manaCost: 30,
     cooldown: 8,
-    currentCooldown: 0,
     effect: 'heal',
     value: 0.5, // 50% max health
     icon: 'heal',
@@ -180,8 +178,8 @@ describe('PowerSystem', () => {
 
     PowerSystem(16);
 
-    // Cooldown should be set to power's cooldown value (5)
-    expect(player.powers?.[0].currentCooldown).toBe(5);
+    // Cooldown should be set in cooldowns Map to power's cooldown value (5)
+    expect(player.cooldowns?.get('fireball')?.remaining).toBe(5);
   });
 
   it('should clear casting component after processing', () => {

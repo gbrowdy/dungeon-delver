@@ -101,7 +101,6 @@ describe('Snapshot Types', () => {
             description: 'Throws fire',
             manaCost: 20,
             cooldown: 5,
-            currentCooldown: 0,
             effect: 'damage',
             value: 30,
             icon: 'flame',
@@ -622,8 +621,11 @@ describe('Snapshot Types', () => {
 
       const snapshot = createCombatSnapshot();
 
-      // activeEnemyQuery excludes dying enemies
-      expect(snapshot.enemy).toBeNull();
+      // Dying enemies are included in snapshot for death animation
+      // but marked with isDying: true so UI knows they're dying
+      expect(snapshot.enemy).not.toBeNull();
+      expect(snapshot.enemy?.isDying).toBe(true);
+      expect(snapshot.enemy?.name).toBe('Dying Goblin');
     });
   });
 
@@ -641,12 +643,12 @@ describe('Snapshot Types', () => {
             description: 'A basic attack',
             manaCost: 10,
             cooldown: 3,
-            currentCooldown: 0,
             effect: 'damage',
             value: 20,
             icon: 'sword',
           },
         ],
+        cooldowns: new Map([['slash', { remaining: 0, base: 3 }]]),
       };
       world.add(entity);
 
@@ -654,13 +656,13 @@ describe('Snapshot Types', () => {
 
       // Mutate original entity
       entity.health!.current = 50;
-      entity.powers![0].currentCooldown = 3;
+      entity.cooldowns!.get('slash')!.remaining = 3;
 
       // Snapshot should reflect original values (shallow copy of nested objects)
       // Note: This test verifies the arrays are copied, but nested object references may still be shared
       expect(snapshot!.powers).toHaveLength(1);
-      // The powers array is a new array, but power objects themselves are not deep cloned
-      // This is acceptable for read-only snapshots in React
+      // The cooldowns Map is copied, so original mutations don't affect snapshot
+      expect(snapshot!.cooldowns.get('slash')?.remaining).toBe(0);
     });
 
     it('should not reflect changes to original entity in enemy snapshot', () => {

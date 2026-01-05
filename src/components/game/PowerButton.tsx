@@ -56,6 +56,7 @@ function getPowerIcon(power: Power): React.ComponentType<{ className?: string }>
  * Props for the PowerButton component.
  *
  * @property power - The power/ability configuration containing icon, name, cooldown, mana cost
+ * @property cooldownRemaining - Current cooldown remaining (from cooldowns Map)
  * @property currentMana - Player's current mana for affordability check
  * @property effectiveManaCost - Actual mana cost after path ability reductions (optional, defaults to power.manaCost)
  * @property onUse - Callback fired when the power button is clicked
@@ -65,6 +66,8 @@ function getPowerIcon(power: Power): React.ComponentType<{ className?: string }>
 interface PowerButtonProps {
   /** The power configuration (icon, name, cooldown, mana cost, effect) */
   power: Power;
+  /** Current cooldown remaining in seconds (from cooldowns Map, 0 = ready) */
+  cooldownRemaining: number;
   /** Player's current mana points for affordability check */
   currentMana: number;
   /** Effective mana cost after path ability reductions */
@@ -105,18 +108,18 @@ function getPowerDescription(power: Power): string {
  * - Synergy indicator if power matches player's path
  *
  * The button is disabled when:
- * - On cooldown (currentCooldown > 0)
+ * - On cooldown (cooldownRemaining > 0)
  * - Insufficient mana
  * - Explicitly disabled via prop (combat paused, etc.)
  */
-export function PowerButton({ power, currentMana, effectiveManaCost, onUse, disabled, playerPathId }: PowerButtonProps) {
+export function PowerButton({ power, cooldownRemaining, currentMana, effectiveManaCost, onUse, disabled, playerPathId }: PowerButtonProps) {
   // Use effective mana cost if provided, otherwise fall back to base cost
   const manaCost = effectiveManaCost ?? power.manaCost;
   const hasReduction = effectiveManaCost !== undefined && effectiveManaCost < power.manaCost;
 
-  const canUse = power.currentCooldown <= 0 && currentMana >= manaCost && !disabled;
-  const isOnCooldown = power.currentCooldown > 0;
-  const cooldownProgress = isOnCooldown ? (power.currentCooldown / power.cooldown) * 100 : 0;
+  const canUse = cooldownRemaining <= 0 && currentMana >= manaCost && !disabled;
+  const isOnCooldown = cooldownRemaining > 0;
+  const cooldownProgress = isOnCooldown ? (cooldownRemaining / power.cooldown) * 100 : 0;
 
   // Check for synergy with player's path
   const powerWithSynergies = power as PowerWithSynergies;
@@ -125,7 +128,7 @@ export function PowerButton({ power, currentMana, effectiveManaCost, onUse, disa
 
   // Build accessible status description
   const statusDescription = isOnCooldown
-    ? `On cooldown: ${Math.ceil(power.currentCooldown)} seconds remaining`
+    ? `On cooldown: ${Math.ceil(cooldownRemaining)} seconds remaining`
     : currentMana < manaCost
     ? `Insufficient mana: need ${manaCost}, have ${Math.floor(currentMana)}`
     : `Ready. Costs ${manaCost} mana.`;
@@ -172,7 +175,7 @@ export function PowerButton({ power, currentMana, effectiveManaCost, onUse, disa
               className={cn("pixel-text text-pixel-2xs relative z-10", isOnCooldown ? "text-slate-400" : hasReduction ? "text-emerald-400" : "text-mana")}
               aria-hidden="true"
             >
-              {isOnCooldown ? `${Math.ceil(power.currentCooldown)}s` : `${manaCost} MP`}
+              {isOnCooldown ? `${Math.ceil(cooldownRemaining)}s` : `${manaCost} MP`}
             </span>
           </button>
         </TooltipTrigger>

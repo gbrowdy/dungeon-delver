@@ -13,8 +13,8 @@ import { PowerSystem } from '../systems/power';
 
 describe('Power Immediate Execution', () => {
   beforeEach(() => {
-    // Clear the world
-    for (const entity of world.entities) {
+    // Clear the world (spread to avoid modifying while iterating)
+    for (const entity of [...world.entities]) {
       world.remove(entity);
     }
 
@@ -101,8 +101,8 @@ describe('Power Immediate Execution', () => {
 
     const power = player!.powers![0];
 
-    // Power should not be on cooldown initially
-    expect(power.currentCooldown).toBeFalsy();
+    // Power should not be on cooldown initially (no entry in cooldowns Map)
+    expect(player!.cooldowns?.get(power.id)?.remaining ?? 0).toBe(0);
 
     // Activate the power
     dispatch(Commands.activatePower(power.id));
@@ -111,7 +111,7 @@ describe('Power Immediate Execution', () => {
     InputSystem(16);
     PowerSystem(16);
 
-    // Cooldown should be set immediately
-    expect(power.currentCooldown).toBe(power.cooldown);
+    // Cooldown should be set immediately in the cooldowns Map
+    expect(player!.cooldowns?.get(power.id)?.remaining).toBe(power.cooldown);
   });
 });
