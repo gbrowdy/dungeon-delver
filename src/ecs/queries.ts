@@ -8,8 +8,9 @@ import { world } from './world';
 import type { Entity } from './components';
 
 // Player queries
-export const playerQuery = world.with('player', 'health', 'mana');
-export const playerWithStatsQuery = world.with('player', 'health', 'mana', 'attack', 'defense', 'speed');
+// Note: Don't require 'mana' - it's removed when player selects a path (replaced by pathResource or nothing)
+export const playerQuery = world.with('player', 'health');
+export const playerWithStatsQuery = world.with('player', 'health', 'attack', 'defense', 'speed');
 
 // Enemy queries
 export const enemyQuery = world.with('enemy', 'health');

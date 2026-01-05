@@ -129,6 +129,30 @@ export const PATH_RESOURCES: Record<string, PathResource> = {
       },
     ],
   },
+
+  // Alias for paladin crusader path (pathId includes class prefix)
+  paladin_crusader: {
+    type: 'zeal',
+    current: 0,
+    max: 10,
+    color: '#f5f5f5', // neutral-100
+    resourceBehavior: 'spend',
+    generation: {
+      onPowerUse: 2,
+      onHit: 1,
+      onBlock: 1,
+      onKill: 3,
+    },
+    thresholds: [
+      {
+        value: 10,
+        effect: {
+          type: 'special',
+          description: 'Guaranteed crit + holy burst damage',
+        },
+      },
+    ],
+  },
 };
 
 /**

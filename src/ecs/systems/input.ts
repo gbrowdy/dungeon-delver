@@ -316,6 +316,11 @@ export function InputSystem(_deltaMs: number): void {
           abilityCooldowns: {}, // Initialize cooldowns map
         };
 
+        // Remove mana for ALL paths (active uses pathResource, passive uses nothing)
+        if (player.mana) {
+          world.removeComponent(player, 'mana');
+        }
+
         // Initialize pathResource for active paths
         if (pathDef?.type === 'active' && PATH_RESOURCES[cmd.pathId]) {
           player.pathResource = getPathResource(cmd.pathId);
@@ -323,6 +328,9 @@ export function InputSystem(_deltaMs: number): void {
 
         // Initialize stance state for passive paths
         if (pathDef?.type === 'passive') {
+          // Clear powers - passive paths use stances, not powers
+          player.powers = [];
+
           const defaultStanceId = getDefaultStanceId(cmd.pathId);
           if (defaultStanceId) {
             player.stanceState = {
