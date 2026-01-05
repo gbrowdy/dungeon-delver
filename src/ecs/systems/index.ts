@@ -6,6 +6,7 @@ import { EnemyAbilitySystem } from './enemy-ability';
 import { CombatSystem } from './combat';
 import { PowerSystem } from './power';
 import { ItemEffectSystem } from './item-effect';
+import { ResourceGenerationSystem } from './resource-generation';
 import { PathAbilitySystem } from './path-ability';
 import { StatusEffectSystem } from './status-effect';
 import { RegenSystem } from './regen';
@@ -24,8 +25,9 @@ export const systems: System[] = [
   EnemyAbilitySystem,   // 4. Process enemy abilities (before combat, intercepts ability attacks)
   CombatSystem,         // 5. Resolve attacks, apply damage
   PowerSystem,          // 5. Process power casting effects
-  ItemEffectSystem,     // 6. Process item proc effects (on_hit, on_crit, etc.)
-  PathAbilitySystem,    // 7. Process path ability triggers
+  ItemEffectSystem,         // 6. Process item proc effects (on_hit, on_crit, etc.)
+  ResourceGenerationSystem, // 7. Generate path resources from combat events
+  PathAbilitySystem,        // 8. Process path ability triggers
   StatusEffectSystem,   // 8. Process DoT effects (poison, bleed, etc.)
   RegenSystem,          // 9. Apply HP/MP regeneration
   DeathSystem,          // 10. Check deaths (after ALL damage)

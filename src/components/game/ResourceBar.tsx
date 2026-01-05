@@ -64,6 +64,8 @@ export function ResourceBar({
         aria-valuemin={0}
         aria-valuemax={resource.max}
         aria-label={`${resourceName}: ${Math.floor(resource.current)} of ${resource.max}`}
+        data-testid={`resource-bar-${resource.type}`}
+        data-resource-current={Math.floor(resource.current)}
       >
         {/* Fill bar */}
         <div

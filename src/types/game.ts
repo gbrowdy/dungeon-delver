@@ -125,6 +125,13 @@ export interface PathResource {
   max: number;
   color: string;  // CSS color for UI
 
+  /**
+   * How powers interact with this resource:
+   * - 'spend': Powers consume resource (Fury, Momentum, Zeal, Mana)
+   * - 'gain': Powers add to resource (Arcane Charges - reverse mana)
+   */
+  resourceBehavior: 'spend' | 'gain';
+
   // Generation config
   generation: {
     onHit?: number;      // Gain per auto-attack
@@ -185,7 +192,14 @@ export interface Power {
   id: string;
   name: string;
   description: string;
-  manaCost: number;
+  manaCost: number; // Used for pre-level-2 (mana) or as fallback
+  /**
+   * Resource cost for active paths:
+   * - For 'spend' resources (Fury, Momentum, Zeal): Amount deducted when casting
+   * - For 'gain' resources (Arcane Charges): Amount ADDED when casting
+   * - If undefined, uses manaCost as fallback
+   */
+  resourceCost?: number;
   cooldown: number; // Cooldown duration in seconds
   // NOTE: Cooldown state is tracked in entity.cooldowns Map, not on the Power object
   // Use cooldowns.get(power.id)?.remaining to get current cooldown

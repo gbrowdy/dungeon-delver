@@ -49,7 +49,7 @@ export interface TriggerContext {
   isBlock?: boolean;
 }
 
-interface PathTriggerEvent {
+export interface PathTriggerEvent {
   trigger: PathAbilityTrigger;
   context: TriggerContext;
 }
@@ -70,6 +70,14 @@ export function recordPathTrigger(trigger: PathAbilityTrigger, context: TriggerC
  */
 export function clearPathTriggerTracking(): void {
   pendingTriggers = [];
+}
+
+/**
+ * Get pending triggers for this tick (read-only access).
+ * Used by ResourceGenerationSystem to process resource gains.
+ */
+export function getPendingTriggers(): readonly PathTriggerEvent[] {
+  return pendingTriggers;
 }
 
 // ============================================================================
