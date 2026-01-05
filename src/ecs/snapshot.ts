@@ -9,6 +9,7 @@ import type { Entity, GamePhase, PopupState, PendingReward, AnimationEvent } fro
 import type { CharacterClass, Power, Item, ActiveBuff, StatusEffect, PathResource, AttackModifier, EnemyAbility, EnemyIntent, ModifierEffect, EnemyStatDebuff } from '@/types/game';
 import type { PlayerPath, PlayerStanceState } from '@/types/paths';
 import { getPlayer, getGameState, enemyQuery } from './queries';
+import { getTick, TICK_MS } from './loop';
 
 // ============================================================================
 // UTILITY TYPES
@@ -27,6 +28,13 @@ export type DeepReadonly<T> = T extends (infer U)[]
   : T extends object
   ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
   : T;
+
+/**
+ * Convert ticks to milliseconds.
+ */
+function ticksToMs(ticks: number): number {
+  return ticks * TICK_MS;
+}
 
 /**
  * Snapshot of player entity state for React components.
@@ -96,6 +104,19 @@ export interface PlayerSnapshot {
   // Regen
   healthRegen: number;
   manaRegen: number;
+
+  // Animation state
+  combatAnimation: {
+    type: string;
+    progress: number; // 0-1
+    powerId?: string;
+  } | null;
+
+  visualEffects: {
+    flash: boolean;
+    shake: boolean;
+    hitStop: boolean;
+  };
 }
 
 /**
@@ -261,6 +282,19 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
     // Regen
     healthRegen: entity.regen?.healthPerSecond ?? 0,
     manaRegen: entity.regen?.manaPerSecond ?? 0,
+
+    // Animation state
+    combatAnimation: entity.combatAnimation ? {
+      type: entity.combatAnimation.type,
+      progress: Math.min(1, ticksToMs(getTick() - entity.combatAnimation.startedAtTick) / entity.combatAnimation.duration),
+      powerId: entity.combatAnimation.powerId,
+    } : null,
+
+    visualEffects: {
+      flash: !!entity.visualEffects?.flash,
+      shake: !!entity.visualEffects?.shake,
+      hitStop: !!entity.visualEffects?.hitStop,
+    },
   };
 }
 
