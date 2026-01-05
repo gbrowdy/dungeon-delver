@@ -153,6 +153,17 @@ export interface EnemySnapshot {
   // Rewards
   xpReward: number;
   goldReward: number;
+
+  // Animation state
+  combatAnimation: {
+    type: string;
+    progress: number;
+  } | null;
+
+  visualEffects: {
+    flash: boolean;
+    aura: 'red' | 'blue' | 'green' | null;
+  };
 }
 
 /**
@@ -341,6 +352,17 @@ export function createEnemySnapshot(entity: Entity): EnemySnapshot | null {
     // Rewards
     xpReward: entity.rewards?.xp ?? 0,
     goldReward: entity.rewards?.gold ?? 0,
+
+    // Animation state
+    combatAnimation: entity.combatAnimation ? {
+      type: entity.combatAnimation.type,
+      progress: Math.min(1, ticksToMs(getTick() - entity.combatAnimation.startedAtTick) / entity.combatAnimation.duration),
+    } : null,
+
+    visualEffects: {
+      flash: !!entity.visualEffects?.flash,
+      aura: entity.visualEffects?.aura?.color ?? null,
+    },
   };
 }
 
