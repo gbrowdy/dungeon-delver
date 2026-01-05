@@ -31,6 +31,10 @@ export function ResourceBar({
   const percentage = (resource.current / resource.max) * 100;
   const resourceName = getResourceDisplayName(resource.type);
 
+  // For gain-type resources (Arcane Charges), don't animate - instant updates
+  // The decay rate (5/sec) is gradual enough to look smooth without CSS transition
+  const shouldAnimate = resource.resourceBehavior !== 'gain';
+
   // Check which thresholds are currently active
   const activeThresholds = resource.thresholds?.filter(
     t => resource.current >= t.value
@@ -67,9 +71,12 @@ export function ResourceBar({
         data-testid={`resource-bar-${resource.type}`}
         data-resource-current={Math.floor(resource.current)}
       >
-        {/* Fill bar */}
+        {/* Fill bar - only animate decreases for gain-type resources */}
         <div
-          className="absolute inset-y-0 left-0 transition-all duration-200"
+          className={cn(
+            'absolute inset-y-0 left-0',
+            shouldAnimate && 'transition-all duration-200'
+          )}
           style={{
             width: `${percentage}%`,
             backgroundColor: resource.color,

@@ -426,6 +426,16 @@ export function InputSystem(_deltaMs: number): void {
           floor.room = 1;
           floor.totalRooms = FLOOR_CONFIG.ROOMS_PER_FLOOR[floor.number - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
 
+          // Reset player combat state for new floor
+          if (player) {
+            if (player.blocking) {
+              world.removeComponent(player, 'blocking');
+            }
+            if (player.pathResource) {
+              player.pathResource.current = 0;
+            }
+          }
+
           // Spawn first enemy of new floor
           const enemy = createEnemyEntity({
             floor: floor.number,
@@ -528,12 +538,31 @@ export function InputSystem(_deltaMs: number): void {
           }
 
           player.statusEffects = [];
+
+          // Clear blocking state (use removeComponent for query reactivity)
+          if (player.blocking) {
+            world.removeComponent(player, 'blocking');
+          }
+
+          // Reset pathResource to starting value (0 for all path resources)
+          if (player.pathResource) {
+            player.pathResource.current = 0;
+          }
+
           floor.room = 1;
         } else {
           // Came from floor-complete: advance to next floor
           floor.number += 1;
           floor.room = 1;
           floor.totalRooms = FLOOR_CONFIG.ROOMS_PER_FLOOR[floor.number - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
+
+          // Reset player combat state for new floor
+          if (player.blocking) {
+            world.removeComponent(player, 'blocking');
+          }
+          if (player.pathResource) {
+            player.pathResource.current = 0;
+          }
         }
 
         // Spawn first enemy
@@ -587,6 +616,16 @@ export function InputSystem(_deltaMs: number): void {
 
         // Clear status effects
         player.statusEffects = [];
+
+        // Clear blocking state (use removeComponent for query reactivity)
+        if (player.blocking) {
+          world.removeComponent(player, 'blocking');
+        }
+
+        // Reset pathResource to starting value (0 for all path resources)
+        if (player.pathResource) {
+          player.pathResource.current = 0;
+        }
 
         // Reset room to 1
         floor.room = 1;
