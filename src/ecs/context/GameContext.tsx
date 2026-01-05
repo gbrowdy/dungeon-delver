@@ -74,10 +74,6 @@ export interface GameActions {
   purchaseShopItem: (item: Item, cost: number) => void;
   enhanceEquippedItem: (slot: 'weapon' | 'armor' | 'accessory') => void;
 
-  // Items/Powers
-  claimItem: (itemId: string) => void;
-  learnPower: (powerId: string) => void;
-
   // Animation callbacks
   handleTransitionComplete: () => void;
   handleEnemyDeathAnimationComplete: () => void;
@@ -238,16 +234,6 @@ export function GameProvider({ children, enabled = true }: GameProviderProps) {
     },
     enhanceEquippedItem: (slot: 'weapon' | 'armor' | 'accessory') => {
       dispatch(Commands.enhanceItem(slot));
-    },
-
-    // Items/Powers
-    claimItem: (_itemId: string) => {
-      // TODO: Add CLAIM_ITEM command when item drop system is migrated
-      console.warn('claimItem not yet implemented in ECS');
-    },
-    learnPower: (_powerId: string) => {
-      // TODO: Add LEARN_POWER command when power learning is migrated
-      console.warn('learnPower not yet implemented in ECS');
     },
 
     // Animation callbacks

@@ -318,10 +318,6 @@ describe('GameContext', () => {
       expect(typeof actions.purchaseShopItem).toBe('function');
       expect(typeof actions.enhanceEquippedItem).toBe('function');
 
-      // Items/Powers
-      expect(typeof actions.learnPower).toBe('function');
-      expect(typeof actions.claimItem).toBe('function');
-
       // Animation callbacks
       expect(typeof actions.handleTransitionComplete).toBe('function');
       expect(typeof actions.handleEnemyDeathAnimationComplete).toBe('function');
