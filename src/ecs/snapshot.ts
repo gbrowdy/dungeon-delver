@@ -192,6 +192,18 @@ export interface GameStateSnapshot {
 
   // Combat log
   combatLog: string[];
+
+  // Animation state
+  battlePhase: 'entering' | 'combat' | 'transitioning' | 'defeat';
+  groundScrolling: boolean;
+  floatingEffects: ReadonlyArray<{
+    id: string;
+    type: string;
+    value?: number;
+    x: number;
+    y: number;
+    isCrit?: boolean;
+  }>;
 }
 
 // ============================================================================
@@ -394,6 +406,11 @@ export function createGameStateSnapshot(entity: Entity): GameStateSnapshot {
 
     // Combat log
     combatLog: entity.combatLog ? [...entity.combatLog] : [],
+
+    // Animation state
+    battlePhase: entity.battlePhase?.phase ?? 'combat',
+    groundScrolling: entity.groundScrolling ?? false,
+    floatingEffects: entity.floatingEffects ?? [],
   };
 }
 
@@ -415,6 +432,9 @@ export function createDefaultGameStateSnapshot(): GameStateSnapshot {
     pendingRewards: null,
     animationEvents: [],
     combatLog: [],
+    battlePhase: 'combat',
+    groundScrolling: false,
+    floatingEffects: [],
   };
 }
 
