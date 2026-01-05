@@ -26,8 +26,9 @@ export function resetEnemyIdCounter(): void {
  * Used when starting a new game.
  */
 export function clearWorld(): void {
-  // Remove all entities
-  for (const entity of world.entities) {
+  // Remove all entities (convert to array first to avoid iterator modification issues)
+  const entities = Array.from(world.entities);
+  for (const entity of entities) {
     world.remove(entity);
   }
   resetEnemyIdCounter();
