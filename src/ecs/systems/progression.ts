@@ -16,6 +16,9 @@ import { getTick, TICK_MS } from '../loop';
 import { LEVEL_UP_BONUSES } from '@/constants/game';
 import type { AnimationEvent, AnimationPayload } from '../components';
 import { queueAnimationEvent, addCombatLog } from '../utils';
+import { getBerserkerPowerChoices } from '@/data/paths/berserker-powers';
+import { getGuardianEnhancementChoices } from '@/data/paths/guardian-enhancements';
+import { world } from '../world';
 
 export function ProgressionSystem(_deltaMs: number): void {
   const gameState = getGameState();
@@ -89,5 +92,52 @@ export function ProgressionSystem(_deltaMs: number): void {
     // PAUSE combat during level-up
     // IMPORTANT: Field is 'paused' not 'isPaused' - loop.ts checks gameState?.paused
     gameState.paused = true;
+
+    // Path-aware level-up choices
+    const newLevel = player.progression.level;
+    if (player.pathProgression) {
+      if (player.pathProgression.pathType === 'active') {
+        // Active path: Power levels (2,4,6,8) or Upgrade levels (3,5,7,9+)
+        const isPowerLevel = [2, 4, 6, 8].includes(newLevel);
+
+        if (isPowerLevel) {
+          const choices = getBerserkerPowerChoices(newLevel);
+          if (choices.length > 0) {
+            world.addComponent(player, 'pendingPowerChoice', {
+              level: newLevel,
+              choices,
+            });
+          }
+        } else if (newLevel >= 3) {
+          // Upgrade level - find upgradeable powers (those not at max tier)
+          const upgradeablePowers =
+            player.pathProgression.powerUpgrades
+              ?.filter((p) => p.currentTier < 2)
+              .map((p) => p.powerId) ?? [];
+
+          if (upgradeablePowers.length > 0) {
+            world.addComponent(player, 'pendingUpgradeChoice', {
+              powerIds: upgradeablePowers,
+            });
+          }
+        }
+      } else if (player.pathProgression.pathType === 'passive') {
+        // Passive path: Stance enhancement choice every level from 3-15
+        if (newLevel >= 3 && newLevel <= 15) {
+          const stanceState = player.pathProgression.stanceProgression;
+          const choices = getGuardianEnhancementChoices(
+            stanceState?.ironTier ?? 0,
+            stanceState?.retributionTier ?? 0
+          );
+
+          if (choices.iron && choices.retribution) {
+            world.addComponent(player, 'pendingStanceEnhancement', {
+              ironChoice: choices.iron,
+              retributionChoice: choices.retribution,
+            });
+          }
+        }
+      }
+    }
   }
 }

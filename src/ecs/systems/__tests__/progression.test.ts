@@ -405,4 +405,219 @@ describe('ProgressionSystem', () => {
       expect(gameState.animationEvents?.length).toBeGreaterThan(0);
     });
   });
+
+  describe('Path-aware level-ups', () => {
+    it('should set pendingPowerChoice at level 4 for active path', () => {
+      // Setup player at level 3 with Berserker path
+      const player = createPlayer({
+        xp: 150, // Enough to level from 3 to 4
+        xpToNext: 150,
+        level: 3,
+      });
+
+      // Add path progression for active path (Berserker)
+      player.pathProgression = {
+        pathId: 'berserker',
+        pathType: 'active',
+        powerUpgrades: [],
+      };
+
+      // Run progression system
+      ProgressionSystem(16);
+
+      // Should have leveled to 4
+      expect(player.progression?.level).toBe(4);
+
+      // Should have pendingPowerChoice with 2 choices
+      expect(player.pendingPowerChoice).toBeDefined();
+      expect(player.pendingPowerChoice?.level).toBe(4);
+      expect(player.pendingPowerChoice?.choices.length).toBe(2);
+
+      // Should not have upgrade or stance choices
+      expect(player.pendingUpgradeChoice).toBeUndefined();
+      expect(player.pendingStanceEnhancement).toBeUndefined();
+    });
+
+    it('should set pendingUpgradeChoice at level 3 for active path', () => {
+      // Setup player at level 2 with Berserker path and rage_strike power
+      const player = createPlayer({
+        xp: 150, // Enough to level from 2 to 3
+        xpToNext: 150,
+        level: 2,
+      });
+
+      // Add path progression with a power to upgrade
+      player.pathProgression = {
+        pathId: 'berserker',
+        pathType: 'active',
+        powerUpgrades: [
+          { powerId: 'rage_strike', currentTier: 0 },
+        ],
+      };
+
+      // Run progression system
+      ProgressionSystem(16);
+
+      // Should have leveled to 3
+      expect(player.progression?.level).toBe(3);
+
+      // Should have pendingUpgradeChoice with rage_strike
+      expect(player.pendingUpgradeChoice).toBeDefined();
+      expect(player.pendingUpgradeChoice?.powerIds).toContain('rage_strike');
+
+      // Should not have power or stance choices
+      expect(player.pendingPowerChoice).toBeUndefined();
+      expect(player.pendingStanceEnhancement).toBeUndefined();
+    });
+
+    it('should not set pendingUpgradeChoice if all powers are max tier', () => {
+      // Setup player at level 2 with maxed power
+      const player = createPlayer({
+        xp: 150,
+        xpToNext: 150,
+        level: 2,
+      });
+
+      player.pathProgression = {
+        pathId: 'berserker',
+        pathType: 'active',
+        powerUpgrades: [
+          { powerId: 'rage_strike', currentTier: 2 }, // Max tier
+        ],
+      };
+
+      ProgressionSystem(16);
+
+      expect(player.progression?.level).toBe(3);
+      expect(player.pendingUpgradeChoice).toBeUndefined();
+    });
+
+    it('should set pendingStanceEnhancement at level 3 for passive path', () => {
+      // Setup player at level 2 with Guardian path
+      const player = createPlayer({
+        xp: 150,
+        xpToNext: 150,
+        level: 2,
+      });
+
+      // Add path progression for passive path (Guardian)
+      player.pathProgression = {
+        pathId: 'guardian',
+        pathType: 'passive',
+        stanceProgression: {
+          ironTier: 0,
+          retributionTier: 0,
+          acquiredEnhancements: [],
+        },
+      };
+
+      // Run progression system
+      ProgressionSystem(16);
+
+      // Should have leveled to 3
+      expect(player.progression?.level).toBe(3);
+
+      // Should have pendingStanceEnhancement with iron and retribution choices
+      expect(player.pendingStanceEnhancement).toBeDefined();
+      expect(player.pendingStanceEnhancement?.ironChoice).toBeDefined();
+      expect(player.pendingStanceEnhancement?.retributionChoice).toBeDefined();
+
+      // Iron choice should be tier 1
+      expect(player.pendingStanceEnhancement?.ironChoice.tier).toBe(1);
+      // Retribution choice should be tier 1
+      expect(player.pendingStanceEnhancement?.retributionChoice.tier).toBe(1);
+
+      // Should not have power or upgrade choices
+      expect(player.pendingPowerChoice).toBeUndefined();
+      expect(player.pendingUpgradeChoice).toBeUndefined();
+    });
+
+    it('should not set pendingStanceEnhancement before level 3', () => {
+      const player = createPlayer({
+        xp: 100,
+        xpToNext: 100,
+        level: 1,
+      });
+
+      player.pathProgression = {
+        pathId: 'guardian',
+        pathType: 'passive',
+        stanceProgression: {
+          ironTier: 0,
+          retributionTier: 0,
+          acquiredEnhancements: [],
+        },
+      };
+
+      ProgressionSystem(16);
+
+      expect(player.progression?.level).toBe(2);
+      expect(player.pendingStanceEnhancement).toBeUndefined();
+    });
+
+    it('should not set pendingStanceEnhancement after level 15', () => {
+      const player = createPlayer({
+        xp: 1000,
+        xpToNext: 1000,
+        level: 15,
+      });
+
+      player.pathProgression = {
+        pathId: 'guardian',
+        pathType: 'passive',
+        stanceProgression: {
+          ironTier: 13,
+          retributionTier: 13,
+          acquiredEnhancements: [],
+        },
+      };
+
+      ProgressionSystem(16);
+
+      expect(player.progression?.level).toBe(16);
+      expect(player.pendingStanceEnhancement).toBeUndefined();
+    });
+
+    it('should handle player without pathProgression', () => {
+      const player = createPlayer({
+        xp: 100,
+        xpToNext: 100,
+        level: 1,
+      });
+
+      // No pathProgression set
+      ProgressionSystem(16);
+
+      // Should still level up normally
+      expect(player.progression?.level).toBe(2);
+
+      // Should not have any path-specific choices
+      expect(player.pendingPowerChoice).toBeUndefined();
+      expect(player.pendingUpgradeChoice).toBeUndefined();
+      expect(player.pendingStanceEnhancement).toBeUndefined();
+    });
+
+    it('should not set pendingStanceEnhancement when one path is maxed', () => {
+      const player = createPlayer({
+        xp: 1000,
+        xpToNext: 1000,
+        level: 14,
+      });
+
+      player.pathProgression = {
+        pathId: 'guardian',
+        pathType: 'passive',
+        stanceProgression: {
+          ironTier: 13, // Maxed
+          retributionTier: 5,
+          acquiredEnhancements: [],
+        },
+      };
+
+      ProgressionSystem(16);
+
+      expect(player.progression?.level).toBe(15);
+      expect(player.pendingStanceEnhancement).toBeUndefined();
+    });
+  });
 });
