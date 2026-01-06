@@ -8,6 +8,9 @@ import { PlayerStatsPanel } from './PlayerStatsPanel';
 import { PowersPanel } from './PowersPanel';
 import { LevelUpPopup } from './LevelUpPopup';
 import { AbilityChoicePopup } from './AbilityChoicePopup';
+import { PowerChoicePopup } from './PowerChoicePopup';
+import { UpgradeChoicePopup } from './UpgradeChoicePopup';
+import { StanceEnhancementPopup } from './StanceEnhancementPopup';
 import { useGameKeyboard } from '@/hooks/useGameKeyboard';
 import { useGameActions } from '@/ecs/context/GameContext';
 import type { PlayerSnapshot, EnemySnapshot, GameStateSnapshot } from '@/ecs/snapshot';
@@ -135,6 +138,15 @@ export function CombatScreen({
           playerLevel={player.level}
         />
       )}
+
+      {/* Power Choice Popup */}
+      {player.pendingPowerChoice && <PowerChoicePopup />}
+
+      {/* Upgrade Choice Popup */}
+      {player.pendingUpgradeChoice && <UpgradeChoicePopup />}
+
+      {/* Stance Enhancement Popup */}
+      {player.pendingStanceEnhancement && <StanceEnhancementPopup />}
     </div>
   );
 }
