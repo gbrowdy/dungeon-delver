@@ -253,6 +253,10 @@ function formatBehavior(behavior: string, value: number): string {
       return `${percent}% auto-negate chance`;
     case 'lifesteal':
       return `${percent}% lifesteal`;
+    case 'arcane_burn':
+      return `${percent}% Arcane Burn chance`;
+    case 'hex_aura':
+      return `${percent}% enemy damage reduction`;
     default:
       return `${behavior}: ${percent}%`;
   }
