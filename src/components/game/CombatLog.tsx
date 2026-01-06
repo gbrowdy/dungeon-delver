@@ -59,13 +59,13 @@ function formatLogEntry(log: string): LogEntry {
     return { iconName: LOG_ICONS.speed, color: 'text-slate-400', text: log };
   }
 
-  // Player attacks
-  if (log.includes('You dealt') || log.includes('You hit') || log.includes('deals')) {
+  // Player attacks (Hero attacks enemy)
+  if (log.startsWith('Hero attacks') || log.includes('You dealt') || log.includes('You hit')) {
     return { iconName: LOG_ICONS.power, color: 'text-primary', text: log };
   }
 
-  // Enemy attacks
-  if (log.includes('takes') || log.includes('hit you') || log.includes('attacks')) {
+  // Enemy attacks (enemy attacks Hero)
+  if (log.includes('attacks Hero') || log.includes('hit you') || log.includes('takes')) {
     return { iconName: LOG_ICONS.attack, color: 'text-health', text: log };
   }
 
