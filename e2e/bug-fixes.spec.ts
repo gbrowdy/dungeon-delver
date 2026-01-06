@@ -79,43 +79,67 @@ test.describe('Bug Fix #1: Level-up popup dismisses at level 3+', () => {
 });
 
 test.describe('Bug Fix #2: Enemy uses varied attacks', () => {
-  test('enemy uses different abilities over multiple attacks', async ({ page }) => {
-    test.setTimeout(45000); // 45 seconds
+  test('enemy with abilities uses more than one attack type', async ({ page }) => {
+    test.setTimeout(120000); // 2 minutes
 
-    // Use strong player to survive long enough to see enemy abilities
-    await navigateToGame(page, 'devMode=true&playerAttack=30&playerDefense=40');
+    // Balanced stats - can kill enemies but not instantly, survives well
+    await navigateToGame(page, 'devMode=true&playerAttack=25&playerDefense=50');
     await selectClassAndBegin(page, 'Warrior');
     await setSpeedToMax(page);
 
     await expect(page.getByTestId('floor-indicator')).toBeVisible();
 
-    // Collect enemy attack types from combat log
-    const observedAttacks = new Set<string>();
+    // Track attack types across all combat (persists through floor transitions)
+    const attackTypes = new Set<string>();
 
-    // Use page.waitForFunction to poll combat log content
-    await page.waitForFunction(
-      () => {
-        const log = document.querySelector('[role="log"]');
-        const text = log?.textContent || '';
-        // Return true when we see attack messages (means combat is happening)
-        return /attacks.*for.*damage/i.test(text);
-      },
-      { timeout: 15000, polling: 200 }
-    );
+    // Play through combat, tracking attack variety
+    for (let attempt = 0; attempt < 20; attempt++) {
+      // Check current combat log
+      const logVisible = await page.locator('[role="log"]').isVisible().catch(() => false);
+      if (logVisible) {
+        const text = await page.locator('[role="log"]').textContent().catch(() => '');
 
-    // Get current combat log content
-    const combatLogText = await page.locator('[role="log"]').textContent().catch(() => '');
+        // Check for basic attacks
+        if (/\w+ attacks Hero for \d+ damage/i.test(text || '')) {
+          attackTypes.add('basic');
+        }
 
-    // Look for ability names in combat log
-    if (/Double Strike/i.test(combatLogText || '')) observedAttacks.add('Double Strike');
-    if (/Poison Bite/i.test(combatLogText || '')) observedAttacks.add('Poison Bite');
-    if (/Stunning Blow/i.test(combatLogText || '')) observedAttacks.add('Stunning Blow');
-    if (/Triple Strike/i.test(combatLogText || '')) observedAttacks.add('Triple Strike');
-    if (/Regenerate/i.test(combatLogText || '')) observedAttacks.add('Regenerate');
-    if (/attacks.*for.*damage/i.test(combatLogText || '')) observedAttacks.add('Basic Attack');
+        // Check for special abilities
+        if (/Double Strike/i.test(text || '')) attackTypes.add('double_strike');
+        if (/Poison Bite/i.test(text || '')) attackTypes.add('poison_bite');
+        if (/Stunning Blow/i.test(text || '')) attackTypes.add('stunning_blow');
+        if (/Triple Strike/i.test(text || '')) attackTypes.add('triple_strike');
+        if (/Regenerate/i.test(text || '')) attackTypes.add('regenerate');
+        if (/poisoned/i.test(text || '')) attackTypes.add('poison_applied');
+        if (/stunned/i.test(text || '')) attackTypes.add('stun_applied');
 
-    // We should observe at least 1 attack type (basic attacks always happen)
-    expect(observedAttacks.size).toBeGreaterThanOrEqual(1);
+        // Success: we've seen 2+ different attack types
+        if (attackTypes.size >= 2) {
+          break;
+        }
+      }
+
+      // Handle floor complete - continue to next floor
+      if (await page.getByText('Floor 1 Complete!').isVisible().catch(() => false) ||
+          await page.getByText('Floor 2 Complete!').isVisible().catch(() => false)) {
+        const continueBtn = page.getByRole('button', { name: /Continue to Floor/i });
+        if (await continueBtn.isVisible().catch(() => false)) {
+          await continueBtn.click();
+          await page.waitForTimeout(1000);
+        }
+      }
+
+      // Handle death - retry
+      if (await page.getByTestId('death-screen').isVisible().catch(() => false)) {
+        await page.getByRole('button', { name: /Retry/i }).click();
+        await setSpeedToMax(page);
+      }
+
+      await page.waitForTimeout(500);
+    }
+
+    // Verify we saw at least 2 different attack types
+    expect(attackTypes.size).toBeGreaterThanOrEqual(2);
   });
 });
 
