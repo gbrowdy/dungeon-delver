@@ -572,14 +572,14 @@ describe('PowerSystem', () => {
         }],
         pathResource: {
           type: 'fury',
-          current: 80, // At threshold
+          current: 80, // 80 fury
           max: 100,
           color: '#dc2626',
           resourceBehavior: 'spend',
           generation: { onHit: 8 },
           thresholds: [{
-            value: 80,
-            effect: { type: 'damage_bonus', value: 0.3, description: '+30% damage' },
+            value: 1,
+            effect: { type: 'damage_bonus', value: 0.005, description: '+0.5% per Fury' },
           }],
         },
         casting: { powerId: 'test-power', startedAtTick: 0 },
@@ -594,9 +594,9 @@ describe('PowerSystem', () => {
 
       PowerSystem(16);
 
-      // Base 100 damage * 1.3 amplify = 130 damage
-      // Enemy should have 200 - 130 = 70 HP
-      expect(enemy.health?.current).toBe(70);
+      // Base 100 damage * (1 + 80 * 0.005) = 100 * 1.4 = 140 damage
+      // Enemy should have 200 - 140 = 60 HP
+      expect(enemy.health?.current).toBe(60);
     });
   });
 });
