@@ -267,7 +267,7 @@ export function CharacterSprite({
             return (
               <div key={effect.id} className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-accent/50">
                 <IconComponent className="w-4 h-4" />
-                <span className="text-accent/90">{effect.remainingTurns}</span>
+                <span className="text-accent/90">{Math.ceil(effect.remainingTurns)}</span>
               </div>
             );
           })}
