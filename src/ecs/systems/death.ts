@@ -6,37 +6,15 @@
  */
 
 import { world } from '../world';
-import { dyingEntities, getGameState, getPlayer } from '../queries';
-import { getTick, TICK_MS } from '../loop';
-import type { Entity, AnimationEvent, AnimationPayload } from '../components';
+import { getGameState, getPlayer } from '../queries';
+import { getTick } from '../loop';
+import type { Entity } from '../components';
 import { getDevModeParams } from '@/utils/devMode';
+import { queueAnimationEvent, addCombatLog } from '../utils';
 
 // Player death needs longer animation than enemy death
 const ENEMY_DEATH_ANIMATION_MS = 500;
 const PLAYER_DEATH_ANIMATION_MS = 2300; // 800ms animation + 1500ms pause for dramatic effect
-
-function queueAnimationEvent(
-  type: AnimationEvent['type'],
-  payload: AnimationPayload,
-  durationTicks: number = 30
-): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.animationEvents) {
-    gameState.animationEvents = [];
-  }
-
-  const currentTick = getTick();
-  gameState.animationEvents.push({
-    id: `death-${currentTick}`,
-    type,
-    payload,
-    createdAtTick: currentTick,
-    displayUntilTick: currentTick + durationTicks,
-    consumed: false,
-  });
-}
 
 function scheduleTransition(toPhase: Entity['phase'], delayMs: number): void {
   const gameState = getGameState();
@@ -47,17 +25,6 @@ function scheduleTransition(toPhase: Entity['phase'], delayMs: number): void {
   }
 
   gameState.scheduledTransitions.push({ toPhase: toPhase!, delay: delayMs });
-}
-
-function addCombatLog(message: string): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.combatLog) {
-    gameState.combatLog = [];
-  }
-
-  gameState.combatLog.push(message);
 }
 
 export function DeathSystem(_deltaMs: number): void {
@@ -123,20 +90,6 @@ export function DeathSystem(_deltaMs: number): void {
           gameState.scheduledSpawns.push({ delay: ENEMY_DEATH_ANIMATION_MS + 300 });
         }
       }
-    }
-  }
-
-  // Clean up entities that finished dying
-  for (const entity of dyingEntities) {
-    const dying = entity.dying!;
-    const elapsed = (getTick() - dying.startedAtTick) * TICK_MS;
-
-    if (elapsed >= dying.duration) {
-      if (!entity.player) {
-        // Remove enemy entity
-        world.remove(entity);
-      }
-      // Player entity stays (needed for death screen)
     }
   }
 }
