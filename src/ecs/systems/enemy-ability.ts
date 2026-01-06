@@ -89,9 +89,11 @@ function executeAbility(
         existingPoison.remainingTurns = 3;
       } else {
         player.statusEffects.push({
+          id: crypto.randomUUID(),
           type: 'poison',
           remainingTurns: 3,
           damage: poisonDamage,
+          icon: 'Skull',
         });
       }
 
@@ -114,8 +116,10 @@ function executeAbility(
       const existingStun = player.statusEffects.find(e => e.type === 'stun');
       if (!existingStun) {
         player.statusEffects.push({
+          id: crypto.randomUUID(),
           type: 'stun',
           remainingTurns: ability.value,
+          icon: 'Zap',
         });
         addCombatLog(`You are stunned for ${ability.value} turn(s)!`);
       } else {

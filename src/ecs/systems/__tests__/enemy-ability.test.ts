@@ -100,4 +100,80 @@ describe('EnemyAbilitySystem', () => {
       expect(intentWasRecalculated).toBe(true);
     });
   });
+
+  describe('status effect fields', () => {
+    it('should create poison with id and icon fields', () => {
+      const enemy = world.add({
+        enemy: {
+          tier: 'common',
+          name: 'Venomous Snake',
+          isBoss: false,
+          abilities: [
+            { id: 'poison', name: 'Poison Bite', type: 'poison', value: 5, cooldown: 3, currentCooldown: 0, chance: 1, icon: 'Skull', description: 'Poisons' },
+          ],
+          intent: null as any,
+        },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 10, critChance: 0, critMultiplier: 2, variance: { min: 1, max: 1 } },
+        defense: { value: 3, blockReduction: 0 },
+        speed: { value: 8, attackInterval: 3000, accumulated: 0 },
+        cooldowns: new Map(),
+      });
+      enemy.enemy!.intent = { type: 'ability', ability: enemy.enemy!.abilities[0], icon: 'Skull' };
+      world.addComponent(enemy, 'attackReady', { damage: 10 });
+
+      const player = createTestPlayer();
+      player.statusEffects = [];
+      world.add(player);
+
+      createTestGameState({ phase: 'combat', floor: { number: 1, room: 1, totalRooms: 5 } });
+
+      EnemyAbilitySystem(16);
+
+      // Verify poison was applied with required fields
+      expect(player.statusEffects.length).toBe(1);
+      const poison = player.statusEffects[0];
+      expect(poison.type).toBe('poison');
+      expect(poison.id).toBeDefined();
+      expect(typeof poison.id).toBe('string');
+      expect(poison.icon).toBe('Skull');
+    });
+
+    it('should create stun with id and icon fields', () => {
+      const enemy = world.add({
+        enemy: {
+          tier: 'common',
+          name: 'Stunning Foe',
+          isBoss: false,
+          abilities: [
+            { id: 'stun', name: 'Stun Attack', type: 'stun', value: 2, cooldown: 5, currentCooldown: 0, chance: 1, icon: 'Zap', description: 'Stuns' },
+          ],
+          intent: null as any,
+        },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 10, critChance: 0, critMultiplier: 2, variance: { min: 1, max: 1 } },
+        defense: { value: 3, blockReduction: 0 },
+        speed: { value: 8, attackInterval: 3000, accumulated: 0 },
+        cooldowns: new Map(),
+      });
+      enemy.enemy!.intent = { type: 'ability', ability: enemy.enemy!.abilities[0], icon: 'Zap' };
+      world.addComponent(enemy, 'attackReady', { damage: 10 });
+
+      const player = createTestPlayer();
+      player.statusEffects = [];
+      world.add(player);
+
+      createTestGameState({ phase: 'combat' });
+
+      EnemyAbilitySystem(16);
+
+      // Verify stun was applied with required fields
+      expect(player.statusEffects.length).toBe(1);
+      const stun = player.statusEffects[0];
+      expect(stun.type).toBe('stun');
+      expect(stun.id).toBeDefined();
+      expect(typeof stun.id).toBe('string');
+      expect(stun.icon).toBe('Zap');
+    });
+  });
 });
