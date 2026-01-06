@@ -65,7 +65,7 @@ export function CleanupSystem(_deltaMs: number): void {
   if (player?.combatAnimation) {
     const elapsed = (currentTick - player.combatAnimation.startedAtTick) * TICK_MS;
     if (elapsed >= player.combatAnimation.duration) {
-      delete player.combatAnimation;
+      world.removeComponent(player, 'combatAnimation');
     }
   }
 
@@ -73,32 +73,32 @@ export function CleanupSystem(_deltaMs: number): void {
   if (enemy?.combatAnimation) {
     const elapsed = (currentTick - enemy.combatAnimation.startedAtTick) * TICK_MS;
     if (elapsed >= enemy.combatAnimation.duration) {
-      delete enemy.combatAnimation;
+      world.removeComponent(enemy, 'combatAnimation');
     }
   }
 
   // 6. Clear expired visualEffects (flash, shake, hitStop have untilTick)
   if (player?.visualEffects) {
     if (player.visualEffects.flash && currentTick >= player.visualEffects.flash.untilTick) {
-      delete player.visualEffects.flash;
+      player.visualEffects.flash = undefined;
     }
     if (player.visualEffects.shake && currentTick >= player.visualEffects.shake.untilTick) {
-      delete player.visualEffects.shake;
+      player.visualEffects.shake = undefined;
     }
     if (player.visualEffects.hitStop && currentTick >= player.visualEffects.hitStop.untilTick) {
-      delete player.visualEffects.hitStop;
+      player.visualEffects.hitStop = undefined;
     }
     if (player.visualEffects.aura && currentTick >= player.visualEffects.aura.untilTick) {
-      delete player.visualEffects.aura;
+      player.visualEffects.aura = undefined;
     }
   }
 
   if (enemy?.visualEffects) {
     if (enemy.visualEffects.flash && currentTick >= enemy.visualEffects.flash.untilTick) {
-      delete enemy.visualEffects.flash;
+      enemy.visualEffects.flash = undefined;
     }
     if (enemy.visualEffects.aura && currentTick >= enemy.visualEffects.aura.untilTick) {
-      delete enemy.visualEffects.aura;
+      enemy.visualEffects.aura = undefined;
     }
   }
 }
