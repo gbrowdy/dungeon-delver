@@ -11,64 +11,10 @@ import { getTick } from '../loop';
 import type { Entity, AnimationEvent, AnimationPayload } from '../components';
 import type { Power, StatusEffect } from '@/types/game';
 import { recordPathTrigger } from './path-ability';
+import { queueAnimationEvent, addCombatLog, getEntityName } from '../utils';
 
 // Query for entities that are casting
 const castingQuery = world.with('casting', 'powers');
-
-let nextAnimationId = 0;
-
-function getNextAnimationId(): string {
-  return `power-anim-${nextAnimationId++}`;
-}
-
-function queueAnimationEvent(
-  type: AnimationEvent['type'],
-  payload: AnimationPayload,
-  durationTicks: number = 30
-): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.animationEvents) {
-    gameState.animationEvents = [];
-  }
-
-  const currentTick = getTick();
-  gameState.animationEvents.push({
-    id: getNextAnimationId(),
-    type,
-    payload,
-    createdAtTick: currentTick,
-    displayUntilTick: currentTick + durationTicks,
-    consumed: false,
-  });
-}
-
-function addCombatLog(message: string): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.combatLog) {
-    gameState.combatLog = [];
-  }
-
-  gameState.combatLog.push(message);
-
-  // Keep last 50 entries
-  if (gameState.combatLog.length > 50) {
-    gameState.combatLog.shift();
-  }
-}
-
-function getEntityName(entity: Entity): string {
-  if (entity.player) {
-    return entity.identity?.name ?? 'Hero';
-  }
-  if (entity.enemy) {
-    return entity.enemy.name;
-  }
-  return 'Unknown';
-}
 
 /**
  * Calculate damage for a power based on the caster's attack stats.
