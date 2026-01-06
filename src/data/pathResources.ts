@@ -44,14 +44,14 @@ export const PATH_RESOURCES: Record<string, PathResource> = {
       onDamaged: 12,
     },
     // No decay - continuous auto-combat means always "in combat"
-    // Amplify threshold: spend at 80+ for bonus damage
+    // Amplify threshold: per-point scaling like arcane charges
     thresholds: [
       {
-        value: 80,
+        value: 1,
         effect: {
           type: 'damage_bonus',
-          value: 0.3,
-          description: '+30% power damage at 80+ Fury',
+          value: 0.005,  // +0.5% per Fury = +50% at 100
+          description: '+0.5% power damage per Fury',
         },
       },
     ],
