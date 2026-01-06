@@ -148,7 +148,7 @@ describe('InputSystem - Path Selection', () => {
   it('should handle path selection for all passive paths', () => {
     const passivePaths = [
       { pathId: 'guardian', class: 'warrior', firstStance: 'iron_stance' },
-      { pathId: 'enchanter', class: 'mage', firstStance: 'arcane_stance' },
+      { pathId: 'enchanter', class: 'mage', firstStance: 'arcane_surge' },
       { pathId: 'duelist', class: 'rogue', firstStance: 'evasion_stance' },
       { pathId: 'paladin_protector', class: 'paladin', firstStance: 'healing_stance' },
     ] as const;
