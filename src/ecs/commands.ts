@@ -57,6 +57,14 @@ export function drainCommands(): Command[] {
 }
 
 /**
+ * Clear all pending commands.
+ * Called when resetting game state (abandon, new game).
+ */
+export function clearCommands(): void {
+  commandQueue.length = 0;
+}
+
+/**
  * Type-safe command creators for use in React components.
  */
 export const Commands = {
