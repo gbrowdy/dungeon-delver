@@ -91,6 +91,17 @@ export interface PlayerSnapshot {
     level: number;
     choices: Power[];
   } | null;
+  pendingUpgradeChoice: {
+    powerIds: string[];
+  } | null;
+
+  // Path progression tracking
+  pathProgression: {
+    pathId: string;
+    pathType: 'active' | 'passive';
+    subpathId?: string;
+    powerUpgrades?: Array<{ powerId: string; currentTier: 0 | 1 | 2 }>;
+  } | null;
 
   // Combat modifiers
   attackModifiers: AttackModifier[];
@@ -296,6 +307,19 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
     pendingPowerChoice: entity.pendingPowerChoice ? {
       level: entity.pendingPowerChoice.level,
       choices: [...entity.pendingPowerChoice.choices],
+    } : null,
+    pendingUpgradeChoice: entity.pendingUpgradeChoice ? {
+      powerIds: [...entity.pendingUpgradeChoice.powerIds],
+    } : null,
+
+    // Path progression tracking
+    pathProgression: entity.pathProgression ? {
+      pathId: entity.pathProgression.pathId,
+      pathType: entity.pathProgression.pathType,
+      subpathId: entity.pathProgression.subpathId,
+      powerUpgrades: entity.pathProgression.powerUpgrades
+        ? entity.pathProgression.powerUpgrades.map(u => ({ ...u }))
+        : undefined,
     } : null,
 
     // Combat modifiers
