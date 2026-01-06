@@ -57,7 +57,7 @@ export function getAbilitiesByIds(abilityIds: string[]): PathAbility[] {
  * Returns a tuple of two abilities the player can choose from.
  */
 export function getAbilityChoices(
-  player: { level: number; path: { pathId: string; abilities: string[] } | null },
+  player: { level: number; path: PlayerPath | null },
   pathDef: PathDefinition
 ): [PathAbility, PathAbility] | null {
   if (!player.path) return null;

@@ -29,8 +29,7 @@ export function Game() {
       level: player.level,
       path: player.path,
     };
-    // TODO: Type getAbilityChoices parameters properly
-    return getAbilityChoices(playerForChoices as unknown as Parameters<typeof getAbilityChoices>[0], pathDef);
+    return getAbilityChoices(playerForChoices, pathDef);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player?.pendingAbilityChoice, player?.path?.pathId, player?.path?.abilities?.length, player?.level]);
 
