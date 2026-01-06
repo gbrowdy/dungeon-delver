@@ -16,6 +16,7 @@ const BASE_STARTING_POWER = {
   value: 1.2, // 120% damage
   category: 'strike' as const,
   synergies: [],
+  upgradeLevel: 1,
 };
 
 export const GENERIC_STARTING_POWERS: Record<CharacterClass, Power> = {
