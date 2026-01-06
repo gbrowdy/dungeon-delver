@@ -240,7 +240,9 @@ export type StanceBehavior =
   | 'reflect_damage'    // Reflect % of damage taken back to attacker
   | 'counter_attack'    // Chance to auto-attack when hit
   | 'auto_block'        // Chance to automatically negate attacks
-  | 'lifesteal';        // Heal for % of damage dealt
+  | 'lifesteal'         // Heal for % of damage dealt
+  | 'arcane_burn'       // Chance on hit to deal bonus damage + apply burn DoT
+  | 'hex_aura';         // Passive: enemies deal reduced damage
 
 /**
  * Individual effect within a stance
