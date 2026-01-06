@@ -4,7 +4,7 @@
  * Runs first each tick to translate user input into component changes.
  */
 
-import { drainCommands, type Command } from '../commands';
+import { drainCommands, clearCommands, type Command } from '../commands';
 import { getPlayer, getGameState } from '../queries';
 import { getTick } from '../loop';
 import { world } from '../world';
@@ -261,6 +261,8 @@ export function InputSystem(_deltaMs: number): void {
 
       case 'RESTART_GAME': {
         if (gameState) {
+          // Clear any pending commands
+          clearCommands();
           gameState.phase = 'menu';
         }
         break;
@@ -274,6 +276,9 @@ export function InputSystem(_deltaMs: number): void {
         if (existingPlayer) {
           world.remove(existingPlayer);
         }
+
+        // Clear any pending commands from previous game
+        clearCommands();
 
         // Get dev mode overrides
         const devParams = getDevModeParams();
@@ -666,6 +671,9 @@ export function InputSystem(_deltaMs: number): void {
         for (const e of world.with('enemy')) {
           world.remove(e);
         }
+
+        // Clear any pending commands
+        clearCommands();
 
         // Reset to menu
         gameState.phase = 'menu';
