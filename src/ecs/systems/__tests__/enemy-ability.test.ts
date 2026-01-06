@@ -23,28 +23,6 @@ function createTestPlayer(): Entity {
   });
 }
 
-// Helper to create test enemy
-function createTestEnemy(): Entity {
-  return {
-    enemy: {
-      tier: 'common',
-      name: 'Test Enemy',
-      isBoss: false,
-      abilities: [],
-      intent: null,
-    },
-    health: { current: 100, max: 100 },
-    attack: {
-      baseDamage: 10,
-      critChance: 0,
-      critMultiplier: 2,
-      variance: { min: 1, max: 1 },
-    },
-    defense: { value: 3, blockReduction: 0 },
-    speed: { value: 8, attackInterval: 3000, accumulated: 0 },
-  };
-}
-
 // Helper to create test game state
 function createTestGameState(overrides?: Partial<Entity>): Entity {
   return world.add({
@@ -68,21 +46,31 @@ describe('EnemyAbilitySystem', () => {
 
   describe('intent recalculation', () => {
     it('should recalculate intent after using an ability', () => {
-      // Create enemy with multiple abilities
-      const enemy = createTestEnemy();
-      enemy.enemy = {
-        tier: 'common',
-        name: 'Test Enemy',
-        isBoss: false,
-        abilities: [
-          { id: 'poison', name: 'Poison', type: 'poison', value: 5, cooldown: 3, currentCooldown: 0, chance: 1, icon: 'Skull', description: 'Poisons' },
-          { id: 'heal', name: 'Heal', type: 'heal', value: 0.2, cooldown: 5, currentCooldown: 0, chance: 1, icon: 'Heart', description: 'Heals' },
-        ],
-        intent: { type: 'ability', ability: { id: 'poison', name: 'Poison', type: 'poison', value: 5, cooldown: 3, currentCooldown: 0, chance: 1, icon: 'Skull', description: 'Poisons' }, icon: 'Skull' },
-      };
-      enemy.cooldowns = new Map();
+      // Create enemy with multiple abilities - add to world first
+      const enemy = world.add({
+        enemy: {
+          tier: 'common',
+          name: 'Test Enemy',
+          isBoss: false,
+          abilities: [
+            { id: 'poison', name: 'Poison', type: 'poison', value: 5, cooldown: 3, currentCooldown: 0, chance: 1, icon: 'Skull', description: 'Poisons' },
+            { id: 'heal', name: 'Heal', type: 'heal', value: 0.2, cooldown: 5, currentCooldown: 0, chance: 1, icon: 'Heart', description: 'Heals' },
+          ],
+          intent: { type: 'ability', ability: { id: 'poison', name: 'Poison', type: 'poison', value: 5, cooldown: 3, currentCooldown: 0, chance: 1, icon: 'Skull', description: 'Poisons' }, icon: 'Skull' },
+        },
+        health: { current: 100, max: 100 },
+        attack: {
+          baseDamage: 10,
+          critChance: 0,
+          critMultiplier: 2,
+          variance: { min: 1, max: 1 },
+        },
+        defense: { value: 3, blockReduction: 0 },
+        speed: { value: 8, attackInterval: 3000, accumulated: 0 },
+        cooldowns: new Map(),
+      });
+      // Now add attackReady component after entity is in world
       world.addComponent(enemy, 'attackReady', { damage: 10 });
-      world.add(enemy);
 
       const player = createTestPlayer();
 
