@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { STAMINA_RESOURCE, getPathResource } from '../pathResources';
+import { STAMINA_RESOURCE, getPathResource, getResourceDisplayName } from '../pathResources';
 
 describe('Stamina Resource', () => {
   it('should have stamina as default pre-path resource', () => {
@@ -12,5 +12,23 @@ describe('Stamina Resource', () => {
   it('should return stamina for players without a path', () => {
     const resource = getPathResource(undefined);
     expect(resource.type).toBe('stamina');
+  });
+});
+
+describe('getResourceDisplayName', () => {
+  it('should return "Stamina" for stamina resource type', () => {
+    expect(getResourceDisplayName('stamina')).toBe('Stamina');
+  });
+});
+
+describe('getPathResource', () => {
+  it('should return mana for unknown path', () => {
+    const resource = getPathResource('unknown_path' as any);
+    expect(resource.type).toBe('mana');
+  });
+
+  it('should return fury for berserker path', () => {
+    const resource = getPathResource('berserker');
+    expect(resource.type).toBe('fury');
   });
 });
