@@ -1,15 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Player, Item, ItemType } from '@/types/game';
+import { Item, ItemType } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
-import { PowerChoice, isPowerUpgrade } from '@/data/powers';
 import { formatItemStatBonus } from '@/utils/itemUtils';
-import { PowerWithSynergies, hasSynergy, getSynergy, getPathName, getPlayerDisplayName } from '@/utils/powerSynergies';
-import { Star } from 'lucide-react';
 import { PixelDivider } from '@/components/ui/PixelDivider';
 import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
-import { STAT_ICONS, ITEM_ICONS, UI_ICONS } from '@/constants/icons';
+import { STAT_ICONS, UI_ICONS } from '@/constants/icons';
+import type { PlayerSnapshot } from '@/ecs/snapshot';
+import { getPlayerDisplayName } from '@/utils/powerSynergies';
 
 const RARITY_COLORS: Record<Item['rarity'], string> = {
   common: 'border-rarity-common bg-rarity-common/10 text-rarity-common',
@@ -51,10 +50,8 @@ function getPowerIconType(powerId: string): IconType {
 const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
 
 interface FloorCompleteScreenProps {
-  player: Player;
+  player: PlayerSnapshot;
   floor: number;
-  availablePowers: PowerChoice[];
-  onLearnPower: (index: number) => void;
   onContinue: () => void;
   onVisitShop: () => void;
 }
@@ -62,8 +59,6 @@ interface FloorCompleteScreenProps {
 export function FloorCompleteScreen({
   player,
   floor,
-  availablePowers,
-  onLearnPower,
   onContinue,
   onVisitShop,
 }: FloorCompleteScreenProps) {
@@ -78,18 +73,19 @@ export function FloorCompleteScreen({
     return () => clearTimeout(timer);
   }, []);
 
-  // Memoize equipped items map for O(1) lookup
-  const equippedItemsMap = useMemo(() => {
-    const map = new Map<ItemType, Item>();
-    player.equippedItems.forEach((item) => {
-      map.set(item.type, item);
-    });
-    return map;
-  }, [player.equippedItems]);
-
-  const getEquippedItem = (type: ItemType): Item | undefined => {
-    return equippedItemsMap.get(type);
+  // Get equipped item by type from equipment object
+  const getEquippedItem = (type: ItemType): Item | null => {
+    return player.equipment[type];
   };
+
+  // Create array of equipped items for display
+  const equippedItemsList = useMemo(() => {
+    const items: Item[] = [];
+    if (player.equipment.weapon) items.push(player.equipment.weapon);
+    if (player.equipment.armor) items.push(player.equipment.armor);
+    if (player.equipment.accessory) items.push(player.equipment.accessory);
+    return items;
+  }, [player.equipment]);
 
 
   return (
@@ -137,7 +133,7 @@ export function FloorCompleteScreen({
               {/* Sprite Display */}
               <div className="relative pixel-panel-dark rounded-lg p-3 border-2 border-primary/50">
                 <PixelSprite
-                  type={player.class}
+                  type={player.characterClass}
                   state={spriteState}
                   direction="right"
                   scale={4}
@@ -146,7 +142,7 @@ export function FloorCompleteScreen({
                 <div className="absolute inset-0 bg-primary/10 rounded-lg animate-pulse" />
               </div>
               <div className="text-center">
-                <div className="pixel-text text-pixel-sm text-amber-200">{getPlayerDisplayName(player)}</div>
+                <div className="pixel-text text-pixel-sm text-amber-200">{getPlayerDisplayName(player as Parameters<typeof getPlayerDisplayName>[0])}</div>
                 <div className="pixel-text text-pixel-xs text-slate-400">Level {player.level}</div>
               </div>
 
@@ -154,24 +150,26 @@ export function FloorCompleteScreen({
               <div className="w-full space-y-1.5">
                 <PixelStatBar
                   label="HP"
-                  current={player.currentStats.maxHealth}
-                  max={player.currentStats.maxHealth}
+                  current={player.health.max}
+                  max={player.health.max}
                   color="red"
                 />
-                <PixelStatBar
-                  label="MP"
-                  current={player.currentStats.maxMana}
-                  max={player.currentStats.maxMana}
-                  color="blue"
-                />
+                {player.mana && (
+                  <PixelStatBar
+                    label="MP"
+                    current={player.mana.max}
+                    max={player.mana.max}
+                    color="blue"
+                  />
+                )}
               </div>
 
               {/* Stat Boxes - Core Stats */}
               <div className="grid grid-cols-4 gap-1 w-full">
-                <PixelStatBox iconType={STAT_ICONS.POWER} label="PWR" value={player.currentStats.power} />
-                <PixelStatBox iconType={STAT_ICONS.ARMOR} label="ARM" value={player.currentStats.armor} />
-                <PixelStatBox iconType={STAT_ICONS.SPEED} label="SPD" value={player.currentStats.speed} />
-                <PixelStatBox iconType={STAT_ICONS.FORTUNE} label="FOR" value={player.currentStats.fortune} />
+                <PixelStatBox iconType={STAT_ICONS.POWER} label="PWR" value={player.attack.baseDamage} />
+                <PixelStatBox iconType={STAT_ICONS.ARMOR} label="ARM" value={player.defense.value} />
+                <PixelStatBox iconType={STAT_ICONS.SPEED} label="SPD" value={player.speed.value} />
+                <PixelStatBox iconType={STAT_ICONS.FORTUNE} label="CRIT" value={`${Math.round(player.attack.critChance * 100)}%`} />
               </div>
 
               {/* Gold Display */}
@@ -231,117 +229,15 @@ export function FloorCompleteScreen({
             </div>
           </div>
 
-          {/* Center: Power Rewards */}
-          <div className="space-y-4">
-            {/* Power Choice */}
-            {availablePowers.length > 0 && (
-              <div data-testid="power-choices" className="pixel-panel rounded-lg p-4 border-2 border-primary/30">
-                <h3 className="pixel-text text-pixel-sm text-primary mb-3 flex items-center gap-2">
-                  <PixelIcon type={UI_ICONS.SPARKLE} size={16} /> Choose a Power!
-                </h3>
-                <div className="space-y-2">
-                  {availablePowers.map((choice, index) => {
-                    const isUpgrade = isPowerUpgrade(choice);
-
-                    // Check for synergy with player's path (only for new powers, not upgrades)
-                    const powerWithSynergies = !isUpgrade ? (choice as PowerWithSynergies) : null;
-                    const playerPathId = player.path?.pathId ?? null;
-                    const synergizes = powerWithSynergies && playerPathId ? hasSynergy(powerWithSynergies, playerPathId) : false;
-                    const synergy = powerWithSynergies && playerPathId ? getSynergy(powerWithSynergies, playerPathId) : null;
-
-                    if (isUpgrade) {
-                      return (
-                        <div
-                          key={`upgrade-${choice.powerId}`}
-                          className="pixel-panel-dark p-3 rounded border border-gold/30 hover:border-gold/60 transition-all cursor-pointer"
-                          onClick={() => onLearnPower(index)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="relative">
-                              <PixelIcon type={getPowerIconType(choice.powerId)} size={32} />
-                              <span className="absolute -top-1 -right-1 pixel-text text-pixel-xs bg-gold text-black px-1 rounded font-bold">
-                                +{choice.newLevel - 1}
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h4 className="pixel-text text-pixel-sm font-bold text-gold">{choice.powerName}</h4>
-                                <span className="pixel-text text-pixel-xs bg-gold/20 text-gold px-1 py-0.5 rounded">
-                                  Lv.{choice.currentLevel} → Lv.{choice.newLevel}
-                                </span>
-                              </div>
-                              <p className="pixel-text text-pixel-xs text-slate-400">{choice.description}</p>
-                            </div>
-                            <Button size="sm" className="pixel-button text-pixel-xs h-6 px-2 bg-gold hover:bg-gold/90 text-black">
-                              Upgrade
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <div
-                          key={choice.id}
-                          className={cn(
-                            "pixel-panel-dark p-3 rounded border transition-all cursor-pointer relative",
-                            synergizes
-                              ? "border-amber-500/50 hover:border-amber-400/70 bg-amber-500/5 shadow-sm shadow-amber-500/10"
-                              : "border-info/30 hover:border-info/60"
-                          )}
-                          onClick={() => onLearnPower(index)}
-                        >
-                          {/* Synergy indicator badge */}
-                          {synergizes && synergy && (
-                            <div className="absolute top-2 right-2">
-                              <div className="flex items-center gap-0.5 bg-amber-500/20 border border-amber-500/40 rounded px-1.5 py-0.5">
-                                <Star className="h-2.5 w-2.5 text-amber-400 fill-amber-400" aria-hidden="true" />
-                                <span className="pixel-text text-pixel-2xs text-amber-400 font-bold">
-                                  {getPathName(synergy.pathId)}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="flex items-center gap-3">
-                            <PixelIcon type={getPowerIconType(choice.id)} size={32} />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h4 className="pixel-text text-pixel-sm font-bold text-primary">{choice.name}</h4>
-                                <span className="pixel-text text-pixel-xs bg-info/20 text-info px-1 py-0.5 rounded">
-                                  NEW
-                                </span>
-                              </div>
-                              <p className="pixel-text text-pixel-xs text-slate-400">{choice.description}</p>
-                              <div className="flex gap-2 mt-1 pixel-text text-pixel-xs text-slate-500">
-                                <span className="flex items-center gap-1"><PixelIcon type={STAT_ICONS.MANA} size={16} /> {choice.manaCost} MP</span>
-                                <span className="flex items-center gap-1"><PixelIcon type="ui-play" size={16} /> {choice.cooldown}s CD</span>
-                              </div>
-                              {/* Synergy description */}
-                              {synergy && (
-                                <div className="mt-2 pt-2 border-t border-amber-500/20">
-                                  <p className="pixel-text text-pixel-2xs text-amber-300 italic">
-                                    <PixelIcon type="ui-star" size={16} className="inline-block mr-1" />{synergy.description}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                            <Button
-                              size="sm"
-                              className={cn(
-                                "pixel-button text-pixel-xs h-6 px-2",
-                                synergizes && "bg-amber-600 hover:bg-amber-500 text-black font-bold"
-                              )}
-                            >
-                              Learn
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    }
-                  })}
-                </div>
-              </div>
-            )}
+          {/* Center: Floor Complete Message */}
+          <div className="pixel-panel rounded-lg p-4 flex flex-col items-center justify-center">
+            <PixelIcon type={UI_ICONS.SPARKLE} size={48} className="mb-3" />
+            <h3 className="pixel-text text-pixel-sm text-primary mb-2 text-center">
+              Well Done!
+            </h3>
+            <p className="pixel-text text-pixel-xs text-slate-400 text-center">
+              You've cleared all enemies on this floor. Visit the shop to gear up or continue to the next challenge.
+            </p>
           </div>
 
           {/* Right: Powers & Gold Display */}

@@ -1,0 +1,169 @@
+// src/ecs/systems/__tests__/regen.test.ts
+import { describe, it, expect, beforeEach } from 'vitest';
+import { world } from '../../world';
+import { RegenSystem } from '../regen';
+
+describe('RegenSystem', () => {
+  beforeEach(() => {
+    for (const entity of world.entities) {
+      world.remove(entity);
+    }
+    // Add game state for combat phase and speed
+    world.add({
+      gameState: true,
+      phase: 'combat',
+      combatSpeed: { multiplier: 1 },
+    });
+  });
+
+  it('should accumulate time toward regen tick', () => {
+    const entity = world.add({
+      player: true,
+      health: { current: 50, max: 100 },
+      mana: { current: 25, max: 50 },
+      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 0 },
+    });
+
+    // 16ms tick - not enough for regen
+    RegenSystem(16);
+
+    expect(entity.regen?.accumulated).toBe(16);
+    expect(entity.health?.current).toBe(50); // No regen yet
+    expect(entity.mana?.current).toBe(25); // No regen yet
+  });
+
+  it('should apply health regen when 1 second accumulated', () => {
+    const entity = world.add({
+      player: true,
+      health: { current: 50, max: 100 },
+      mana: { current: 25, max: 50 },
+      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 990 },
+    });
+
+    // 16ms tick - pushes over 1000ms threshold
+    RegenSystem(16);
+
+    expect(entity.health?.current).toBe(55); // 50 + 5
+    // Accumulated should be 6 (1006 - 1000)
+    expect(entity.regen?.accumulated).toBe(6);
+  });
+
+  it('should apply mana regen when 1 second accumulated', () => {
+    const entity = world.add({
+      player: true,
+      health: { current: 50, max: 100 },
+      mana: { current: 25, max: 50 },
+      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 990 },
+    });
+
+    // 16ms tick - pushes over 1000ms threshold
+    RegenSystem(16);
+
+    expect(entity.mana?.current).toBe(27); // 25 + 2
+  });
+
+  it('should not exceed max health', () => {
+    const entity = world.add({
+      player: true,
+      health: { current: 98, max: 100 },
+      mana: { current: 25, max: 50 },
+      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 990 },
+    });
+
+    RegenSystem(16);
+
+    expect(entity.health?.current).toBe(100); // Capped at max
+  });
+
+  it('should not exceed max mana', () => {
+    const entity = world.add({
+      player: true,
+      health: { current: 50, max: 100 },
+      mana: { current: 49, max: 50 },
+      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 990 },
+    });
+
+    RegenSystem(16);
+
+    expect(entity.mana?.current).toBe(50); // Capped at max
+  });
+
+  it('should respect combat speed multiplier', () => {
+    // Set 2x speed
+    const gameState = world.with('gameState').first;
+    if (gameState?.combatSpeed) {
+      gameState.combatSpeed.multiplier = 2;
+    }
+
+    const entity = world.add({
+      player: true,
+      health: { current: 50, max: 100 },
+      mana: { current: 25, max: 50 },
+      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 0 },
+    });
+
+    // 16ms tick at 2x speed = 32ms effective
+    RegenSystem(16);
+
+    expect(entity.regen?.accumulated).toBe(32);
+  });
+
+  it('should skip dying entities', () => {
+    const entity = world.add({
+      player: true,
+      health: { current: 50, max: 100 },
+      mana: { current: 25, max: 50 },
+      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 990 },
+      dying: { startedAtTick: 0, duration: 500 },
+    });
+
+    RegenSystem(16);
+
+    // Should not have applied regen
+    expect(entity.health?.current).toBe(50);
+    expect(entity.mana?.current).toBe(25);
+    // Accumulated should not have changed either
+    expect(entity.regen?.accumulated).toBe(990);
+  });
+
+  it('should not regen outside combat phase', () => {
+    // Change phase to shop
+    const gameState = world.with('gameState').first;
+    if (gameState) {
+      gameState.phase = 'shop';
+    }
+
+    const entity = world.add({
+      player: true,
+      health: { current: 50, max: 100 },
+      mana: { current: 25, max: 50 },
+      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 990 },
+    });
+
+    RegenSystem(16);
+
+    // Should not have applied regen
+    expect(entity.health?.current).toBe(50);
+    expect(entity.mana?.current).toBe(25);
+    expect(entity.regen?.accumulated).toBe(990);
+  });
+
+  it('should handle entities without mana component', () => {
+    const entity = world.add({
+      enemy: {
+        tier: 'common',
+        name: 'Goblin',
+        isBoss: false,
+        abilities: [],
+        intent: null,
+      },
+      health: { current: 50, max: 100 },
+      regen: { healthPerSecond: 3, manaPerSecond: 0, accumulated: 990 },
+    });
+
+    RegenSystem(16);
+
+    // Should apply health regen without error
+    expect(entity.health?.current).toBe(53);
+  });
+});

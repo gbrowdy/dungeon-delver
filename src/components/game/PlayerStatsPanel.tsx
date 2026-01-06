@@ -1,6 +1,6 @@
-import { useCombatPlayer } from '@/contexts/CombatContext';
 import { cn } from '@/lib/utils';
 import { Item, ItemType } from '@/types/game';
+import type { PlayerSnapshot } from '@/ecs/snapshot';
 import {
   Tooltip,
   TooltipContent,
@@ -33,13 +33,36 @@ const TYPE_LABELS: Record<ItemType, string> = {
   accessory: 'Accessory',
 };
 
+interface PlayerStatsPanelProps {
+  player: PlayerSnapshot;
+}
+
 /**
  * PlayerStatsPanel - Displays player info, equipment, stats grid, and XP bar.
  * Styled with pixel art / 8-bit retro aesthetic.
  * Compact layout on mobile to reduce visual clutter.
  */
-export function PlayerStatsPanel() {
-  const player = useCombatPlayer();
+export function PlayerStatsPanel({ player }: PlayerStatsPanelProps) {
+  // Create a compatible player object for utility functions that expect old Player type
+  const playerForUtils = {
+    ...player,
+    class: player.characterClass,
+    currentStats: {
+      power: player.attack.baseDamage,
+      armor: player.defense.value,
+      speed: player.speed.value,
+      fortune: player.attack.critChance * 100, // Convert back to fortune approximation
+      mana: player.mana?.current ?? 0, // null after path selection
+      maxMana: player.mana?.max ?? 0,
+    },
+    experience: player.xp,
+    experienceToNext: player.xpToNext,
+    equippedItems: [
+      player.equipment.weapon,
+      player.equipment.armor,
+      player.equipment.accessory,
+    ].filter((item): item is Item => item !== null),
+  };
 
   return (
     <div className="pixel-panel rounded-lg p-1.5 xs:p-2 sm:p-3">
@@ -47,18 +70,18 @@ export function PlayerStatsPanel() {
       <div className="flex items-center justify-between flex-wrap gap-1 xs:gap-2">
         <PlayerInfo
           name={getPlayerDisplayName(player)}
-          playerClass={player.class}
-          level={player.level}
+          playerClass={playerForUtils.class}
+          level={playerForUtils.level}
         />
-        <EquipmentDisplay items={player.equippedItems} />
+        <EquipmentDisplay items={playerForUtils.equippedItems} />
       </div>
 
       {/* Stats Grid - only show primary stats on very small screens */}
       <StatsGrid
-        power={player.currentStats.power}
-        armor={player.currentStats.armor}
-        speed={player.currentStats.speed}
-        fortune={player.currentStats.fortune}
+        power={playerForUtils.currentStats.power}
+        armor={playerForUtils.currentStats.armor}
+        speed={playerForUtils.currentStats.speed}
+        fortune={playerForUtils.currentStats.fortune}
       />
 
       {/* Path Abilities Display */}
@@ -76,8 +99,8 @@ export function PlayerStatsPanel() {
           </span>
         </div>
         <XPProgressBar
-          current={player.experience}
-          max={player.experienceToNext}
+          current={playerForUtils.experience}
+          max={playerForUtils.experienceToNext}
         />
       </div>
     </div>

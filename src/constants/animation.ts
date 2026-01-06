@@ -16,8 +16,9 @@ export const ANIMATION_TIMING = {
   PLAYER_HIT_SHAKE: 400,           // Screen shake duration on player hit
 
   // Death animations
-  DEATH_ANIMATION: 500,            // Death sprite animation duration
-  PLAYER_DEATH_PAUSE: 1500,        // Extended pause after player death before transitioning
+  DEATH_ANIMATION: 500,            // Enemy death sprite animation duration
+  PLAYER_DEATH_ANIMATION: 800,     // Player death sprite animation duration (longer for dramatic effect)
+  PLAYER_DEATH_PAUSE: 1500,        // Extended pause after player death animation before transitioning
 
   // Phase transitions
   ENTERING_PHASE: 800,             // Walking into combat arena

@@ -1,15 +1,15 @@
 import { Shield, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useCombat } from '@/contexts/CombatContext';
 import { PowerButton } from './PowerButton';
 import { StanceToggle } from './StanceToggle';
 import { ResourceBar } from './ResourceBar';
 import { COMBAT_BALANCE } from '@/constants/balance';
-import { usePathAbilities } from '@/hooks/usePathAbilities';
-import { useStanceSystem } from '@/hooks/useStanceSystem';
+import { getPowerModifiers, hasComboMechanic, isPassivePath, pathUsesResourceSystem } from '@/utils/pathUtils';
 import { getStancesForPath } from '@/data/stances';
 import { isFeatureEnabled } from '@/constants/features';
-import { pathUsesResourceSystem } from '@/hooks/usePathResource';
+import { getResourceDisplayName } from '@/data/pathResources';
+import type { PlayerSnapshot } from '@/ecs/snapshot';
+import { useGameActions } from '@/ecs/context/GameContext';
 import {
   Tooltip,
   TooltipContent,
@@ -17,45 +17,54 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+interface PowersPanelProps {
+  player: PlayerSnapshot;
+  canUsePowers: boolean;
+  onUsePower: (powerId: string) => void;
+  onActivateBlock: () => void;
+}
+
 /**
  * PowersPanel - Displays mana bar, block button, power buttons, and combo indicator.
  * For passive paths with PASSIVE_STANCE_SYSTEM enabled, shows stance toggle UI.
  * Styled with pixel art / 8-bit retro aesthetic.
  */
-export function PowersPanel() {
-  const { player, combatState, actions } = useCombat();
-  const { canUsePowers, isPaused } = combatState;
-  const { getPowerModifiers, hasComboMechanic, isPassivePath } = usePathAbilities();
-
+export function PowersPanel({
+  player,
+  canUsePowers,
+  onUsePower,
+  onActivateBlock,
+}: PowersPanelProps) {
   // Calculate effective mana costs with path ability reductions
-  const powerMods = getPowerModifiers(player);
+  const powerMods = getPowerModifiers({ path: player.path });
   const getEffectiveManaCost = (baseCost: number) =>
     Math.max(1, Math.floor(baseCost * (1 - powerMods.costReduction)));
 
   // Check if this player's path uses the combo system
-  const showCombo = hasComboMechanic(player);
+  const showCombo = hasComboMechanic({ path: player.path });
 
-  // Stance system for passive paths
+  // Get game actions for stance switching
+  const actions = useGameActions();
+
+  // Stance system for passive paths - now uses ECS state
   const pathId = player.path?.pathId ?? '';
   const availableStances = getStancesForPath(pathId);
-  const {
-    currentStance,
-    switchStance,
-    cooldownRemaining,
-    isStanceSystemActive,
-  } = useStanceSystem(availableStances, availableStances[0]?.id, isPaused);
+  const stanceState = player.stanceState;
+  const currentStanceId = stanceState?.activeStanceId;
+  const cooldownRemaining = stanceState?.stanceCooldownRemaining ?? 0;
 
   // Determine if we should show stance UI instead of standard powers
   const showStanceUI = isFeatureEnabled('PASSIVE_STANCE_SYSTEM') &&
-    isPassivePath(player) &&
-    isStanceSystemActive;
+    isPassivePath({ path: player.path }) &&
+    !!stanceState &&
+    availableStances.length > 0;
 
-  // Check if player uses path resource system (Phase 6)
+  // Check if player uses path resource system
   const usesPathResource = pathUsesResourceSystem(pathId) && player.pathResource;
 
   return (
     <div className="pixel-panel rounded-lg p-2 sm:p-3">
-      {/* Resource bar header - show path resource OR mana */}
+      {/* Resource bar header - show path resource OR mana (passive paths have neither) */}
       {usesPathResource && player.pathResource ? (
         <div className="mb-2">
           <h3 className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400 mb-1">Powers</h3>
@@ -65,52 +74,72 @@ export function PowersPanel() {
             showLabel={true}
           />
         </div>
-      ) : (
+      ) : player.mana ? (
         <ManaBar
-          current={player.currentStats.mana}
-          max={player.currentStats.maxMana}
+          current={player.mana.current}
+          max={player.mana.max}
         />
-      )}
+      ) : null}
 
       {showStanceUI ? (
         /* Stance UI for passive paths */
         <StanceToggle
           stances={availableStances}
-          currentStanceId={currentStance?.id}
-          onSwitch={switchStance}
+          currentStanceId={currentStanceId}
+          onSwitch={actions.switchStance}
           cooldownRemaining={cooldownRemaining}
-          isPaused={isPaused}
+          isPaused={false}
         />
       ) : (
         /* Standard powers UI for active paths */
         <>
           {/* Powers grid */}
           <div className="flex flex-wrap gap-1.5">
-            {/* Block Button */}
-            <BlockButton
-              isBlocking={player.isBlocking}
-              currentMana={player.currentStats.mana}
-              canUse={canUsePowers}
-              onActivate={actions.activateBlock}
-            />
+            {/* Block Button - show for mana users (pre-level-2) and active path users (free) */}
+            {/* Passive paths have no Block - they use stances for defense */}
+            {(player.mana || (player.pathResource && player.pathResource.type !== 'mana')) && (
+              <BlockButton
+                isBlocking={player.isBlocking}
+                currentMana={player.mana?.current ?? 0}
+                canUse={canUsePowers}
+                onActivate={onActivateBlock}
+                isFree={!!player.pathResource && player.pathResource.type !== 'mana'}
+              />
+            )}
 
             {/* Power buttons */}
-            {player.powers.map(power => (
-              <PowerButton
-                key={power.id}
-                power={power}
-                currentMana={player.currentStats.mana}
-                effectiveManaCost={getEffectiveManaCost(power.manaCost)}
-                onUse={() => actions.usePower(power.id)}
-                disabled={!canUsePowers}
-                playerPathId={player.path?.pathId ?? null}
-              />
-            ))}
+            {player.powers.map(power => {
+              // Use pathResource for active paths, mana for pre-level-2
+              const currentResource = player.pathResource?.current ?? player.mana?.current ?? 0;
+              const resourceCost = player.pathResource
+                ? (power.resourceCost ?? power.manaCost)
+                : power.manaCost;
+              const resourceBehavior = player.pathResource?.resourceBehavior ?? 'spend';
+              const resourceMax = player.pathResource?.max ?? player.mana?.max ?? 100;
+              const resourceLabel = player.pathResource
+                ? getResourceDisplayName(player.pathResource.type)
+                : 'MP';
+              return (
+                <PowerButton
+                  key={power.id}
+                  power={power}
+                  cooldownRemaining={player.cooldowns.get(power.id)?.remaining ?? 0}
+                  currentMana={currentResource}
+                  effectiveManaCost={getEffectiveManaCost(resourceCost)}
+                  onUse={() => onUsePower(power.id)}
+                  disabled={!canUsePowers}
+                  playerPathId={player.path?.pathId ?? null}
+                  resourceBehavior={resourceBehavior}
+                  resourceMax={resourceMax}
+                  resourceLabel={resourceLabel}
+                />
+              );
+            })}
           </div>
 
           {/* Combo indicator - only show for active paths */}
-          {showCombo && player.comboCount > 0 && (
-            <ComboIndicator count={player.comboCount} />
+          {showCombo && (player.comboCount ?? 0) > 0 && (
+            <ComboIndicator count={player.comboCount ?? 0} />
           )}
         </>
       )}
@@ -166,10 +195,12 @@ interface BlockButtonProps {
   currentMana: number;
   canUse: boolean;
   onActivate: () => void;
+  /** If true, block is free (active paths) */
+  isFree?: boolean;
 }
 
-function BlockButton({ isBlocking, currentMana, canUse, onActivate }: BlockButtonProps) {
-  const canAfford = currentMana >= COMBAT_BALANCE.BLOCK_MANA_COST;
+function BlockButton({ isBlocking, currentMana, canUse, onActivate, isFree = false }: BlockButtonProps) {
+  const canAfford = isFree || currentMana >= COMBAT_BALANCE.BLOCK_MANA_COST;
   const isDisabled = !canUse || isBlocking || !canAfford;
   const canActivate = !isDisabled;
 
@@ -186,18 +217,18 @@ function BlockButton({ isBlocking, currentMana, canUse, onActivate }: BlockButto
             )}
             onClick={onActivate}
             disabled={isDisabled}
-            aria-label={`Block: Reduce damage by 50% from next attack. Costs ${COMBAT_BALANCE.BLOCK_MANA_COST} mana.${isBlocking ? ' Currently active.' : ''}`}
+            aria-label={`Block: Reduce damage by 50% from next attack.${isFree ? ' Free.' : ` Costs ${COMBAT_BALANCE.BLOCK_MANA_COST} mana.`}${isBlocking ? ' Currently active.' : ''}`}
           >
             <Shield className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-info" aria-hidden="true" />
             <span className="pixel-text text-pixel-2xs font-medium text-slate-200">Block</span>
             <span className="pixel-text text-pixel-2xs text-mana">
-              {COMBAT_BALANCE.BLOCK_MANA_COST} MP
+              {isFree ? 'Free' : `${COMBAT_BALANCE.BLOCK_MANA_COST} MP`}
             </span>
           </button>
         </TooltipTrigger>
         <TooltipContent side="top" className="pixel-panel">
           <p className="pixel-text text-pixel-xs">Reduce damage by 50% from next attack</p>
-          <p className="pixel-text text-pixel-2xs text-mana mt-1">{COMBAT_BALANCE.BLOCK_MANA_COST} MP</p>
+          <p className="pixel-text text-pixel-2xs text-mana mt-1">{isFree ? 'Free' : `${COMBAT_BALANCE.BLOCK_MANA_COST} MP`}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

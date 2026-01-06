@@ -22,7 +22,6 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       description: 'Enter a fury, dealing 200% damage on next hit',
       manaCost: 20,    // Reduced for better early game viability
       cooldown: 4,     // Increased from 3
-      currentCooldown: 0,
       effect: 'damage',
       value: 2.0,      // Buffed for competitive early game damage
       icon: 'power-reckless_swing',
@@ -48,7 +47,6 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       description: 'Launch a devastating fireball dealing 220% damage',
       manaCost: 40,    // Increased from 30
       cooldown: 3,     // Increased from 2
-      currentCooldown: 0,
       effect: 'damage',
       value: 2.2,      // Reduced from 2.5
       icon: 'power-fireball',
@@ -74,7 +72,6 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       description: 'Strike from shadows with guaranteed critical hit',
       manaCost: 25,    // Increased from 20
       cooldown: 3,     // Increased from 2
-      currentCooldown: 0,
       effect: 'damage',
       value: 1.4,      // Reduced from 1.5
       icon: 'power-ambush',
@@ -101,7 +98,6 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       description: 'Restore 40% of maximum health',
       manaCost: 30,    // Reduced from 45 to be usable at start
       cooldown: 5,     // Increased from 4
-      currentCooldown: 0,
       effect: 'heal',
       value: 0.4,      // Buffed from 0.3 for more impactful healing
       icon: 'power-divine_heal',

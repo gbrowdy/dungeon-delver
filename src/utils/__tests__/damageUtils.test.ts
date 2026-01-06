@@ -1,13 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { applyDamageToPlayer, applyDamageToEnemy, DamageSource, EnemyDamageSource } from '../damageUtils';
 import { Player, Enemy } from '@/types/game';
-
-// Mock isTestInvincible
-vi.mock('@/hooks/useTestHooks', () => ({
-  isTestInvincible: vi.fn(() => false),
-}));
-
-import { isTestInvincible } from '@/hooks/useTestHooks';
 
 const createMockPlayer = (overrides?: Partial<Player>): Player => ({
   name: 'Test Player',
@@ -60,14 +53,6 @@ const createMockPlayer = (overrides?: Partial<Player>): Player => ({
 });
 
 describe('applyDamageToPlayer', () => {
-  beforeEach(() => {
-    vi.mocked(isTestInvincible).mockReturnValue(false);
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
   it('reduces player health by damage amount', () => {
     const player = createMockPlayer({
       currentStats: { ...createMockPlayer().currentStats, health: 100 },
@@ -77,18 +62,6 @@ describe('applyDamageToPlayer', () => {
     expect(result.player.currentStats.health).toBe(75);
     expect(result.actualDamage).toBe(25);
     expect(result.blocked).toBe(false);
-  });
-
-  it('blocks all damage when test invincible', () => {
-    vi.mocked(isTestInvincible).mockReturnValue(true);
-    const player = createMockPlayer({
-      currentStats: { ...createMockPlayer().currentStats, health: 100 },
-    });
-    const result = applyDamageToPlayer(player, 25, 'enemy_attack');
-
-    expect(result.player.currentStats.health).toBe(100);
-    expect(result.actualDamage).toBe(0);
-    expect(result.blocked).toBe(true);
   });
 
   it('absorbs damage with shield first', () => {

@@ -11,20 +11,26 @@
 import type { PathResource } from '@/types/game';
 
 /**
- * Default mana resource for passive paths and pre-level-2 players
- * Note: Mana regeneration is handled by useCombatTimers, not by this config
+ * Default mana resource for pre-level-2 players only
+ * Note: Passive paths have NO resource (stances, not powers)
+ * Note: Mana regeneration is handled by RegenSystem
  */
 export const DEFAULT_MANA_RESOURCE: PathResource = {
   type: 'mana',
   current: 50,
   max: 50,
   color: '#3b82f6', // blue-500
+  resourceBehavior: 'spend',
   generation: {},
 };
 
 /**
  * Resource definitions keyed by path ID
  * Only active paths have custom resources
+ *
+ * resourceBehavior:
+ * - 'spend': Powers cost resource (Fury, Momentum, Zeal)
+ * - 'gain': Powers add to resource (Arcane Charges - reverse mana)
  */
 export const PATH_RESOURCES: Record<string, PathResource> = {
   berserker: {
@@ -32,38 +38,20 @@ export const PATH_RESOURCES: Record<string, PathResource> = {
     current: 0,
     max: 100,
     color: '#dc2626', // red-600
+    resourceBehavior: 'spend',
     generation: {
       onHit: 8,
       onDamaged: 12,
     },
-    decay: {
-      rate: 3,
-      tickInterval: 1000,
-      outOfCombatOnly: true,
-    },
-    // Multiple thresholds at same value = multiple effects that trigger together
+    // No decay - continuous auto-combat means always "in combat"
+    // Amplify threshold: spend at 80+ for bonus damage
     thresholds: [
-      {
-        value: 80,
-        effect: {
-          type: 'cost_reduction',
-          value: 0.5,
-          description: 'Power costs reduced by 50%',
-        },
-      },
       {
         value: 80,
         effect: {
           type: 'damage_bonus',
           value: 0.3,
-          description: '+30% power damage',
-        },
-      },
-      {
-        value: 100,
-        effect: {
-          type: 'special',
-          description: 'Kill at max Fury: Full HP restore',
+          description: '+30% power damage at 80+ Fury',
         },
       },
     ],
@@ -72,18 +60,25 @@ export const PATH_RESOURCES: Record<string, PathResource> = {
   archmage: {
     type: 'arcane_charges',
     current: 0,
-    max: 5,
+    max: 100,
     color: '#9333ea', // purple-600
+    resourceBehavior: 'gain', // Casting ADDS charges (reverse mana)
     generation: {
-      onPowerUse: 1,
+      // No combat generation - charges come from casting powers
     },
+    decay: {
+      rate: 5,
+      tickInterval: 1000,
+    },
+    // Passive damage bonus based on current charges
+    // At max (100): charges cap and decay naturally, preventing further buildup
     thresholds: [
       {
         value: 1,
         effect: {
           type: 'damage_bonus',
-          value: 0.10,
-          description: '+10% spell damage per charge',
+          value: 0.005, // +0.5% per charge = +50% at 100
+          description: '+0.5% spell damage per charge',
         },
       },
     ],
@@ -94,20 +89,18 @@ export const PATH_RESOURCES: Record<string, PathResource> = {
     current: 0,
     max: 5,
     color: '#eab308', // yellow-500
+    resourceBehavior: 'spend',
     generation: {
       onCrit: 1,
       onPowerUse: 1,
     },
-    decay: {
-      rate: 1,
-      tickInterval: 4000,
-    },
+    // No decay - small pool with sparse generation
     thresholds: [
       {
         value: 5,
         effect: {
           type: 'special',
-          description: 'Execute enemies below 20% HP, reset all cooldowns',
+          description: 'Execute enemies below 20% HP + reset cooldowns',
         },
       },
     ],
@@ -118,30 +111,44 @@ export const PATH_RESOURCES: Record<string, PathResource> = {
     current: 0,
     max: 10,
     color: '#f5f5f5', // neutral-100
+    resourceBehavior: 'spend',
     generation: {
       onPowerUse: 2,
       onHit: 1,
       onBlock: 1,
       onKill: 3,
     },
-    decay: {
-      rate: 1,
-      tickInterval: 3000,
-    },
+    // No decay - small pool with combat-based generation
     thresholds: [
-      {
-        value: 5,
-        effect: {
-          type: 'damage_bonus',
-          value: 0.20,
-          description: '+20% holy damage on powers',
-        },
-      },
       {
         value: 10,
         effect: {
           type: 'special',
-          description: 'Guaranteed critical + burst damage',
+          description: 'Guaranteed crit + holy burst damage',
+        },
+      },
+    ],
+  },
+
+  // Alias for paladin crusader path (pathId includes class prefix)
+  paladin_crusader: {
+    type: 'zeal',
+    current: 0,
+    max: 10,
+    color: '#f5f5f5', // neutral-100
+    resourceBehavior: 'spend',
+    generation: {
+      onPowerUse: 2,
+      onHit: 1,
+      onBlock: 1,
+      onKill: 3,
+    },
+    thresholds: [
+      {
+        value: 10,
+        effect: {
+          type: 'special',
+          description: 'Guaranteed crit + holy burst damage',
         },
       },
     ],

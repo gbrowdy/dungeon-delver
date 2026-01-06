@@ -1,9 +1,7 @@
-import { useEffect, useMemo } from 'react';
-import { Player, Enemy } from '@/types/game';
+import { useEffect, useMemo, useCallback, useState } from 'react';
 import { EffectsLayer, ScreenShake, BossDeathEffect } from './BattleEffects';
-import { useBattleAnimation, CombatEvent } from '@/hooks/useBattleAnimation';
 import { cn } from '@/lib/utils';
-import { BattlePhaseType } from '@/constants/enums';
+import { BattlePhaseType, SPRITE_STATE } from '@/constants/enums';
 import { CharacterSprite } from './CharacterSprite';
 import { EnemyIntentDisplay } from './EnemyIntentDisplay';
 import { BattleOverlay } from './BattleOverlay';
@@ -12,16 +10,27 @@ import { getPlayerDisplayName } from '@/utils/powerSynergies';
 import { getIcon, ABILITY_ICONS } from '@/lib/icons';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { Star } from 'lucide-react';
+import type { PlayerSnapshot, EnemySnapshot, AnimationEvent } from '@/ecs/snapshot';
+import type { BattleEffect } from './BattleEffects';
 
 /** Maximum number of enemy abilities to display in the battle arena UI */
 const MAX_DISPLAYED_ABILITIES = 4;
 
 interface BattleArenaProps {
-  player: Player;
-  enemy: Enemy | null;
+  player: PlayerSnapshot;
+  enemy: EnemySnapshot | null;
   isPaused: boolean;
-  lastCombatEvent: CombatEvent | null;
-  gamePhase: string;
+  animationEvents: AnimationEvent[];
+  battlePhase: BattlePhaseType;
+  groundScrolling: boolean;
+  floatingEffects: ReadonlyArray<{
+    id: string;
+    type: string;
+    value?: number;
+    x: number;
+    y: number;
+    isCrit?: boolean;
+  }>;
   onPhaseChange?: (phase: BattlePhaseType) => void;
   onTransitionComplete?: () => void;
   onEnemyDeathAnimationComplete?: () => void;
@@ -36,8 +45,10 @@ export function BattleArena({
   player,
   enemy,
   isPaused,
-  lastCombatEvent,
-  gamePhase,
+  animationEvents,
+  battlePhase,
+  groundScrolling,
+  floatingEffects,
   onPhaseChange,
   onTransitionComplete,
   onEnemyDeathAnimationComplete,
@@ -47,42 +58,97 @@ export function BattleArena({
   enemyProgress = 0,
   isStunned = false,
 }: BattleArenaProps) {
-  // Memoize animation options to prevent unnecessary re-renders of useBattleAnimation
-  const animationOptions = useMemo(() => ({
-    onTransitionComplete,
-    onEnemyDeathAnimationComplete,
-    onPlayerDeathAnimationComplete,
-  }), [onTransitionComplete, onEnemyDeathAnimationComplete, onPlayerDeathAnimationComplete]);
+  // Convert animation events to the format expected by ScreenReaderAnnouncer
+  const lastCombatEvent = useMemo(() => {
+    const unconsumed = animationEvents.filter(e => !e.consumed);
+    if (unconsumed.length === 0) return null;
+    const latest = unconsumed[unconsumed.length - 1];
 
-  const {
-    heroState,
-    enemyState,
-    effects,
-    phase,
-    groundScrolling,
-    isShaking,
-    heroAttacking,
-    enemyAttacking,
-    heroCasting,
-    castingPowerId,
-    heroFlash,
-    enemyFlash,
-    hitStop,
-    playerDeathEffect,
-    enemyCasting,
-    enemyAuraColor,
-    removeEffect,
-  } = useBattleAnimation(enemy, lastCombatEvent, isPaused, gamePhase, animationOptions);
+    // Extract damage/crit/targetDied from payload based on type
+    const payload = latest.payload;
+    const hasDamageData = payload.type === 'damage' || payload.type === 'spell';
+    const damage = hasDamageData && 'value' in payload ? payload.value : 0;
+    const isCrit = hasDamageData && 'isCrit' in payload ? payload.isCrit : false;
+    const targetDied = payload.type === 'damage' && 'targetDied' in payload ? payload.targetDied : false;
+    const powerId = payload.type === 'spell' && 'powerId' in payload ? payload.powerId : undefined;
+
+    const baseEvent = {
+      id: latest.id,
+      timestamp: latest.createdAtTick,
+    };
+
+    // Map based on animation event type to correct CombatEvent
+    switch (latest.type) {
+      case 'player_attack':
+        return { ...baseEvent, type: 'playerAttack' as const, damage, isCrit };
+      case 'enemy_attack':
+        return { ...baseEvent, type: 'enemyAttack' as const, damage, isCrit };
+      case 'player_hit':
+        return { ...baseEvent, type: 'playerHit' as const, damage, isCrit, targetDied };
+      case 'enemy_hit':
+        return { ...baseEvent, type: 'enemyHit' as const, damage, isCrit, targetDied };
+      case 'power_used':
+      case 'spell_cast':
+        return { ...baseEvent, type: 'playerPower' as const, powerId: powerId || '', damage, isCrit };
+      case 'player_dodge':
+        return { ...baseEvent, type: 'playerDodge' as const };
+      case 'enemy_ability': {
+        const abilityType = 'abilityType' in payload ? payload.abilityType : undefined;
+        return { ...baseEvent, type: 'enemyAbility' as const, abilityType: abilityType || 'unknown' };
+      }
+      default:
+        return { ...baseEvent, type: 'playerAttack' as const, damage, isCrit };
+    }
+  }, [animationEvents]);
+
+  // Convert floatingEffects to BattleEffect format
+  const effects: BattleEffect[] = useMemo(() => {
+    return floatingEffects.map(effect => ({
+      id: effect.id,
+      type: effect.type as 'damage' | 'heal' | 'miss' | 'spell',
+      x: effect.x,
+      y: effect.y,
+      value: effect.value,
+      isCrit: effect.isCrit,
+    }));
+  }, [floatingEffects]);
+
+  // Track effects that have been removed for cleanup callback
+  const [removedEffects] = useState(new Set<string>());
+  const removeEffect = useCallback((id: string) => {
+    removedEffects.add(id);
+    // Note: Effects are removed by ECS systems, not by UI
+  }, [removedEffects]);
+
+  // Read animation state from snapshots
+  const heroSpriteState = (player.combatAnimation?.type as typeof SPRITE_STATE[keyof typeof SPRITE_STATE]) ?? SPRITE_STATE.IDLE;
+  const enemySpriteState = (enemy?.combatAnimation?.type as typeof SPRITE_STATE[keyof typeof SPRITE_STATE]) ?? SPRITE_STATE.IDLE;
+
+  // Determine if characters are attacking/casting based on animation state
+  const heroAttacking = heroSpriteState === SPRITE_STATE.ATTACK && !player.combatAnimation?.powerId;
+  const heroCasting = heroSpriteState === SPRITE_STATE.ATTACK && !!player.combatAnimation?.powerId;
+  const castingPowerId = player.combatAnimation?.powerId ?? null;
+  const enemyAttacking = enemySpriteState === SPRITE_STATE.ATTACK && !enemy?.visualEffects?.aura;
+  const enemyCasting = enemySpriteState === SPRITE_STATE.IDLE && !!enemy?.visualEffects?.aura;
+
+  // Read visual effects from snapshots
+  const heroFlash = player.visualEffects.flash;
+  const enemyFlash = enemy?.visualEffects.flash ?? false;
+  const hitStop = player.visualEffects.hitStop;
+  const isShaking = player.visualEffects.shake;
+  const enemyAuraColor = enemy?.visualEffects.aura ?? null;
+
+  // Player death effect (screen dimming)
+  const playerDeathEffect = player.isDying;
 
   // The game state now keeps the enemy during death animation (enemy.isDying = true)
   // and only clears it after the animation completes. No need for local tracking.
-  // During transitioning phase, enemy will be null (cleared by handleTransitionComplete)
   const displayEnemy = enemy;
 
   // Notify parent of phase changes
   useEffect(() => {
-    onPhaseChange?.(phase);
-  }, [phase, onPhaseChange]);
+    onPhaseChange?.(battlePhase);
+  }, [battlePhase, onPhaseChange]);
 
   return (
     <ScreenShake active={isShaking} intensity="medium">
@@ -136,9 +202,9 @@ export function BattleArena({
           <CharacterSprite
             type="hero"
             character={player}
-            spriteState={heroState.state}
-            spriteFrame={heroState.frame}
-            phase={phase}
+            spriteState={heroSpriteState}
+            spriteFrame={0}
+            phase={battlePhase}
             displayEnemy={displayEnemy}
             isAttacking={heroAttacking}
             isCasting={heroCasting}
@@ -157,9 +223,9 @@ export function BattleArena({
               <CharacterSprite
                 type="enemy"
                 character={displayEnemy}
-                spriteState={enemyState.state}
-                spriteFrame={enemyState.frame}
-                phase={phase}
+                spriteState={enemySpriteState}
+                spriteFrame={0}
+                phase={battlePhase}
                 displayEnemy={displayEnemy}
                 isAttacking={enemyAttacking}
                 enemyCasting={enemyCasting}
@@ -219,7 +285,7 @@ export function BattleArena({
 
               {/* Row 2: Stats */}
               <div className="pixel-text text-pixel-2xs text-gray-400">
-                PWR:{displayEnemy.power} ARM:{displayEnemy.armor}
+                PWR:{displayEnemy.attack.baseDamage} ARM:{displayEnemy.defense.value}
               </div>
 
               {/* Row 3: Abilities with names */}
@@ -265,7 +331,7 @@ export function BattleArena({
           isPaused={isPaused}
           playerDeathEffect={playerDeathEffect}
           isFloorComplete={isFloorComplete}
-          phase={phase}
+          phase={battlePhase}
           enemy={enemy}
         />
       </div>

@@ -125,6 +125,13 @@ export interface PathResource {
   max: number;
   color: string;  // CSS color for UI
 
+  /**
+   * How powers interact with this resource:
+   * - 'spend': Powers consume resource (Fury, Momentum, Zeal, Mana)
+   * - 'gain': Powers add to resource (Arcane Charges - reverse mana)
+   */
+  resourceBehavior: 'spend' | 'gain';
+
   // Generation config
   generation: {
     onHit?: number;      // Gain per auto-attack
@@ -185,9 +192,17 @@ export interface Power {
   id: string;
   name: string;
   description: string;
-  manaCost: number;
+  manaCost: number; // Used for pre-level-2 (mana) or as fallback
+  /**
+   * Resource cost for active paths:
+   * - For 'spend' resources (Fury, Momentum, Zeal): Amount deducted when casting
+   * - For 'gain' resources (Arcane Charges): Amount ADDED when casting
+   * - If undefined, uses manaCost as fallback
+   */
+  resourceCost?: number;
   cooldown: number; // Cooldown duration in seconds
-  currentCooldown: number; // Remaining cooldown in seconds (can be fractional)
+  // NOTE: Cooldown state is tracked in entity.cooldowns Map, not on the Power object
+  // Use cooldowns.get(power.id)?.remaining to get current cooldown
   effect: 'damage' | 'heal' | 'buff' | 'debuff';
   value: number;
   icon: string;
@@ -235,6 +250,12 @@ export interface EnemyStatDebuff {
   sourceName: string; // ability name for combat log
 }
 
+/**
+ * @deprecated Legacy type - use ECS entities with enemy component instead.
+ * The ECS stores enemy data as entities in world.ts with health, attack, defense, etc. components.
+ * This type remains for backward compatibility with generateEnemy() and legacy systems.
+ * Prefer using EnemySnapshot from ecs/snapshot.ts for UI components.
+ */
 export interface Enemy {
   id: string;
   name: string;
@@ -260,6 +281,12 @@ export interface Enemy {
   modifiers?: ModifierEffect[]; // Optional elite/rare enemy modifiers
 }
 
+/**
+ * @deprecated Legacy type - use ECS entities with player component instead.
+ * The ECS stores player data as entities in world.ts with health, mana, attack, etc. components.
+ * This type remains for backward compatibility with legacy systems.
+ * Prefer using PlayerSnapshot from ecs/snapshot.ts for UI components.
+ */
 export interface Player {
   name: string;
   class: CharacterClass;
@@ -299,6 +326,12 @@ export interface Player {
   pathResource?: PathResource; // Active path resource (Phase 6) - replaces mana for active paths
 }
 
+/**
+ * @deprecated Legacy type - use ECS gameState entity instead.
+ * The ECS stores game state in an entity with phase, floor, popups, etc. components.
+ * This type remains for backward compatibility with legacy systems.
+ * Prefer using GameStateSnapshot from ecs/snapshot.ts for UI components.
+ */
 export interface GameState {
   player: Player | null;
   currentEnemy: Enemy | null;
@@ -329,3 +362,91 @@ export interface ClassData {
   icon: string;
   hpRegen?: number; // Base HP regen per second (e.g., Paladin has 0.5)
 }
+
+// ============================================================================
+// COMBAT EVENT TYPES (for animations and screen reader announcements)
+// ============================================================================
+
+/**
+ * Base fields shared by all combat events
+ */
+interface BaseCombatEvent {
+  timestamp: number;
+  id: string; // Unique ID for deduplication
+}
+
+/**
+ * Player attack event
+ */
+export interface PlayerAttackEvent extends BaseCombatEvent {
+  type: 'playerAttack';
+  damage: number;
+  isCrit: boolean;
+}
+
+/**
+ * Player power/ability event
+ */
+export interface PlayerPowerEvent extends BaseCombatEvent {
+  type: 'playerPower';
+  powerId: string;
+  damage: number;
+  isCrit: boolean;
+}
+
+/**
+ * Player dodge event
+ */
+export interface PlayerDodgeEvent extends BaseCombatEvent {
+  type: 'playerDodge';
+}
+
+/**
+ * Enemy attack event
+ */
+export interface EnemyAttackEvent extends BaseCombatEvent {
+  type: 'enemyAttack';
+  damage: number;
+  isCrit: boolean;
+}
+
+/**
+ * Enemy ability event (non-attack abilities: heal, enrage, shield)
+ */
+export interface EnemyAbilityEvent extends BaseCombatEvent {
+  type: 'enemyAbility';
+  abilityType: 'heal' | 'enrage' | 'shield' | 'unknown';
+}
+
+/**
+ * Enemy hit event
+ */
+export interface EnemyHitEvent extends BaseCombatEvent {
+  type: 'enemyHit';
+  damage: number;
+  isCrit: boolean;
+  targetDied?: boolean; // Flag indicating the enemy died from this hit
+}
+
+/**
+ * Player hit event
+ */
+export interface PlayerHitEvent extends BaseCombatEvent {
+  type: 'playerHit';
+  damage: number;
+  isCrit: boolean;
+  targetDied?: boolean; // Flag indicating the player died from this hit
+}
+
+/**
+ * Discriminated union of all combat events
+ * Used for battle animations and screen reader announcements
+ */
+export type CombatEvent =
+  | PlayerAttackEvent
+  | PlayerPowerEvent
+  | PlayerDodgeEvent
+  | EnemyAttackEvent
+  | EnemyAbilityEvent
+  | EnemyHitEvent
+  | PlayerHitEvent;

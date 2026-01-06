@@ -68,7 +68,6 @@ function clonePowers(powers: Power[]): Power[] {
     description: power.description,
     manaCost: power.manaCost,
     cooldown: power.cooldown,
-    currentCooldown: power.currentCooldown,
     effect: power.effect,
     value: power.value,
     icon: power.icon,

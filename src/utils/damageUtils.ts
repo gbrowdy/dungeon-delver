@@ -1,5 +1,4 @@
 import { Player, Enemy } from '@/types/game';
-import { isTestInvincible } from '@/hooks/useTestHooks';
 import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
 
 /**
@@ -70,18 +69,6 @@ export function applyDamageToPlayer(
 ): DamageResult {
   const updatedPlayer = deepClonePlayer(player);
   const logs: string[] = [];
-
-  // Check test invincibility first
-  if (isTestInvincible()) {
-    return {
-      player: updatedPlayer,
-      logs: ['[Test] Damage blocked by invincibility'],
-      actualDamage: 0,
-      shieldAbsorbed: 0,
-      shieldBroken: false,
-      blocked: true,
-    };
-  }
 
   let remainingDamage = damage;
   let shieldAbsorbed = 0;

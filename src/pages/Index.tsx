@@ -1,7 +1,12 @@
 import { Game } from '@/components/game/Game';
+import { GameProvider } from '@/ecs/context/GameContext';
 
 const Index = () => {
-  return <Game />;
+  return (
+    <GameProvider>
+      <Game />
+    </GameProvider>
+  );
 };
 
 export default Index;

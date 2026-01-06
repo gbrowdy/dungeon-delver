@@ -39,7 +39,6 @@ describe('stateUtils', () => {
             description: 'Deals fire damage',
             manaCost: 15,
             cooldown: 3,
-            currentCooldown: 0,
             effect: 'damage',
             value: 25,
             icon: 'power-fireball',
@@ -413,7 +412,6 @@ describe('stateUtils', () => {
             description: 'Deals fire damage',
             manaCost: 15,
             cooldown: 3,
-            currentCooldown: 2,
             effect: 'damage',
             value: 25,
             icon: 'power-fireball',
@@ -446,12 +444,12 @@ describe('stateUtils', () => {
       const clonedPlayer = deepClonePlayer(originalPlayer);
 
       // Modify clone's powers
-      clonedPlayer.powers[0].currentCooldown = 0;
       clonedPlayer.powers[0].upgradeLevel = 3;
+      clonedPlayer.powers[0].value = 50;
 
       // Verify original is unchanged
-      expect(originalPlayer.powers[0].currentCooldown).toBe(2);
       expect(originalPlayer.powers[0].upgradeLevel).toBe(2);
+      expect(originalPlayer.powers[0].value).toBe(25);
 
       // Verify arrays are not the same reference
       expect(clonedPlayer.powers).not.toBe(originalPlayer.powers);

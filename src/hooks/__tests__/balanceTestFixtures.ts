@@ -58,7 +58,6 @@ export function createTestPlayer(
 
   const startingPower: Power = {
     ...classData.startingPower,
-    currentCooldown: 0,
   };
 
   return {

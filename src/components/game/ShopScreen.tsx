@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Player, Item } from '@/types/game';
+import { Item } from '@/types/game';
+import type { PlayerSnapshot } from '@/ecs/snapshot';
 import { ShopState, ShopItem, SHOP_UNLOCKS, ShopTier } from '@/types/shop';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,12 +27,40 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+// Map tier to rarity (tiers roughly correspond to rarity levels)
+const TIER_TO_RARITY: Record<ShopTier, Item['rarity']> = {
+  starter: 'common',
+  class: 'uncommon',
+  specialty: 'rare',
+  legendary: 'legendary',
+};
+
+/**
+ * Convert a ShopItem to the Item type expected by the game engine.
+ * Maps shop-specific fields to the standard Item interface.
+ */
+function shopItemToItem(shopItem: ShopItem): Item {
+  return {
+    id: shopItem.id,
+    name: shopItem.name,
+    type: shopItem.type,
+    rarity: TIER_TO_RARITY[shopItem.tier],
+    statBonus: shopItem.stats,
+    description: shopItem.description,
+    icon: shopItem.icon,
+    effect: shopItem.effect,
+    enhancementLevel: shopItem.enhancementLevel ?? 0,
+    maxEnhancement: 3,
+    tier: shopItem.tier,
+  };
+}
+
 interface ShopScreenProps {
-  player: Player;
+  player: PlayerSnapshot;
   shopState: ShopState;
   currentFloor: number;
-  onPurchase: (itemId: string) => void;
-  onEnhance: (itemId: string) => void;
+  onPurchase: (item: Item, cost: number) => void;
+  onEnhance: (slot: 'weapon' | 'armor' | 'accessory') => void;
   onClose: () => void;
 }
 
@@ -97,9 +126,9 @@ interface ItemCardProps {
   item: ShopItem;
   isPurchased: boolean;
   canAfford: boolean;
-  onPurchase: () => void;
+  onPurchase: (item: ShopItem) => void;
   showPathSynergy?: boolean;
-  equippedItems: Item[];
+  equippedItems: (Item | null)[];
 }
 
 function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy, equippedItems }: ItemCardProps) {
@@ -110,7 +139,7 @@ function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy, e
   const IconComponent = Icons[iconName as keyof typeof Icons] || Icons.Package;
 
   // Check if this item is a downgrade from currently equipped item
-  const equippedItem = equippedItems.find(equipped => equipped.type === item.type);
+  const equippedItem = equippedItems.find(equipped => equipped?.type === item.type);
   const isItemDowngrade = equippedItem && equippedItem.tier && isDowngrade(item.tier, equippedItem.tier);
 
   // Handle purchase - show confirmation if downgrade
@@ -118,13 +147,13 @@ function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy, e
     if (isItemDowngrade && !isPurchased) {
       setShowDowngradeDialog(true);
     } else {
-      onPurchase();
+      onPurchase(item);
     }
   };
 
   const handleConfirmDowngrade = () => {
     setShowDowngradeDialog(false);
-    onPurchase();
+    onPurchase(item);
   };
 
   // Format stats for display
@@ -321,7 +350,7 @@ interface EquippedItemCardProps {
   item: Item | null;
   slotType: 'weapon' | 'armor' | 'accessory';
   playerGold: number;
-  onEnhance: (itemId: string) => void;
+  onEnhance: (slot: 'weapon' | 'armor' | 'accessory') => void;
 }
 
 function EquippedItemCard({ item, slotType, playerGold, onEnhance }: EquippedItemCardProps) {
@@ -505,7 +534,7 @@ function EquippedItemCard({ item, slotType, playerGold, onEnhance }: EquippedIte
           </div>
         ) : (
           <Button
-            onClick={() => onEnhance(item.id)}
+            onClick={() => onEnhance(slotType)}
             disabled={!canAfford}
             className={cn(
               'w-full pixel-button text-pixel-xs uppercase font-bold',
@@ -543,7 +572,7 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
   // (needed because shopState resets on floor transition but equipped items persist)
   const isItemPurchased = (itemId: string) =>
     shopState.purchasedItems.includes(itemId) ||
-    player.equippedItems.some(item => item.id === itemId);
+    Object.values(player.equipment).some(item => item?.id === itemId);
 
   // Check if player can afford item
   const canAfford = (item: ShopItem) => player.gold >= item.price;
@@ -551,7 +580,7 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
   // Path synergy detection (placeholder - would check player.path)
   const hasPathSynergy = (item: ShopItem) => {
     if (!player.path || !item.pathRestriction) return false;
-    return item.pathRestriction === player.path.id;
+    return item.pathRestriction === player.path.pathId;
   };
 
   return (
@@ -595,7 +624,7 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {/* Get equipped items by type */}
             {(['weapon', 'armor', 'accessory'] as const).map((slotType) => {
-              const equippedItem = player.equippedItems.find(item => item.type === slotType) || null;
+              const equippedItem = player.equipment[slotType] || null;
               return (
                 <EquippedItemCard
                   key={slotType}
@@ -619,14 +648,14 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
             <div className="flex-1 h-[2px] bg-gradient-to-r from-slate-700/50 to-transparent" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {shopState.starterGear.map((item) => (
+            {shopState.starterGear.map((shopItem) => (
               <ItemCard
-                key={item.id}
-                item={item}
-                isPurchased={isItemPurchased(item.id)}
-                canAfford={canAfford(item)}
-                onPurchase={() => onPurchase(item.id)}
-                equippedItems={player.equippedItems}
+                key={shopItem.id}
+                item={shopItem}
+                isPurchased={isItemPurchased(shopItem.id)}
+                canAfford={canAfford(shopItem)}
+                onPurchase={(si) => onPurchase(shopItemToItem(si), si.price)}
+                equippedItems={Object.values(player.equipment)}
               />
             ))}
           </div>
@@ -642,14 +671,14 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
             <div className="flex-1 h-[2px] bg-gradient-to-r from-blue-700/50 to-transparent" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {shopState.classGear.map((item) => (
+            {shopState.classGear.map((shopItem) => (
               <ItemCard
-                key={item.id}
-                item={item}
-                isPurchased={isItemPurchased(item.id)}
-                canAfford={canAfford(item)}
-                onPurchase={() => onPurchase(item.id)}
-                equippedItems={player.equippedItems}
+                key={shopItem.id}
+                item={shopItem}
+                isPurchased={isItemPurchased(shopItem.id)}
+                canAfford={canAfford(shopItem)}
+                onPurchase={(si) => onPurchase(shopItemToItem(si), si.price)}
+                equippedItems={Object.values(player.equipment)}
               />
             ))}
           </div>
@@ -665,15 +694,15 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
             <div className="flex-1 h-[2px] bg-gradient-to-r from-purple-700/50 to-transparent" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {shopState.todaysSelection.map((item) => (
+            {shopState.todaysSelection.map((shopItem) => (
               <ItemCard
-                key={item.id}
-                item={item}
-                isPurchased={isItemPurchased(item.id)}
-                canAfford={canAfford(item)}
-                onPurchase={() => onPurchase(item.id)}
-                showPathSynergy={hasPathSynergy(item)}
-                equippedItems={player.equippedItems}
+                key={shopItem.id}
+                item={shopItem}
+                isPurchased={isItemPurchased(shopItem.id)}
+                canAfford={canAfford(shopItem)}
+                onPurchase={(si) => onPurchase(shopItemToItem(si), si.price)}
+                showPathSynergy={hasPathSynergy(shopItem)}
+                equippedItems={Object.values(player.equipment)}
               />
             ))}
           </div>
@@ -701,9 +730,9 @@ export function ShopScreen({ player, shopState, currentFloor, onPurchase, onEnha
                 item={shopState.legendary}
                 isPurchased={isItemPurchased(shopState.legendary.id)}
                 canAfford={canAfford(shopState.legendary)}
-                onPurchase={() => onPurchase(shopState.legendary!.id)}
+                onPurchase={(si) => onPurchase(shopItemToItem(si), si.price)}
                 showPathSynergy={hasPathSynergy(shopState.legendary)}
-                equippedItems={player.equippedItems}
+                equippedItems={Object.values(player.equipment)}
               />
             </div>
           ) : !legendaryUnlocked ? (

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { CombatEvent } from '@/hooks/useBattleAnimation';
-import { Player, Enemy } from '@/types/game';
+import { CombatEvent } from '@/types/game';
 import { COMBAT_EVENT_TYPE } from '@/constants/enums';
 import { getPlayerDisplayName } from '@/utils/powerSynergies';
+import type { PlayerSnapshot, EnemySnapshot } from '@/ecs/snapshot';
 
 /**
  * Formats a combat event into a screen reader announcement.
@@ -43,8 +43,8 @@ function formatCombatAnnouncement(event: CombatEvent | null, playerName: string,
 
 interface ScreenReaderAnnouncerProps {
   lastCombatEvent: CombatEvent | null;
-  player: Player;
-  enemy: Enemy | null;
+  player: PlayerSnapshot;
+  enemy: EnemySnapshot | null;
 }
 
 export function ScreenReaderAnnouncer({
@@ -68,13 +68,13 @@ export function ScreenReaderAnnouncer({
 
   // Low health warning for screen readers
   useEffect(() => {
-    const healthPercent = player.currentStats.health / player.currentStats.maxHealth;
-    if (healthPercent <= 0.25 && !lowHealthWarning) {
-      setLowHealthWarning(true);
-    } else if (healthPercent > 0.25 && lowHealthWarning) {
-      setLowHealthWarning(false);
+    const healthPercent = player.health.current / player.health.max;
+    const isLowHealth = healthPercent <= 0.25;
+
+    if (isLowHealth !== lowHealthWarning) {
+      setLowHealthWarning(isLowHealth);
     }
-  }, [player.currentStats.health, player.currentStats.maxHealth, lowHealthWarning]);
+  }, [player.health, lowHealthWarning]);
 
   return (
     <>

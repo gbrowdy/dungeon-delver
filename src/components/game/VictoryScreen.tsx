@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Player } from '@/types/game';
+import type { PlayerSnapshot } from '@/ecs/snapshot';
 import { Button } from '@/components/ui/button';
 import { PixelSprite } from './PixelSprite';
 import { cn } from '@/lib/utils';
@@ -10,7 +10,7 @@ import { getIcon } from '@/lib/icons';
 import type { SpriteType } from '@/data/sprites';
 
 interface VictoryScreenProps {
-  player: Player;
+  player: PlayerSnapshot;
   onNewRun: () => void;
   onReturnToMenu: () => void;
 }
@@ -25,7 +25,7 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
     if (player.path?.pathId) {
       return player.path.pathId as SpriteType;
     }
-    return player.class as SpriteType;
+    return player.characterClass as SpriteType;
   };
   const spriteType = getSpriteType();
 
@@ -245,13 +245,15 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
           </div>
 
           {/* Equipment showcase */}
-          {player.equippedItems.length > 0 && (
+          {(() => {
+            const equippedItems = [player.equipment.weapon, player.equipment.armor, player.equipment.accessory].filter(Boolean);
+            return equippedItems.length > 0 && (
             <div className="mt-4 pt-4 border-t border-slate-700">
               <div className="pixel-text text-pixel-2xs sm:text-pixel-xs text-slate-400 mb-2 text-center">
                 Equipment
               </div>
               <div className="flex flex-wrap gap-2 justify-center">
-                {player.equippedItems.map((item, idx) => {
+                {equippedItems.map((item, idx) => {
                   const IconComponent = getIcon(item.icon, 'Package');
                   return (
                     <div
@@ -274,7 +276,8 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
                 })}
               </div>
             </div>
-          )}
+          );
+          })()}
         </div>
 
         {/* Action Buttons */}
