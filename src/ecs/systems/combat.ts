@@ -173,12 +173,15 @@ export function CombatSystem(_deltaMs: number): void {
     if (target.blocking) {
       damage = Math.floor(damage * (1 - target.blocking.reduction));
       blocked = true;
-      delete target.blocking;
+
+      // Save reduction before removing component
+      const blockReduction = target.blocking.reduction;
+      world.removeComponent(target, 'blocking');
 
       // Queue block animation
       queueAnimationEvent('player_block', {
         type: 'block',
-        reduction: target.blocking?.reduction ?? 0.4,
+        reduction: blockReduction,
       });
 
       // Record path ability trigger for blocking
