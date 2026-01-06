@@ -13,87 +13,13 @@
 import { world } from '../world';
 import { getGameState, getPlayer } from '../queries';
 import { getEffectiveDelta, getTick, TICK_MS } from '../loop';
-import { generateEnemy } from '@/data/enemies';
 import { FLOOR_CONFIG } from '@/constants/game';
 import type { Entity, GamePhase, EnemyTier, ScheduledTransition, ScheduledSpawn } from '../components';
+import { createEnemyEntity } from '../factories';
+import { addCombatLog } from '../utils';
 
 // Duration for enemy entering animation (matches CSS --anim-entering-phase)
 const ENTERING_PHASE_DURATION_MS = 800;
-
-/**
- * Add a message to the combat log.
- */
-function addCombatLog(message: string): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.combatLog) {
-    gameState.combatLog = [];
-  }
-
-  gameState.combatLog.push(message);
-}
-
-/**
- * Convert game Enemy type to ECS enemy entity.
- */
-function addEnemyEntity(
-  floor: number,
-  room: number,
-  totalRooms: number
-): Entity | null {
-  const enemy = generateEnemy(floor, room, totalRooms);
-
-  // Determine tier for ECS
-  let tier: EnemyTier = 'common';
-  if (enemy.isBoss) {
-    tier = 'boss';
-  } else if (room > totalRooms * 0.6) {
-    tier = 'rare';
-  } else if (room > totalRooms * 0.3) {
-    tier = 'uncommon';
-  }
-
-  // Create enemy entity with ECS components
-  const entity = world.add({
-    enemy: {
-      id: `enemy-${floor}-${room}-${Date.now()}`,
-      tier,
-      name: enemy.name,
-      isBoss: enemy.isBoss,
-      isFinalBoss: floor === FLOOR_CONFIG.FINAL_BOSS_FLOOR && enemy.isBoss,
-      abilities: enemy.abilities,
-      intent: enemy.intent,
-      modifiers: enemy.modifiers,
-    },
-    health: {
-      current: enemy.health,
-      max: enemy.maxHealth,
-    },
-    attack: {
-      baseDamage: enemy.power,
-      critChance: 0.05,
-      critMultiplier: 1.5,
-      variance: { min: 0.9, max: 1.1 },
-    },
-    defense: {
-      value: enemy.armor,
-      blockReduction: 0,
-    },
-    speed: {
-      value: enemy.speed,
-      attackInterval: Math.floor(2500 * (10 / enemy.speed)),
-      accumulated: 0,
-    },
-    statusEffects: [],
-    rewards: {
-      xp: enemy.experienceReward,
-      gold: enemy.goldReward,
-    },
-  });
-
-  return entity;
-}
 
 /**
  * Process scheduled phase transitions.
@@ -211,9 +137,19 @@ function spawnNextEnemy(): void {
   }
 
   // Spawn the enemy
-  const enemy = addEnemyEntity(floor.number, floor.room, floor.totalRooms);
-  if (enemy?.enemy) {
-    addCombatLog(`Room ${floor.room}: A ${enemy.enemy.name} appears!`);
+  const isBoss = floor.room === floor.totalRooms;
+  const isFinalBoss = floor.number === FLOOR_CONFIG.FINAL_BOSS_FLOOR && isBoss;
+  const enemyEntity = createEnemyEntity({
+    floor: floor.number,
+    room: floor.room,
+    isBoss,
+    isFinalBoss,
+    roomsPerFloor: floor.totalRooms,
+  });
+  world.add(enemyEntity);
+
+  if (enemyEntity?.enemy) {
+    addCombatLog(`Room ${floor.room}: A ${enemyEntity.enemy.name} appears!`);
   }
 
   // Start entering animation phase
