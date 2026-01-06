@@ -200,6 +200,30 @@ export function CombatSystem(_deltaMs: number): void {
           addCombatLog(`${attackerName} heals for ${healAmount} HP (lifesteal)`);
         }
       }
+
+      // Apply arcane burn from stance (chance to deal bonus damage + apply burn DoT)
+      const arcaneBurnChance = getStanceBehavior(entity, 'arcane_burn');
+      if (arcaneBurnChance > 0 && Math.random() < arcaneBurnChance) {
+        // Bonus damage: 30% of attack damage
+        const bonusDamage = Math.round(damage * 0.3);
+        if (bonusDamage > 0 && target.health) {
+          target.health.current = Math.max(0, target.health.current - bonusDamage);
+        }
+
+        // Apply burn DoT: 5 damage per second for 3 seconds
+        if (!target.statusEffects) {
+          target.statusEffects = [];
+        }
+        target.statusEffects.push({
+          id: `burn-${Date.now()}`,
+          type: 'burn',
+          damage: 5,
+          remainingTurns: 3,
+          icon: 'flame',
+        });
+
+        addCombatLog(`Arcane Burn! ${bonusDamage} bonus damage + burning for 15`);
+      }
     } else {
       // Enemy hit player
       recordPathTrigger('on_damaged', { damage });
