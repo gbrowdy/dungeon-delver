@@ -71,7 +71,7 @@ describe('createPlayerEntity', () => {
 
     // Check powers
     expect(player.powers).toHaveLength(1);
-    expect(player.powers![0].id).toBe('berserker-rage');
+    expect(player.powers![0].id).toBe('basic-strike');
 
     // Check equipment slots
     expect(player.equipment).toEqual({
@@ -154,7 +154,7 @@ describe('createPlayerEntity', () => {
     });
 
     expect(player.attack!.baseDamage).toBe(mageStats.power);
-    expect(player.powers![0].id).toBe('fireball');
+    expect(player.powers![0].id).toBe('basic-zap');
   });
 
   it('should use correct class stats for rogue', () => {
@@ -171,7 +171,7 @@ describe('createPlayerEntity', () => {
     });
 
     expect(player.speed!.value).toBe(rogueStats.speed);
-    expect(player.powers![0].id).toBe('shadow-strike');
+    expect(player.powers![0].id).toBe('basic-slash');
   });
 
   it('should use correct class stats for paladin with HP regen', () => {
@@ -189,7 +189,7 @@ describe('createPlayerEntity', () => {
     });
 
     expect(player.regen!.healthPerSecond).toBe(paladinHpRegen);
-    expect(player.powers![0].id).toBe('divine-heal');
+    expect(player.powers![0].id).toBe('basic-smite');
   });
 
   it('should calculate attack interval correctly from speed', () => {
@@ -451,5 +451,48 @@ describe('createPlayerEntity with dev mode overrides', () => {
     });
     // Should use class base stats (warrior has 9 attack)
     expect(entity.attack?.baseDamage).toBe(9);
+  });
+});
+
+describe('createPlayerEntity with new starting system', () => {
+  it('should start with stamina resource', () => {
+    const player = createPlayerEntity({
+      name: 'Test Hero',
+      characterClass: 'warrior',
+    });
+    expect(player.pathResource?.type).toBe('stamina');
+  });
+
+  it('should start with generic Strike power for warrior', () => {
+    const player = createPlayerEntity({
+      name: 'Test Hero',
+      characterClass: 'warrior',
+    });
+    expect(player.powers).toHaveLength(1);
+    expect(player.powers?.[0]?.name).toBe('Strike');
+  });
+
+  it('should start with generic Zap power for mage', () => {
+    const player = createPlayerEntity({
+      name: 'Test Hero',
+      characterClass: 'mage',
+    });
+    expect(player.powers?.[0]?.name).toBe('Zap');
+  });
+
+  it('should start with generic Slash power for rogue', () => {
+    const player = createPlayerEntity({
+      name: 'Test Hero',
+      characterClass: 'rogue',
+    });
+    expect(player.powers?.[0]?.name).toBe('Slash');
+  });
+
+  it('should start with generic Smite power for paladin', () => {
+    const player = createPlayerEntity({
+      name: 'Test Hero',
+      characterClass: 'paladin',
+    });
+    expect(player.powers?.[0]?.name).toBe('Smite');
   });
 });

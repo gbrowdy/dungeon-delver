@@ -80,7 +80,8 @@ describe('Power Immediate Execution', () => {
     expect(player!.powers).toBeDefined();
 
     const power = player!.powers![0];
-    const initialMana = player!.mana!.current;
+    // Level 1 players use pathResource (stamina) instead of mana
+    const initialResource = player!.pathResource!.current;
 
     // Activate the power
     dispatch(Commands.activatePower(power.id));
@@ -89,8 +90,8 @@ describe('Power Immediate Execution', () => {
     InputSystem(16);
     PowerSystem(16);
 
-    // Mana should be deducted immediately
-    expect(player!.mana!.current).toBe(initialMana - power.manaCost);
+    // Resource should be deducted immediately
+    expect(player!.pathResource!.current).toBe(initialResource - power.manaCost);
   });
 
   it('should set cooldown immediately when power is activated', () => {

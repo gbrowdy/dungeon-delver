@@ -353,6 +353,11 @@ export function InputSystem(_deltaMs: number): void {
         // Initialize pathResource for active paths
         if (pathDef?.type === 'active' && PATH_RESOURCES[cmd.pathId]) {
           player.pathResource = getPathResource(cmd.pathId);
+        } else if (pathDef?.type === 'passive') {
+          // Remove pathResource for passive paths (they use stances, not powers/resource)
+          if (player.pathResource) {
+            world.removeComponent(player, 'pathResource');
+          }
         }
 
         // Initialize stance state for passive paths

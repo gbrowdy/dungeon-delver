@@ -9,6 +9,8 @@ import { CLASS_DATA } from '@/data/classes';
 import { generateEnemy } from '@/data/enemies';
 import { FLOOR_CONFIG } from '@/constants/game';
 import { COMBAT_BALANCE } from '@/constants/balance';
+import { getStartingPower } from '@/data/startingPowers';
+import { STAMINA_RESOURCE } from '@/data/pathResources';
 
 // ============================================================================
 // Helper Functions
@@ -57,7 +59,7 @@ export function createPlayerEntity(options: CreatePlayerOptions): Entity {
   const baseStats = classData.baseStats;
 
   // Deep clone the starting power to avoid mutation
-  const startingPower: Power = { ...classData.startingPower };
+  const startingPower: Power = getStartingPower(characterClass);
 
   const entity: Entity = {
     // Identity tag
@@ -100,6 +102,9 @@ export function createPlayerEntity(options: CreatePlayerOptions): Entity {
       xp: 0,
       xpToNext: FLOOR_CONFIG.STARTING_EXP_TO_LEVEL,
     },
+
+    // Path resource (stamina at level 1, changes with path selection at level 2)
+    pathResource: { ...STAMINA_RESOURCE },
 
     // Powers and equipment
     powers: [startingPower],
