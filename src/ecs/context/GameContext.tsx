@@ -55,6 +55,7 @@ export interface GameActions {
   switchStance: (stanceId: string) => void;
   selectPower: (powerId: string) => void;
   upgradePower: (powerId: string) => void;
+  selectStanceEnhancement: (stanceId: 'iron' | 'retribution') => void;
 
   // Combat
   usePower: (powerId: string) => void;
@@ -198,6 +199,9 @@ export function GameProvider({ children, enabled = true }: GameProviderProps) {
     },
     upgradePower: (powerId: string) => {
       dispatch(Commands.upgradePower(powerId));
+    },
+    selectStanceEnhancement: (stanceId: 'iron' | 'retribution') => {
+      dispatch(Commands.selectStanceEnhancement(stanceId));
     },
 
     // Combat

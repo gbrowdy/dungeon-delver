@@ -7,7 +7,7 @@
 
 import type { Entity, GamePhase, PopupState, PendingReward, AnimationEvent } from './components';
 import type { CharacterClass, Power, Item, ActiveBuff, StatusEffect, PathResource, AttackModifier, EnemyAbility, EnemyIntent, ModifierEffect, EnemyStatDebuff } from '@/types/game';
-import type { PlayerPath, PlayerStanceState } from '@/types/paths';
+import type { PlayerPath, PlayerStanceState, StanceEnhancement } from '@/types/paths';
 import { getPlayer, getGameState, enemyQuery } from './queries';
 import { getTick, TICK_MS } from './loop';
 
@@ -93,6 +93,10 @@ export interface PlayerSnapshot {
   } | null;
   pendingUpgradeChoice: {
     powerIds: string[];
+  } | null;
+  pendingStanceEnhancement: {
+    ironChoice: StanceEnhancement;
+    retributionChoice: StanceEnhancement;
   } | null;
 
   // Path progression tracking
@@ -310,6 +314,10 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
     } : null,
     pendingUpgradeChoice: entity.pendingUpgradeChoice ? {
       powerIds: [...entity.pendingUpgradeChoice.powerIds],
+    } : null,
+    pendingStanceEnhancement: entity.pendingStanceEnhancement ? {
+      ironChoice: { ...entity.pendingStanceEnhancement.ironChoice },
+      retributionChoice: { ...entity.pendingStanceEnhancement.retributionChoice },
     } : null,
 
     // Path progression tracking
