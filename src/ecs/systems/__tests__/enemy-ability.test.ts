@@ -1,0 +1,115 @@
+// src/ecs/systems/__tests__/enemy-ability.test.ts
+import { describe, it, expect, beforeEach } from 'vitest';
+import { world } from '../../world';
+import { EnemyAbilitySystem } from '../enemy-ability';
+import type { Entity } from '../../components';
+
+// Helper to create test player
+function createTestPlayer(): Entity {
+  return world.add({
+    player: true,
+    identity: { name: 'Hero', class: 'warrior' },
+    health: { current: 100, max: 100 },
+    mana: { current: 50, max: 50 },
+    attack: {
+      baseDamage: 20,
+      critChance: 0,
+      critMultiplier: 2,
+      variance: { min: 1, max: 1 },
+    },
+    defense: { value: 5, blockReduction: 0.4 },
+    speed: { value: 10, attackInterval: 2500, accumulated: 0 },
+    statusEffects: [],
+  });
+}
+
+// Helper to create test enemy
+function createTestEnemy(): Entity {
+  return {
+    enemy: {
+      tier: 'common',
+      name: 'Test Enemy',
+      isBoss: false,
+      abilities: [],
+      intent: null,
+    },
+    health: { current: 100, max: 100 },
+    attack: {
+      baseDamage: 10,
+      critChance: 0,
+      critMultiplier: 2,
+      variance: { min: 1, max: 1 },
+    },
+    defense: { value: 3, blockReduction: 0 },
+    speed: { value: 8, attackInterval: 3000, accumulated: 0 },
+  };
+}
+
+// Helper to create test game state
+function createTestGameState(overrides?: Partial<Entity>): Entity {
+  return world.add({
+    gameState: true,
+    phase: 'combat',
+    combatSpeed: { multiplier: 1 },
+    animationEvents: [],
+    combatLog: [],
+    floor: { number: 1 },
+    ...overrides,
+  });
+}
+
+describe('EnemyAbilitySystem', () => {
+  beforeEach(() => {
+    // Clear all entities
+    for (const entity of [...world.entities]) {
+      world.remove(entity);
+    }
+  });
+
+  describe('intent recalculation', () => {
+    it('should recalculate intent after using an ability', () => {
+      // Create enemy with multiple abilities
+      const enemy = createTestEnemy();
+      enemy.enemy = {
+        tier: 'common',
+        name: 'Test Enemy',
+        isBoss: false,
+        abilities: [
+          { id: 'poison', name: 'Poison', type: 'poison', value: 5, cooldown: 3, currentCooldown: 0, chance: 1, icon: 'Skull', description: 'Poisons' },
+          { id: 'heal', name: 'Heal', type: 'heal', value: 0.2, cooldown: 5, currentCooldown: 0, chance: 1, icon: 'Heart', description: 'Heals' },
+        ],
+        intent: { type: 'ability', ability: { id: 'poison', name: 'Poison', type: 'poison', value: 5, cooldown: 3, currentCooldown: 0, chance: 1, icon: 'Skull', description: 'Poisons' }, icon: 'Skull' },
+      };
+      enemy.cooldowns = new Map();
+      world.addComponent(enemy, 'attackReady', { damage: 10 });
+      world.add(enemy);
+
+      const player = createTestPlayer();
+
+      createTestGameState({ phase: 'combat' });
+
+      // Store original intent
+      const originalIntentAbilityId = enemy.enemy!.intent?.ability?.id;
+
+      // Run system - should use ability and recalculate intent
+      EnemyAbilitySystem(16);
+
+      // The poison ability should now be on cooldown
+      expect(enemy.cooldowns?.get('poison')?.remaining).toBe(3);
+
+      // Intent should exist (recalculated)
+      expect(enemy.enemy!.intent).toBeDefined();
+
+      // Intent should have changed because poison is now on cooldown
+      // (calculateEnemyIntent should now pick heal or basic attack)
+      const newIntentAbilityId = enemy.enemy!.intent?.ability?.id;
+
+      // Either intent changed to a different ability, or switched to basic attack
+      const intentWasRecalculated =
+        originalIntentAbilityId === 'poison' &&
+        (newIntentAbilityId !== 'poison' || enemy.enemy!.intent?.type === 'attack');
+
+      expect(intentWasRecalculated).toBe(true);
+    });
+  });
+});
