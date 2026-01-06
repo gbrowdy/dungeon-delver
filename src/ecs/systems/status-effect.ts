@@ -22,15 +22,15 @@ function processStatusEffect(
 ): boolean {
   const entityName = getEntityName(entity);
 
-  // Process DoT effects (poison, bleed)
-  if ((effect.type === 'poison' || effect.type === 'bleed') && effect.damage) {
+  // Process DoT effects (poison, bleed, burn)
+  if ((effect.type === 'poison' || effect.type === 'bleed' || effect.type === 'burn') && effect.damage) {
     // Calculate damage for this tick (damage per second * delta time)
     const tickDamage = Math.round(effect.damage * deltaSeconds);
 
     if (tickDamage > 0 && entity.health) {
       entity.health.current = Math.max(0, entity.health.current - tickDamage);
 
-      const effectName = effect.type === 'poison' ? 'Poison' : 'Bleed';
+      const effectName = effect.type === 'poison' ? 'Poison' : effect.type === 'bleed' ? 'Bleed' : 'Burn';
       addCombatLog(`${entityName} takes ${tickDamage} ${effectName.toLowerCase()} damage`);
 
       // Queue damage animation
