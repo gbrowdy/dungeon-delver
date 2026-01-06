@@ -276,4 +276,37 @@ describe('CombatSystem', () => {
       mockRandom.mockRestore();
     });
   });
+
+  describe('Hex Aura stance behavior', () => {
+    it('should reduce enemy damage by 15% when hex_aura is active', () => {
+      const gameState = world.add({
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+      });
+
+      const player = world.add({
+        player: true,
+        health: { current: 100, max: 100 },
+        defense: { value: 0, blockReduction: 0 },
+        statusEffects: [],
+        path: { pathId: 'enchanter', abilities: [] },
+        stanceState: { activeStanceId: 'hex_veil', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+      });
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 100, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+      });
+      world.addComponent(enemy, 'attackReady', { damage: 100, isCrit: false });
+
+      CombatSystem(16);
+
+      // 100 damage - 15% hex reduction = 85 damage
+      // Player should have 100 - 85 = 15 HP
+      expect(player.health?.current).toBe(15);
+    });
+  });
 });

@@ -78,6 +78,15 @@ export function CombatSystem(_deltaMs: number): void {
 
     let damage = attackData.damage;
 
+    // Apply hex aura damage reduction (passive aura weakens enemies)
+    if (entity.enemy && target.player) {
+      const hexReduction = getStanceBehavior(target, 'hex_aura');
+      if (hexReduction > 0) {
+        damage = Math.round(damage * (1 - hexReduction));
+        damage = Math.max(1, damage);
+      }
+    }
+
     // Apply stance power modifier to outgoing damage (player attacking)
     if (entity.player) {
       const powerMod = getStanceStatModifier(entity, 'power');
