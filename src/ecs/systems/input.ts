@@ -111,11 +111,10 @@ export function InputSystem(_deltaMs: number): void {
             // At level 2+, if player hasn't selected a path yet, go to path selection
             if (level >= 2 && !hasPath) {
               gameState.phase = 'path-select';
-              // Clear pendingLevelUp so popup doesn't show again
-              if (gameState.pendingLevelUp !== undefined) {
-                gameState.pendingLevelUp = null;
-              }
             }
+
+            // Always clear pendingLevelUp after dismissing level-up popup
+            gameState.pendingLevelUp = null;
 
             // IMPORTANT: Unpause combat after level-up popup is dismissed
             // (ProgressionSystem pauses when level-up occurs)
