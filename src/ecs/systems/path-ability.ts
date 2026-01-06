@@ -33,6 +33,7 @@ import { WARRIOR_PATHS } from '@/data/paths/warrior';
 import { MAGE_PATHS } from '@/data/paths/mage';
 import { ROGUE_PATHS } from '@/data/paths/rogue';
 import { PALADIN_PATHS } from '@/data/paths/paladin';
+import { queueAnimationEvent, addCombatLog } from '../utils';
 
 // ============================================================================
 // TRIGGER TRACKING
@@ -189,51 +190,6 @@ function checkCondition(
 // ============================================================================
 // EFFECT PROCESSING
 // ============================================================================
-
-let nextAnimationId = 0;
-
-function getNextAnimationId(): string {
-  return `path-anim-${nextAnimationId++}`;
-}
-
-function queueAnimationEvent(
-  type: AnimationEvent['type'],
-  payload: AnimationPayload,
-  durationTicks: number = 30
-): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.animationEvents) {
-    gameState.animationEvents = [];
-  }
-
-  const currentTick = getTick();
-  gameState.animationEvents.push({
-    id: getNextAnimationId(),
-    type,
-    payload,
-    createdAtTick: currentTick,
-    displayUntilTick: currentTick + durationTicks,
-    consumed: false,
-  });
-}
-
-function addCombatLog(message: string): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.combatLog) {
-    gameState.combatLog = [];
-  }
-
-  gameState.combatLog.push(message);
-
-  // Keep last 50 entries
-  if (gameState.combatLog.length > 50) {
-    gameState.combatLog.shift();
-  }
-}
 
 /**
  * Generate a unique ID for buffs/debuffs.

@@ -9,61 +9,7 @@ import { entitiesWithStatusEffects, getGameState } from '../queries';
 import { getEffectiveDelta, getTick } from '../loop';
 import type { Entity, AnimationEvent, AnimationPayload } from '../components';
 import type { StatusEffect } from '@/types/game';
-
-let nextAnimationId = 0;
-
-function getNextAnimationId(): string {
-  return `status-anim-${nextAnimationId++}`;
-}
-
-function queueAnimationEvent(
-  type: AnimationEvent['type'],
-  payload: AnimationPayload,
-  durationTicks: number = 30
-): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.animationEvents) {
-    gameState.animationEvents = [];
-  }
-
-  const currentTick = getTick();
-  gameState.animationEvents.push({
-    id: getNextAnimationId(),
-    type,
-    payload,
-    createdAtTick: currentTick,
-    displayUntilTick: currentTick + durationTicks,
-    consumed: false,
-  });
-}
-
-function addCombatLog(message: string): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.combatLog) {
-    gameState.combatLog = [];
-  }
-
-  gameState.combatLog.push(message);
-
-  // Keep last 50 entries
-  if (gameState.combatLog.length > 50) {
-    gameState.combatLog.shift();
-  }
-}
-
-function getEntityName(entity: Entity): string {
-  if (entity.player) {
-    return entity.identity?.name ?? 'Hero';
-  }
-  if (entity.enemy) {
-    return entity.enemy.name;
-  }
-  return 'Unknown';
-}
+import { queueAnimationEvent, addCombatLog, getEntityName } from '../utils';
 
 /**
  * Process a single status effect for an entity.

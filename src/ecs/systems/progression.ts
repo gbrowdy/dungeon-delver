@@ -15,40 +15,7 @@ import { getGameState, getPlayer } from '../queries';
 import { getTick, TICK_MS } from '../loop';
 import { LEVEL_UP_BONUSES } from '@/constants/game';
 import type { AnimationEvent, AnimationPayload } from '../components';
-
-function queueAnimationEvent(
-  type: AnimationEvent['type'],
-  payload: AnimationPayload,
-  durationTicks: number = 60
-): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.animationEvents) {
-    gameState.animationEvents = [];
-  }
-
-  const currentTick = getTick();
-  gameState.animationEvents.push({
-    id: `level-up-${currentTick}`,
-    type,
-    payload,
-    createdAtTick: currentTick,
-    displayUntilTick: currentTick + durationTicks,
-    consumed: false,
-  });
-}
-
-function addCombatLog(message: string): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.combatLog) {
-    gameState.combatLog = [];
-  }
-
-  gameState.combatLog.push(message);
-}
+import { queueAnimationEvent, addCombatLog } from '../utils';
 
 export function ProgressionSystem(_deltaMs: number): void {
   const gameState = getGameState();

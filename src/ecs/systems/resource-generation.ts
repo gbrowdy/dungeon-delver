@@ -14,6 +14,7 @@
 import { getPlayer, getGameState } from '../queries';
 import { getPendingTriggers } from './path-ability';
 import type { PathAbilityTrigger } from '@/types/paths';
+import { addCombatLog } from '../utils';
 
 /**
  * Map trigger types to generation config keys.
@@ -33,22 +34,6 @@ const TRIGGER_TO_GENERATION: Record<PathAbilityTrigger, keyof NonNullable<typeof
 // Workaround for TypeScript - define the type separately
 type GenerationKey = 'onHit' | 'onCrit' | 'onKill' | 'onDamaged' | 'onPowerUse' | 'onBlock' | 'passive';
 const generation: Record<GenerationKey, number | undefined> = {} as Record<GenerationKey, number | undefined>;
-
-function addCombatLog(message: string): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.combatLog) {
-    gameState.combatLog = [];
-  }
-
-  gameState.combatLog.push(message);
-
-  // Keep last 50 entries
-  if (gameState.combatLog.length > 50) {
-    gameState.combatLog.shift();
-  }
-}
 
 /**
  * Get display name for resource type.

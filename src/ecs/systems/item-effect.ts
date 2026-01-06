@@ -17,6 +17,7 @@ import { getProcChanceBonus } from '@/utils/fortuneUtils';
 import type { Entity, AnimationEvent, AnimationPayload } from '../components';
 import type { Item, ItemEffect } from '@/types/game';
 import { getTick } from '../loop';
+import { queueAnimationEvent, addCombatLog } from '../utils';
 
 // Track combat events for the current tick
 // These are set by CombatSystem and cleared at the end of this system
@@ -84,51 +85,6 @@ function createEmptyTracking(): CombatEventTracking {
     playerDamageTaken: 0,
     enemyKilled: false,
   };
-}
-
-let nextAnimationId = 0;
-
-function getNextAnimationId(): string {
-  return `item-anim-${nextAnimationId++}`;
-}
-
-function queueAnimationEvent(
-  type: AnimationEvent['type'],
-  payload: AnimationPayload,
-  durationTicks: number = 30
-): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.animationEvents) {
-    gameState.animationEvents = [];
-  }
-
-  const currentTick = getTick();
-  gameState.animationEvents.push({
-    id: getNextAnimationId(),
-    type,
-    payload,
-    createdAtTick: currentTick,
-    displayUntilTick: currentTick + durationTicks,
-    consumed: false,
-  });
-}
-
-function addCombatLog(message: string): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.combatLog) {
-    gameState.combatLog = [];
-  }
-
-  gameState.combatLog.push(message);
-
-  // Keep last 50 entries
-  if (gameState.combatLog.length > 50) {
-    gameState.combatLog.shift();
-  }
 }
 
 /**

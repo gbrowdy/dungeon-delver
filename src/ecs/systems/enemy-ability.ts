@@ -11,50 +11,7 @@ import { getTick } from '../loop';
 import { COMBAT_BALANCE } from '@/constants/balance';
 import type { Entity, AnimationEvent, AnimationPayload } from '../components';
 import type { EnemyAbility } from '@/types/game';
-
-let nextAnimationId = 0;
-
-function getNextAnimationId(): string {
-  return `anim-enemy-ability-${nextAnimationId++}`;
-}
-
-function queueAnimationEvent(
-  type: AnimationEvent['type'],
-  payload: AnimationPayload,
-  durationTicks: number = 30
-): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.animationEvents) {
-    gameState.animationEvents = [];
-  }
-
-  const currentTick = getTick();
-  gameState.animationEvents.push({
-    id: getNextAnimationId(),
-    type,
-    payload,
-    createdAtTick: currentTick,
-    displayUntilTick: currentTick + durationTicks,
-    consumed: false,
-  });
-}
-
-function addCombatLog(message: string): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.combatLog) {
-    gameState.combatLog = [];
-  }
-
-  gameState.combatLog.push(message);
-
-  if (gameState.combatLog.length > 50) {
-    gameState.combatLog.shift();
-  }
-}
+import { queueAnimationEvent, addCombatLog } from '../utils';
 
 /**
  * Execute an enemy ability and apply its effects.
