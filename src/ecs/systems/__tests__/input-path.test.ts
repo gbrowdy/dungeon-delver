@@ -184,6 +184,47 @@ describe('InputSystem - Path Selection', () => {
     }
   });
 
+  it('should initialize pathProgression for active paths', () => {
+    // Create player with mana
+    const player = createPlayerEntity({ name: 'Hero', characterClass: 'warrior' });
+    world.add(player);
+
+    // Select Berserker (active path)
+    dispatch(Commands.selectPath('berserker'));
+    InputSystem(16);
+
+    const playerAfterPath = getPlayer();
+
+    // pathProgression should be initialized for active path
+    expect(playerAfterPath?.pathProgression).toBeDefined();
+    expect(playerAfterPath?.pathProgression?.pathId).toBe('berserker');
+    expect(playerAfterPath?.pathProgression?.pathType).toBe('active');
+    expect(playerAfterPath?.pathProgression?.powerUpgrades).toEqual([]);
+    expect(playerAfterPath?.pathProgression?.stanceProgression).toBeUndefined();
+  });
+
+  it('should initialize pathProgression for passive paths', () => {
+    // Create player with mana
+    const player = createPlayerEntity({ name: 'Hero', characterClass: 'warrior' });
+    world.add(player);
+
+    // Select Guardian (passive path)
+    dispatch(Commands.selectPath('guardian'));
+    InputSystem(16);
+
+    const playerAfterPath = getPlayer();
+
+    // pathProgression should be initialized for passive path
+    expect(playerAfterPath?.pathProgression).toBeDefined();
+    expect(playerAfterPath?.pathProgression?.pathId).toBe('guardian');
+    expect(playerAfterPath?.pathProgression?.pathType).toBe('passive');
+    expect(playerAfterPath?.pathProgression?.powerUpgrades).toBeUndefined();
+    expect(playerAfterPath?.pathProgression?.stanceProgression).toBeDefined();
+    expect(playerAfterPath?.pathProgression?.stanceProgression?.ironTier).toBe(0);
+    expect(playerAfterPath?.pathProgression?.stanceProgression?.retributionTier).toBe(0);
+    expect(playerAfterPath?.pathProgression?.stanceProgression?.acquiredEnhancements).toEqual([]);
+  });
+
   describe('Power Activation with pathResource', () => {
     it('should allow power activation with sufficient pathResource (spend-type)', () => {
       const gameState = createGameStateEntity();

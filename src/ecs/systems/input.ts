@@ -345,6 +345,25 @@ export function InputSystem(_deltaMs: number): void {
           abilityCooldowns: {}, // Initialize cooldowns map
         };
 
+        // Initialize pathProgression based on path type
+        if (pathDef?.type === 'active') {
+          player.pathProgression = {
+            pathId: cmd.pathId,
+            pathType: 'active',
+            powerUpgrades: [],
+          };
+        } else if (pathDef?.type === 'passive') {
+          player.pathProgression = {
+            pathId: cmd.pathId,
+            pathType: 'passive',
+            stanceProgression: {
+              ironTier: 0,
+              retributionTier: 0,
+              acquiredEnhancements: [],
+            },
+          };
+        }
+
         // Remove mana for ALL paths (active uses pathResource, passive uses nothing)
         if (player.mana) {
           world.removeComponent(player, 'mana');
