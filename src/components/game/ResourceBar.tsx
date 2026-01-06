@@ -31,8 +31,8 @@ export function ResourceBar({
   const percentage = (resource.current / resource.max) * 100;
   const resourceName = getResourceDisplayName(resource.type);
 
-  // For gain-type resources (Arcane Charges), don't animate - instant updates
-  // The decay rate (5/sec) is gradual enough to look smooth without CSS transition
+  // For gain-type resources, don't animate - instant updates feel more responsive
+  // Their natural update cadence is smooth enough without a CSS transition
   const shouldAnimate = resource.resourceBehavior !== 'gain';
 
   // Check which thresholds are currently active

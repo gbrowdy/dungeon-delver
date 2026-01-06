@@ -32,8 +32,8 @@ export type DeepReadonly<T> = T extends (infer U)[]
 /**
  * Convert ticks to milliseconds.
  */
-function ticksToMs(ticks: number): number {
-  return ticks * TICK_MS;
+function ticksToMs(tickCount: number): number {
+  return tickCount * TICK_MS;
 }
 
 /**

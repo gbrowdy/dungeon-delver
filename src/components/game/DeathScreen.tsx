@@ -143,9 +143,10 @@ export function DeathScreen({ player, currentFloor, onRetry, onAbandon, onVisitS
                     <li>Floor {currentFloor}</li>
                     <li className="text-gold">{player.gold} gold</li>
                     <li>{player.powers.length} powers learned</li>
-                    {[player.equipment.weapon, player.equipment.armor, player.equipment.accessory].filter(Boolean).length > 0 && (
-                      <li>{[player.equipment.weapon, player.equipment.armor, player.equipment.accessory].filter(Boolean).length} equipped items</li>
-                    )}
+                    {(() => {
+                      const equippedItemsCount = [player.equipment.weapon, player.equipment.armor, player.equipment.accessory].filter(Boolean).length;
+                      return equippedItemsCount > 0 && <li>{equippedItemsCount} equipped items</li>;
+                    })()}
                   </ul>
                   <p className="pixel-text text-pixel-2xs text-red-400 pt-2">
                     You will start fresh from the beginning.

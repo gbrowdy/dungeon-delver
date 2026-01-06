@@ -245,13 +245,15 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
           </div>
 
           {/* Equipment showcase */}
-          {[player.equipment.weapon, player.equipment.armor, player.equipment.accessory].filter(Boolean).length > 0 && (
+          {(() => {
+            const equippedItems = [player.equipment.weapon, player.equipment.armor, player.equipment.accessory].filter(Boolean);
+            return equippedItems.length > 0 && (
             <div className="mt-4 pt-4 border-t border-slate-700">
               <div className="pixel-text text-pixel-2xs sm:text-pixel-xs text-slate-400 mb-2 text-center">
                 Equipment
               </div>
               <div className="flex flex-wrap gap-2 justify-center">
-                {[player.equipment.weapon, player.equipment.armor, player.equipment.accessory].filter(Boolean).map((item, idx) => {
+                {equippedItems.map((item, idx) => {
                   const IconComponent = getIcon(item.icon, 'Package');
                   return (
                     <div
@@ -274,7 +276,8 @@ export function VictoryScreen({ player, onNewRun, onReturnToMenu }: VictoryScree
                 })}
               </div>
             </div>
-          )}
+          );
+          })()}
         </div>
 
         {/* Action Buttons */}

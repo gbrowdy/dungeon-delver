@@ -15,7 +15,7 @@ import {
 
 test.describe('Path Resource Generation', () => {
   test('Berserker Fury generates on hit', async ({ page }) => {
-    test.setTimeout(120000); // 2 minutes
+    test.setTimeout(90000); // 1.5 minutes
 
     // High XP to level up fast, boosted stats to survive and hit enemies
     await navigateToGame(page, 'devMode=true&xpMultiplier=10&playerAttack=40&playerDefense=25');
@@ -94,7 +94,7 @@ test.describe('Path Resource Generation', () => {
   });
 
   test('Mage Archmage shows Arcane Charges resource', async ({ page }) => {
-    test.setTimeout(120000);
+    test.setTimeout(90000); // 1.5 minutes
 
     await navigateToGame(page, 'devMode=true&xpMultiplier=10&playerAttack=40&playerDefense=25');
     await selectClassAndBegin(page, 'Mage');

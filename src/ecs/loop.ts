@@ -13,7 +13,7 @@ import { runSystems } from './systems';
 import { getGameState } from './queries';
 
 // Timing constants
-export const TICK_MS = 16; // ~60 ticks per second
+export const TICK_MS = 16; // ~62.5 ticks per second
 const MAX_CATCHUP_TICKS = 10; // Prevent death spiral
 
 // Loop state

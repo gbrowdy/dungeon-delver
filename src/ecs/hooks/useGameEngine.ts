@@ -61,15 +61,14 @@ export function useGameEngine({
   const initializedRef = useRef(false);
 
   // Initialize the ECS world with game state entity (only once)
-  useEffect(() => {
-    if (!initializedRef.current) {
-      // Check if game state entity already exists
-      if (!getGameState()) {
-        world.add(createGameStateEntity());
-      }
-      initializedRef.current = true;
+  // Use synchronous check-and-set pattern to prevent race conditions in React 18 concurrent mode
+  if (!initializedRef.current) {
+    initializedRef.current = true;
+    // Check if game state entity already exists before adding
+    if (!getGameState()) {
+      world.add(createGameStateEntity());
     }
-  }, []);
+  }
 
   // Handle enabled prop changes
   useEffect(() => {

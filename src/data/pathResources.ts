@@ -71,7 +71,7 @@ export const PATH_RESOURCES: Record<string, PathResource> = {
       tickInterval: 1000,
     },
     // Passive damage bonus based on current charges
-    // At 100: can't cast until decay brings you below
+    // At max (100): charges cap and decay naturally, preventing further buildup
     thresholds: [
       {
         value: 1,

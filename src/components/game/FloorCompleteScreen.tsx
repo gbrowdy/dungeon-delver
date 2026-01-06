@@ -8,6 +8,7 @@ import { PixelDivider } from '@/components/ui/PixelDivider';
 import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
 import { STAT_ICONS, UI_ICONS } from '@/constants/icons';
 import type { PlayerSnapshot } from '@/ecs/snapshot';
+import { getPlayerDisplayName } from '@/utils/powerSynergies';
 
 const RARITY_COLORS: Record<Item['rarity'], string> = {
   common: 'border-rarity-common bg-rarity-common/10 text-rarity-common',
@@ -47,22 +48,6 @@ function getPowerIconType(powerId: string): IconType {
 }
 
 const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
-
-/**
- * Get display name for player (class name, optionally with path)
- */
-function getPlayerDisplayName(player: PlayerSnapshot): string {
-  const className = player.characterClass.charAt(0).toUpperCase() + player.characterClass.slice(1);
-  if (player.path) {
-    // Extract path name from pathId (e.g., 'warrior-berserker' -> 'Berserker')
-    const pathParts = player.path.pathId.split('-');
-    if (pathParts.length > 1) {
-      const pathName = pathParts[1].charAt(0).toUpperCase() + pathParts[1].slice(1);
-      return `${pathName} ${className}`;
-    }
-  }
-  return className;
-}
 
 interface FloorCompleteScreenProps {
   player: PlayerSnapshot;
@@ -157,7 +142,7 @@ export function FloorCompleteScreen({
                 <div className="absolute inset-0 bg-primary/10 rounded-lg animate-pulse" />
               </div>
               <div className="text-center">
-                <div className="pixel-text text-pixel-sm text-amber-200">{getPlayerDisplayName(player)}</div>
+                <div className="pixel-text text-pixel-sm text-amber-200">{getPlayerDisplayName(player as Parameters<typeof getPlayerDisplayName>[0])}</div>
                 <div className="pixel-text text-pixel-xs text-slate-400">Level {player.level}</div>
               </div>
 

@@ -27,24 +27,24 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+// Map tier to rarity (tiers roughly correspond to rarity levels)
+const TIER_TO_RARITY: Record<ShopTier, Item['rarity']> = {
+  starter: 'common',
+  class: 'uncommon',
+  specialty: 'rare',
+  legendary: 'legendary',
+};
+
 /**
  * Convert a ShopItem to the Item type expected by the game engine.
  * Maps shop-specific fields to the standard Item interface.
  */
 function shopItemToItem(shopItem: ShopItem): Item {
-  // Map tier to rarity (tiers roughly correspond to rarity levels)
-  const tierToRarity: Record<ShopTier, Item['rarity']> = {
-    starter: 'common',
-    class: 'uncommon',
-    specialty: 'rare',
-    legendary: 'legendary',
-  };
-
   return {
     id: shopItem.id,
     name: shopItem.name,
     type: shopItem.type,
-    rarity: tierToRarity[shopItem.tier],
+    rarity: TIER_TO_RARITY[shopItem.tier],
     statBonus: shopItem.stats,
     description: shopItem.description,
     icon: shopItem.icon,
