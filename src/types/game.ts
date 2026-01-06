@@ -99,6 +99,7 @@ export type AttackModifier =
  */
 export type PathResourceType =
   | 'mana'           // Default (pre-level 2 or passive paths)
+  | 'stamina'        // Generic pre-path resource (level 1)
   | 'fury'           // Berserker (Warrior)
   | 'arcane_charges' // Archmage (Mage)
   | 'momentum'       // Assassin (Rogue)

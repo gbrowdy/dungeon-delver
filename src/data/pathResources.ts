@@ -11,6 +11,19 @@
 import type { PathResource } from '@/types/game';
 
 /**
+ * Stamina resource for level 1 players (before path selection)
+ * Replaced by path-specific resource at level 2
+ */
+export const STAMINA_RESOURCE: PathResource = {
+  type: 'stamina',
+  current: 50,
+  max: 50,
+  color: '#22c55e', // green-500
+  resourceBehavior: 'spend',
+  generation: {},
+};
+
+/**
  * Default mana resource for pre-level-2 players only
  * Note: Passive paths have NO resource (stances, not powers)
  * Note: Mana regeneration is handled by RegenSystem
@@ -157,10 +170,11 @@ export const PATH_RESOURCES: Record<string, PathResource> = {
 
 /**
  * Get the resource definition for a path
- * Returns default mana if path not found or is passive
+ * Returns stamina for players without a path (level 1)
+ * Returns path-specific resource or mana fallback for others
  */
 export function getPathResource(pathId: string | undefined): PathResource {
-  if (!pathId) return { ...DEFAULT_MANA_RESOURCE };
+  if (!pathId) return { ...STAMINA_RESOURCE };
   return PATH_RESOURCES[pathId] ? { ...PATH_RESOURCES[pathId] } : { ...DEFAULT_MANA_RESOURCE };
 }
 
@@ -174,6 +188,7 @@ export function getResourceDisplayName(type: PathResource['type']): string {
     case 'momentum': return 'Momentum';
     case 'zeal': return 'Zeal';
     case 'mana': return 'Mana';
+    case 'stamina': return 'Stamina';
     default: return 'Resource';
   }
 }
