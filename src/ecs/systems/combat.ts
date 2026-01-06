@@ -6,56 +6,11 @@
 
 import { world } from '../world';
 import { entitiesWithAttackReady, getPlayer, getActiveEnemy, getGameState } from '../queries';
-import { getTick } from '../loop';
-import type { Entity, AnimationEvent, AnimationPayload } from '../components';
+import type { Entity } from '../components';
 import { getDodgeChance } from '@/utils/fortuneUtils';
 import { recordPathTrigger } from './path-ability';
 import { getStanceDamageMultiplier, getStanceBehavior, getStanceStatModifier } from '@/utils/stanceUtils';
-
-let nextAnimationId = 0;
-
-function getNextAnimationId(): string {
-  return `anim-${nextAnimationId++}`;
-}
-
-function queueAnimationEvent(
-  type: AnimationEvent['type'],
-  payload: AnimationPayload,
-  durationTicks: number = 30
-): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.animationEvents) {
-    gameState.animationEvents = [];
-  }
-
-  const currentTick = getTick();
-  gameState.animationEvents.push({
-    id: getNextAnimationId(),
-    type,
-    payload,
-    createdAtTick: currentTick,
-    displayUntilTick: currentTick + durationTicks,
-    consumed: false,
-  });
-}
-
-function addCombatLog(message: string): void {
-  const gameState = getGameState();
-  if (!gameState) return;
-
-  if (!gameState.combatLog) {
-    gameState.combatLog = [];
-  }
-
-  gameState.combatLog.push(message);
-
-  // Keep last 50 entries
-  if (gameState.combatLog.length > 50) {
-    gameState.combatLog.shift();
-  }
-}
+import { queueAnimationEvent, addCombatLog, getEntityName } from '../utils';
 
 function getTarget(attacker: Entity): Entity | undefined {
   if (attacker.player) {
@@ -64,16 +19,6 @@ function getTarget(attacker: Entity): Entity | undefined {
     return getPlayer();
   }
   return undefined;
-}
-
-function getEntityName(entity: Entity): string {
-  if (entity.player) {
-    return entity.identity?.name ?? 'Hero';
-  }
-  if (entity.enemy) {
-    return entity.enemy.name;
-  }
-  return 'Unknown';
 }
 
 export function CombatSystem(_deltaMs: number): void {
