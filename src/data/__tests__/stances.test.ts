@@ -45,10 +45,10 @@ describe('Stance Definitions', () => {
       expect(ENCHANTER_STANCES.length).toBe(2);
     });
 
-    it('should have arcane_stance and disruption_stance', () => {
+    it('should have arcane_surge and hex_veil', () => {
       const ids = ENCHANTER_STANCES.map(s => s.id);
-      expect(ids).toContain('arcane_stance');
-      expect(ids).toContain('disruption_stance');
+      expect(ids).toContain('arcane_surge');
+      expect(ids).toContain('hex_veil');
     });
 
     it('should have valid stance structure', () => {
@@ -132,7 +132,7 @@ describe('getStancesForPath', () => {
 describe('getDefaultStanceId', () => {
   it('should return first stance ID for passive paths', () => {
     expect(getDefaultStanceId('guardian')).toBe('iron_stance');
-    expect(getDefaultStanceId('enchanter')).toBe('arcane_stance');
+    expect(getDefaultStanceId('enchanter')).toBe('arcane_surge');
     expect(getDefaultStanceId('duelist')).toBe('evasion_stance');
     expect(getDefaultStanceId('paladin_protector')).toBe('healing_stance');
   });
@@ -214,6 +214,30 @@ describe('Passive paths have no resources', () => {
     allStances.forEach(stance => {
       expect(stance.description.toLowerCase()).not.toContain('mana');
     });
+  });
+});
+
+describe('Enchanter stances', () => {
+  it('should have arcane_burn behavior on Arcane Surge', () => {
+    const stances = getStancesForPath('enchanter');
+    const arcaneSurge = stances.find(s => s.id === 'arcane_surge');
+
+    expect(arcaneSurge).toBeDefined();
+    const burnEffect = arcaneSurge!.effects.find(
+      e => e.type === 'behavior_modifier' && e.behavior === 'arcane_burn'
+    );
+    expect(burnEffect).toBeDefined();
+  });
+
+  it('should have hex_aura behavior on Hex Veil', () => {
+    const stances = getStancesForPath('enchanter');
+    const hexVeil = stances.find(s => s.id === 'hex_veil');
+
+    expect(hexVeil).toBeDefined();
+    const hexEffect = hexVeil!.effects.find(
+      e => e.type === 'behavior_modifier' && e.behavior === 'hex_aura'
+    );
+    expect(hexEffect).toBeDefined();
   });
 });
 
