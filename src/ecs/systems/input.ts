@@ -419,6 +419,78 @@ export function InputSystem(_deltaMs: number): void {
         break;
       }
 
+      case 'SELECT_POWER': {
+        if (!player?.pendingPowerChoice) break;
+
+        const selectedPower = player.pendingPowerChoice.choices.find(
+          (p) => p.id === cmd.powerId
+        );
+        if (!selectedPower) break;
+
+        // Add power to player's powers array
+        player.powers = [...(player.powers ?? []), selectedPower];
+
+        // Initialize power upgrade tracking if pathProgression exists
+        if (player.pathProgression?.powerUpgrades) {
+          player.pathProgression.powerUpgrades.push({
+            powerId: selectedPower.id,
+            currentTier: 0,
+          });
+        }
+
+        // Clear pending choice
+        world.removeComponent(player, 'pendingPowerChoice');
+        break;
+      }
+
+      case 'UPGRADE_POWER': {
+        if (!player?.pendingUpgradeChoice) break;
+
+        // Verify the power is in the upgrade choices
+        if (!player.pendingUpgradeChoice.powerIds.includes(cmd.powerId)) break;
+
+        // Find and upgrade the power if pathProgression exists
+        if (player.pathProgression?.powerUpgrades) {
+          const powerState = player.pathProgression.powerUpgrades.find(
+            (p) => p.powerId === cmd.powerId
+          );
+          if (powerState && powerState.currentTier < 2) {
+            powerState.currentTier = (powerState.currentTier + 1) as 0 | 1 | 2;
+          }
+        }
+
+        // Clear pending choice
+        world.removeComponent(player, 'pendingUpgradeChoice');
+        break;
+      }
+
+      case 'SELECT_STANCE_ENHANCEMENT': {
+        if (!player?.pendingStanceEnhancement) break;
+
+        // Apply enhancement if pathProgression exists
+        if (player.pathProgression?.stanceProgression) {
+          const stanceState = player.pathProgression.stanceProgression;
+          const enhancement =
+            cmd.stanceId === 'iron'
+              ? player.pendingStanceEnhancement.ironChoice
+              : player.pendingStanceEnhancement.retributionChoice;
+
+          // Update stance tier
+          if (cmd.stanceId === 'iron') {
+            stanceState.ironTier = enhancement.tier;
+          } else {
+            stanceState.retributionTier = enhancement.tier;
+          }
+
+          // Track acquired enhancement
+          stanceState.acquiredEnhancements.push(enhancement.id);
+        }
+
+        // Clear pending choice
+        world.removeComponent(player, 'pendingStanceEnhancement');
+        break;
+      }
+
       case 'ADVANCE_ROOM': {
         if (!gameState?.floor) break;
 

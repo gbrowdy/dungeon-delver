@@ -23,6 +23,10 @@ export type Command =
   | { type: 'SELECT_ABILITY'; abilityId: string }
   | { type: 'SELECT_SUBPATH'; subpathId: string }
   | { type: 'SWITCH_STANCE'; stanceId: string }
+  // Path progression
+  | { type: 'SELECT_POWER'; powerId: string }
+  | { type: 'UPGRADE_POWER'; powerId: string }
+  | { type: 'SELECT_STANCE_ENHANCEMENT'; stanceId: 'iron' | 'retribution' }
   // Room/floor progression
   | { type: 'ADVANCE_ROOM' }
   | { type: 'GO_TO_SHOP' }
@@ -110,6 +114,20 @@ export const Commands = {
   }),
   switchStance: (stanceId: string): Command => ({
     type: 'SWITCH_STANCE',
+    stanceId,
+  }),
+
+  // Path progression
+  selectPower: (powerId: string): Command => ({
+    type: 'SELECT_POWER',
+    powerId,
+  }),
+  upgradePower: (powerId: string): Command => ({
+    type: 'UPGRADE_POWER',
+    powerId,
+  }),
+  selectStanceEnhancement: (stanceId: 'iron' | 'retribution'): Command => ({
+    type: 'SELECT_STANCE_ENHANCEMENT',
     stanceId,
   }),
 
