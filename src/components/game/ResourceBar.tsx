@@ -83,8 +83,11 @@ export function ResourceBar({
           }}
         />
 
-        {/* Threshold markers */}
+        {/* Threshold markers - skip markers at value=1 (per-point scaling, not a real threshold) */}
         {thresholdMarkers && resource.thresholds?.map((threshold, i) => {
+          // Skip per-point scaling thresholds (value=1) - they don't represent a meaningful visual threshold
+          if (threshold.value <= 1) return null;
+
           const isActive = resource.current >= threshold.value;
           const position = (threshold.value / resource.max) * 100;
 
@@ -161,14 +164,17 @@ export function CompactResourceBar({ resource, className }: CompactResourceBarPr
         }}
       />
 
-      {/* Threshold markers for compact view */}
-      {resource.thresholds?.map((threshold, i) => (
-        <div
-          key={`compact-${threshold.value}-${i}`}
-          className="absolute top-0 bottom-0 w-px bg-white/40"
-          style={{ left: `${(threshold.value / resource.max) * 100}%` }}
-        />
-      ))}
+      {/* Threshold markers for compact view - skip per-point scaling thresholds */}
+      {resource.thresholds?.map((threshold, i) => {
+        if (threshold.value <= 1) return null;
+        return (
+          <div
+            key={`compact-${threshold.value}-${i}`}
+            className="absolute top-0 bottom-0 w-px bg-white/40"
+            style={{ left: `${(threshold.value / resource.max) * 100}%` }}
+          />
+        );
+      })}
     </div>
   );
 }

@@ -44,12 +44,12 @@ function calculatePowerDamage(
     for (const threshold of caster.pathResource.thresholds) {
       if (resourceValueForThreshold >= threshold.value) {
         if (threshold.effect.type === 'damage_bonus') {
-          // For arcane_charges, bonus is per-charge (0.5% per charge)
-          if (caster.pathResource.type === 'arcane_charges') {
+          // For arcane_charges and fury, bonus is per-point (0.5% per charge/fury point)
+          if (caster.pathResource.type === 'arcane_charges' || caster.pathResource.type === 'fury') {
             const bonus = resourceValueForThreshold * threshold.effect.value;
             damage = Math.round(damage * (1 + bonus));
           } else {
-            // Fixed bonus (e.g., 30% for Fury at 80+)
+            // Fixed bonus for other resource types
             damage = Math.round(damage * (1 + threshold.effect.value));
           }
         }

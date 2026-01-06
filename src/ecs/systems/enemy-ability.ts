@@ -12,6 +12,7 @@ import { COMBAT_BALANCE } from '@/constants/balance';
 import type { Entity, AnimationEvent, AnimationPayload } from '../components';
 import type { EnemyAbility } from '@/types/game';
 import { queueAnimationEvent, addCombatLog } from '../utils';
+import { calculateEnemyIntent } from '@/data/enemies';
 
 /**
  * Execute an enemy ability and apply its effects.
@@ -26,9 +27,17 @@ function executeAbility(
 
   addCombatLog(`${enemyName} uses ${ability.name}!`);
 
-  // Put ability on cooldown
+  // Put ability on cooldown (both in Map and in abilities array)
   if (enemy.cooldowns) {
     enemy.cooldowns.set(ability.id, { remaining: ability.cooldown, base: ability.cooldown });
+  }
+
+  // Update currentCooldown in the abilities array so calculateEnemyIntent sees it
+  if (enemy.enemy) {
+    const abilityInArray = enemy.enemy.abilities.find(a => a.id === ability.id);
+    if (abilityInArray) {
+      abilityInArray.currentCooldown = ability.cooldown;
+    }
   }
 
   switch (ability.type) {
@@ -80,9 +89,11 @@ function executeAbility(
         existingPoison.remainingTurns = 3;
       } else {
         player.statusEffects.push({
+          id: crypto.randomUUID(),
           type: 'poison',
           remainingTurns: 3,
           damage: poisonDamage,
+          icon: 'Skull',
         });
       }
 
@@ -105,8 +116,10 @@ function executeAbility(
       const existingStun = player.statusEffects.find(e => e.type === 'stun');
       if (!existingStun) {
         player.statusEffects.push({
+          id: crypto.randomUUID(),
           type: 'stun',
           remainingTurns: ability.value,
+          icon: 'Zap',
         });
         addCombatLog(`You are stunned for ${ability.value} turn(s)!`);
       } else {
@@ -229,4 +242,9 @@ export function EnemyAbilitySystem(_deltaMs: number): void {
 
   // Clear attackReady since ability was used
   world.removeComponent(enemy, 'attackReady');
+
+  // Recalculate intent for next attack
+  if (enemy.enemy) {
+    enemy.enemy.intent = calculateEnemyIntent(enemy.enemy);
+  }
 }

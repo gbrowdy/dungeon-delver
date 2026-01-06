@@ -92,15 +92,16 @@ describe('FlowSystem', () => {
       expect(['shop', 'combat']).toContain(gameState.phase);
     });
 
-    it('should log phase transitions to combat log', () => {
+    it('should not log phase transitions to combat log', () => {
       const gameState = world.with('gameState').first!;
-      gameState.scheduledTransitions = [{ toPhase: 'defeat', delay: 5 }];
+      gameState.combatLog = [];
+      gameState.scheduledTransitions = [{ toPhase: 'floor-complete', delay: 0 }];
 
       FlowSystem(16);
 
-      expect(gameState.combatLog).toContainEqual(
-        expect.stringContaining('Phase: combat -> defeat')
-      );
+      // Combat log should not contain phase transition messages
+      const phaseLogEntry = gameState.combatLog.find(log => log.includes('Phase:'));
+      expect(phaseLogEntry).toBeUndefined();
     });
 
     it('should add victory message when transitioning to victory', () => {

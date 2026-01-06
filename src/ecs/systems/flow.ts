@@ -59,9 +59,6 @@ function applyPhaseTransition(toPhase: GamePhase): void {
   const fromPhase = gameState.phase;
   gameState.phase = toPhase;
 
-  // Log the transition
-  addCombatLog(`Phase: ${fromPhase} -> ${toPhase}`);
-
   // Handle phase-specific logic
   switch (toPhase) {
     case 'victory':

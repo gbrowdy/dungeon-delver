@@ -40,7 +40,7 @@ export function getDamageMultiplier(resource: PathResource): number {
 
   let multiplier = 1;
 
-  if (resource.type === 'arcane_charges') {
+  if (resource.type === 'arcane_charges' || resource.type === 'fury') {
     const chargeBonus = damageEffects.find(t => t.effect.value);
     if (chargeBonus) {
       multiplier += (chargeBonus.effect.value ?? 0) * resource.current;

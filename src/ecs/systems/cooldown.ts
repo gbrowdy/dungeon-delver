@@ -15,11 +15,19 @@ export function CooldownSystem(deltaMs: number): void {
     const cooldowns = entity.cooldowns;
     if (!cooldowns) continue;
 
-    for (const [, cooldown] of cooldowns) {
+    for (const [abilityId, cooldown] of cooldowns) {
       if (cooldown.remaining > 0) {
         // Convert ms to seconds for cooldown (powers use seconds)
         const deltaSeconds = effectiveDelta / 1000;
         cooldown.remaining = Math.max(0, cooldown.remaining - deltaSeconds);
+
+        // Sync cooldown back to ability.currentCooldown for enemies
+        if (entity.enemy) {
+          const abilityInArray = entity.enemy.abilities.find(a => a.id === abilityId);
+          if (abilityInArray) {
+            abilityInArray.currentCooldown = cooldown.remaining;
+          }
+        }
       }
     }
   }

@@ -130,10 +130,10 @@ export function FloorCompleteScreen({
           {/* Left: Character Panel */}
           <div className="pixel-panel rounded-lg p-4">
             <div className="flex flex-col items-center gap-3">
-              {/* Sprite Display */}
+              {/* Sprite Display - use path sprite if player has selected a path */}
               <div className="relative pixel-panel-dark rounded-lg p-3 border-2 border-primary/50">
                 <PixelSprite
-                  type={player.characterClass}
+                  type={player.path?.pathId || player.characterClass}
                   state={spriteState}
                   direction="right"
                   scale={4}
