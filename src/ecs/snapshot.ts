@@ -87,6 +87,10 @@ export interface PlayerSnapshot {
   pathResource: PathResource | null;
   stanceState: PlayerStanceState | null;
   pendingAbilityChoice: boolean;
+  pendingPowerChoice: {
+    level: number;
+    choices: Power[];
+  } | null;
 
   // Combat modifiers
   attackModifiers: AttackModifier[];
@@ -289,6 +293,10 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
     pathResource: entity.pathResource ?? null,
     stanceState: entity.stanceState ?? null,
     pendingAbilityChoice: entity.pendingAbilityChoice ?? false,
+    pendingPowerChoice: entity.pendingPowerChoice ? {
+      level: entity.pendingPowerChoice.level,
+      choices: [...entity.pendingPowerChoice.choices],
+    } : null,
 
     // Combat modifiers
     attackModifiers: entity.attackModifiers ? [...entity.attackModifiers] : [],

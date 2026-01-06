@@ -53,6 +53,7 @@ export interface GameActions {
   selectAbility: (abilityId: string) => void;
   selectSubpath: (subpathId: string) => void;
   switchStance: (stanceId: string) => void;
+  selectPower: (powerId: string) => void;
 
   // Combat
   usePower: (powerId: string) => void;
@@ -190,6 +191,9 @@ export function GameProvider({ children, enabled = true }: GameProviderProps) {
     },
     switchStance: (stanceId: string) => {
       dispatch(Commands.switchStance(stanceId));
+    },
+    selectPower: (powerId: string) => {
+      dispatch(Commands.selectPower(powerId));
     },
 
     // Combat
