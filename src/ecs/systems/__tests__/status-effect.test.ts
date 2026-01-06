@@ -265,4 +265,28 @@ describe('StatusEffectSystem', () => {
     // Health should be unchanged when not in combat
     expect(enemy.health?.current).toBe(50);
   });
+
+  it('should apply burn damage over time', () => {
+    const entity = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'warrior' },
+      health: { current: 100, max: 100 },
+      mana: { current: 50, max: 50 },
+      statusEffects: [
+        {
+          id: 'burn-1',
+          type: 'burn',
+          damage: 5,
+          remainingTurns: 3,
+          icon: 'flame',
+        },
+      ],
+    });
+
+    // Simulate 1 second
+    StatusEffectSystem(1000);
+
+    // Should take 5 damage (5 dps * 1s)
+    expect(entity.health?.current).toBe(95);
+  });
 });

@@ -1,5 +1,5 @@
 // src/ecs/systems/__tests__/combat.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { world } from '../../world';
 import { CombatSystem } from '../combat';
 
@@ -181,5 +181,132 @@ describe('CombatSystem', () => {
 
     // No damage - enemy is dying
     expect(enemy.health?.current).toBe(50);
+  });
+
+  describe('Arcane Burn stance behavior', () => {
+    it('should apply burn status effect when arcane_burn procs', () => {
+      // Mock Math.random to always proc (return < 0.20)
+      const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.1);
+
+      const gameState = world.add({
+        gameState: true,
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+        animationEvents: [],
+        combatSpeed: { multiplier: 1 },
+      });
+
+      const player = world.add({
+        player: true,
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 10, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+        statusEffects: [],
+        path: { pathId: 'enchanter', abilities: [] },
+        stanceState: { activeStanceId: 'arcane_surge', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+      });
+      world.addComponent(player, 'attackReady', { damage: 10, isCrit: false });
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 100, max: 100 },
+        defense: { value: 0, blockReduction: 0 },
+        statusEffects: [],
+      });
+
+      CombatSystem(16);
+
+      // Should have burn status effect on enemy
+      expect(enemy.statusEffects?.some(e => e.type === 'burn')).toBe(true);
+
+      // Damage calculation:
+      // Base damage: 10
+      // After arcane_surge power modifier (+15%): 10 * 1.15 = 12 (rounded)
+      // Arcane burn bonus (30%): 12 * 0.30 = 4 (rounded)
+      // Total: 12 + 4 = 16 damage
+      expect(enemy.health?.current).toBe(84);
+
+      mockRandom.mockRestore();
+    });
+
+    it('should not apply burn when arcane_burn fails to proc', () => {
+      // Mock Math.random to fail proc (return > 0.20)
+      const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+      const gameState = world.add({
+        gameState: true,
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+        animationEvents: [],
+        combatSpeed: { multiplier: 1 },
+      });
+
+      const player = world.add({
+        player: true,
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 10, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+        statusEffects: [],
+        path: { pathId: 'enchanter', abilities: [] },
+        stanceState: { activeStanceId: 'arcane_surge', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+      });
+      world.addComponent(player, 'attackReady', { damage: 10, isCrit: false });
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 100, max: 100 },
+        defense: { value: 0, blockReduction: 0 },
+        statusEffects: [],
+      });
+
+      CombatSystem(16);
+
+      // Should NOT have burn status effect on enemy
+      expect(enemy.statusEffects?.some(e => e.type === 'burn')).toBe(false);
+
+      // Damage calculation:
+      // Base damage: 10
+      // After arcane_surge power modifier (+15%): 10 * 1.15 = 12 (rounded)
+      // No arcane burn bonus
+      // Total: 12 damage
+      expect(enemy.health?.current).toBe(88);
+
+      mockRandom.mockRestore();
+    });
+  });
+
+  describe('Hex Aura stance behavior', () => {
+    it('should reduce enemy damage by 15% when hex_aura is active', () => {
+      const gameState = world.add({
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+      });
+
+      const player = world.add({
+        player: true,
+        health: { current: 100, max: 100 },
+        defense: { value: 0, blockReduction: 0 },
+        statusEffects: [],
+        path: { pathId: 'enchanter', abilities: [] },
+        stanceState: { activeStanceId: 'hex_veil', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+      });
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 100, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+      });
+      world.addComponent(enemy, 'attackReady', { damage: 100, isCrit: false });
+
+      CombatSystem(16);
+
+      // 100 damage - 15% hex reduction = 85 damage
+      // Player should have 100 - 85 = 15 HP
+      expect(player.health?.current).toBe(15);
+    });
   });
 });

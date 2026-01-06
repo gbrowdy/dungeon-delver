@@ -54,26 +54,26 @@ export const GUARDIAN_STANCES: PassiveStance[] = [
 
 export const ENCHANTER_STANCES: PassiveStance[] = [
   {
-    id: 'arcane_stance',
-    name: 'Arcane Stance',
-    description: '+25% Power, +15% Speed. Attacks deal 10% bonus magic damage.',
+    id: 'arcane_surge',
+    name: 'Arcane Surge',
+    description: '+15% Power, +10% Speed. 20% chance to proc Arcane Burn (bonus damage + DoT).',
     icon: 'sparkles',
     effects: [
-      { type: 'stat_modifier', stat: 'power', percentBonus: 0.25 },
-      { type: 'stat_modifier', stat: 'speed', percentBonus: 0.15 },
-      { type: 'damage_modifier', damageType: 'outgoing', multiplier: 1.10 },
+      { type: 'stat_modifier', stat: 'power', percentBonus: 0.15 },
+      { type: 'stat_modifier', stat: 'speed', percentBonus: 0.10 },
+      { type: 'behavior_modifier', behavior: 'arcane_burn', value: 0.20 },
     ],
     switchCooldown: DEFAULT_STANCE_COOLDOWN,
   },
   {
-    id: 'disruption_stance',
-    name: 'Disruption Stance',
-    description: '+20% Armor, +10% max HP. Reduce incoming damage by 10%.',
+    id: 'hex_veil',
+    name: 'Hex Veil',
+    description: '+15% Armor, +10% Speed. Enemies deal 15% less damage.',
     icon: 'shield-alert',
     effects: [
-      { type: 'stat_modifier', stat: 'armor', percentBonus: 0.20 },
-      { type: 'stat_modifier', stat: 'maxHealth', percentBonus: 0.10 },
-      { type: 'damage_modifier', damageType: 'incoming', multiplier: 0.90 },
+      { type: 'stat_modifier', stat: 'armor', percentBonus: 0.15 },
+      { type: 'stat_modifier', stat: 'speed', percentBonus: 0.10 },
+      { type: 'behavior_modifier', behavior: 'hex_aura', value: 0.15 },
     ],
     switchCooldown: DEFAULT_STANCE_COOLDOWN,
   },

@@ -36,7 +36,7 @@ export interface ActiveBuff {
 // Status effects (debuffs/DoTs)
 export interface StatusEffect {
   id: string;
-  type: 'poison' | 'stun' | 'slow' | 'bleed';
+  type: 'poison' | 'stun' | 'slow' | 'bleed' | 'burn';
   damage?: number; // For DoT effects
   value?: number; // For slow (speed reduction %), stun (chance), etc.
   remainingTurns: number;
