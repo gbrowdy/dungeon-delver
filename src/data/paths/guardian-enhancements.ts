@@ -6,42 +6,7 @@
  * Enhancements only apply while in that stance.
  */
 
-export interface StanceEnhancement {
-  id: string;
-  name: string;
-  tier: number;
-  description: string;
-  stanceId: 'iron_stance' | 'retribution_stance';
-  effects: StanceEnhancementEffect[];
-}
-
-export type StanceEnhancementEffect =
-  | { type: 'armor_percent'; value: number }
-  | { type: 'damage_reduction'; value: number }
-  | { type: 'hp_regen'; value: number }
-  | { type: 'cc_immunity'; value: boolean }
-  | { type: 'armor_scaling_dr'; perArmor: number } // +X% DR per Y armor
-  | { type: 'low_hp_armor'; threshold: number; value: number }
-  | { type: 'on_hit_heal_chance'; chance: number; healPercent: number }
-  | { type: 'max_damage_per_hit'; percent: number }
-  | { type: 'remove_speed_penalty'; value: boolean }
-  | { type: 'max_hp_percent'; value: number }
-  | { type: 'regen_multiplier_above_hp'; threshold: number; multiplier: number }
-  | { type: 'armor_reduces_dot'; value: boolean }
-  | { type: 'survive_lethal'; value: boolean }
-  | { type: 'reflect_percent'; value: number }
-  | { type: 'damage_per_hit_stack'; valuePerStack: number; maxStacks: number }
-  | { type: 'heal_from_reflect'; percent: number }
-  | { type: 'reflect_scaling_per_hit'; value: number }
-  | { type: 'counter_attack_chance'; chance: number }
-  | { type: 'low_hp_reflect_multiplier'; threshold: number; multiplier: number }
-  | { type: 'passive_damage_aura'; damagePerSecond: number }
-  | { type: 'next_attack_bonus_after_hit'; value: number }
-  | { type: 'permanent_power_per_hit'; value: number }
-  | { type: 'reflect_ignores_armor'; value: boolean }
-  | { type: 'on_hit_burst_chance'; chance: number; powerPercent: number }
-  | { type: 'reflect_can_crit'; value: boolean }
-  | { type: 'reflect_kill_heal'; percent: number };
+import type { StanceEnhancement, StanceEnhancementEffect } from '@/types/paths';
 
 export const IRON_PATH_ENHANCEMENTS: StanceEnhancement[] = [
   {

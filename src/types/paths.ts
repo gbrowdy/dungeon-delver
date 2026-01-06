@@ -311,3 +311,82 @@ export interface PlayerStanceState {
   stanceCooldownRemaining: number;  // milliseconds until can switch
   triggerCooldowns: Record<string, number>;  // triggerId → remaining ms
 }
+
+// ============================================================================
+// PATH PROGRESSION TYPES (Phase 4: Path Progression State)
+// ============================================================================
+
+/**
+ * Stance enhancement effect types for passive path progression
+ * Guardian passive paths gain incremental enhancements to their stances
+ */
+export type StanceEnhancementEffect =
+  | { type: 'armor_percent'; value: number }
+  | { type: 'damage_reduction'; value: number }
+  | { type: 'hp_regen'; value: number }
+  | { type: 'cc_immunity'; value: boolean }
+  | { type: 'armor_scaling_dr'; perArmor: number }
+  | { type: 'low_hp_armor'; threshold: number; value: number }
+  | { type: 'on_hit_heal_chance'; chance: number; healPercent: number }
+  | { type: 'max_damage_per_hit'; percent: number }
+  | { type: 'remove_speed_penalty'; value: boolean }
+  | { type: 'max_hp_percent'; value: number }
+  | { type: 'regen_multiplier_above_hp'; threshold: number; multiplier: number }
+  | { type: 'armor_reduces_dot'; value: boolean }
+  | { type: 'survive_lethal'; value: boolean }
+  | { type: 'reflect_percent'; value: number }
+  | { type: 'damage_per_hit_stack'; valuePerStack: number; maxStacks: number }
+  | { type: 'heal_from_reflect'; percent: number }
+  | { type: 'reflect_scaling_per_hit'; value: number }
+  | { type: 'counter_attack_chance'; chance: number }
+  | { type: 'low_hp_reflect_multiplier'; threshold: number; multiplier: number }
+  | { type: 'passive_damage_aura'; damagePerSecond: number }
+  | { type: 'next_attack_bonus_after_hit'; value: number }
+  | { type: 'permanent_power_per_hit'; value: number }
+  | { type: 'reflect_ignores_armor'; value: boolean }
+  | { type: 'on_hit_burst_chance'; chance: number; powerPercent: number }
+  | { type: 'reflect_can_crit'; value: boolean }
+  | { type: 'reflect_kill_heal'; percent: number };
+
+/**
+ * Stance enhancement definition for passive paths
+ * Passive paths (like Guardian) acquire stance enhancements linearly
+ */
+export interface StanceEnhancement {
+  id: string;
+  name: string;
+  tier: number;
+  description: string;
+  stanceId: 'iron_stance' | 'retribution_stance';
+  effects: StanceEnhancementEffect[];
+}
+
+/**
+ * Tracks player's power upgrade state (active paths)
+ */
+export interface PowerUpgradeState {
+  powerId: string;
+  currentTier: 0 | 1 | 2; // 0 = base, 1 = T1, 2 = T2 (max)
+}
+
+/**
+ * Tracks player's stance enhancement state (passive paths)
+ */
+export interface StanceProgressionState {
+  ironTier: number;        // Current tier in Iron path (0-13)
+  retributionTier: number; // Current tier in Retribution path (0-13)
+  acquiredEnhancements: string[]; // IDs of acquired enhancements
+}
+
+/**
+ * Extended PlayerPath with progression tracking
+ */
+export interface PlayerPathProgression {
+  pathId: string;
+  pathType: 'active' | 'passive';
+  subpathId?: string;
+  // Active path state
+  powerUpgrades?: PowerUpgradeState[];
+  // Passive path state
+  stanceProgression?: StanceProgressionState;
+}

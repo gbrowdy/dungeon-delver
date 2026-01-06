@@ -18,7 +18,7 @@ import type {
   EnemyStatDebuff,
   ModifierEffect,
 } from '@/types/game';
-import type { PlayerPath, PlayerStanceState } from '@/types/paths';
+import type { PlayerPath, PlayerStanceState, PlayerPathProgression, StanceEnhancement } from '@/types/paths';
 import type { CombatAnimationType, FloatingEffectType } from '@/constants/enums';
 
 // Game phases
@@ -203,7 +203,19 @@ export interface Entity {
     xpToNext: number;
   };
   path?: PlayerPath;
+  pathProgression?: PlayerPathProgression;
   pendingAbilityChoice?: boolean;
+  pendingPowerChoice?: {
+    level: number;
+    choices: Power[];
+  };
+  pendingUpgradeChoice?: {
+    powerIds: string[]; // IDs of powers that can be upgraded
+  };
+  pendingStanceEnhancement?: {
+    ironChoice: StanceEnhancement;
+    retributionChoice: StanceEnhancement;
+  };
   powers?: Power[];
   equipment?: {
     weapon: Item | null;
