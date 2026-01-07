@@ -234,6 +234,7 @@ export function BattleArena({
                 hitStop={hitStop}
                 turnProgress={enemyProgress}
                 intent={displayEnemy.intent}
+                powerImpact={displayEnemy.visualEffects?.powerImpact ?? null}
               />
 
               {/* Boss death effect - only for boss enemies when dying */}
