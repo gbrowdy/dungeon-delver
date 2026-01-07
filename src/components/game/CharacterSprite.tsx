@@ -1,6 +1,7 @@
 import { ActiveBuff, StatusEffect, EnemyIntent } from '@/types/game';
 import { PixelSprite } from './PixelSprite';
 import { PixelSlash, PixelSpell, PixelShield } from './BattleEffects';
+import { PowerImpactEffect } from './PowerImpactEffect';
 import { BATTLE_PHASE } from '@/constants/enums';
 import { cn } from '@/lib/utils';
 import { SpriteStateType, BattlePhaseType } from '@/constants/enums';
@@ -33,6 +34,7 @@ interface CharacterSpriteProps {
   hitStop?: boolean;
   enemyCasting?: boolean;
   enemyAuraColor?: 'red' | 'blue' | 'green' | null;
+  powerImpact?: { powerId: string } | null;
 
   // Progress bars
   turnProgress?: number;
@@ -60,6 +62,7 @@ export function CharacterSprite({
   hitStop = false,
   enemyCasting = false,
   enemyAuraColor = null,
+  powerImpact = null,
   turnProgress = 0,
   isStunned = false,
   statusEffects = [],
@@ -188,6 +191,11 @@ export function CharacterSprite({
             active={player.isBlocking || player.buffs.some(buff => buff.stat === 'armor')}
             variant="block"
           />
+        )}
+
+        {/* Power impact effect - enemy only */}
+        {!isHero && powerImpact && (
+          <PowerImpactEffect powerId={powerImpact.powerId} />
         )}
       </div>
 
