@@ -155,11 +155,6 @@ export function CombatSystem(_deltaMs: number): void {
     // Check if this attack killed the target
     const targetDied = target.health ? target.health.current <= 0 : false;
 
-    // If target died, immediately clear their pending attack to prevent posthumous hits
-    if (targetDied && target.attackReady) {
-      world.removeComponent(target, 'attackReady');
-    }
-
     // Queue combat animation event (hit event triggers both attack and hit animations)
     const isPlayerAttacking = !!entity.player;
     queueAnimationEvent(isPlayerAttacking ? 'enemy_hit' : 'player_hit', {

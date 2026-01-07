@@ -595,10 +595,6 @@ export function InputSystem(_deltaMs: number): void {
 
           // Reset player combat state for new floor
           if (player) {
-            // Reset attack timer for fresh start
-            if (player.speed) {
-              player.speed.accumulated = 0;
-            }
             if (player.pathResource) {
               // Stamina resets to max, other resources reset to 0
               player.pathResource.current = player.pathResource.type === 'stamina'
@@ -640,11 +636,6 @@ export function InputSystem(_deltaMs: number): void {
 
         // Advance to next room
         floor.room += 1;
-
-        // Reset player attack timer for fresh start in new room
-        if (player?.speed) {
-          player.speed.accumulated = 0;
-        }
 
         // Spawn next enemy
         const nextEnemy = createEnemyEntity({
@@ -703,11 +694,6 @@ export function InputSystem(_deltaMs: number): void {
             player.mana.current = player.mana.max;
           }
 
-          // Reset attack timing so player starts fresh
-          if (player.speed) {
-            player.speed.accumulated = 0;
-          }
-
           // Clear cooldowns
           if (player.cooldowns) {
             player.cooldowns.clear();
@@ -728,11 +714,6 @@ export function InputSystem(_deltaMs: number): void {
           floor.number += 1;
           floor.room = 1;
           floor.totalRooms = FLOOR_CONFIG.ROOMS_PER_FLOOR[floor.number - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
-
-          // Reset attack timer for fresh start
-          if (player.speed) {
-            player.speed.accumulated = 0;
-          }
 
           // Reset player combat state for new floor
           if (player.pathResource) {
@@ -780,11 +761,6 @@ export function InputSystem(_deltaMs: number): void {
         }
         if (player.mana) {
           player.mana.current = player.mana.max;
-        }
-
-        // Reset attack timing so player starts fresh
-        if (player.speed) {
-          player.speed.accumulated = 0;
         }
 
         // Clear cooldowns

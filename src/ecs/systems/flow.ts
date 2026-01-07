@@ -108,12 +108,6 @@ function spawnNextEnemy(): void {
   const gameState = getGameState();
   if (!gameState?.floor) return;
 
-  // Reset player attack timer for fresh combat start
-  const player = getPlayer();
-  if (player?.speed) {
-    player.speed.accumulated = 0;
-  }
-
   const floor = gameState.floor;
 
   // Increment room number
@@ -169,6 +163,7 @@ function spawnNextEnemy(): void {
 
 /**
  * Process battle phase transitions (entering -> combat).
+ * Resets attack timers when combat begins for a fresh start.
  */
 function processBattlePhase(): void {
   const gameState = getGameState();
@@ -181,6 +176,13 @@ function processBattlePhase(): void {
     const elapsed = (getTick() - startedAtTick) * TICK_MS;
 
     if (elapsed >= duration) {
+      // Reset player attack timer for fresh combat start
+      // This is the ONE place where all new combat begins (after entering animation)
+      const player = getPlayer();
+      if (player?.speed) {
+        player.speed.accumulated = 0;
+      }
+
       // Transition to combat phase
       gameState.battlePhase = {
         phase: 'combat',

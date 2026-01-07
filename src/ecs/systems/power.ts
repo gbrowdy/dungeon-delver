@@ -101,11 +101,6 @@ function applyDamagePower(
   const targetName = getEntityName(target);
   const targetDied = (target.health?.current ?? 0) <= 0;
 
-  // If target died, immediately clear their pending attack to prevent posthumous hits
-  if (targetDied && target.attackReady) {
-    world.removeComponent(target, 'attackReady');
-  }
-
   // Build log message with any special effects
   let logMessage = `${casterName} uses ${power.name} for ${damage} damage to ${targetName}`;
 
@@ -302,11 +297,6 @@ function applyDebuffPower(
   const casterName = getEntityName(caster);
   const targetName = getEntityName(target);
   const effects: string[] = [];
-
-  // If target died from debuff damage, immediately clear their pending attack
-  if (targetDied && target.attackReady) {
-    world.removeComponent(target, 'attackReady');
-  }
 
   // === Stun application ===
   if (power.stunDuration && power.stunDuration > 0) {
