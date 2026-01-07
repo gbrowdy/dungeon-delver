@@ -210,6 +210,7 @@ export function BattleArena({
             isCasting={heroCasting}
             castingPowerId={castingPowerId}
             isFlashing={heroFlash}
+            flashColor={player?.visualEffects?.flash?.color}
             hitStop={hitStop}
             turnProgress={heroProgress}
             isStunned={isStunned}

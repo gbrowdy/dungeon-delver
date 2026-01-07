@@ -32,6 +32,7 @@ interface CharacterSpriteProps {
   isCasting?: boolean;
   castingPowerId?: string | null;
   isFlashing?: boolean;
+  flashColor?: 'white' | 'red' | 'green' | 'gold';
   hitStop?: boolean;
   enemyCasting?: boolean;
   enemyAuraColor?: 'red' | 'blue' | 'green' | null;
@@ -60,6 +61,7 @@ export function CharacterSprite({
   isCasting = false,
   castingPowerId = null,
   isFlashing = false,
+  flashColor,
   hitStop = false,
   enemyCasting = false,
   enemyAuraColor = null,
@@ -172,10 +174,15 @@ export function CharacterSprite({
 
         {/* Flash overlay */}
         {isFlashing && (
-          <div className={cn(
-            "absolute inset-0 mix-blend-overlay pointer-events-none",
-            isHero ? "bg-health/40" : "bg-white/60"
-          )} />
+          <div
+            className={cn(
+              'absolute inset-0 pointer-events-none rounded animate-flash',
+              flashColor === 'green' && 'bg-green-500/50',
+              flashColor === 'gold' && 'bg-yellow-400/50',
+              flashColor === 'red' && 'bg-red-500/50',
+              (!flashColor || flashColor === 'white') && 'bg-white/50'
+            )}
+          />
         )}
 
         {/* Enemy casting aura */}
