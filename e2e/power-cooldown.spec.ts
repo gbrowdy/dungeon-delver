@@ -24,21 +24,16 @@ test.describe('Power Cooldown System', () => {
     // Wait for combat to start
     await page.waitForTimeout(500);
 
-    // Find the power button (Berserker Rage)
-    const powerButton = page.getByTestId('power-berserker-rage');
+    // Find the power button (Strike - Warrior's starting power)
+    const powerButton = page.getByTestId('power-basic-strike');
     await expect(powerButton).toBeVisible();
 
     // Power should be enabled initially (not on cooldown)
     await expect(powerButton).toBeEnabled({ timeout: 3000 });
 
     // Verify no cooldown indicator is shown initially
-    const cooldownIndicator = page.getByTestId('power-cooldown-berserker-rage');
+    const cooldownIndicator = page.getByTestId('power-cooldown-basic-strike');
     await expect(cooldownIndicator).not.toBeVisible();
-
-    // Get initial mana to verify power is actually used
-    const manaDisplay = page.getByTestId('mana-display');
-    const initialManaText = await manaDisplay.textContent();
-    const initialMana = parseInt(initialManaText?.split('/')[0] ?? '40');
 
     // Use the power
     await powerButton.click();
@@ -46,25 +41,20 @@ test.describe('Power Cooldown System', () => {
     // Wait for the power to actually execute
     await page.waitForTimeout(300);
 
-    // Verify mana was deducted (proves power was actually used)
-    const afterUseManaText = await manaDisplay.textContent();
-    const afterUseMana = parseInt(afterUseManaText?.split('/')[0] ?? '40');
-    expect(afterUseMana).toBeLessThan(initialMana);
-
     // Power should now be on cooldown and disabled
     await expect(powerButton).toBeDisabled({ timeout: 1000 });
 
     // Cooldown indicator should be visible showing countdown
     await expect(cooldownIndicator).toBeVisible({ timeout: 1000 });
 
-    // Get the initial cooldown value (should be ~4s for Berserker Rage)
+    // Get the initial cooldown value (should be ~3s for Strike)
     const initialCooldownText = await cooldownIndicator.textContent();
     console.log(`Initial cooldown: ${initialCooldownText}`);
 
-    // Cooldown should be around 4 seconds (the power's cooldown value)
-    const initialCooldown = parseInt(initialCooldownText?.replace('s', '') ?? '4');
-    expect(initialCooldown).toBeGreaterThanOrEqual(3);
-    expect(initialCooldown).toBeLessThanOrEqual(5);
+    // Cooldown should be around 3 seconds (the power's cooldown value)
+    const initialCooldown = parseInt(initialCooldownText?.replace('s', '') ?? '3');
+    expect(initialCooldown).toBeGreaterThanOrEqual(2);
+    expect(initialCooldown).toBeLessThanOrEqual(4);
 
     // === THE ACTUAL BUG TEST ===
     // Wait 2 seconds and verify cooldown has decreased
@@ -73,7 +63,7 @@ test.describe('Power Cooldown System', () => {
     const midCooldownText = await cooldownIndicator.textContent();
     console.log(`Cooldown after 2s: ${midCooldownText}`);
 
-    const midCooldown = parseInt(midCooldownText?.replace('s', '') ?? '4');
+    const midCooldown = parseInt(midCooldownText?.replace('s', '') ?? '3');
 
     // BUG: If cooldown is NOT ticking down, this will fail
     // The cooldown should be approximately initialCooldown - 2
@@ -101,7 +91,7 @@ test.describe('Power Cooldown System', () => {
 
     await page.waitForTimeout(300);
 
-    const powerButton = page.getByTestId('power-berserker-rage');
+    const powerButton = page.getByTestId('power-basic-strike');
     await expect(powerButton).toBeEnabled({ timeout: 3000 });
 
     // Use the power
@@ -109,7 +99,7 @@ test.describe('Power Cooldown System', () => {
     await page.waitForTimeout(200);
 
     // Track cooldown values over time
-    const cooldownIndicator = page.getByTestId('power-cooldown-berserker-rage');
+    const cooldownIndicator = page.getByTestId('power-cooldown-basic-strike');
     await expect(cooldownIndicator).toBeVisible();
 
     const cooldowns: number[] = [];

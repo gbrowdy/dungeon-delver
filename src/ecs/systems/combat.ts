@@ -11,6 +11,7 @@ import { getDodgeChance } from '@/utils/fortuneUtils';
 import { recordPathTrigger } from './path-ability';
 import { getStanceDamageMultiplier, getStanceBehavior, getStanceStatModifier } from '@/utils/stanceUtils';
 import { queueAnimationEvent, addCombatLog, getEntityName } from '../utils';
+import { calculateEnemyIntent } from '@/data/enemies';
 
 function getTarget(attacker: Entity): Entity | undefined {
   if (attacker.player) {
@@ -134,6 +135,19 @@ export function CombatSystem(_deltaMs: number): void {
       }
     }
 
+    // Apply manual block (player activated block ability)
+    if (target.player && target.isBlocking) {
+      const blocked = true;
+      const reduction = COMBAT_BALANCE.BLOCK_DAMAGE_REDUCTION ?? 0.5;
+      damage = Math.round(damage * (1 - reduction));
+      damage = Math.max(1, damage);
+      addCombatLog(`${targetName} blocks, reducing damage!`);
+      queueAnimationEvent('player_block', { type: 'block', reduction });
+      recordPathTrigger('on_block', { isBlock: true });
+      // Clear block after it's used (one-time use)
+      target.isBlocking = false;
+    }
+
     // Apply shield first (if target has shield)
     if (target.shield && target.shield.value > 0) {
       if (target.shield.value >= damage) {
@@ -244,6 +258,11 @@ export function CombatSystem(_deltaMs: number): void {
           addCombatLog(`${targetName} counter-attacks for ${counterDamage} damage!`);
         }
       }
+    }
+
+    // Recalculate enemy intent after attack so UI shows next action
+    if (entity.enemy?.abilities && entity.enemy.abilities.length > 0) {
+      entity.enemy.intent = calculateEnemyIntent(entity.enemy);
     }
 
     // Clear attack ready

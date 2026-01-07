@@ -11,6 +11,7 @@ import type { Item } from '@/types/game';
 export type Command =
   // Combat actions
   | { type: 'ACTIVATE_POWER'; powerId: string }
+  | { type: 'ACTIVATE_BLOCK' }
   // Game speed
   | { type: 'SET_COMBAT_SPEED'; speed: 1 | 2 | 3 }
   | { type: 'TOGGLE_PAUSE' }
@@ -75,6 +76,9 @@ export const Commands = {
   activatePower: (powerId: string): Command => ({
     type: 'ACTIVATE_POWER',
     powerId,
+  }),
+  activateBlock: (): Command => ({
+    type: 'ACTIVATE_BLOCK',
   }),
 
   // Game speed

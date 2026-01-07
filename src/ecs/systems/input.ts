@@ -56,8 +56,12 @@ export function InputSystem(_deltaMs: number): void {
         const cooldown = player.cooldowns?.get(cmd.powerId);
         if (cooldown && cooldown.remaining > 0) break;
 
-        // Check resource - pathResource takes priority over mana
-        if (player.pathResource && player.pathResource.type !== 'mana') {
+        // Check resource - pre-path players use mana, post-path use pathResource
+        // Note: Pre-path players have pathResource.type === 'stamina' but should use mana
+        const hasActivePath = player.path && player.pathResource && player.pathResource.type !== 'stamina';
+
+        if (hasActivePath && player.pathResource) {
+          // Active path: use path resource (fury, momentum, arcane charges, etc.)
           const cost = power.resourceCost ?? power.manaCost;
           if (player.pathResource.resourceBehavior === 'spend') {
             // Fury/Momentum/Zeal: check if enough resource to spend
@@ -67,7 +71,7 @@ export function InputSystem(_deltaMs: number): void {
             if (player.pathResource.current + cost > player.pathResource.max) break;
           }
         } else if (player.mana) {
-          // Pre-level-2: use mana
+          // Pre-path: use mana
           if (player.mana.current < power.manaCost) break;
         } else {
           // No resource system - can't cast (passive paths shouldn't have powers)
@@ -83,7 +87,26 @@ export function InputSystem(_deltaMs: number): void {
         break;
       }
 
-      // BLOCK command removed - Block mechanic eliminated from game
+      case 'ACTIVATE_BLOCK': {
+        if (!player) break;
+
+        // Cannot block while dying or dead
+        if (player.dying || (player.health && player.health.current <= 0)) break;
+
+        // Already blocking
+        if (player.isBlocking) break;
+
+        // Check mana cost (if using mana system) - active paths get free blocks
+        if (player.mana) {
+          if (player.mana.current < COMBAT_BALANCE.BLOCK_MANA_COST) break;
+          player.mana.current -= COMBAT_BALANCE.BLOCK_MANA_COST;
+        }
+        // Active paths (with pathResource) don't pay mana for block
+
+        // Activate block - CombatSystem will check this flag when applying damage
+        player.isBlocking = true;
+        break;
+      }
 
       case 'SET_COMBAT_SPEED': {
         if (gameState) {

@@ -82,8 +82,9 @@ test.describe('Bug Fix #2: Enemy uses varied attacks', () => {
   test('enemy with abilities uses more than one attack type', async ({ page }) => {
     test.setTimeout(120000); // 2 minutes
 
+    // Start at floor 4 where enemies have 80% chance of abilities
     // Balanced stats - can kill enemies but not instantly, survives well
-    await navigateToGame(page, 'devMode=true&playerAttack=25&playerDefense=50');
+    await navigateToGame(page, 'devMode=true&startFloor=4&playerAttack=35&playerDefense=60');
     await selectClassAndBegin(page, 'Warrior');
     await setSpeedToMax(page);
 
@@ -120,8 +121,7 @@ test.describe('Bug Fix #2: Enemy uses varied attacks', () => {
       }
 
       // Handle floor complete - continue to next floor
-      if (await page.getByText('Floor 1 Complete!').isVisible().catch(() => false) ||
-          await page.getByText('Floor 2 Complete!').isVisible().catch(() => false)) {
+      if (await page.getByText(/Floor \d+ Complete!/i).isVisible().catch(() => false)) {
         const continueBtn = page.getByRole('button', { name: /Continue to Floor/i });
         if (await continueBtn.isVisible().catch(() => false)) {
           await continueBtn.click();
@@ -314,6 +314,19 @@ test.describe('Bug Fix #5: Fury scales damage linearly', () => {
     const confirmButton = page.getByRole('button', { name: /Confirm.*Path/i });
     await expect(confirmButton).toBeVisible({ timeout: 2000 });
     await confirmButton.click();
+
+    // At level 2, selecting an active path triggers power selection
+    // Wait for power choice popup and select the first power
+    const powerChoicePopup = page.getByTestId('power-choice-popup');
+    await expect(powerChoicePopup).toBeVisible({ timeout: 5000 });
+
+    // Click the first power choice to select it
+    const firstPowerChoice = page.getByRole('button', { name: /Rage Strike|Savage Slam/i }).first();
+    await firstPowerChoice.click();
+
+    // Click confirm button to finalize the selection
+    const powerConfirmButton = page.getByRole('button', { name: /Confirm.*Strike|Confirm.*Slam/i });
+    await powerConfirmButton.click();
 
     // Wait for combat to resume with Fury resource
     await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });

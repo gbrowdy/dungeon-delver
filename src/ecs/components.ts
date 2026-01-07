@@ -200,6 +200,8 @@ export interface Entity {
   };
   /** Temporary attack modifiers (shadow_dance, ambush, etc) */
   attackModifiers?: AttackModifier[];
+  /** Set when player is blocking (reduces damage from next attack) */
+  isBlocking?: boolean;
 
   // === PROGRESSION ===
   progression?: {

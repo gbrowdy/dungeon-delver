@@ -53,14 +53,12 @@ test('debug: walk through basic game flow', async ({ page }) => {
     console.log('No power button found');
   }
 
-  // Step 8: Try using block
-  console.log('Step 8: Attempting to use block...');
-  const blockButton = page.getByRole('button', { name: /block/i });
-  if (await blockButton.isVisible()) {
-    await blockButton.click();
-    await page.waitForTimeout(500);
-    await page.screenshot({ path: 'test-results/debug/07-after-block.png' });
-  }
+  // Step 8: Check combat is progressing (block was removed from UI)
+  console.log('Step 8: Verifying combat progression...');
+  const playerHealthCheck = await page.getByTestId('player-health').textContent();
+  const enemyHealthCheck = await page.getByTestId('enemy-health').textContent();
+  console.log(`Combat check - Player: ${playerHealthCheck}, Enemy: ${enemyHealthCheck}`);
+  await page.screenshot({ path: 'test-results/debug/07-combat-check.png' });
 
   // Step 9: Watch more combat
   console.log('Step 9: Watching more combat...');

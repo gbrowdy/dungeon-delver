@@ -412,9 +412,11 @@ export function PowerSystem(_deltaMs: number): void {
 
     // Check resource requirements and track value for threshold calculations
     // Priority: pathResource (active paths) > mana (pre-level-2)
+    // Note: Pre-path players have pathResource.type === 'stamina' but should use mana
     let resourceValueForThreshold: number | undefined;
+    const hasActivePath = entity.path && entity.pathResource && entity.pathResource.type !== 'stamina';
 
-    if (entity.pathResource && entity.pathResource.type !== 'mana') {
+    if (hasActivePath && entity.pathResource) {
       const resource = entity.pathResource;
       const cost = power.resourceCost ?? power.manaCost;
 

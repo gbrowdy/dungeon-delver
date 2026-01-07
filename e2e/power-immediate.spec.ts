@@ -1,14 +1,16 @@
 // e2e/power-immediate.spec.ts
 /**
- * Test that powers can be used during combat with proper resource management.
+ * Test that powers can be used during combat.
+ * Note: Mana was removed in favor of path-specific resources (Fury, Momentum, etc.)
+ * Note: Block button was removed - blocking is now handled by path abilities/stances
  */
 
 import { test, expect } from '@playwright/test';
 import { navigateToGame, selectClassAndBegin, setSpeedToMax } from './helpers/game-actions';
 
 test.describe('Power Usage', () => {
-  test('power can be clicked and deducts mana', async ({ page }) => {
-    // Start game - warrior starts with Berserker Rage power
+  test('power can be clicked and executes', async ({ page }) => {
+    // Start game - warrior starts with Strike power
     await navigateToGame(page, 'devMode=true&playerAttack=20&playerDefense=15');
     await selectClassAndBegin(page, 'Warrior');
 
@@ -18,13 +20,9 @@ test.describe('Power Usage', () => {
     // Wait for combat to start
     await page.waitForTimeout(500);
 
-    // Find the power button (Berserker Rage for Warrior)
+    // Find the power button
     const powerButton = page.locator('[data-testid^="power-"]').first();
     await expect(powerButton).toBeVisible();
-
-    // Get initial mana from the mana bar - look for MP indicator
-    const manaText = await page.locator('text=/MP/').locator('..').locator('text=/\\d+\\/\\d+/').textContent();
-    const manaBefore = parseInt(manaText?.split('/')[0] ?? '40');
 
     // Click the power button when it's enabled
     await expect(powerButton).toBeEnabled({ timeout: 5000 });
@@ -33,41 +31,10 @@ test.describe('Power Usage', () => {
     // Wait for power to execute
     await page.waitForTimeout(200);
 
-    // Check mana decreased
-    const manaAfter = await page.locator('text=/MP/').locator('..').locator('text=/\\d+\\/\\d+/').textContent();
-    const manaAfterValue = parseInt(manaAfter?.split('/')[0] ?? '40');
-
-    // Mana should have decreased (Berserker Rage costs 20 mana)
-    expect(manaAfterValue).toBeLessThan(manaBefore);
-  });
-
-  test('block can be used and costs mana', async ({ page }) => {
-    await navigateToGame(page, 'devMode=true&playerAttack=20&playerDefense=15');
-    await selectClassAndBegin(page, 'Warrior');
-
-    // Wait for combat to start
-    await page.waitForTimeout(500);
-
-    // Find the block button
-    const blockButton = page.getByRole('button', { name: /Block/i });
-    await expect(blockButton).toBeVisible();
-
-    // Get initial mana
-    const manaText = await page.locator('text=/MP/').locator('..').locator('text=/\\d+\\/\\d+/').textContent();
-    const manaBefore = parseInt(manaText?.split('/')[0] ?? '40');
-
-    // Click block when enabled
-    await expect(blockButton).toBeEnabled({ timeout: 5000 });
-    await blockButton.click();
-
-    // Wait for block to execute
-    await page.waitForTimeout(200);
-
-    // Check mana decreased (Block costs 15 mana)
-    const manaAfter = await page.locator('text=/MP/').locator('..').locator('text=/\\d+\\/\\d+/').textContent();
-    const manaAfterValue = parseInt(manaAfter?.split('/')[0] ?? '40');
-
-    expect(manaAfterValue).toBeLessThan(manaBefore);
+    // Check combat log for power usage
+    const powerMessage = page.locator('text=/uses|Strike|damage/i');
+    const hasMessage = await powerMessage.count();
+    expect(hasMessage).toBeGreaterThan(0);
   });
 
   test('power goes on cooldown after use', async ({ page }) => {

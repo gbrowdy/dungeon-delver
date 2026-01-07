@@ -90,6 +90,7 @@ export interface PlayerSnapshot {
   buffs: ActiveBuff[];
   shield: { value: number; remaining: number; maxDuration: number } | null;
   isDying: boolean;
+  isBlocking: boolean;
 
   // Path
   path: PlayerPath | null;
@@ -321,6 +322,7 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
     buffs: entity.buffs ? [...entity.buffs] : [],
     shield: entity.shield ? { ...entity.shield } : null,
     isDying: !!entity.dying,
+    isBlocking: !!entity.isBlocking,
 
     // Path
     path: entity.path ?? null,

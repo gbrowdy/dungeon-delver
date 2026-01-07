@@ -28,6 +28,10 @@ export const COMBAT_BALANCE = {
   MAX_COMBO_COUNT: 5,
   COMBO_DAMAGE_BONUS_PER_LEVEL: 0.1, // +10% damage per combo level
 
+  // Block ability
+  BLOCK_MANA_COST: 15, // Mana cost to activate block
+  BLOCK_DAMAGE_REDUCTION: 0.5, // 50% damage reduction when blocking
+
   // Stat caps (percentage)
   MAX_CRIT_CHANCE: 100,
   MAX_DODGE_CHANCE: 100,

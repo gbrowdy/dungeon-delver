@@ -112,6 +112,7 @@ export function CombatScreen({
           player={player}
           canUsePowers={canUsePowers}
           onUsePower={actions.usePower}
+          onActivateBlock={actions.activateBlock}
         />
 
         <PlayerStatsPanel player={player} />
