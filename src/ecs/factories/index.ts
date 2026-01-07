@@ -11,6 +11,7 @@ import { FLOOR_CONFIG } from '@/constants/game';
 import { COMBAT_BALANCE } from '@/constants/balance';
 import { getStartingPower } from '@/data/startingPowers';
 import { STAMINA_RESOURCE } from '@/data/pathResources';
+import { computeDerivedStats } from '@/utils/statUtils';
 
 // ============================================================================
 // Helper Functions
@@ -95,6 +96,10 @@ export function createPlayerEntity(options: CreatePlayerOptions): Entity {
       attackInterval: calculateAttackInterval(baseStats.speed),
       accumulated: 0,
     },
+
+    // Fortune and derived stats
+    fortune: baseStats.fortune,
+    derivedStats: computeDerivedStats(baseStats.fortune),
 
     // Progression
     progression: {

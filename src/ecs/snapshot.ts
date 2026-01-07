@@ -57,6 +57,14 @@ export interface PlayerSnapshot {
   defense: { value: number; blockReduction: number };
   speed: { value: number; attackInterval: number };
 
+  // Fortune and derived stats
+  fortune: number;
+  derivedStats: {
+    critChance: number;
+    critDamage: number;
+    dodgeChance: number;
+  };
+
   // Progression
   level: number;
   xp: number;
@@ -275,6 +283,14 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
       value: entity.speed.value,
       attackInterval: entity.speed.attackInterval
     } : { value: 10, attackInterval: 2500 },
+
+    // Fortune and derived stats
+    fortune: entity.fortune ?? 0,
+    derivedStats: entity.derivedStats ?? {
+      critChance: 0,
+      critDamage: 1.5,
+      dodgeChance: 0,
+    },
 
     // Progression
     level: entity.progression?.level ?? 1,

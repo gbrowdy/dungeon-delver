@@ -19,6 +19,7 @@ import { getStancesForPath, getDefaultStanceId } from '@/data/stances';
 import { getBerserkerPowerChoices } from '@/data/paths/berserker-powers';
 import { computeAllEffectivePowers } from '@/utils/powerUpgrades';
 import { computeEffectiveStanceEffects } from '@/utils/stanceUtils';
+import { recomputeDerivedStats } from '@/utils/statUtils';
 import type { Entity } from '../components';
 
 /**
@@ -185,6 +186,11 @@ export function InputSystem(_deltaMs: number): void {
             player.mana.max += item.statBonus.maxMana;
             player.mana.current += item.statBonus.maxMana;
           }
+          if (item.statBonus.fortune) {
+            // Apply fortune bonus and recompute derived stats
+            player.fortune = (player.fortune ?? 0) + item.statBonus.fortune;
+            recomputeDerivedStats(player);
+          }
         }
         break;
       }
@@ -231,6 +237,7 @@ export function InputSystem(_deltaMs: number): void {
         const bonusPerStat = enhancementConfig.perStatPerLevel;
 
         // Apply stat bonuses to player (one level's worth)
+        let fortuneChanged = false;
         if (equippedItem.statBonus) {
           if (player.health && equippedItem.statBonus.maxHealth) {
             player.health.max += bonusPerStat;
@@ -251,6 +258,15 @@ export function InputSystem(_deltaMs: number): void {
             player.mana.max += bonusPerStat;
             player.mana.current += bonusPerStat;
           }
+          if (equippedItem.statBonus.fortune) {
+            player.fortune = (player.fortune ?? 0) + bonusPerStat;
+            fortuneChanged = true;
+          }
+        }
+
+        // Recompute derived stats if fortune changed
+        if (fortuneChanged) {
+          recomputeDerivedStats(player);
         }
 
         // Upgrade the item's enhancement level

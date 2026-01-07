@@ -148,6 +148,14 @@ export interface Entity {
     attackInterval: number; // calculated from value
     accumulated: number; // ms toward next attack
   };
+  /** Cached derived stats computed from fortune */
+  derivedStats?: {
+    critChance: number;    // 0-1, e.g., 0.15 = 15%
+    critDamage: number;    // multiplier, e.g., 1.5 = 150%
+    dodgeChance: number;   // 0-1
+  };
+  /** Fortune stat - base value from class + equipment bonuses */
+  fortune?: number;
 
   // === STATUS ===
   statusEffects?: StatusEffect[];
