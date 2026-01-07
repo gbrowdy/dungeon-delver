@@ -286,7 +286,7 @@ export interface Entity {
 
   // Visual effects overlay
   visualEffects?: {
-    flash?: { untilTick: number };
+    flash?: { color?: 'white' | 'red' | 'green' | 'gold'; untilTick: number };
     shake?: { untilTick: number };
     hitStop?: { untilTick: number };
     aura?: { color: 'red' | 'blue' | 'green'; untilTick: number };

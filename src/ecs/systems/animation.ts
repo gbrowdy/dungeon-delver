@@ -180,8 +180,8 @@ function processAnimationEvent(event: AnimationEvent): void {
       break;
     }
     case 'spell_cast': {
-      // Only process damage spells (not heals/buffs)
       if (event.payload.type === 'spell' && event.payload.powerId) {
+        // Damage spell - impact on enemy
         const enemy = enemyQuery.first;
         if (enemy) {
           // Set power impact effect on enemy
@@ -192,6 +192,20 @@ function processAnimationEvent(event: AnimationEvent): void {
             powerId: event.payload.powerId,
             untilTick: event.displayUntilTick,
           };
+        }
+      } else if (event.payload.type === 'heal') {
+        // Heal spell - green flash on player
+        const player = getPlayer();
+        if (player) {
+          if (!player.visualEffects) {
+            player.visualEffects = {};
+          }
+          player.visualEffects.flash = {
+            color: 'green',
+            untilTick: currentTick + 3, // ~48ms green flash
+          };
+          // Add floating heal text
+          addFloatingEffect(gameState, event.payload, 'player');
         }
       }
       break;
