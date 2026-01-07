@@ -290,6 +290,7 @@ export interface Entity {
     shake?: { untilTick: number };
     hitStop?: { untilTick: number };
     aura?: { color: 'red' | 'blue' | 'green'; untilTick: number };
+    powerImpact?: { powerId: string; untilTick: number };
   };
 
   // Floating text effects (on gameState entity)

@@ -179,6 +179,23 @@ function processAnimationEvent(event: AnimationEvent): void {
       }
       break;
     }
+    case 'spell_cast': {
+      // Only process damage spells (not heals/buffs)
+      if (event.payload.type === 'spell' && event.payload.powerId) {
+        const enemy = enemyQuery.first;
+        if (enemy) {
+          // Set power impact effect on enemy
+          if (!enemy.visualEffects) {
+            enemy.visualEffects = {};
+          }
+          enemy.visualEffects.powerImpact = {
+            powerId: event.payload.powerId,
+            untilTick: event.displayUntilTick,
+          };
+        }
+      }
+      break;
+    }
     // Add more event types as needed
   }
 }
