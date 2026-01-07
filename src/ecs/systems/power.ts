@@ -379,7 +379,9 @@ export function PowerSystem(_deltaMs: number): void {
     if (!castingData) continue;
 
     // Find the power being cast
-    const power = entity.powers?.find(p => p.id === castingData.powerId);
+    // Prefer effectivePowers (with upgrades) over base powers
+    const power = entity.effectivePowers?.find(p => p.id === castingData.powerId)
+      ?? entity.powers?.find(p => p.id === castingData.powerId);
     if (!power) {
       // Power not found - clear casting and continue
       world.removeComponent(entity, 'casting');
