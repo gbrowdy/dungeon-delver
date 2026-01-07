@@ -158,9 +158,6 @@ export interface Entity {
     maxDuration: number;
   };
   buffs?: ActiveBuff[];
-  blocking?: {
-    reduction: number;
-  };
   dying?: {
     startedAtTick: number;
     duration: number; // ms

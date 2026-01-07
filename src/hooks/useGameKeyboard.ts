@@ -4,7 +4,6 @@ import { CombatSpeed } from '@/types/game';
 interface GameKeyboardShortcuts {
   togglePause: () => void;
   onUsePower: (index: number) => void;
-  activateBlock: () => void;
   setCombatSpeed: (speed: CombatSpeed) => void;
   enabled?: boolean;
 }
@@ -15,7 +14,6 @@ interface GameKeyboardShortcuts {
  * Shortcuts:
  * - Space: Pause/Resume combat
  * - 1-5: Use power at that index
- * - B: Activate block
  * - [: Speed 1x
  * - ]: Speed 2x
  * - \: Speed 3x
@@ -23,7 +21,6 @@ interface GameKeyboardShortcuts {
 export function useGameKeyboard({
   togglePause,
   onUsePower,
-  activateBlock,
   setCombatSpeed,
   enabled = true,
 }: GameKeyboardShortcuts) {
@@ -57,11 +54,6 @@ export function useGameKeyboard({
           break;
         }
 
-        case 'KeyB':
-          e.preventDefault();
-          activateBlock();
-          break;
-
         case 'BracketLeft':
           e.preventDefault();
           setCombatSpeed(1);
@@ -78,7 +70,7 @@ export function useGameKeyboard({
           break;
       }
     },
-    [togglePause, onUsePower, activateBlock, setCombatSpeed, enabled]
+    [togglePause, onUsePower, setCombatSpeed, enabled]
   );
 
   useEffect(() => {
@@ -94,7 +86,6 @@ export function useGameKeyboard({
 export const KEYBOARD_SHORTCUTS = [
   { key: 'Space', action: 'Pause/Resume combat' },
   { key: '1-5', action: 'Use power 1-5' },
-  { key: 'B', action: 'Activate block' },
   { key: '[', action: 'Speed 1x' },
   { key: ']', action: 'Speed 2x' },
   { key: '\\', action: 'Speed 3x' },

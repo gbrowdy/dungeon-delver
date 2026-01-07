@@ -17,6 +17,7 @@ import {
   startLoop,
   stopLoop,
   getTick,
+  getRenderVersion,
   resetTick,
   isLoopRunning,
   subscribeToTick,
@@ -27,6 +28,7 @@ vi.mock('../../loop', () => ({
   startLoop: vi.fn(),
   stopLoop: vi.fn(),
   getTick: vi.fn(() => 0),
+  getRenderVersion: vi.fn(() => 0),
   isLoopRunning: vi.fn(() => false),
   subscribeToTick: vi.fn(() => vi.fn()),
 }));
@@ -34,6 +36,7 @@ vi.mock('../../loop', () => ({
 const mockStartLoop = startLoop as ReturnType<typeof vi.fn>;
 const mockStopLoop = stopLoop as ReturnType<typeof vi.fn>;
 const mockGetTick = getTick as ReturnType<typeof vi.fn>;
+const mockGetRenderVersion = getRenderVersion as ReturnType<typeof vi.fn>;
 const mockIsLoopRunning = isLoopRunning as ReturnType<typeof vi.fn>;
 const mockSubscribeToTick = subscribeToTick as ReturnType<typeof vi.fn>;
 

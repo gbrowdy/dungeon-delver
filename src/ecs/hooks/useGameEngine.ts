@@ -11,6 +11,7 @@ import {
   startLoop,
   stopLoop,
   getTick,
+  getRenderVersion,
   isLoopRunning,
   subscribeToTick,
 } from '../loop';
@@ -24,8 +25,10 @@ export interface UseGameEngineOptions {
 }
 
 export interface UseGameEngineResult {
-  /** Current tick number */
+  /** Current tick number (game time - only increments when unpaused) */
   tick: number;
+  /** Render version (increments whenever systems run, use for React dependencies) */
+  renderVersion: number;
   /** Start the game loop manually */
   start: () => void;
   /** Stop the game loop manually */
@@ -57,6 +60,7 @@ export function useGameEngine({
   enabled,
 }: UseGameEngineOptions): UseGameEngineResult {
   const [tick, setTick] = useState(() => getTick());
+  const [renderVersion, setRenderVersion] = useState(() => getRenderVersion());
   const [isRunning, setIsRunning] = useState(() => isLoopRunning());
   const initializedRef = useRef(false);
 
@@ -90,6 +94,7 @@ export function useGameEngine({
   useEffect(() => {
     const unsubscribe = subscribeToTick(() => {
       setTick(getTick());
+      setRenderVersion(getRenderVersion());
       setIsRunning(isLoopRunning());
     });
 
@@ -108,5 +113,5 @@ export function useGameEngine({
     setIsRunning(false);
   }, []);
 
-  return { tick, start, stop, isRunning };
+  return { tick, renderVersion, start, stop, isRunning };
 }

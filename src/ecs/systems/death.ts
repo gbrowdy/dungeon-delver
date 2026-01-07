@@ -35,6 +35,20 @@ export function DeathSystem(_deltaMs: number): void {
   for (const entity of world.with('health').without('dying')) {
     if (entity.health!.current <= 0) {
       const isPlayer = !!entity.player;
+
+      // === Death immunity check (for player only) ===
+      if (isPlayer && entity.statusEffects) {
+        const hasDeathImmunity = entity.statusEffects.some(
+          effect => effect.type === 'death_immunity' && effect.remainingTurns > 0
+        );
+        if (hasDeathImmunity) {
+          // Survive at 1 HP instead of dying
+          entity.health!.current = 1;
+          addCombatLog('Death immunity saves you!');
+          continue;
+        }
+      }
+
       const deathDuration = isPlayer ? PLAYER_DEATH_ANIMATION_MS : ENEMY_DEATH_ANIMATION_MS;
 
       // Mark as dying - MUST use addComponent for query reactivity

@@ -300,7 +300,6 @@ describe('GameContext', () => {
 
       // Combat
       expect(typeof actions.usePower).toBe('function');
-      expect(typeof actions.activateBlock).toBe('function');
 
       // UI
       expect(typeof actions.togglePause).toBe('function');
@@ -338,7 +337,6 @@ describe('GameContext', () => {
       expect(() => actions.togglePause()).not.toThrow();
       expect(() => actions.setCombatSpeed(2)).not.toThrow();
       expect(() => actions.usePower('fireball')).not.toThrow();
-      expect(() => actions.activateBlock()).not.toThrow();
     });
   });
 

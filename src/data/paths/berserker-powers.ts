@@ -50,6 +50,9 @@ const RAGE_STRIKE: BerserkerPower = {
   value: 2.0,
   category: 'strike',
   synergies: [],
+  // Special mechanics
+  hpThreshold: 0.5,      // Bonus activates below 50% HP
+  bonusMultiplier: 0.5,  // +50% damage when below threshold
   upgrades: [
     {
       tier: 1,
@@ -77,6 +80,8 @@ const SAVAGE_SLAM: BerserkerPower = {
   value: 1.5,
   category: 'control',
   synergies: [],
+  // Special mechanics
+  stunDuration: 1.5, // 1.5 second stun
   upgrades: [
     {
       tier: 1,
@@ -102,9 +107,15 @@ const BERSERKER_ROAR: BerserkerPower = {
   resourceCost: 25,
   cooldown: 10,
   effect: 'buff',
-  value: 0.4,
+  value: 0.4, // Legacy value (will use buffStats instead)
   category: 'buff',
   synergies: [],
+  // Special mechanics - multi-stat buff
+  buffStats: [
+    { stat: 'power', value: 0.4 },   // +40% power
+    { stat: 'speed', value: 0.25 },  // +25% speed
+  ],
+  buffDuration: 6,
   upgrades: [
     {
       tier: 1,
@@ -133,6 +144,8 @@ const RECKLESS_CHARGE: BerserkerPower = {
   value: 1.5,
   category: 'sacrifice',
   synergies: [],
+  // Special mechanics
+  selfDamagePercent: 10, // Lose 10% max HP
   upgrades: [
     {
       tier: 1,
@@ -161,6 +174,8 @@ const BLOODTHIRST: BerserkerPower = {
   value: 1.6,
   category: 'heal',
   synergies: [],
+  // Special mechanics
+  lifestealPercent: 100, // Heal 100% of damage dealt
   upgrades: [
     {
       tier: 1,
@@ -188,6 +203,8 @@ const UNSTOPPABLE_FORCE: BerserkerPower = {
   value: 3.0,
   category: 'strike',
   synergies: [],
+  // Special mechanics
+  deathImmunityDuration: 3, // 3 seconds of death immunity
   upgrades: [
     {
       tier: 1,
@@ -216,6 +233,10 @@ const WARCRY: BerserkerPower = {
   value: 0,
   category: 'control',
   synergies: [],
+  // Special mechanics
+  stunDuration: 2,          // 2 second stun
+  enemyDamageDebuff: 25,    // -25% enemy damage
+  enemyDebuffDuration: 8,   // For 8 seconds
   upgrades: [
     {
       tier: 1,
@@ -242,6 +263,10 @@ const DEATH_SENTENCE: BerserkerPower = {
   value: 2.0,
   category: 'execute',
   synergies: [],
+  // Special mechanics
+  executeThreshold: 0.3,    // Enemy below 30% HP
+  executeMultiplier: 2.5,   // 500% total (2.0 * 2.5 = 5.0)
+  resetCooldownsOnKill: true,
   upgrades: [
     {
       tier: 1,

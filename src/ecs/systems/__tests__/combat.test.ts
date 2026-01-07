@@ -87,42 +87,6 @@ describe('CombatSystem', () => {
     expect(enemy.health?.current).toBe(49);
   });
 
-  it('should reduce damage when target is blocking', () => {
-    world.add({
-      player: true,
-      identity: { name: 'Hero', class: 'warrior' },
-      health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
-      blocking: { reduction: 0.4 },
-      defense: { value: 5, blockReduction: 0.4 },
-      speed: { value: 10, attackInterval: 2500, accumulated: 0 },
-    });
-
-    // Enemy attacks player who is blocking
-    const enemy = world.add({
-      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
-      health: { current: 50, max: 50 },
-      attack: {
-        baseDamage: 20,
-        critChance: 0,
-        critMultiplier: 2,
-        variance: { min: 1, max: 1 },
-      },
-      defense: { value: 3, blockReduction: 0 },
-      speed: { value: 8, attackInterval: 3000, accumulated: 0 },
-      attackReady: { damage: 20, isCrit: false },
-    });
-
-    const player = world.with('player').first!;
-
-    CombatSystem(16);
-
-    // Damage = (20 - 5) * 0.6 = 9
-    expect(player.health?.current).toBe(91);
-    // Block consumed
-    expect(player.blocking).toBeUndefined();
-  });
-
   it('should clear attackReady after processing', () => {
     const player = world.add({
       player: true,

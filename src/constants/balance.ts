@@ -6,10 +6,6 @@
 // === COMBAT BALANCE ===
 
 export const COMBAT_BALANCE = {
-  // Block ability - more expensive but still useful
-  BLOCK_MANA_COST: 15, // Increased from 10
-  BLOCK_DAMAGE_REDUCTION: 0.4, // Reduced from 0.5 - 40% damage reduction
-
   // Power cooldowns (time-based)
   COOLDOWN_TICK_INTERVAL: 100, // How often to tick cooldowns (ms)
   BASE_COOLDOWN_SPEED: 1.0, // Default cooldown recovery speed multiplier
@@ -205,7 +201,6 @@ export const EFFECT_VALUES = {
   POWER_COST_REDUCTION_20: 2.0, // -20% power cost ≈ 2 stat points
 
   // Defensive effects
-  BLOCK_ENHANCEMENT_50: 2.0,    // Block 50% more effective ≈ 2 stat points
   DAMAGE_REFLECT_3: 1.0,        // Reflect 3 damage ≈ 1 stat point
   DAMAGE_REDUCTION_5: 2.5,      // -5% damage taken ≈ 2.5 stat points
   DODGE_CHANCE_5: 1.5,          // +5% dodge chance ≈ 1.5 stat points

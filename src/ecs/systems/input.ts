@@ -62,25 +62,7 @@ export function InputSystem(_deltaMs: number): void {
         break;
       }
 
-      case 'BLOCK': {
-        if (!player) break;
-        if (player.blocking) break; // Already blocking
-
-        // Active paths (pathResource): Block is FREE
-        // Pre-level-2 (mana): Block costs mana
-        // Passive paths (no mana, no pathResource): Cannot block
-        if (player.pathResource && player.pathResource.type !== 'mana') {
-          // Active path - free block
-          player.blocking = { reduction: COMBAT_BALANCE.BLOCK_DAMAGE_REDUCTION };
-        } else if (player.mana) {
-          // Pre-level-2 - costs mana
-          if (player.mana.current < COMBAT_BALANCE.BLOCK_MANA_COST) break;
-          player.blocking = { reduction: COMBAT_BALANCE.BLOCK_DAMAGE_REDUCTION };
-          player.mana.current -= COMBAT_BALANCE.BLOCK_MANA_COST;
-        }
-        // Passive paths have no block ability
-        break;
-      }
+      // BLOCK command removed - Block mechanic eliminated from game
 
       case 'SET_COMBAT_SPEED': {
         if (gameState) {
@@ -117,9 +99,16 @@ export function InputSystem(_deltaMs: number): void {
             // Always clear pendingLevelUp after dismissing level-up popup
             gameState.pendingLevelUp = null;
 
-            // IMPORTANT: Unpause combat after level-up popup is dismissed
-            // (ProgressionSystem pauses when level-up occurs)
-            gameState.paused = false;
+            // Only unpause if no other popups are pending
+            // (power choice, upgrade choice, stance enhancement need the game paused)
+            const hasOtherPendingPopup =
+              player.pendingPowerChoice ||
+              player.pendingUpgradeChoice ||
+              player.pendingStanceEnhancement;
+
+            if (!hasOtherPendingPopup) {
+              gameState.paused = false;
+            }
           }
         }
         break;
@@ -407,6 +396,8 @@ export function InputSystem(_deltaMs: number): void {
                 level: currentLevel,
                 choices,
               });
+              // Pause combat while player makes their power choice
+              gameState.paused = true;
             }
           }
         }
@@ -456,15 +447,20 @@ export function InputSystem(_deltaMs: number): void {
       }
 
       case 'SELECT_POWER': {
-        if (!player?.pendingPowerChoice) break;
+        if (!player?.pendingPowerChoice || !gameState) break;
 
         const selectedPower = player.pendingPowerChoice.choices.find(
           (p) => p.id === cmd.powerId
         );
         if (!selectedPower) break;
 
-        // Add power to player's powers array
-        player.powers = [...(player.powers ?? []), selectedPower];
+        // Remove starting power (Strike/Zap/Slash/Smite) - they have id starting with 'basic-'
+        const powersWithoutStarter = (player.powers ?? []).filter(
+          (p) => !p.id.startsWith('basic-')
+        );
+
+        // Add new power to player's powers array
+        player.powers = [...powersWithoutStarter, selectedPower];
 
         // Initialize power upgrade tracking if pathProgression exists
         if (player.pathProgression?.powerUpgrades) {
@@ -476,11 +472,14 @@ export function InputSystem(_deltaMs: number): void {
 
         // Clear pending choice
         world.removeComponent(player, 'pendingPowerChoice');
+
+        // Unpause combat now that choice is made
+        gameState.paused = false;
         break;
       }
 
       case 'UPGRADE_POWER': {
-        if (!player?.pendingUpgradeChoice) break;
+        if (!player?.pendingUpgradeChoice || !gameState) break;
 
         // Verify the power is in the upgrade choices
         if (!player.pendingUpgradeChoice.powerIds.includes(cmd.powerId)) break;
@@ -497,11 +496,14 @@ export function InputSystem(_deltaMs: number): void {
 
         // Clear pending choice
         world.removeComponent(player, 'pendingUpgradeChoice');
+
+        // Unpause combat now that choice is made
+        gameState.paused = false;
         break;
       }
 
       case 'SELECT_STANCE_ENHANCEMENT': {
-        if (!player?.pendingStanceEnhancement) break;
+        if (!player?.pendingStanceEnhancement || !gameState) break;
 
         // Apply enhancement if pathProgression exists
         if (player.pathProgression?.stanceProgression) {
@@ -524,6 +526,9 @@ export function InputSystem(_deltaMs: number): void {
 
         // Clear pending choice
         world.removeComponent(player, 'pendingStanceEnhancement');
+
+        // Unpause combat now that choice is made
+        gameState.paused = false;
         break;
       }
 
@@ -545,11 +550,11 @@ export function InputSystem(_deltaMs: number): void {
 
           // Reset player combat state for new floor
           if (player) {
-            if (player.blocking) {
-              world.removeComponent(player, 'blocking');
-            }
             if (player.pathResource) {
-              player.pathResource.current = 0;
+              // Stamina resets to max, other resources reset to 0
+              player.pathResource.current = player.pathResource.type === 'stamina'
+                ? player.pathResource.max
+                : 0;
             }
           }
 
@@ -656,14 +661,11 @@ export function InputSystem(_deltaMs: number): void {
 
           player.statusEffects = [];
 
-          // Clear blocking state (use removeComponent for query reactivity)
-          if (player.blocking) {
-            world.removeComponent(player, 'blocking');
-          }
-
-          // Reset pathResource to starting value (0 for all path resources)
+          // Reset pathResource (stamina to max, others to 0)
           if (player.pathResource) {
-            player.pathResource.current = 0;
+            player.pathResource.current = player.pathResource.type === 'stamina'
+              ? player.pathResource.max
+              : 0;
           }
 
           floor.room = 1;
@@ -674,11 +676,11 @@ export function InputSystem(_deltaMs: number): void {
           floor.totalRooms = FLOOR_CONFIG.ROOMS_PER_FLOOR[floor.number - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
 
           // Reset player combat state for new floor
-          if (player.blocking) {
-            world.removeComponent(player, 'blocking');
-          }
           if (player.pathResource) {
-            player.pathResource.current = 0;
+            // Stamina resets to max, other resources reset to 0
+            player.pathResource.current = player.pathResource.type === 'stamina'
+              ? player.pathResource.max
+              : 0;
           }
         }
 
@@ -734,14 +736,11 @@ export function InputSystem(_deltaMs: number): void {
         // Clear status effects
         player.statusEffects = [];
 
-        // Clear blocking state (use removeComponent for query reactivity)
-        if (player.blocking) {
-          world.removeComponent(player, 'blocking');
-        }
-
-        // Reset pathResource to starting value (0 for all path resources)
+        // Reset pathResource (stamina to max, others to 0)
         if (player.pathResource) {
-          player.pathResource.current = 0;
+          player.pathResource.current = player.pathResource.type === 'stamina'
+            ? player.pathResource.max
+            : 0;
         }
 
         // Reset room to 1

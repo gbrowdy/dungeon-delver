@@ -198,22 +198,6 @@ describe('Snapshot Types', () => {
       expect(snapshot!.isDying).toBe(true);
     });
 
-    it('should correctly identify isBlocking flag from blocking component', () => {
-      const entity: Entity = {
-        player: true,
-        health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
-        identity: { name: 'Blocking', class: 'warrior' },
-        blocking: { reduction: 0.4 },
-      };
-      world.add(entity);
-
-      const snapshot = createPlayerSnapshot(entity);
-
-      expect(snapshot).not.toBeNull();
-      expect(snapshot!.isBlocking).toBe(true);
-    });
-
     it('should copy shield info when present', () => {
       const entity: Entity = {
         player: true,

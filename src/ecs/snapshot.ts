@@ -79,7 +79,6 @@ export interface PlayerSnapshot {
   statusEffects: StatusEffect[];
   buffs: ActiveBuff[];
   shield: { value: number; remaining: number; maxDuration: number } | null;
-  isBlocking: boolean;
   isDying: boolean;
 
   // Path
@@ -300,7 +299,6 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
     statusEffects: entity.statusEffects ? [...entity.statusEffects] : [],
     buffs: entity.buffs ? [...entity.buffs] : [],
     shield: entity.shield ? { ...entity.shield } : null,
-    isBlocking: !!entity.blocking,
     isDying: !!entity.dying,
 
     // Path

@@ -180,3 +180,63 @@ export async function continueFromFloorComplete(page: Page): Promise<void> {
   await page.getByTestId('continue-button').click();
   await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
 }
+
+/**
+ * Clear any blocking popups (level-up, floor-complete, upgrade-choice, power-choice)
+ * Returns true if combat is ready, false if we hit death screen
+ */
+export async function clearBlockingPopups(page: Page, maxIterations = 5): Promise<boolean> {
+  for (let i = 0; i < maxIterations; i++) {
+    await page.waitForTimeout(300);
+
+    // Check for death screen first
+    const deathVisible = await page.getByTestId('death-screen').isVisible().catch(() => false);
+    if (deathVisible) return false;
+
+    // Check for level-up popup
+    const levelUpVisible = await page.getByTestId('level-up-popup').isVisible().catch(() => false);
+    if (levelUpVisible) {
+      await page.getByRole('button', { name: /continue|close|ok/i }).first().click();
+      await page.waitForTimeout(300);
+      continue;
+    }
+
+    // Check for floor-complete screen
+    const floorCompleteVisible = await page.getByTestId('floor-complete').isVisible().catch(() => false);
+    if (floorCompleteVisible) {
+      await page.getByTestId('continue-button').click();
+      await page.waitForTimeout(500);
+      continue;
+    }
+
+    // Check for upgrade-choice popup (shouldn't appear but handle it)
+    const upgradeVisible = await page.getByTestId('upgrade-choice-popup').isVisible().catch(() => false);
+    if (upgradeVisible) {
+      // Just dismiss by selecting first option
+      const chooseBtn = page.getByTestId('upgrade-choice-popup').getByRole('button', { name: /Choose/i }).first();
+      await chooseBtn.click();
+      await page.waitForTimeout(300);
+      const confirmBtn = page.getByTestId('upgrade-choice-popup').locator('button').filter({ hasText: /^Upgrade\s/ });
+      await confirmBtn.click();
+      await page.waitForTimeout(300);
+      continue;
+    }
+
+    // Check for power-choice popup (shouldn't appear but handle it)
+    const powerChoiceVisible = await page.getByTestId('power-choice-popup').isVisible().catch(() => false);
+    if (powerChoiceVisible) {
+      const powerCards = page.locator('[data-testid="power-choice-popup"]').locator('button:has-text("Choose")');
+      await powerCards.first().click();
+      await page.waitForTimeout(300);
+      await page.getByRole('button', { name: /Confirm/i }).click();
+      await page.waitForTimeout(300);
+      continue;
+    }
+
+    // If floor-indicator is visible and no popups, we're in combat
+    const combatReady = await page.getByTestId('floor-indicator').isVisible().catch(() => false);
+    if (combatReady) return true;
+  }
+
+  return true; // Assume combat ready after max iterations
+}

@@ -1,9 +1,8 @@
-import { Shield, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PowerButton } from './PowerButton';
 import { StanceToggle } from './StanceToggle';
 import { ResourceBar } from './ResourceBar';
-import { COMBAT_BALANCE } from '@/constants/balance';
 import { getPowerModifiers, hasComboMechanic, isPassivePath, pathUsesResourceSystem } from '@/utils/pathUtils';
 import { getStancesForPath } from '@/data/stances';
 import { isFeatureEnabled } from '@/constants/features';
@@ -21,11 +20,10 @@ interface PowersPanelProps {
   player: PlayerSnapshot;
   canUsePowers: boolean;
   onUsePower: (powerId: string) => void;
-  onActivateBlock: () => void;
 }
 
 /**
- * PowersPanel - Displays mana bar, block button, power buttons, and combo indicator.
+ * PowersPanel - Displays resource bar, power buttons, and combo indicator.
  * For passive paths with PASSIVE_STANCE_SYSTEM enabled, shows stance toggle UI.
  * Styled with pixel art / 8-bit retro aesthetic.
  */
@@ -33,7 +31,6 @@ export function PowersPanel({
   player,
   canUsePowers,
   onUsePower,
-  onActivateBlock,
 }: PowersPanelProps) {
   // Calculate effective mana costs with path ability reductions
   const powerMods = getPowerModifiers({ path: player.path });
@@ -59,8 +56,9 @@ export function PowersPanel({
     !!stanceState &&
     availableStances.length > 0;
 
-  // Check if player uses path resource system
-  const usesPathResource = pathUsesResourceSystem(pathId) && player.pathResource;
+  // Check if player uses path resource system (or has stamina pre-path)
+  // Pre-path players have pathResource.type === 'stamina'
+  const usesPathResource = (pathUsesResourceSystem(pathId) || player.pathResource?.type === 'stamina') && player.pathResource;
 
   return (
     <div className="pixel-panel rounded-lg p-2 sm:p-3">
@@ -95,18 +93,6 @@ export function PowersPanel({
         <>
           {/* Powers grid */}
           <div className="flex flex-wrap gap-1.5">
-            {/* Block Button - show for mana users (pre-level-2) and active path users (free) */}
-            {/* Passive paths have no Block - they use stances for defense */}
-            {(player.mana || (player.pathResource && player.pathResource.type !== 'mana')) && (
-              <BlockButton
-                isBlocking={player.isBlocking}
-                currentMana={player.mana?.current ?? 0}
-                canUse={canUsePowers}
-                onActivate={onActivateBlock}
-                isFree={!!player.pathResource && player.pathResource.type !== 'mana'}
-              />
-            )}
-
             {/* Power buttons */}
             {player.powers.map(power => {
               // Use pathResource for active paths, mana for pre-level-2
@@ -184,54 +170,6 @@ function ManaBar({ current, max }: ManaBarProps) {
         </span>
       </div>
     </div>
-  );
-}
-
-/**
- * BlockButton - Pixel-styled button to activate the block ability.
- */
-interface BlockButtonProps {
-  isBlocking: boolean;
-  currentMana: number;
-  canUse: boolean;
-  onActivate: () => void;
-  /** If true, block is free (active paths) */
-  isFree?: boolean;
-}
-
-function BlockButton({ isBlocking, currentMana, canUse, onActivate, isFree = false }: BlockButtonProps) {
-  const canAfford = isFree || currentMana >= COMBAT_BALANCE.BLOCK_MANA_COST;
-  const isDisabled = !canUse || isBlocking || !canAfford;
-  const canActivate = !isDisabled;
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            className={cn(
-              'pixel-panel-dark flex flex-col items-center gap-0.5 p-1.5 xs:p-2 min-w-[60px] xs:min-w-[70px] sm:min-w-[80px] min-h-[50px] xs:min-h-[56px] rounded border transition-all',
-              canActivate && 'border-info/40 hover:border-info/70 hover:bg-info/10 cursor-pointer',
-              !canActivate && 'opacity-50 cursor-not-allowed border-slate-700/30',
-              isBlocking && 'bg-info/20 border-info/60'
-            )}
-            onClick={onActivate}
-            disabled={isDisabled}
-            aria-label={`Block: Reduce damage by 50% from next attack.${isFree ? ' Free.' : ` Costs ${COMBAT_BALANCE.BLOCK_MANA_COST} mana.`}${isBlocking ? ' Currently active.' : ''}`}
-          >
-            <Shield className="h-4 w-4 xs:h-5 xs:w-5 sm:h-6 sm:w-6 text-info" aria-hidden="true" />
-            <span className="pixel-text text-pixel-2xs font-medium text-slate-200">Block</span>
-            <span className="pixel-text text-pixel-2xs text-mana">
-              {isFree ? 'Free' : `${COMBAT_BALANCE.BLOCK_MANA_COST} MP`}
-            </span>
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="pixel-panel">
-          <p className="pixel-text text-pixel-xs">Reduce damage by 50% from next attack</p>
-          <p className="pixel-text text-pixel-2xs text-mana mt-1">{isFree ? 'Free' : `${COMBAT_BALANCE.BLOCK_MANA_COST} MP`}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
   );
 }
 

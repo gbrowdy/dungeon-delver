@@ -87,6 +87,18 @@ export function CombatSystem(_deltaMs: number): void {
       }
     }
 
+    // Apply weaken status effect (enemy attacking with damage debuff)
+    if (entity.enemy && entity.statusEffects) {
+      const weakenEffect = entity.statusEffects.find(
+        effect => effect.type === 'weaken' && effect.remainingTurns > 0
+      );
+      if (weakenEffect && weakenEffect.value) {
+        const reduction = weakenEffect.value / 100; // Convert percentage to decimal
+        damage = Math.round(damage * (1 - reduction));
+        damage = Math.max(1, damage);
+      }
+    }
+
     // Apply stance power modifier to outgoing damage (player attacking)
     if (entity.player) {
       const powerMod = getStanceStatModifier(entity, 'power');
@@ -122,28 +134,6 @@ export function CombatSystem(_deltaMs: number): void {
       }
     }
 
-    // Check for block
-    let blocked = false;
-    if (target.blocking) {
-      damage = Math.floor(damage * (1 - target.blocking.reduction));
-      blocked = true;
-
-      // Save reduction before removing component
-      const blockReduction = target.blocking.reduction;
-      world.removeComponent(target, 'blocking');
-
-      // Queue block animation
-      queueAnimationEvent('player_block', {
-        type: 'block',
-        reduction: blockReduction,
-      });
-
-      // Record path ability trigger for blocking
-      if (target.player) {
-        recordPathTrigger('on_block', { isBlock: true });
-      }
-    }
-
     // Apply shield first (if target has shield)
     if (target.shield && target.shield.value > 0) {
       if (target.shield.value >= damage) {
@@ -171,15 +161,13 @@ export function CombatSystem(_deltaMs: number): void {
       type: 'damage',
       value: damage,
       isCrit: attackData.isCrit,
-      blocked,
       targetDied,
     });
 
     // Combat log
     const critText = attackData.isCrit ? ' (CRIT!)' : '';
-    const blockText = blocked ? ' (blocked)' : '';
     addCombatLog(
-      `${attackerName} attacks ${targetName} for ${damage} damage${critText}${blockText}`
+      `${attackerName} attacks ${targetName} for ${damage} damage${critText}`
     );
 
     // Record path ability triggers

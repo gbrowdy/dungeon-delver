@@ -45,6 +45,15 @@ export function RegenSystem(deltaMs: number): void {
         mana.current = Math.min(mana.max, mana.current + regen.manaPerSecond);
       }
 
+      // Apply path resource passive regeneration
+      const pathResource = entity.pathResource;
+      if (pathResource?.generation?.passive && pathResource.generation.passive > 0) {
+        pathResource.current = Math.min(
+          pathResource.max,
+          pathResource.current + pathResource.generation.passive
+        );
+      }
+
       // Reset accumulated time (keeping overflow for precision)
       regen.accumulated -= REGEN_TICK_MS;
     }

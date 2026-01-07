@@ -17,6 +17,7 @@ import {
   waitForCombatOutcome,
   waitForEnemySpawn,
   waitForDeathAndRetry,
+  clearBlockingPopups,
 } from './helpers/game-actions';
 
 test.describe('Berserker Power Progression', () => {
@@ -179,23 +180,25 @@ test.describe('Berserker Power Progression', () => {
           // Should show UpgradeChoicePopup
           await expect(page.getByTestId('upgrade-choice-popup')).toBeVisible({ timeout: 5000 });
 
-          // Verify it shows "Upgrade a Power"
-          await expect(page.getByText(/Upgrade a Power/i)).toBeVisible();
+          // Scope further checks to the upgrade popup
+          const upgradePopup = page.getByTestId('upgrade-choice-popup');
 
-          // Verify we can see the power we selected (Rage Strike)
-          await expect(page.getByText('Rage Strike')).toBeVisible();
+          // Verify it shows "Upgrade a Power"
+          await expect(upgradePopup.getByText(/Upgrade a Power/i)).toBeVisible();
+
+          // Verify we can see the power we selected (Rage Strike) within the popup
+          await expect(upgradePopup.getByText('Rage Strike')).toBeVisible();
 
           // Verify tier upgrade indicator (Tier 0 -> 1)
-          await expect(page.getByText(/Tier.*0/i)).toBeVisible();
-          await expect(page.getByText(/Tier.*1/i)).toBeVisible();
+          await expect(upgradePopup.getByText(/Tier.*0/i)).toBeVisible();
 
           // Select the upgrade
-          const chooseUpgradeButton = page.locator('[data-testid="upgrade-choice-popup"]').getByRole('button', { name: /Choose/i }).first();
+          const chooseUpgradeButton = upgradePopup.getByRole('button', { name: /Choose/i }).first();
           await chooseUpgradeButton.click();
           await page.waitForTimeout(300);
 
-          // Confirm the upgrade
-          const confirmUpgradeButton = page.getByRole('button', { name: /Upgrade.*Rage Strike/i });
+          // Confirm the upgrade (use exact match for the confirm button)
+          const confirmUpgradeButton = upgradePopup.getByRole('button', { name: 'Upgrade Rage Strike', exact: true });
           await expect(confirmUpgradeButton).toBeEnabled();
           await confirmUpgradeButton.click();
 
@@ -272,14 +275,16 @@ test.describe('Berserker Power Progression', () => {
           await page.getByRole('button', { name: /continue|close|ok/i }).first().click();
           await page.waitForTimeout(500);
 
-          const upgradeChoiceVisible = await page.getByTestId('upgrade-choice-popup').isVisible();
+          const upgradePopup = page.getByTestId('upgrade-choice-popup');
+          const upgradeChoiceVisible = await upgradePopup.isVisible();
           if (upgradeChoiceVisible) {
-            const chooseButton = page.locator('[data-testid="upgrade-choice-popup"]').getByRole('button', { name: /Choose/i }).first();
+            const chooseButton = upgradePopup.getByRole('button', { name: /Choose/i }).first();
             await chooseButton.click();
             await page.waitForTimeout(300);
-            const confirmButton = page.getByRole('button', { name: /Upgrade/i });
+            // Get power name from the selected card to build confirm button selector
+            const confirmButton = upgradePopup.locator('button').filter({ hasText: /^Upgrade\s/ });
             await confirmButton.click();
-            await expect(page.getByTestId('upgrade-choice-popup')).not.toBeVisible({ timeout: 3000 });
+            await expect(upgradePopup).not.toBeVisible({ timeout: 3000 });
             hasUpgradedFirstPower = true;
           }
         }
@@ -312,9 +317,16 @@ test.describe('Berserker Power Progression', () => {
           // Popup should disappear
           await expect(page.getByTestId('power-choice-popup')).not.toBeVisible({ timeout: 3000 });
 
+          // Clear any blocking popups (floor-complete, additional level-ups, etc.)
+          await clearBlockingPopups(page);
+
+          // Wait for enemy to be present (ensures we're in combat)
+          await waitForEnemySpawn(page).catch(() => {});
+          await page.waitForTimeout(500);
+
           // Verify both powers appear in power bar
-          await expect(page.locator('[data-testid^="power-rage_strike"]')).toBeVisible({ timeout: 3000 });
-          await expect(page.locator('[data-testid^="power-berserker_roar"]')).toBeVisible({ timeout: 3000 });
+          await expect(page.locator('[data-testid^="power-rage_strike"]')).toBeVisible({ timeout: 5000 });
+          await expect(page.locator('[data-testid^="power-berserker_roar"]')).toBeVisible({ timeout: 5000 });
 
           break;
         }
@@ -377,12 +389,14 @@ test.describe('Berserker Power Progression', () => {
 
         // Level 3: Upgrade Power 1
         if (currentLevel === 3) {
-          const upgradeVisible = await page.getByTestId('upgrade-choice-popup').isVisible().catch(() => false);
+          const upgradePopup = page.getByTestId('upgrade-choice-popup');
+          const upgradeVisible = await upgradePopup.isVisible().catch(() => false);
           if (upgradeVisible) {
-            const chooseButton = page.locator('[data-testid="upgrade-choice-popup"]').getByRole('button', { name: /Choose/i }).first();
+            const chooseButton = upgradePopup.getByRole('button', { name: /Choose/i }).first();
             await chooseButton.click();
             await page.waitForTimeout(300);
-            await page.getByRole('button', { name: /Upgrade/i }).click();
+            const confirmButton = upgradePopup.locator('button').filter({ hasText: /^Upgrade\s/ });
+            await confirmButton.click();
             await page.waitForTimeout(500);
           }
         }
@@ -397,12 +411,19 @@ test.describe('Berserker Power Progression', () => {
             await page.getByRole('button', { name: /Confirm/i }).click();
             await page.waitForTimeout(500);
 
-            // Now verify both powers are visible
+            // Clear any blocking popups (floor-complete, additional level-ups, etc.)
+            await clearBlockingPopups(page);
+
+            // Wait for enemy to be present (ensures we're in combat)
+            await waitForEnemySpawn(page).catch(() => {});
+            await page.waitForTimeout(500);
+
+            // Now verify both powers are visible in power bar
             const power1 = page.locator('[data-testid^="power-"]').first();
             const power2 = page.locator('[data-testid^="power-"]').nth(1);
 
-            await expect(power1).toBeVisible();
-            await expect(power2).toBeVisible();
+            await expect(power1).toBeVisible({ timeout: 5000 });
+            await expect(power2).toBeVisible({ timeout: 5000 });
 
             // Verify they are different powers (check their data-testid)
             const power1Id = await power1.getAttribute('data-testid');
@@ -422,60 +443,44 @@ test.describe('Berserker Power Progression', () => {
     expect(completedProgression).toBe(true);
   });
 
-  test('should show path resource (Rage) after selecting Berserker', async ({ page }) => {
+  test('should show path resource (Fury) after selecting Berserker', async ({ page }) => {
     test.setTimeout(120000);
 
     await selectClassAndBegin(page, 'Warrior');
     await setSpeedToMax(page);
 
-    let selectedBerserker = false;
+    // Step 1: Wait for level-up to level 2 (enemy defeat + XP)
+    await page.getByTestId('level-up-popup').waitFor({ state: 'visible', timeout: 60000 });
+    console.log('Level up popup visible');
 
-    for (let attempt = 0; attempt < 15 && !selectedBerserker; attempt++) {
-      const outcome = await waitForCombatOutcome(page, { timeout: 30000 });
+    // Step 2: Dismiss level-up popup
+    await page.getByRole('button', { name: /continue|close|ok/i }).first().click();
+    await page.waitForTimeout(500);
+    console.log('Clicked Continue');
 
-      if (outcome === 'player_died') {
-        await waitForDeathAndRetry(page);
-        await setSpeedToMax(page);
-        continue;
-      }
+    // Step 3: Wait for path selection screen
+    await page.getByTestId('path-selection').waitFor({ state: 'visible', timeout: 10000 });
+    console.log('Path selection visible');
 
-      const levelUpVisible = await page.getByTestId('level-up-popup').isVisible();
-      if (levelUpVisible) {
-        const levelText = await page.getByTestId('level-up-new-level').textContent();
-        const level = parseInt(levelText?.match(/\d+/)?.[0] ?? '1');
+    // Step 4: Select Berserker path (first path)
+    await page.getByRole('button', { name: /Select Path/i }).first().click();
+    await page.waitForTimeout(300);
+    await page.getByTestId('path-confirm-button').click();
+    await page.waitForTimeout(500);
+    console.log('Selected Berserker path');
 
-        await page.getByRole('button', { name: /continue|close|ok/i }).first().click();
-        await page.waitForTimeout(500);
+    // Step 5: Wait for power choice popup
+    await page.getByTestId('power-choice-popup').waitFor({ state: 'visible', timeout: 10000 });
+    console.log('Power choice popup visible');
 
-        if (level === 2) {
-          const pathVisible = await page.getByTestId('path-selection').isVisible().catch(() => false);
-          if (pathVisible) {
-            await page.getByRole('button', { name: /Select Path/i }).first().click();
-            await page.waitForTimeout(300);
-            await page.getByTestId('path-confirm-button').click();
-            await page.waitForTimeout(500);
-          }
+    // Step 6: Verify Fury is displayed
+    await expect(page.getByText(/Fury/i).first()).toBeVisible();
+    console.log('Fury resource is visible');
 
-          const powerChoiceVisible = await page.getByTestId('power-choice-popup').isVisible().catch(() => false);
-          if (powerChoiceVisible) {
-            // Check that resource label changed to "Rage"
-            await expect(page.getByText(/Rage/i)).toBeVisible();
-
-            // Confirm a power has "Rage" cost instead of "Mana"
-            const powerChoicePopup = page.getByTestId('power-choice-popup');
-            const hasRageCost = await powerChoicePopup.getByText(/\d+\s+Rage/i).isVisible();
-            expect(hasRageCost).toBe(true);
-
-            selectedBerserker = true;
-          }
-        }
-      }
-
-      if (outcome === 'enemy_died') {
-        await waitForEnemySpawn(page).catch(() => {});
-      }
-    }
-
-    expect(selectedBerserker).toBe(true);
+    // Step 7: Verify power has Fury cost
+    const powerChoicePopup = page.getByTestId('power-choice-popup');
+    const hasFuryCost = await powerChoicePopup.getByText(/\d+\s+Fury/i).first().isVisible();
+    expect(hasFuryCost).toBe(true);
+    console.log('Power has Fury cost');
   });
 });

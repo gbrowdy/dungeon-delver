@@ -50,11 +50,6 @@ export function CombatScreen({
         actions.usePower(power.id);
       }
     },
-    activateBlock: () => {
-      if (canUsePowers) {
-        actions.activateBlock();
-      }
-    },
     setCombatSpeed: actions.setCombatSpeed,
   }), [actions, player.powers, canUsePowers]);
 
@@ -117,7 +112,6 @@ export function CombatScreen({
           player={player}
           canUsePowers={canUsePowers}
           onUsePower={actions.usePower}
-          onActivateBlock={actions.activateBlock}
         />
 
         <PlayerStatsPanel player={player} />
@@ -125,28 +119,22 @@ export function CombatScreen({
         <CombatLog logs={gameState.combatLog} />
       </div>
 
-      {/* Level Up Popup */}
-      {gameState.pendingLevelUp && (
+      {/* Popups - show one at a time, level up takes priority */}
+      {gameState.pendingLevelUp ? (
         <LevelUpPopup newLevel={gameState.pendingLevelUp} onContinue={actions.dismissLevelUp} />
-      )}
-
-      {/* Ability Choice Popup */}
-      {abilityChoices && onSelectAbility && (
+      ) : abilityChoices && onSelectAbility ? (
         <AbilityChoicePopup
           abilities={abilityChoices}
           onSelectAbility={onSelectAbility}
           playerLevel={player.level}
         />
-      )}
-
-      {/* Power Choice Popup */}
-      {player.pendingPowerChoice && <PowerChoicePopup />}
-
-      {/* Upgrade Choice Popup */}
-      {player.pendingUpgradeChoice && <UpgradeChoicePopup />}
-
-      {/* Stance Enhancement Popup */}
-      {player.pendingStanceEnhancement && <StanceEnhancementPopup />}
+      ) : player.pendingPowerChoice ? (
+        <PowerChoicePopup />
+      ) : player.pendingUpgradeChoice ? (
+        <UpgradeChoicePopup />
+      ) : player.pendingStanceEnhancement ? (
+        <StanceEnhancementPopup />
+      ) : null}
     </div>
   );
 }

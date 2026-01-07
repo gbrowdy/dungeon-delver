@@ -21,6 +21,7 @@ let running = false;
 let lastTime = 0;
 let accumulator = 0;
 let tick = 0;
+let renderVersion = 0; // Increments whenever systems run (paused or not) to trigger React re-renders
 let animationFrameId: number | null = null;
 
 // Subscribers for tick updates (allows multiple React components to subscribe)
@@ -90,6 +91,10 @@ export function startLoop(): void {
         runSystems(0);
       }
 
+      // Always increment render version when systems run (paused or not)
+      // This ensures React re-renders when ECS state changes during pause
+      renderVersion++;
+
       accumulator -= TICK_MS;
       tickedThisFrame = true;
     }
@@ -117,10 +122,18 @@ export function stopLoop(): void {
 }
 
 /**
- * Get the current tick number.
+ * Get the current tick number (game time, only increments when unpaused).
  */
 export function getTick(): number {
   return tick;
+}
+
+/**
+ * Get the render version (increments whenever systems run, paused or not).
+ * Use this for React re-render triggers instead of tick.
+ */
+export function getRenderVersion(): number {
+  return renderVersion;
 }
 
 /**
@@ -128,6 +141,7 @@ export function getTick(): number {
  */
 export function resetTick(): void {
   tick = 0;
+  renderVersion = 0;
 }
 
 /**
