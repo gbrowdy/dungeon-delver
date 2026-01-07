@@ -18,6 +18,7 @@ import { getPathById } from '@/utils/pathUtils';
 import { getStancesForPath, getDefaultStanceId } from '@/data/stances';
 import { getBerserkerPowerChoices } from '@/data/paths/berserker-powers';
 import { computeAllEffectivePowers } from '@/utils/powerUpgrades';
+import { computeEffectiveStanceEffects } from '@/utils/stanceUtils';
 import type { Entity } from '../components';
 
 /**
@@ -25,6 +26,13 @@ import type { Entity } from '../components';
  */
 function recomputeEffectivePowers(player: Entity): void {
   player.effectivePowers = computeAllEffectivePowers(player);
+}
+
+/**
+ * Recompute effectiveStanceEffects after stance changes
+ */
+function recomputeEffectiveStanceEffects(player: Entity): void {
+  player.effectiveStanceEffects = computeEffectiveStanceEffects(player);
 }
 
 export function InputSystem(_deltaMs: number): void {
@@ -452,6 +460,9 @@ export function InputSystem(_deltaMs: number): void {
         // Switch stance and set cooldown
         player.stanceState.activeStanceId = cmd.stanceId;
         player.stanceState.stanceCooldownRemaining = newStance.switchCooldown;
+
+        // Recompute effective stance effects after switching
+        recomputeEffectiveStanceEffects(player);
         break;
       }
 
@@ -544,6 +555,9 @@ export function InputSystem(_deltaMs: number): void {
 
         // Unpause combat now that choice is made
         gameState.paused = false;
+
+        // Recompute effective stance effects with new enhancement
+        recomputeEffectiveStanceEffects(player);
         break;
       }
 
