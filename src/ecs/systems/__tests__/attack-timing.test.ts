@@ -14,6 +14,13 @@ describe('AttackTimingSystem', () => {
       phase: 'combat',
       combatSpeed: { multiplier: 1 },
     });
+    // Add enemy (required for combat to proceed)
+    world.add({
+      enemy: { tier: 'common', name: 'Test Enemy', isBoss: false, abilities: [], intent: null },
+      health: { current: 50, max: 50 },
+      attack: { baseDamage: 10, critChance: 0, critMultiplier: 2, variance: { min: 1, max: 1 } },
+      speed: { value: 10, attackInterval: 3000, accumulated: 0 },
+    });
   });
 
   it('should accumulate time toward attack', () => {

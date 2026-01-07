@@ -5,7 +5,7 @@
  * When accumulated time >= interval, mark entity as ready to attack.
  */
 
-import { attackersQuery, getGameState } from '../queries';
+import { attackersQuery, getGameState, getPlayer, getActiveEnemy } from '../queries';
 import { getEffectiveDelta } from '../loop';
 import { world } from '../world';
 import type { Entity } from '../components';
@@ -38,6 +38,12 @@ export function AttackTimingSystem(deltaMs: number): void {
   const gameState = getGameState();
 
   if (gameState?.phase !== 'combat') return;
+
+  // Stop all combat when either combatant is dead/dying
+  const player = getPlayer();
+  const enemy = getActiveEnemy();
+  if (player?.dying || (player?.health && player.health.current <= 0)) return;
+  if (!enemy) return; // No enemy to fight
 
   const effectiveDelta = getEffectiveDelta(deltaMs);
 
