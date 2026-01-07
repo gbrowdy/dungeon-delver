@@ -1300,6 +1300,16 @@ All colors MUST be HSL.
    POWER IMPACT EFFECTS (Power Visual Feedback)
    ================================ */
 
+/* Buff aura animation */
+@keyframes buff-aura {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.05); }
+}
+
+.animate-buff-aura {
+  animation: buff-aura 2s ease-in-out infinite;
+}
+
 /* Fire burst effect */
 @keyframes power-burst {
   0% { transform: scale(0.5); opacity: 1; }

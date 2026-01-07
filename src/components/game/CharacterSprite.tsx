@@ -2,6 +2,7 @@ import { ActiveBuff, StatusEffect, EnemyIntent } from '@/types/game';
 import { PixelSprite } from './PixelSprite';
 import { PixelSlash, PixelSpell, PixelShield } from './BattleEffects';
 import { PowerImpactEffect } from './PowerImpactEffect';
+import { BuffAura } from './BuffAura';
 import { BATTLE_PHASE } from '@/constants/enums';
 import { cn } from '@/lib/utils';
 import { SpriteStateType, BattlePhaseType } from '@/constants/enums';
@@ -156,6 +157,11 @@ export function CharacterSprite({
         )}
         style={hitStop ? { animationPlayState: 'paused' } : undefined}
       >
+        {/* Buff aura - hero only */}
+        {isHero && activeBuffs.length > 0 && (
+          <BuffAura buffs={activeBuffs} />
+        )}
+
         <PixelSprite
           type={spriteType}
           state={spriteState}
