@@ -83,6 +83,27 @@ function processPlayerBuffs(deltaSeconds: number): void {
 }
 
 /**
+ * Process player shield duration and tick it down.
+ */
+function processPlayerShield(deltaSeconds: number): void {
+  const player = getPlayer();
+  if (!player || player.dying || !player.shield) return;
+
+  // Only tick down if there's an active shield with remaining duration
+  if (player.shield.value > 0 && player.shield.remaining > 0) {
+    player.shield.remaining -= deltaSeconds;
+
+    if (player.shield.remaining <= 0) {
+      // Shield expired - remove it
+      player.shield.value = 0;
+      player.shield.remaining = 0;
+      player.shield.maxDuration = 0;
+      addCombatLog('Shield fades');
+    }
+  }
+}
+
+/**
  * Process enemy flags like enrage and shield that have durations.
  */
 function processEnemyFlags(deltaSeconds: number): void {
@@ -118,6 +139,36 @@ function processEnemyFlags(deltaSeconds: number): void {
   }
 }
 
+/**
+ * Process enemy stat debuffs (power/armor/speed reductions from player abilities).
+ */
+function processEnemyStatDebuffs(deltaSeconds: number): void {
+  for (const enemy of enemyQuery) {
+    if (enemy.dying || !enemy.statDebuffs || enemy.statDebuffs.length === 0) continue;
+
+    const enemyName = enemy.enemy?.name ?? 'Enemy';
+    const expiredDebuffs: number[] = [];
+
+    // Tick down all debuffs
+    for (let i = 0; i < enemy.statDebuffs.length; i++) {
+      const debuff = enemy.statDebuffs[i];
+      debuff.remainingDuration -= deltaSeconds;
+
+      if (debuff.remainingDuration <= 0) {
+        expiredDebuffs.push(i);
+      }
+    }
+
+    // Remove expired debuffs (in reverse order to maintain indices)
+    for (let i = expiredDebuffs.length - 1; i >= 0; i--) {
+      const index = expiredDebuffs[i];
+      const debuff = enemy.statDebuffs[index];
+      enemy.statDebuffs.splice(index, 1);
+      addCombatLog(`${debuff.sourceName} debuff wears off from ${enemyName}`);
+    }
+  }
+}
+
 export function StatusEffectSystem(deltaMs: number): void {
   const gameState = getGameState();
   if (gameState?.phase !== 'combat') return;
@@ -129,8 +180,14 @@ export function StatusEffectSystem(deltaMs: number): void {
   // Process player buffs (power, speed, etc.)
   processPlayerBuffs(deltaSeconds);
 
+  // Process player shield duration
+  processPlayerShield(deltaSeconds);
+
   // Process enemy flags (enrage, shield)
   processEnemyFlags(deltaSeconds);
+
+  // Process enemy stat debuffs (power/armor/speed reductions)
+  processEnemyStatDebuffs(deltaSeconds);
 
   // Process all entities with status effects
   for (const entity of entitiesWithStatusEffects) {
