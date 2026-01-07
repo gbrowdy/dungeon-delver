@@ -5,7 +5,7 @@
  * Runs after CombatSystem to apply tick damage, before DeathSystem to check for deaths.
  */
 
-import { entitiesWithStatusEffects, getGameState } from '../queries';
+import { entitiesWithStatusEffects, getGameState, enemyQuery } from '../queries';
 import { getEffectiveDelta, getTick } from '../loop';
 import type { Entity, AnimationEvent, AnimationPayload } from '../components';
 import type { StatusEffect } from '@/types/game';
@@ -24,10 +24,14 @@ function processStatusEffect(
 
   // Process DoT effects (poison, bleed, burn)
   if ((effect.type === 'poison' || effect.type === 'bleed' || effect.type === 'burn') && effect.damage) {
-    // Calculate damage for this tick (damage per second * delta time)
-    const tickDamage = Math.round(effect.damage * deltaSeconds);
+    // Accumulate fractional damage to handle small deltas
+    const rawDamage = effect.damage * deltaSeconds;
+    effect.accumulatedDamage = (effect.accumulatedDamage ?? 0) + rawDamage;
 
-    if (tickDamage > 0 && entity.health) {
+    // Only apply when we've accumulated at least 1 damage
+    const tickDamage = Math.floor(effect.accumulatedDamage);
+    if (tickDamage >= 1 && entity.health) {
+      effect.accumulatedDamage -= tickDamage;
       entity.health.current = Math.max(0, entity.health.current - tickDamage);
 
       const effectName = effect.type === 'poison' ? 'Poison' : effect.type === 'bleed' ? 'Bleed' : 'Burn';
@@ -51,6 +55,42 @@ function processStatusEffect(
   return effect.remainingTurns <= 0;
 }
 
+/**
+ * Process enemy flags like enrage and shield that have durations.
+ */
+function processEnemyFlags(deltaSeconds: number): void {
+  for (const enemy of enemyQuery) {
+    if (enemy.dying || !enemy.enemyFlags) continue;
+
+    const flags = enemy.enemyFlags;
+    const enemyName = enemy.enemy?.name ?? 'Enemy';
+
+    // Tick down enrage
+    if (flags.isEnraged && flags.enrageTurnsRemaining !== undefined) {
+      flags.enrageTurnsRemaining -= deltaSeconds;
+      if (flags.enrageTurnsRemaining <= 0) {
+        flags.isEnraged = false;
+        flags.enrageTurnsRemaining = 0;
+        // Restore original attack power
+        if (enemy.attack && flags.basePower !== undefined) {
+          enemy.attack.baseDamage = flags.basePower;
+        }
+        addCombatLog(`${enemyName}'s rage subsides`);
+      }
+    }
+
+    // Tick down shield
+    if (flags.isShielded && flags.shieldTurnsRemaining !== undefined) {
+      flags.shieldTurnsRemaining -= deltaSeconds;
+      if (flags.shieldTurnsRemaining <= 0) {
+        flags.isShielded = false;
+        flags.shieldTurnsRemaining = 0;
+        addCombatLog(`${enemyName}'s shield fades`);
+      }
+    }
+  }
+}
+
 export function StatusEffectSystem(deltaMs: number): void {
   const gameState = getGameState();
   if (gameState?.phase !== 'combat') return;
@@ -58,6 +98,9 @@ export function StatusEffectSystem(deltaMs: number): void {
   // Get effective delta (scaled by combat speed)
   const effectiveDelta = getEffectiveDelta(deltaMs);
   const deltaSeconds = effectiveDelta / 1000;
+
+  // Process enemy flags (enrage, shield)
+  processEnemyFlags(deltaSeconds);
 
   // Process all entities with status effects
   for (const entity of entitiesWithStatusEffects) {

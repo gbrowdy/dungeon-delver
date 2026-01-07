@@ -141,7 +141,7 @@ export interface PlayerSnapshot {
   } | null;
 
   visualEffects: {
-    flash: boolean;
+    flash: { color?: 'white' | 'red' | 'green' | 'gold' } | null;
     shake: boolean;
     hitStop: boolean;
   };
@@ -374,7 +374,9 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
     } : null,
 
     visualEffects: {
-      flash: !!entity.visualEffects?.flash,
+      flash: entity.visualEffects?.flash
+        ? { color: entity.visualEffects.flash.color }
+        : null,
       shake: !!entity.visualEffects?.shake,
       hitStop: !!entity.visualEffects?.hitStop,
     },

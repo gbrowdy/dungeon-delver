@@ -231,9 +231,9 @@ function addFloatingEffect(
 
   const currentTick = getTick();
 
-  // Position based on target (these are relative positions that UI will use)
-  const x = target === 'enemy' ? 0.7 : 0.3; // 70% right for enemy, 30% for player
-  const y = 0.5; // Middle vertically
+  // Position based on target (percentage values for CSS positioning)
+  const x = target === 'enemy' ? 70 : 30; // 70% right for enemy, 30% for player
+  const y = 50; // Middle vertically
 
   gameState.floatingEffects.push({
     id: getNextAnimationId(),

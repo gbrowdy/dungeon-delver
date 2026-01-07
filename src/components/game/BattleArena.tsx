@@ -132,8 +132,8 @@ export function BattleArena({
   const enemyCasting = enemySpriteState === SPRITE_STATE.IDLE && !!enemy?.visualEffects?.aura;
 
   // Read visual effects from snapshots
-  const heroFlash = player.visualEffects.flash;
-  const enemyFlash = enemy?.visualEffects.flash ?? false;
+  const heroFlash = !!player.visualEffects.flash;
+  const enemyFlash = !!enemy?.visualEffects.flash;
   const hitStop = player.visualEffects.hitStop;
   const isShaking = player.visualEffects.shake;
   const enemyAuraColor = enemy?.visualEffects.aura ?? null;
@@ -215,7 +215,7 @@ export function BattleArena({
             turnProgress={heroProgress}
             isStunned={isStunned}
             statusEffects={player.statusEffects}
-            activeBuffs={player.activeBuffs}
+            activeBuffs={player.buffs}
           />
 
           {/* Enemy */}

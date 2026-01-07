@@ -37,7 +37,8 @@ export interface ActiveBuff {
 export interface StatusEffect {
   id: string;
   type: 'poison' | 'stun' | 'slow' | 'bleed' | 'burn' | 'death_immunity' | 'weaken';
-  damage?: number; // For DoT effects
+  damage?: number; // For DoT effects (damage per second)
+  accumulatedDamage?: number; // Tracks fractional damage between ticks
   value?: number; // For slow (speed reduction %), stun (chance), weaken (damage reduction %), etc.
   remainingTurns: number;
   icon: string;
