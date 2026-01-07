@@ -191,6 +191,7 @@ export interface EnemySnapshot {
   visualEffects: {
     flash: boolean;
     aura: 'red' | 'blue' | 'green' | null;
+    powerImpact: { powerId: string; untilTick: number } | null;
   };
 }
 
@@ -433,6 +434,7 @@ export function createEnemySnapshot(entity: Entity): EnemySnapshot | null {
     visualEffects: {
       flash: !!entity.visualEffects?.flash,
       aura: entity.visualEffects?.aura?.color ?? null,
+      powerImpact: entity.visualEffects?.powerImpact ?? null,
     },
   };
 }
