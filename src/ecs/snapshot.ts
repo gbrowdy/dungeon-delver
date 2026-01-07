@@ -65,6 +65,7 @@ export interface PlayerSnapshot {
 
   // Abilities
   powers: Power[];
+  effectivePowers: Power[];
   cooldowns: Map<string, { remaining: number; base: number }>;
 
   // Equipment
@@ -282,6 +283,7 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
 
     // Abilities
     powers: entity.powers ? [...entity.powers] : [],
+    effectivePowers: entity.effectivePowers ?? entity.powers ?? [],
     // Deep-copy cooldowns Map so mutations to entity don't affect snapshot
     cooldowns: entity.cooldowns
       ? new Map(Array.from(entity.cooldowns.entries()).map(([k, v]) => [k, { ...v }]))
