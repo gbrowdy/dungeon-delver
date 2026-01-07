@@ -31,10 +31,6 @@ export function ResourceBar({
   const percentage = (resource.current / resource.max) * 100;
   const resourceName = getResourceDisplayName(resource.type);
 
-  // For gain-type resources, don't animate - instant updates feel more responsive
-  // Their natural update cadence is smooth enough without a CSS transition
-  const shouldAnimate = resource.resourceBehavior !== 'gain';
-
   // Check which thresholds are currently active
   const activeThresholds = resource.thresholds?.filter(
     t => resource.current >= t.value
@@ -71,12 +67,9 @@ export function ResourceBar({
         data-testid={`resource-bar-${resource.type}`}
         data-resource-current={Math.floor(resource.current)}
       >
-        {/* Fill bar - only animate decreases for gain-type resources */}
+        {/* Fill bar - no CSS transition; per-tick regen provides smooth fill, drops are instant */}
         <div
-          className={cn(
-            'absolute inset-y-0 left-0',
-            shouldAnimate && 'transition-all duration-200'
-          )}
+          className="absolute inset-y-0 left-0"
           style={{
             width: `${percentage}%`,
             backgroundColor: resource.color,
@@ -157,7 +150,7 @@ export function CompactResourceBar({ resource, className }: CompactResourceBarPr
       aria-label={`${resourceName}: ${Math.floor(resource.current)} of ${resource.max}`}
     >
       <div
-        className="absolute inset-y-0 left-0 transition-all duration-150"
+        className="absolute inset-y-0 left-0"
         style={{
           width: `${percentage}%`,
           backgroundColor: resource.color,
