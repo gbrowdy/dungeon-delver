@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/tooltip';
 import { TouchTooltip } from '@/components/ui/touch-tooltip';
 import { formatItemStatBonus } from '@/utils/itemUtils';
-import { getCritChance, getCritDamage, getDodgeChance } from '@/utils/fortuneUtils';
 import { ReactNode } from 'react';
 import { getPlayerDisplayName } from '@/utils/powerSynergies';
 import * as Icons from 'lucide-react';
@@ -82,6 +81,7 @@ export function PlayerStatsPanel({ player }: PlayerStatsPanelProps) {
         armor={playerForUtils.currentStats.armor}
         speed={playerForUtils.currentStats.speed}
         fortune={playerForUtils.currentStats.fortune}
+        derivedStats={player.derivedStats}
       />
 
       {/* Path Abilities Display */}
@@ -342,6 +342,11 @@ interface StatsGridProps {
   armor: number;
   speed: number;
   fortune: number;
+  derivedStats: {
+    critChance: number;
+    critDamage: number;
+    dodgeChance: number;
+  };
 }
 
 function StatsGrid({
@@ -349,11 +354,12 @@ function StatsGrid({
   armor,
   speed,
   fortune,
+  derivedStats,
 }: StatsGridProps) {
-  // Calculate derived stats from fortune
-  const critChance = Math.floor(getCritChance(fortune) * 100);
-  const critDamage = Math.floor(getCritDamage(fortune) * 100);
-  const dodgeChance = Math.floor(getDodgeChance(fortune) * 100);
+  // Use precomputed derived stats from snapshot
+  const critChance = Math.floor(derivedStats.critChance * 100);
+  const critDamage = Math.floor(derivedStats.critDamage * 100);
+  const dodgeChance = Math.floor(derivedStats.dodgeChance * 100);
 
   return (
     <div className="mt-1.5 grid grid-cols-4 gap-1">
