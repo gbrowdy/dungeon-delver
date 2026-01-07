@@ -46,6 +46,9 @@ export function InputSystem(_deltaMs: number): void {
       case 'ACTIVATE_POWER': {
         if (!player || !player.powers) break;
 
+        // Cannot use powers while dying or dead
+        if (player.dying || (player.health && player.health.current <= 0)) break;
+
         const power = player.powers.find((p) => p.id === cmd.powerId);
         if (!power) break;
 
