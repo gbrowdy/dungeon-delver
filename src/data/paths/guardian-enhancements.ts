@@ -241,3 +241,11 @@ export function getGuardianEnhancementChoices(
     retribution: getGuardianEnhancement('retribution', retributionTier + 1),
   };
 }
+
+/**
+ * Get enhancement by ID (for looking up acquired enhancements)
+ */
+export function getGuardianEnhancementById(enhancementId: string): StanceEnhancement | undefined {
+  const allEnhancements = [...IRON_PATH_ENHANCEMENTS, ...RETRIBUTION_PATH_ENHANCEMENTS];
+  return allEnhancements.find(e => e.id === enhancementId);
+}
