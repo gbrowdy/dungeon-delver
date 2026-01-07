@@ -18,7 +18,7 @@ import type {
   EnemyStatDebuff,
   ModifierEffect,
 } from '@/types/game';
-import type { PlayerPath, PlayerStanceState, PlayerPathProgression, StanceEnhancement } from '@/types/paths';
+import type { PlayerPath, PlayerStanceState, PlayerPathProgression, StanceEnhancement, StanceEffect } from '@/types/paths';
 import type { CombatAnimationType, FloatingEffectType } from '@/constants/enums';
 
 // Game phases
@@ -215,6 +215,7 @@ export interface Entity {
   };
   powers?: Power[];
   effectivePowers?: Power[];
+  effectiveStanceEffects?: StanceEffect[];
   equipment?: {
     weapon: Item | null;
     armor: Item | null;
