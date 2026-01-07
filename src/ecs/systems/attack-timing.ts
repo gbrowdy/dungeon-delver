@@ -42,6 +42,9 @@ export function AttackTimingSystem(deltaMs: number): void {
   const effectiveDelta = getEffectiveDelta(deltaMs);
 
   for (const entity of attackersQuery) {
+    // Skip if dying or dead - no more attacks from dead entities
+    if (entity.dying || (entity.health && entity.health.current <= 0)) continue;
+
     // Skip if stunned
     if (isStunned(entity)) continue;
 

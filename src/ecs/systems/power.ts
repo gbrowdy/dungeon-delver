@@ -101,6 +101,11 @@ function applyDamagePower(
   const targetName = getEntityName(target);
   const targetDied = (target.health?.current ?? 0) <= 0;
 
+  // If target died, immediately clear their pending attack to prevent posthumous hits
+  if (targetDied && target.attackReady) {
+    world.removeComponent(target, 'attackReady');
+  }
+
   // Build log message with any special effects
   let logMessage = `${casterName} uses ${power.name} for ${damage} damage to ${targetName}`;
 
@@ -173,6 +178,17 @@ function applyDamagePower(
     powerId: power.id,
     value: damage,
   });
+
+  // If target died, queue enemy_hit event with targetDied=true for death animation
+  // This ensures the death animation plays even for power kills (not just auto-attacks)
+  if (targetDied) {
+    queueAnimationEvent('enemy_hit', {
+      type: 'damage',
+      value: damage,
+      isCrit: false,
+      targetDied: true,
+    });
+  }
 }
 
 /**
@@ -282,9 +298,15 @@ function applyDebuffPower(
     target.health.current = Math.max(0, target.health.current - damage);
   }
 
+  const targetDied = (target.health?.current ?? 0) <= 0;
   const casterName = getEntityName(caster);
   const targetName = getEntityName(target);
   const effects: string[] = [];
+
+  // If target died from debuff damage, immediately clear their pending attack
+  if (targetDied && target.attackReady) {
+    world.removeComponent(target, 'attackReady');
+  }
 
   // === Stun application ===
   if (power.stunDuration && power.stunDuration > 0) {
@@ -356,6 +378,16 @@ function applyDebuffPower(
     powerId: power.id,
     value: damage,
   });
+
+  // If target died from debuff damage, queue enemy_hit event for death animation
+  if (targetDied && damage > 0) {
+    queueAnimationEvent('enemy_hit', {
+      type: 'damage',
+      value: damage,
+      isCrit: false,
+      targetDied: true,
+    });
+  }
 }
 
 /**

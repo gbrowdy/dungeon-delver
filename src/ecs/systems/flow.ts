@@ -108,6 +108,12 @@ function spawnNextEnemy(): void {
   const gameState = getGameState();
   if (!gameState?.floor) return;
 
+  // Reset player attack timer for fresh combat start
+  const player = getPlayer();
+  if (player?.speed) {
+    player.speed.accumulated = 0;
+  }
+
   const floor = gameState.floor;
 
   // Increment room number

@@ -57,6 +57,16 @@ export function DeathSystem(_deltaMs: number): void {
         duration: deathDuration,
       });
 
+      // Clear any pending attack to prevent posthumous hits
+      if (entity.attackReady) {
+        world.removeComponent(entity, 'attackReady');
+      }
+
+      // Stop attack timer accumulation by resetting it
+      if (entity.speed) {
+        entity.speed.accumulated = 0;
+      }
+
       // NOTE: We do NOT queue a death animation event here anymore!
       // The combat system already queues player_hit/enemy_hit events with targetDied=true,
       // and those events handle death animations properly (showing the killing blow first).

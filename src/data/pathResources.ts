@@ -21,7 +21,7 @@ export const STAMINA_RESOURCE: PathResource = {
   color: '#22c55e', // green-500
   resourceBehavior: 'spend',
   generation: {
-    passive: 5, // Regenerate 5 stamina per second
+    passive: 2, // Regenerate 2 stamina per second (slower pace to prevent power spam)
   },
 };
 

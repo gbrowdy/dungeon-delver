@@ -319,6 +319,22 @@ export function CharacterSprite({
         </div>
       )}
 
+      {/* Enemy status effects (stun, etc.) - displayed same as player */}
+      {!isHero && !isDying && enemy && enemy.statusEffects && enemy.statusEffects.length > 0 && (
+        <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex gap-1">
+          {enemy.statusEffects.map(effect => {
+            const iconName = STATUS_ICONS[effect.type?.toUpperCase() as keyof typeof STATUS_ICONS] || 'Skull';
+            const IconComponent = getIcon(iconName);
+            return (
+              <div key={effect.id} className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-accent/50">
+                <IconComponent className="w-4 h-4" />
+                <span className="text-accent/90">{Math.ceil(effect.remainingTurns)}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Enemy stat debuffs - show when enemy has ability debuffs applied */}
       {!isHero && !isDying && enemy && enemy.statDebuffs && enemy.statDebuffs.length > 0 && (
         <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex gap-1">

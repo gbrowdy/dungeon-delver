@@ -45,22 +45,26 @@ export function RegenSystem(deltaMs: number): void {
         mana.current = Math.min(mana.max, mana.current + regen.manaPerSecond);
       }
 
-      // Apply path resource passive regeneration
-      const pathResource = entity.pathResource;
-      if (pathResource?.generation?.passive && pathResource.generation.passive > 0) {
-        pathResource.current = Math.min(
-          pathResource.max,
-          pathResource.current + pathResource.generation.passive
-        );
-      }
+      // Note: Path resource passive regen is now handled per-tick below for smoothness
 
       // Reset accumulated time (keeping overflow for precision)
       regen.accumulated -= REGEN_TICK_MS;
     }
   }
 
-  // Path resource decay (out of combat only)
+  // Path resource passive regeneration (smooth per-tick application)
+  // Applied every tick proportionally for smooth bar fill instead of chunky 1-second jumps
   const player = getPlayer();
+  if (player?.pathResource?.generation?.passive && player.pathResource.generation.passive > 0) {
+    const regenPerMs = player.pathResource.generation.passive / 1000;
+    const regenAmount = regenPerMs * effectiveDelta;
+    player.pathResource.current = Math.min(
+      player.pathResource.max,
+      player.pathResource.current + regenAmount
+    );
+  }
+
+  // Path resource decay (out of combat only)
   if (player?.pathResource?.decay) {
     const decay = player.pathResource.decay;
     if (!decay.outOfCombatOnly || !inCombat) {
