@@ -214,6 +214,7 @@ export interface Entity {
     retributionChoice: StanceEnhancement;
   };
   powers?: Power[];
+  effectivePowers?: Power[];
   equipment?: {
     weapon: Item | null;
     armor: Item | null;
