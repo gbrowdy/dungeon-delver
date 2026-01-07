@@ -7,7 +7,7 @@
 
 import type { Entity, GamePhase, PopupState, PendingReward, AnimationEvent } from './components';
 import type { CharacterClass, Power, Item, ActiveBuff, StatusEffect, PathResource, AttackModifier, EnemyAbility, EnemyIntent, ModifierEffect, EnemyStatDebuff } from '@/types/game';
-import type { PlayerPath, PlayerStanceState, StanceEnhancement } from '@/types/paths';
+import type { PlayerPath, PlayerStanceState, StanceEnhancement, StanceEffect } from '@/types/paths';
 import { getPlayer, getGameState, enemyQuery } from './queries';
 import { getTick, TICK_MS } from './loop';
 
@@ -66,6 +66,7 @@ export interface PlayerSnapshot {
   // Abilities
   powers: Power[];
   effectivePowers: Power[];
+  effectiveStanceEffects: StanceEffect[];
   cooldowns: Map<string, { remaining: number; base: number }>;
 
   // Equipment
@@ -284,6 +285,7 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
     // Abilities
     powers: entity.powers ? [...entity.powers] : [],
     effectivePowers: entity.effectivePowers ?? entity.powers ?? [],
+    effectiveStanceEffects: entity.effectiveStanceEffects ?? [],
     // Deep-copy cooldowns Map so mutations to entity don't affect snapshot
     cooldowns: entity.cooldowns
       ? new Map(Array.from(entity.cooldowns.entries()).map(([k, v]) => [k, { ...v }]))
