@@ -17,6 +17,15 @@ import { getPathResource, PATH_RESOURCES } from '@/data/pathResources';
 import { getPathById } from '@/utils/pathUtils';
 import { getStancesForPath, getDefaultStanceId } from '@/data/stances';
 import { getBerserkerPowerChoices } from '@/data/paths/berserker-powers';
+import { computeAllEffectivePowers } from '@/utils/powerUpgrades';
+import type { Entity } from '../components';
+
+/**
+ * Recompute effectivePowers after power changes or upgrades
+ */
+function recomputeEffectivePowers(player: Entity): void {
+  player.effectivePowers = computeAllEffectivePowers(player);
+}
 
 export function InputSystem(_deltaMs: number): void {
   const commands = drainCommands();
@@ -475,6 +484,9 @@ export function InputSystem(_deltaMs: number): void {
 
         // Unpause combat now that choice is made
         gameState.paused = false;
+
+        // Recompute effective powers with new power
+        recomputeEffectivePowers(player);
         break;
       }
 
@@ -499,6 +511,9 @@ export function InputSystem(_deltaMs: number): void {
 
         // Unpause combat now that choice is made
         gameState.paused = false;
+
+        // Recompute effective powers with upgraded stats
+        recomputeEffectivePowers(player);
         break;
       }
 
