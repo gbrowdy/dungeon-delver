@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useGame, useGameActions } from '@/ecs/context/GameContext';
-import { dispatch, Commands } from '@/ecs/commands';
 import { Button } from '@/components/ui/button';
 import { PixelDivider } from '@/components/ui/PixelDivider';
 import { cn } from '@/lib/utils';
@@ -27,7 +26,7 @@ export function StanceEnhancementPopup() {
 
   const handleConfirm = () => {
     if (selectedStance) {
-      dispatch(Commands.selectStanceEnhancement(selectedStance));
+      actions.selectStanceEnhancement(selectedStance);
     }
   };
 
