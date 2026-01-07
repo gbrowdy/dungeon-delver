@@ -87,11 +87,16 @@ export function getActiveStance(entity: Entity): PassiveStance | null {
 }
 
 /**
- * Get all effects from the active stance
+ * Get all effects from the active stance (base + enhancements)
+ * Reads from precomputed component if available
  */
 export function getActiveStanceEffects(entity: Entity): StanceEffect[] {
-  const stance = getActiveStance(entity);
-  return stance?.effects ?? [];
+  // Use precomputed value if available
+  if (entity.effectiveStanceEffects) {
+    return entity.effectiveStanceEffects;
+  }
+  // Fallback: compute on demand (for backward compatibility)
+  return computeEffectiveStanceEffects(entity);
 }
 
 /**
