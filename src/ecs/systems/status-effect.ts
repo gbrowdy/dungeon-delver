@@ -5,7 +5,8 @@
  * Runs after CombatSystem to apply tick damage, before DeathSystem to check for deaths.
  */
 
-import { entitiesWithStatusEffects, getGameState, enemyQuery } from '../queries';
+import { entitiesWithStatusEffects, getGameState, enemyQuery, getPlayer } from '../queries';
+import type { ActiveBuff } from '@/types/game';
 import { getEffectiveDelta, getTick } from '../loop';
 import type { Entity, AnimationEvent, AnimationPayload } from '../components';
 import type { StatusEffect } from '@/types/game';
@@ -56,6 +57,32 @@ function processStatusEffect(
 }
 
 /**
+ * Process player buffs and tick down their durations.
+ */
+function processPlayerBuffs(deltaSeconds: number): void {
+  const player = getPlayer();
+  if (!player || player.dying || !player.buffs || player.buffs.length === 0) return;
+
+  const expiredBuffs: ActiveBuff[] = [];
+
+  for (const buff of player.buffs) {
+    buff.remainingTurns -= deltaSeconds;
+    if (buff.remainingTurns <= 0) {
+      expiredBuffs.push(buff);
+    }
+  }
+
+  // Remove expired buffs
+  for (const expiredBuff of expiredBuffs) {
+    const index = player.buffs.indexOf(expiredBuff);
+    if (index !== -1) {
+      player.buffs.splice(index, 1);
+      addCombatLog(`${expiredBuff.name} buff expires`);
+    }
+  }
+}
+
+/**
  * Process enemy flags like enrage and shield that have durations.
  */
 function processEnemyFlags(deltaSeconds: number): void {
@@ -98,6 +125,9 @@ export function StatusEffectSystem(deltaMs: number): void {
   // Get effective delta (scaled by combat speed)
   const effectiveDelta = getEffectiveDelta(deltaMs);
   const deltaSeconds = effectiveDelta / 1000;
+
+  // Process player buffs (power, speed, etc.)
+  processPlayerBuffs(deltaSeconds);
 
   // Process enemy flags (enrage, shield)
   processEnemyFlags(deltaSeconds);
