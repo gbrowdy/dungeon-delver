@@ -25,6 +25,7 @@ const UPGRADE_FIELDS = [
   'buffDuration',
   'buffPower',
   'buffSpeed',
+  'lifesteal',
   'lifestealPercent',
   'selfDamagePercent',
   'healOnKill',
