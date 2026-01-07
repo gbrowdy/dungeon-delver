@@ -16,6 +16,7 @@ import { getDevModeParams } from '@/utils/devMode';
 import { getPathResource, PATH_RESOURCES } from '@/data/pathResources';
 import { getPathById } from '@/utils/pathUtils';
 import { getStancesForPath, getDefaultStanceId } from '@/data/stances';
+import { getBerserkerPowerChoices } from '@/data/paths/berserker-powers';
 
 export function InputSystem(_deltaMs: number): void {
   const commands = drainCommands();
@@ -391,6 +392,22 @@ export function InputSystem(_deltaMs: number): void {
               stanceCooldownRemaining: 0,
               triggerCooldowns: {},
             };
+          }
+        }
+
+        // For active paths, trigger power choice if at a power level
+        if (pathDef?.type === 'active' && player.progression) {
+          const currentLevel = player.progression.level;
+          const isPowerLevel = [2, 4, 6, 8].includes(currentLevel);
+
+          if (isPowerLevel) {
+            const choices = getBerserkerPowerChoices(currentLevel);
+            if (choices.length > 0) {
+              world.addComponent(player, 'pendingPowerChoice', {
+                level: currentLevel,
+                choices,
+              });
+            }
           }
         }
 

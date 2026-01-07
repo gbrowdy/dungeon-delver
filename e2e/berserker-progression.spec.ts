@@ -52,13 +52,14 @@ test.describe('Berserker Power Progression', () => {
 
         console.log(`Leveled up to ${level}`);
 
-        // Dismiss level up popup
-        const closeButton = page.getByRole('button', { name: /continue|close|ok/i }).first();
-        await closeButton.click();
-        await page.waitForTimeout(500);
-
-        // At level 2, should show path selection
+        // At level 2, should show path selection after dismissing level-up
         if (level === 2) {
+          // Dismiss level up popup
+          const closeButton = page.getByRole('button', { name: /continue|close|ok/i }).first();
+          await closeButton.click();
+          await page.waitForTimeout(500);
+
+          // Wait for path selection
           await expect(page.getByTestId('path-selection')).toBeVisible({ timeout: 5000 });
 
           // Select Berserker path (first "Select Path" button)
@@ -140,22 +141,20 @@ test.describe('Berserker Power Progression', () => {
         currentLevel = parseInt(levelText?.match(/\d+/)?.[0] ?? '1');
         console.log(`Leveled up to ${currentLevel}`);
 
-        // Dismiss level up
-        await page.getByRole('button', { name: /continue|close|ok/i }).first().click();
-        await page.waitForTimeout(500);
-
         // Handle level 2: path selection + power choice
         if (currentLevel === 2 && !hasSelectedPath) {
+          // Dismiss level up
+          await page.getByRole('button', { name: /continue|close|ok/i }).first().click();
+          await page.waitForTimeout(500);
+
           await expect(page.getByTestId('path-selection')).toBeVisible({ timeout: 5000 });
           await page.getByRole('button', { name: /Select Path/i }).first().click();
           await page.waitForTimeout(300);
           await page.getByTestId('path-confirm-button').click();
           await expect(page.getByTestId('path-selection')).not.toBeVisible({ timeout: 3000 });
           hasSelectedPath = true;
-        }
 
-        // Handle power choice popup (level 2)
-        if (currentLevel === 2 && !hasSelectedFirstPower) {
+          // Handle power choice popup (immediately after path selection)
           const powerChoiceVisible = await page.getByTestId('power-choice-popup').isVisible();
           if (powerChoiceVisible) {
             // Select first power
@@ -173,6 +172,10 @@ test.describe('Berserker Power Progression', () => {
 
         // Handle level 3: upgrade choice
         if (currentLevel === 3) {
+          // Dismiss level up
+          await page.getByRole('button', { name: /continue|close|ok/i }).first().click();
+          await page.waitForTimeout(500);
+
           // Should show UpgradeChoicePopup
           await expect(page.getByTestId('upgrade-choice-popup')).toBeVisible({ timeout: 5000 });
 
@@ -240,20 +243,18 @@ test.describe('Berserker Power Progression', () => {
         currentLevel = parseInt(levelText?.match(/\d+/)?.[0] ?? '1');
         console.log(`Leveled up to ${currentLevel}`);
 
-        await page.getByRole('button', { name: /continue|close|ok/i }).first().click();
-        await page.waitForTimeout(500);
-
         // Level 2: Select path and first power
         if (currentLevel === 2 && !hasSelectedPath) {
+          await page.getByRole('button', { name: /continue|close|ok/i }).first().click();
+          await page.waitForTimeout(500);
+
           await expect(page.getByTestId('path-selection')).toBeVisible({ timeout: 5000 });
           await page.getByRole('button', { name: /Select Path/i }).first().click();
           await page.waitForTimeout(300);
           await page.getByTestId('path-confirm-button').click();
           await expect(page.getByTestId('path-selection')).not.toBeVisible({ timeout: 3000 });
           hasSelectedPath = true;
-        }
 
-        if (currentLevel === 2 && !hasSelectedFirstPower) {
           const powerChoiceVisible = await page.getByTestId('power-choice-popup').isVisible();
           if (powerChoiceVisible) {
             const powerCards = page.locator('[data-testid="power-choice-popup"]').locator('button:has-text("Choose")');
@@ -268,6 +269,9 @@ test.describe('Berserker Power Progression', () => {
 
         // Level 3: Upgrade first power
         if (currentLevel === 3 && !hasUpgradedFirstPower) {
+          await page.getByRole('button', { name: /continue|close|ok/i }).first().click();
+          await page.waitForTimeout(500);
+
           const upgradeChoiceVisible = await page.getByTestId('upgrade-choice-popup').isVisible();
           if (upgradeChoiceVisible) {
             const chooseButton = page.locator('[data-testid="upgrade-choice-popup"]').getByRole('button', { name: /Choose/i }).first();
@@ -282,6 +286,9 @@ test.describe('Berserker Power Progression', () => {
 
         // Level 4: Choose second power
         if (currentLevel === 4) {
+          await page.getByRole('button', { name: /continue|close|ok/i }).first().click();
+          await page.waitForTimeout(500);
+
           // Should show PowerChoicePopup again
           await expect(page.getByTestId('power-choice-popup')).toBeVisible({ timeout: 5000 });
 
