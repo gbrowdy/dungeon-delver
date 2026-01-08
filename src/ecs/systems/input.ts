@@ -9,7 +9,6 @@ import { getPlayer, getGameState } from '../queries';
 import { getTick } from '../loop';
 import { world } from '../world';
 import { createPlayerEntity, createEnemyEntity } from '../factories';
-import { COMBAT_BALANCE } from '@/constants/balance';
 import { FLOOR_CONFIG } from '@/constants/game';
 import type { CharacterClass } from '@/types/game';
 import { getDevModeParams } from '@/utils/devMode';
@@ -20,6 +19,7 @@ import { getBerserkerPowerChoices } from '@/data/paths/berserker-powers';
 import { computeAllEffectivePowers } from '@/utils/powerUpgrades';
 import { computeEffectiveStanceEffects } from '@/utils/stanceUtils';
 import { recomputeDerivedStats } from '@/utils/statUtils';
+import { initializePassiveEffectState, recomputePassiveEffects } from './passive-effect';
 import type { Entity } from '../components';
 
 /**
@@ -56,13 +56,10 @@ export function InputSystem(_deltaMs: number): void {
         const cooldown = player.cooldowns?.get(cmd.powerId);
         if (cooldown && cooldown.remaining > 0) break;
 
-        // Check resource - pre-path players use mana, post-path use pathResource
-        // Note: Pre-path players have pathResource.type === 'stamina' but should use mana
-        const hasActivePath = player.path && player.pathResource && player.pathResource.type !== 'stamina';
-
-        if (hasActivePath && player.pathResource) {
+        // Check resource - active paths use pathResource
+        if (player.pathResource) {
           // Active path: use path resource (fury, momentum, arcane charges, etc.)
-          const cost = power.resourceCost ?? power.manaCost;
+          const cost = power.resourceCost ?? 0;
           if (player.pathResource.resourceBehavior === 'spend') {
             // Fury/Momentum/Zeal: check if enough resource to spend
             if (player.pathResource.current < cost) break;
@@ -70,13 +67,8 @@ export function InputSystem(_deltaMs: number): void {
             // Arcane Charges: check if would overflow
             if (player.pathResource.current + cost > player.pathResource.max) break;
           }
-        } else if (player.mana) {
-          // Pre-path: use mana
-          if (player.mana.current < power.manaCost) break;
-        } else {
-          // No resource system - can't cast (passive paths shouldn't have powers)
-          break;
         }
+        // No resource check for pre-path players (they can cast freely)
 
         // Mark as casting - PowerSystem will handle the effect
         // IMPORTANT: Use world.addComponent for miniplex query reactivity
@@ -84,27 +76,6 @@ export function InputSystem(_deltaMs: number): void {
           powerId: cmd.powerId,
           startedAtTick: getTick(),
         });
-        break;
-      }
-
-      case 'ACTIVATE_BLOCK': {
-        if (!player) break;
-
-        // Cannot block while dying or dead
-        if (player.dying || (player.health && player.health.current <= 0)) break;
-
-        // Already blocking
-        if (player.isBlocking) break;
-
-        // Check mana cost (if using mana system) - active paths get free blocks
-        if (player.mana) {
-          if (player.mana.current < COMBAT_BALANCE.BLOCK_MANA_COST) break;
-          player.mana.current -= COMBAT_BALANCE.BLOCK_MANA_COST;
-        }
-        // Active paths (with pathResource) don't pay mana for block
-
-        // Activate block - CombatSystem will check this flag when applying damage
-        player.isBlocking = true;
         break;
       }
 
@@ -208,10 +179,6 @@ export function InputSystem(_deltaMs: number): void {
             // Recalculate attack interval
             player.speed.attackInterval = Math.floor(2500 * (10 / player.speed.value));
           }
-          if (player.mana && item.statBonus.maxMana) {
-            player.mana.max += item.statBonus.maxMana;
-            player.mana.current += item.statBonus.maxMana;
-          }
           if (item.statBonus.fortune) {
             // Apply fortune bonus and recompute derived stats
             player.fortune = (player.fortune ?? 0) + item.statBonus.fortune;
@@ -279,10 +246,6 @@ export function InputSystem(_deltaMs: number): void {
             player.speed.value += bonusPerStat;
             // Recalculate attack interval
             player.speed.attackInterval = Math.floor(2500 * (10 / player.speed.value));
-          }
-          if (player.mana && equippedItem.statBonus.maxMana) {
-            player.mana.max += bonusPerStat;
-            player.mana.current += bonusPerStat;
           }
           if (equippedItem.statBonus.fortune) {
             player.fortune = (player.fortune ?? 0) + bonusPerStat;
@@ -413,11 +376,6 @@ export function InputSystem(_deltaMs: number): void {
           };
         }
 
-        // Remove mana for ALL paths (active uses pathResource, passive uses nothing)
-        if (player.mana) {
-          world.removeComponent(player, 'mana');
-        }
-
         // Initialize pathResource for active paths
         if (pathDef?.type === 'active' && PATH_RESOURCES[cmd.pathId]) {
           player.pathResource = getPathResource(cmd.pathId);
@@ -441,6 +399,10 @@ export function InputSystem(_deltaMs: number): void {
               triggerCooldowns: {},
             };
           }
+
+          // Initialize and compute passive effects for passive paths
+          initializePassiveEffectState(player);
+          recomputePassiveEffects(player);
         }
 
         // For active paths, trigger power choice if at a power level
@@ -505,6 +467,11 @@ export function InputSystem(_deltaMs: number): void {
 
         // Recompute effective stance effects after switching
         recomputeEffectiveStanceEffects(player);
+
+        // Recompute passive effects for new stance
+        if (player.passiveEffectState) {
+          recomputePassiveEffects(player);
+        }
         break;
       }
 
@@ -600,6 +567,11 @@ export function InputSystem(_deltaMs: number): void {
 
         // Recompute effective stance effects with new enhancement
         recomputeEffectiveStanceEffects(player);
+
+        // Recompute passive effects with new enhancement
+        if (player.passiveEffectState) {
+          recomputePassiveEffects(player);
+        }
         break;
       }
 
@@ -712,12 +684,9 @@ export function InputSystem(_deltaMs: number): void {
             world.removeComponent(player, 'dying');
           }
 
-          // Came from defeat: retry floor (reset health/mana, stay on same floor)
+          // Came from defeat: retry floor (reset health, stay on same floor)
           if (player.health) {
             player.health.current = player.health.max;
-          }
-          if (player.mana) {
-            player.mana.current = player.mana.max;
           }
 
           // Clear cooldowns
@@ -781,12 +750,9 @@ export function InputSystem(_deltaMs: number): void {
           world.removeComponent(player, 'dying');
         }
 
-        // Reset player health/mana
+        // Reset player health
         if (player.health) {
           player.health.current = player.health.max;
-        }
-        if (player.mana) {
-          player.mana.current = player.mana.max;
         }
 
         // Clear cooldowns

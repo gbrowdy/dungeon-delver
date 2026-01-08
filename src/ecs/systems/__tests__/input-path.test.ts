@@ -5,6 +5,52 @@ import { createGameStateEntity, createPlayerEntity } from '../../factories';
 import { dispatch, Commands, commandQueue } from '../../commands';
 import { InputSystem } from '../input';
 import { getPlayer } from '../../queries';
+import type { Entity, ComputedPassiveEffects } from '../../components';
+
+/**
+ * Create default computed passive effects (all zeroed/neutral).
+ */
+function createDefaultComputed(): ComputedPassiveEffects {
+  return {
+    armorPercent: 0,
+    powerPercent: 0,
+    speedPercent: 0,
+    maxHealthPercent: 0,
+    healthRegenFlat: 0,
+    damageReductionPercent: 0,
+    maxDamagePerHitPercent: null,
+    armorReducesDot: false,
+    baseReflectPercent: 0,
+    reflectIgnoresArmor: false,
+    reflectCanCrit: false,
+    healOnReflectPercent: 0,
+    healOnReflectKillPercent: 0,
+    reflectScalingPerHit: 0,
+    counterAttackChance: 0,
+    damageStackConfig: null,
+    healOnDamagedChance: 0,
+    healOnDamagedPercent: 0,
+    nextAttackBonusOnDamaged: 0,
+    permanentPowerPerHit: 0,
+    onHitBurstChance: 0,
+    onHitBurstPowerPercent: 0,
+    damageAuraPerSecond: 0,
+    hasSurviveLethal: false,
+    isImmuneToStuns: false,
+    isImmuneToSlows: false,
+    removeSpeedPenalty: false,
+    lowHpArmorThreshold: 0,
+    lowHpArmorBonus: 0,
+    lowHpReflectThreshold: 0,
+    lowHpReflectMultiplier: 1,
+    highHpRegenThreshold: 100,
+    highHpRegenMultiplier: 1,
+    conditionalArmorPercent: 0,
+    conditionalDamageReduction: 0,
+    conditionalReflectMultiplier: 1,
+    conditionalRegenMultiplier: 1,
+  };
+}
 
 describe('InputSystem - Path Selection', () => {
   beforeEach(() => {
@@ -13,14 +59,14 @@ describe('InputSystem - Path Selection', () => {
     world.add(createGameStateEntity());
   });
 
-  it('should remove mana component when selecting active path', () => {
-    // Create player with mana
+  it('should replace stamina with path resource when selecting active path', () => {
+    // Create player with stamina (pre-path resource)
     const player = createPlayerEntity({ name: 'Hero', characterClass: 'warrior' });
     world.add(player);
 
-    // Verify player has mana before path selection
-    expect(player.mana).toBeDefined();
-    expect(player.mana?.current).toBeGreaterThan(0);
+    // Verify player has stamina before path selection
+    expect(player.pathResource).toBeDefined();
+    expect(player.pathResource?.type).toBe('stamina');
 
     // Select Berserker (active path)
     dispatch(Commands.selectPath('berserker'));
@@ -28,21 +74,19 @@ describe('InputSystem - Path Selection', () => {
 
     const playerAfterPath = getPlayer();
 
-    // Mana should be removed
-    expect(playerAfterPath?.mana).toBeUndefined();
-
-    // pathResource should be added (fury for berserker)
+    // pathResource should be changed to fury (berserker resource)
     expect(playerAfterPath?.pathResource).toBeDefined();
     expect(playerAfterPath?.pathResource?.type).toBe('fury');
   });
 
-  it('should remove mana when selecting passive path', () => {
-    // Create player with mana
+  it('should remove pathResource when selecting passive path', () => {
+    // Create player with stamina (pre-path resource)
     const player = createPlayerEntity({ name: 'Hero', characterClass: 'warrior' });
     world.add(player);
 
-    // Verify player has mana before path selection
-    expect(player.mana).toBeDefined();
+    // Verify player has stamina before path selection
+    expect(player.pathResource).toBeDefined();
+    expect(player.pathResource?.type).toBe('stamina');
 
     // Select Guardian (passive path)
     dispatch(Commands.selectPath('guardian'));
@@ -50,10 +94,7 @@ describe('InputSystem - Path Selection', () => {
 
     const playerAfterPath = getPlayer();
 
-    // Mana should be removed
-    expect(playerAfterPath?.mana).toBeUndefined();
-
-    // pathResource should NOT be added (passive paths have no resource)
+    // pathResource should be removed (passive paths use stances, not resources)
     expect(playerAfterPath?.pathResource).toBeUndefined();
 
     // stanceState should be added
@@ -79,8 +120,8 @@ describe('InputSystem - Path Selection', () => {
     // Powers should be cleared (passive paths use stances, not powers)
     expect(playerAfterPath?.powers).toEqual([]);
 
-    // Mana should be removed
-    expect(playerAfterPath?.mana).toBeUndefined();
+    // pathResource should be removed (passive paths use stances)
+    expect(playerAfterPath?.pathResource).toBeUndefined();
 
     // stanceState should be added
     expect(playerAfterPath?.stanceState).toBeDefined();
@@ -104,10 +145,7 @@ describe('InputSystem - Path Selection', () => {
     expect(playerAfterPath?.powers).toBeDefined();
     expect(playerAfterPath?.powers?.length).toBe(initialPowersLength);
 
-    // Mana should be removed
-    expect(playerAfterPath?.mana).toBeUndefined();
-
-    // pathResource should be added (arcane_charges for archmage)
+    // pathResource should be changed to arcane_charges (archmage resource)
     expect(playerAfterPath?.pathResource).toBeDefined();
     expect(playerAfterPath?.pathResource?.type).toBe('arcane_charges');
   });
@@ -129,17 +167,16 @@ describe('InputSystem - Path Selection', () => {
       const player = createPlayerEntity({ name: 'Hero', characterClass });
       world.add(player);
 
-      expect(player.mana).toBeDefined();
+      // Player should start with stamina
+      expect(player.pathResource).toBeDefined();
+      expect(player.pathResource?.type).toBe('stamina');
 
       dispatch(Commands.selectPath(pathId));
       InputSystem(16);
 
       const playerAfterPath = getPlayer();
 
-      // Mana should be removed for all paths
-      expect(playerAfterPath?.mana).toBeUndefined();
-
-      // pathResource should be added with correct type
+      // pathResource should be replaced with correct type
       expect(playerAfterPath?.pathResource).toBeDefined();
       expect(playerAfterPath?.pathResource?.type).toBe(resourceType);
     }
@@ -162,20 +199,19 @@ describe('InputSystem - Path Selection', () => {
       const player = createPlayerEntity({ name: 'Hero', characterClass });
       world.add(player);
 
-      expect(player.mana).toBeDefined();
+      // Player should start with stamina
+      expect(player.pathResource).toBeDefined();
+      expect(player.pathResource?.type).toBe('stamina');
 
       dispatch(Commands.selectPath(pathId));
       InputSystem(16);
 
       const playerAfterPath = getPlayer();
 
-      // Mana should be removed for all paths
-      expect(playerAfterPath?.mana).toBeUndefined();
-
       // Powers should be cleared
       expect(playerAfterPath?.powers).toEqual([]);
 
-      // pathResource should NOT be added
+      // pathResource should be removed (passive paths use stances)
       expect(playerAfterPath?.pathResource).toBeUndefined();
 
       // stanceState should be added
@@ -185,7 +221,7 @@ describe('InputSystem - Path Selection', () => {
   });
 
   it('should initialize pathProgression for active paths', () => {
-    // Create player with mana
+    // Create player with stamina
     const player = createPlayerEntity({ name: 'Hero', characterClass: 'warrior' });
     world.add(player);
 
@@ -204,7 +240,7 @@ describe('InputSystem - Path Selection', () => {
   });
 
   it('should initialize pathProgression for passive paths', () => {
-    // Create player with mana
+    // Create player with stamina
     const player = createPlayerEntity({ name: 'Hero', characterClass: 'warrior' });
     world.add(player);
 
@@ -240,7 +276,6 @@ describe('InputSystem - Path Selection', () => {
           id: 'strike',
           name: 'Strike',
           description: '',
-          manaCost: 20,
           resourceCost: 30,
           cooldown: 5,
           effect: 'damage',
@@ -281,7 +316,6 @@ describe('InputSystem - Path Selection', () => {
           id: 'strike',
           name: 'Strike',
           description: '',
-          manaCost: 20,
           resourceCost: 30,
           cooldown: 5,
           effect: 'damage',
@@ -321,7 +355,6 @@ describe('InputSystem - Path Selection', () => {
           id: 'arcane_bolt',
           name: 'Arcane Bolt',
           description: '',
-          manaCost: 1,
           resourceCost: 1,
           cooldown: 0,
           effect: 'damage',
@@ -362,7 +395,6 @@ describe('InputSystem - Path Selection', () => {
           id: 'arcane_bolt',
           name: 'Arcane Bolt',
           description: '',
-          manaCost: 1,
           resourceCost: 1,
           cooldown: 0,
           effect: 'damage',
@@ -402,7 +434,6 @@ describe('InputSystem - Path Selection', () => {
           id: 'strike',
           name: 'Strike',
           description: '',
-          manaCost: 20,
           resourceCost: 30,
           cooldown: 5,
           effect: 'damage',
@@ -427,5 +458,114 @@ describe('InputSystem - Path Selection', () => {
       // Should NOT set casting component (on cooldown)
       expect(player.casting).toBeUndefined();
     });
+  });
+});
+
+describe('Passive effect recomputation', () => {
+  beforeEach(() => {
+    clearWorld();
+    commandQueue.length = 0;
+  });
+
+  it('should recompute effects when stance switches', () => {
+    const gameState: Entity = { gameState: true, phase: 'combat', paused: false };
+    world.add(gameState);
+
+    const player: Entity = {
+      player: true,
+      identity: { name: 'Test', class: 'warrior' },
+      health: { current: 100, max: 100 },
+      path: { pathId: 'guardian', abilities: [] },
+      stanceState: {
+        activeStanceId: 'iron_stance',
+        stanceCooldownRemaining: 0,
+        triggerCooldowns: {},
+      },
+      pathProgression: {
+        pathId: 'guardian',
+        pathType: 'passive',
+        stanceProgression: { ironTier: 0, retributionTier: 0, acquiredEnhancements: [] },
+      },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: createDefaultComputed(),
+      },
+    };
+    world.add(player);
+
+    // Initially in Iron Stance
+    dispatch({ type: 'SWITCH_STANCE', stanceId: 'retribution_stance' });
+    InputSystem(16);
+
+    // Should have recomputed to Retribution effects
+    // Retribution Stance: +15% Power, +10% Armor, Reflect 20%
+    expect(player.passiveEffectState?.computed.baseReflectPercent).toBe(20);
+    expect(player.passiveEffectState?.computed.powerPercent).toBe(15);
+  });
+
+  it('should recompute effects when enhancement selected', () => {
+    const player: Entity = {
+      player: true,
+      identity: { name: 'Test', class: 'warrior' },
+      health: { current: 100, max: 100 },
+      path: { pathId: 'guardian', abilities: [] },
+      stanceState: {
+        activeStanceId: 'iron_stance',
+        stanceCooldownRemaining: 0,
+        triggerCooldowns: {},
+      },
+      pathProgression: {
+        pathId: 'guardian',
+        pathType: 'passive',
+        stanceProgression: { ironTier: 0, retributionTier: 0, acquiredEnhancements: [] },
+      },
+      pendingStanceEnhancement: {
+        ironChoice: { id: 'iron_1_fortified_skin', name: 'Fortified Skin', tier: 1, description: '+20% Armor', stanceId: 'iron_stance', effects: [{ type: 'armor_percent', value: 20 }] },
+        retributionChoice: { id: 'retribution_1_sharpened_thorns', name: 'Sharpened Thorns', tier: 1, description: '+30% Reflect', stanceId: 'retribution_stance', effects: [{ type: 'reflect_percent', value: 30 }] },
+      },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: createDefaultComputed(),
+      },
+    };
+    const gameState: Entity = { gameState: true, phase: 'combat', paused: true };
+    world.add(player);
+    world.add(gameState);
+
+    // Select iron enhancement while in iron stance
+    dispatch({ type: 'SELECT_STANCE_ENHANCEMENT', stanceId: 'iron' });
+    InputSystem(16);
+
+    // Should have recomputed with new enhancement
+    // Iron Stance base 25% + Fortified Skin 20% = 45%
+    expect(player.passiveEffectState?.computed.armorPercent).toBe(45);
+  });
+
+  it('should initialize and compute effects when passive path selected', () => {
+    const gameState: Entity = { gameState: true, phase: 'path-select', paused: false };
+    world.add(gameState);
+
+    const player = createPlayerEntity({ name: 'Hero', characterClass: 'warrior' });
+    world.add(player);
+
+    // Player starts without passiveEffectState
+    expect(player.passiveEffectState).toBeUndefined();
+
+    // Select Guardian (passive path)
+    dispatch(Commands.selectPath('guardian'));
+    InputSystem(16);
+
+    // Should have initialized passiveEffectState
+    expect(player.passiveEffectState).toBeDefined();
+
+    // Should have computed effects for Iron Stance (default)
+    // Iron Stance: +25% Armor, -15% Speed, 15% damage reduction
+    expect(player.passiveEffectState?.computed.armorPercent).toBe(25);
+    expect(player.passiveEffectState?.computed.speedPercent).toBe(-15);
+    expect(player.passiveEffectState?.computed.damageReductionPercent).toBe(15);
   });
 });
