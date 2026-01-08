@@ -19,7 +19,7 @@ import { getBerserkerPowerChoices } from '@/data/paths/berserker-powers';
 import { computeAllEffectivePowers } from '@/utils/powerUpgrades';
 import { computeEffectiveStanceEffects } from '@/utils/stanceUtils';
 import { recomputeDerivedStats } from '@/utils/statUtils';
-import { initializePassiveEffectState, recomputePassiveEffects } from './passive-effect';
+import { initializePassiveEffectState, recomputePassiveEffects, resetFloorState } from './passive-effect';
 import type { Entity } from '../components';
 
 /**
@@ -593,6 +593,11 @@ export function InputSystem(_deltaMs: number): void {
 
           // Reset player combat state for new floor
           if (player) {
+            // Reset passive effect floor state for new floor
+            if (player.passiveEffectState) {
+              resetFloorState(player);
+            }
+
             if (player.pathResource) {
               // Stamina resets to max, other resources reset to 0
               player.pathResource.current = player.pathResource.type === 'stamina'
@@ -709,6 +714,11 @@ export function InputSystem(_deltaMs: number): void {
           floor.number += 1;
           floor.room = 1;
           floor.totalRooms = FLOOR_CONFIG.ROOMS_PER_FLOOR[floor.number - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
+
+          // Reset passive effect floor state for new floor
+          if (player.passiveEffectState) {
+            resetFloorState(player);
+          }
 
           // Reset player combat state for new floor
           if (player.pathResource) {

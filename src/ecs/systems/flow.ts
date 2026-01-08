@@ -17,6 +17,7 @@ import { FLOOR_CONFIG } from '@/constants/game';
 import type { Entity, GamePhase, EnemyTier, ScheduledTransition, ScheduledSpawn } from '../components';
 import { createEnemyEntity } from '../factories';
 import { addCombatLog } from '../utils';
+import { resetCombatState } from './passive-effect';
 
 // Duration for enemy entering animation (matches CSS --anim-entering-phase)
 const ENTERING_PHASE_DURATION_MS = 800;
@@ -144,6 +145,12 @@ function spawnNextEnemy(): void {
     roomsPerFloor: floor.totalRooms,
   });
   world.add(enemyEntity);
+
+  // Reset passive effect combat state for new enemy
+  const player = getPlayer();
+  if (player?.passiveEffectState) {
+    resetCombatState(player);
+  }
 
   if (enemyEntity?.enemy) {
     addCombatLog(`Room ${floor.room}: A ${enemyEntity.enemy.name} appears!`);

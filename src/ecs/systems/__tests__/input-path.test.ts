@@ -569,3 +569,167 @@ describe('Passive effect recomputation', () => {
     expect(player.passiveEffectState?.computed.damageReductionPercent).toBe(15);
   });
 });
+
+describe('Floor state reset on ADVANCE_ROOM', () => {
+  beforeEach(() => {
+    clearWorld();
+    commandQueue.length = 0;
+  });
+
+  it('should reset floor state when advancing to new floor from floor-complete', () => {
+    const gameState: Entity = {
+      gameState: true,
+      phase: 'floor-complete',
+      floor: { number: 1, room: 5, totalRooms: 5 },
+    };
+    world.add(gameState);
+
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        combat: {
+          hitsTaken: 5,
+          hitsDealt: 3,
+          nextAttackBonus: 50,
+          damageStacks: 3,
+          reflectBonusPercent: 15,
+        },
+        floor: { survivedLethal: true },
+        permanent: { powerBonusPercent: 10 },
+        computed: createDefaultComputed(),
+      },
+    };
+    world.add(player);
+
+    dispatch({ type: 'ADVANCE_ROOM' });
+    InputSystem(16);
+
+    // Floor state should be reset
+    expect(player.passiveEffectState?.floor.survivedLethal).toBe(false);
+
+    // Combat state should also be reset (floor reset includes combat reset)
+    expect(player.passiveEffectState?.combat.hitsTaken).toBe(0);
+    expect(player.passiveEffectState?.combat.damageStacks).toBe(0);
+
+    // Permanent state should be preserved
+    expect(player.passiveEffectState?.permanent.powerBonusPercent).toBe(10);
+  });
+
+  it('should NOT reset floor state when advancing within same floor', () => {
+    const gameState: Entity = {
+      gameState: true,
+      phase: 'combat',
+      floor: { number: 1, room: 2, totalRooms: 5 },
+    };
+    world.add(gameState);
+
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        combat: {
+          hitsTaken: 5,
+          hitsDealt: 3,
+          nextAttackBonus: 50,
+          damageStacks: 3,
+          reflectBonusPercent: 15,
+        },
+        floor: { survivedLethal: true },
+        permanent: { powerBonusPercent: 10 },
+        computed: createDefaultComputed(),
+      },
+    };
+    world.add(player);
+
+    dispatch({ type: 'ADVANCE_ROOM' });
+    InputSystem(16);
+
+    // Floor state should be preserved (same floor)
+    expect(player.passiveEffectState?.floor.survivedLethal).toBe(true);
+
+    // Combat state is not reset here - that happens in FlowSystem when enemy spawns
+    // ADVANCE_ROOM just schedules the spawn
+  });
+});
+
+describe('Floor state reset on LEAVE_SHOP', () => {
+  beforeEach(() => {
+    clearWorld();
+    commandQueue.length = 0;
+  });
+
+  it('should reset floor state when leaving shop to advance to new floor', () => {
+    const gameState: Entity = {
+      gameState: true,
+      phase: 'shop',
+      shopEnteredFrom: 'floor-complete',
+      floor: { number: 1, room: 5, totalRooms: 5 },
+    };
+    world.add(gameState);
+
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        combat: {
+          hitsTaken: 5,
+          hitsDealt: 3,
+          nextAttackBonus: 50,
+          damageStacks: 3,
+          reflectBonusPercent: 15,
+        },
+        floor: { survivedLethal: true },
+        permanent: { powerBonusPercent: 10 },
+        computed: createDefaultComputed(),
+      },
+    };
+    world.add(player);
+
+    dispatch({ type: 'LEAVE_SHOP' });
+    InputSystem(16);
+
+    // Floor state should be reset
+    expect(player.passiveEffectState?.floor.survivedLethal).toBe(false);
+
+    // Combat state should also be reset (floor reset includes combat reset)
+    expect(player.passiveEffectState?.combat.hitsTaken).toBe(0);
+
+    // Permanent state should be preserved
+    expect(player.passiveEffectState?.permanent.powerBonusPercent).toBe(10);
+  });
+
+  it('should NOT reset floor state when leaving shop after defeat (retrying floor)', () => {
+    const gameState: Entity = {
+      gameState: true,
+      phase: 'shop',
+      shopEnteredFrom: 'defeat',
+      floor: { number: 1, room: 3, totalRooms: 5 },
+    };
+    world.add(gameState);
+
+    const player: Entity = {
+      player: true,
+      health: { current: 50, max: 100 },
+      passiveEffectState: {
+        combat: {
+          hitsTaken: 5,
+          hitsDealt: 3,
+          nextAttackBonus: 50,
+          damageStacks: 3,
+          reflectBonusPercent: 15,
+        },
+        floor: { survivedLethal: true },
+        permanent: { powerBonusPercent: 10 },
+        computed: createDefaultComputed(),
+      },
+    };
+    world.add(player);
+
+    dispatch({ type: 'LEAVE_SHOP' });
+    InputSystem(16);
+
+    // Floor state should be preserved (retrying same floor)
+    expect(player.passiveEffectState?.floor.survivedLethal).toBe(true);
+  });
+});
