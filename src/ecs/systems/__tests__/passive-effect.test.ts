@@ -6,7 +6,8 @@ import {
   initializePassiveEffectState,
   recomputePassiveEffects,
   resetCombatState,
-  resetFloorState
+  resetFloorState,
+  checkSurviveLethal
 } from '../passive-effect';
 import type { Entity } from '../../components';
 
@@ -516,5 +517,81 @@ describe('processOnDamaged', () => {
     expect(result.reflectCanCrit).toBe(true);
     expect(result.healOnReflectPercent).toBe(10);
     expect(result.healOnReflectKillPercent).toBe(50);
+  });
+});
+
+describe('checkSurviveLethal', () => {
+  beforeEach(() => {
+    for (const entity of world) {
+      world.remove(entity);
+    }
+  });
+
+  it('should return true and set HP to 1 when computed.hasSurviveLethal is true', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 0, max: 100 },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: { ...createDefaultComputed(), hasSurviveLethal: true },
+      },
+    };
+    world.add(player);
+
+    const survived = checkSurviveLethal(player);
+
+    expect(survived).toBe(true);
+    expect(player.passiveEffectState?.floor.survivedLethal).toBe(true);
+    expect(player.health?.current).toBe(1);
+  });
+
+  it('should return false if already used this floor', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 0, max: 100 },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: true }, // Already used
+        permanent: { powerBonusPercent: 0 },
+        computed: { ...createDefaultComputed(), hasSurviveLethal: true },
+      },
+    };
+    world.add(player);
+
+    const survived = checkSurviveLethal(player);
+
+    expect(survived).toBe(false);
+  });
+
+  it('should return false when hasSurviveLethal is false', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 0, max: 100 },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: { ...createDefaultComputed(), hasSurviveLethal: false },
+      },
+    };
+    world.add(player);
+
+    const survived = checkSurviveLethal(player);
+
+    expect(survived).toBe(false);
+  });
+
+  it('should return false when no passiveEffectState', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 0, max: 100 },
+    };
+    world.add(player);
+
+    const survived = checkSurviveLethal(player);
+
+    expect(survived).toBe(false);
   });
 });

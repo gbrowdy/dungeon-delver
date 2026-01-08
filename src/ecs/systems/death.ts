@@ -11,6 +11,7 @@ import { getTick } from '../loop';
 import type { Entity } from '../components';
 import { getDevModeParams } from '@/utils/devMode';
 import { queueAnimationEvent, addCombatLog } from '../utils';
+import { checkSurviveLethal } from './passive-effect';
 
 // Player death needs longer animation than enemy death
 const ENEMY_DEATH_ANIMATION_MS = 500;
@@ -47,6 +48,11 @@ export function DeathSystem(_deltaMs: number): void {
           addCombatLog('Death immunity saves you!');
           continue;
         }
+      }
+
+      // === Passive effect survive lethal check (Immortal Bulwark) ===
+      if (isPlayer && entity.passiveEffectState && checkSurviveLethal(entity)) {
+        continue;
       }
 
       const deathDuration = isPlayer ? PLAYER_DEATH_ANIMATION_MS : ENEMY_DEATH_ANIMATION_MS;

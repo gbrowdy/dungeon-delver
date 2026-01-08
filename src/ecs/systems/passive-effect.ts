@@ -21,6 +21,7 @@ import { getPlayer, getActiveEnemy, getGameState } from '../queries';
 import { getEffectiveDelta } from '../loop';
 import { getGuardianEnhancementById } from '@/data/paths/guardian-enhancements';
 import { getStancesForPath } from '@/data/stances';
+import { addCombatLog, queueAnimationEvent } from '../utils';
 import type { StanceEnhancementEffect } from '@/types/paths';
 
 // ============================================================================
@@ -475,6 +476,46 @@ export function processOnDamaged(player: Entity, damage: number): OnDamagedResul
   }
 
   return result;
+}
+
+// ============================================================================
+// SURVIVE LETHAL HOOK
+// ============================================================================
+
+/**
+ * Check if player should survive lethal damage.
+ * Called by death.ts when player HP reaches 0.
+ *
+ * READS from entity.passiveEffectState.computed.hasSurviveLethal
+ * MUTATES own entity state (floor.survivedLethal, health.current)
+ *
+ * @returns true if player survives (Immortal Bulwark triggers)
+ */
+export function checkSurviveLethal(player: Entity): boolean {
+  const state = player.passiveEffectState;
+  const computed = state?.computed;
+
+  if (!computed?.hasSurviveLethal || !state || !player.health) {
+    return false;
+  }
+
+  // Check if already used this floor
+  if (state.floor.survivedLethal) {
+    return false;
+  }
+
+  // Survive at 1 HP
+  player.health.current = 1;
+  state.floor.survivedLethal = true;
+
+  addCombatLog('Immortal Bulwark prevents death!');
+  queueAnimationEvent('item_proc', {
+    type: 'item',
+    itemName: 'Immortal Bulwark',
+    effectDescription: 'Survived lethal!',
+  });
+
+  return true;
 }
 
 // ============================================================================
