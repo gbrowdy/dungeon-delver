@@ -339,6 +339,62 @@ function updateConditionalEffects(player: Entity): void {
 }
 
 // ============================================================================
+// COMBAT HOOKS (read from computed, never compute)
+// ============================================================================
+
+export interface PreDamageResult {
+  finalDamage: number;
+  damageReduced: number;
+  wasCapped: boolean;
+}
+
+/**
+ * Process damage before it's applied.
+ * Called by combat.ts when player is about to take damage.
+ *
+ * READS from entity.passiveEffectState.computed - never computes.
+ */
+export function processPreDamage(player: Entity, incomingDamage: number): PreDamageResult {
+  const computed = player.passiveEffectState?.computed;
+  if (!computed) {
+    return { finalDamage: incomingDamage, damageReduced: 0, wasCapped: false };
+  }
+
+  let damage = incomingDamage;
+  let damageReduced = 0;
+  let wasCapped = false;
+
+  // Apply base damage reduction (from computed)
+  if (computed.damageReductionPercent > 0) {
+    const reduction = Math.round(damage * (computed.damageReductionPercent / 100));
+    damage -= reduction;
+    damageReduced += reduction;
+  }
+
+  // Apply conditional armor bonus as additional DR (simplified conversion)
+  if (computed.conditionalArmorPercent > 0) {
+    const bonusReduction = Math.round(damage * (computed.conditionalArmorPercent / 200));
+    damage -= bonusReduction;
+    damageReduced += bonusReduction;
+  }
+
+  // Apply max damage per hit cap (Unbreakable)
+  if (computed.maxDamagePerHitPercent !== null && player.health) {
+    const maxDamage = Math.round(player.health.max * (computed.maxDamagePerHitPercent / 100));
+    if (damage > maxDamage) {
+      damageReduced += damage - maxDamage;
+      damage = maxDamage;
+      wasCapped = true;
+    }
+  }
+
+  // Ensure minimum 1 damage
+  damage = Math.max(1, damage);
+
+  return { finalDamage: damage, damageReduced, wasCapped };
+}
+
+// ============================================================================
 // SYSTEM TICK FUNCTION
 // ============================================================================
 

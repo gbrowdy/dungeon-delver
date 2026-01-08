@@ -12,6 +12,7 @@ import { recordPathTrigger } from './path-ability';
 import { getStanceDamageMultiplier, getStanceBehavior, getStanceStatModifier } from '@/utils/stanceUtils';
 import { queueAnimationEvent, addCombatLog, getEntityName } from '../utils';
 import { calculateEnemyIntent } from '@/data/enemies';
+import { processPreDamage } from './passive-effect';
 
 function getTarget(attacker: Entity): Entity | undefined {
   if (attacker.player) {
@@ -66,15 +67,6 @@ export function CombatSystem(_deltaMs: number): void {
         continue;
       }
 
-      // Check for stance auto-block (passive paths)
-      const autoBlockChance = getStanceBehavior(target, 'auto_block');
-      if (autoBlockChance > 0 && Math.random() < autoBlockChance) {
-        addCombatLog(`${targetName} auto-blocks ${attackerName}'s attack!`);
-        queueAnimationEvent('player_block', { type: 'block', reduction: 1 });
-        recordPathTrigger('on_block', { isBlock: true });
-        world.removeComponent(entity, 'attackReady');
-        continue;
-      }
     }
 
     let damage = attackData.damage;
@@ -135,17 +127,15 @@ export function CombatSystem(_deltaMs: number): void {
       }
     }
 
-    // Apply manual block (player activated block ability)
-    if (target.player && target.isBlocking) {
-      const blocked = true;
-      const reduction = COMBAT_BALANCE.BLOCK_DAMAGE_REDUCTION ?? 0.5;
-      damage = Math.round(damage * (1 - reduction));
-      damage = Math.max(1, damage);
-      addCombatLog(`${targetName} blocks, reducing damage!`);
-      queueAnimationEvent('player_block', { type: 'block', reduction });
-      recordPathTrigger('on_block', { isBlock: true });
-      // Clear block after it's used (one-time use)
-      target.isBlocking = false;
+    // Process passive damage reduction (Guardian enhancements, etc.)
+    if (target.player && target.passiveEffectState) {
+      const preDamageResult = processPreDamage(target, damage);
+      if (preDamageResult.damageReduced > 0 || preDamageResult.wasCapped) {
+        damage = preDamageResult.finalDamage;
+        if (preDamageResult.wasCapped) {
+          addCombatLog(`Unbreakable caps damage to ${damage}!`);
+        }
+      }
     }
 
     // Apply shield first (if target has shield)
@@ -175,7 +165,6 @@ export function CombatSystem(_deltaMs: number): void {
       type: 'damage',
       value: damage,
       isCrit: attackData.isCrit,
-      targetDied,
     });
 
     // Combat log

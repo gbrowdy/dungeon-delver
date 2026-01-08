@@ -186,3 +186,146 @@ function createDefaultComputed() {
     conditionalRegenMultiplier: 1,
   };
 }
+
+describe('processPreDamage', () => {
+  // Import processPreDamage for these tests
+  let processPreDamage: typeof import('../passive-effect').processPreDamage;
+
+  beforeEach(async () => {
+    for (const entity of world) {
+      world.remove(entity);
+    }
+    const module = await import('../passive-effect');
+    processPreDamage = module.processPreDamage;
+  });
+
+  it('should read damage reduction from computed', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: {
+          ...createDefaultComputed(),
+          damageReductionPercent: 35, // Pre-computed value
+        },
+      },
+    };
+    world.add(player);
+
+    const result = processPreDamage(player, 100);
+
+    // 35% damage reduction: 100 * 0.65 = 65
+    expect(result.finalDamage).toBe(65);
+    expect(result.damageReduced).toBe(35);
+  });
+
+  it('should apply max damage cap from computed', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: {
+          ...createDefaultComputed(),
+          maxDamagePerHitPercent: 20, // Pre-computed value
+        },
+      },
+    };
+    world.add(player);
+
+    const result = processPreDamage(player, 50);
+
+    // Max 20% of 100 max HP = 20 damage
+    expect(result.finalDamage).toBe(20);
+    expect(result.wasCapped).toBe(true);
+  });
+
+  it('should apply conditional armor from computed', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 25, max: 100 }, // Below 30%
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: {
+          ...createDefaultComputed(),
+          conditionalArmorPercent: 50, // Already computed by updateConditionalEffects
+        },
+      },
+    };
+    world.add(player);
+
+    const result = processPreDamage(player, 100);
+
+    // Conditional armor provides additional DR (simplified: 50% armor -> ~25% DR)
+    // 100 - (100 * 50 / 200) = 100 - 25 = 75
+    expect(result.finalDamage).toBe(75);
+    expect(result.damageReduced).toBe(25);
+  });
+
+  it('should return unchanged damage when no passiveEffectState', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+    };
+    world.add(player);
+
+    const result = processPreDamage(player, 100);
+
+    expect(result.finalDamage).toBe(100);
+    expect(result.damageReduced).toBe(0);
+    expect(result.wasCapped).toBe(false);
+  });
+
+  it('should ensure minimum 1 damage', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: {
+          ...createDefaultComputed(),
+          damageReductionPercent: 99, // Very high reduction
+        },
+      },
+    };
+    world.add(player);
+
+    const result = processPreDamage(player, 5);
+
+    // Should never go below 1
+    expect(result.finalDamage).toBe(1);
+  });
+
+  it('should combine damage reduction and max damage cap', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: {
+          ...createDefaultComputed(),
+          damageReductionPercent: 20, // 20% DR
+          maxDamagePerHitPercent: 30, // Max 30 damage
+        },
+      },
+    };
+    world.add(player);
+
+    const result = processPreDamage(player, 100);
+
+    // 100 * 0.8 = 80 after DR, then capped to 30
+    expect(result.finalDamage).toBe(30);
+    expect(result.wasCapped).toBe(true);
+  });
+});
