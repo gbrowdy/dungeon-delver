@@ -348,6 +348,16 @@ export interface PreDamageResult {
   wasCapped: boolean;
 }
 
+export interface OnDamagedResult {
+  reflectDamage: number;
+  reflectIgnoresArmor: boolean;
+  reflectCanCrit: boolean;
+  counterAttackTriggered: boolean;
+  healAmount: number;
+  healOnReflectPercent: number;
+  healOnReflectKillPercent: number;
+}
+
 /**
  * Process damage before it's applied.
  * Called by combat.ts when player is about to take damage.
@@ -392,6 +402,79 @@ export function processPreDamage(player: Entity, incomingDamage: number): PreDam
   damage = Math.max(1, damage);
 
   return { finalDamage: damage, damageReduced, wasCapped };
+}
+
+/**
+ * Process effects when player takes damage.
+ * Called by combat.ts after player receives damage.
+ *
+ * READS from entity.passiveEffectState.computed.
+ * MUTATES only player's passiveEffectState (own entity).
+ * RETURNS damage values for combat.ts to apply to attacker.
+ */
+export function processOnDamaged(player: Entity, damage: number): OnDamagedResult {
+  const state = player.passiveEffectState;
+  const computed = state?.computed;
+
+  const result: OnDamagedResult = {
+    reflectDamage: 0,
+    reflectIgnoresArmor: false,
+    reflectCanCrit: false,
+    counterAttackTriggered: false,
+    healAmount: 0,
+    healOnReflectPercent: 0,
+    healOnReflectKillPercent: 0,
+  };
+
+  if (!state || !computed) return result;
+
+  // Track hit taken (mutate own entity state)
+  state.combat.hitsTaken += 1;
+
+  // Calculate reflect damage (read from computed + combat state)
+  let totalReflectPercent = computed.baseReflectPercent + state.combat.reflectBonusPercent;
+  totalReflectPercent *= computed.conditionalReflectMultiplier;
+
+  if (totalReflectPercent > 0) {
+    result.reflectDamage = Math.round(damage * (totalReflectPercent / 100));
+    result.reflectIgnoresArmor = computed.reflectIgnoresArmor;
+    result.reflectCanCrit = computed.reflectCanCrit;
+    result.healOnReflectPercent = computed.healOnReflectPercent;
+    result.healOnReflectKillPercent = computed.healOnReflectKillPercent;
+  }
+
+  // Increment reflect scaling (mutate own entity state)
+  if (computed.reflectScalingPerHit > 0) {
+    state.combat.reflectBonusPercent += computed.reflectScalingPerHit;
+  }
+
+  // Counter-attack check (read from computed)
+  if (computed.counterAttackChance > 0 && Math.random() * 100 < computed.counterAttackChance) {
+    result.counterAttackTriggered = true;
+  }
+
+  // Damage stacks (read config from computed, mutate own state)
+  if (computed.damageStackConfig) {
+    if (state.combat.damageStacks < computed.damageStackConfig.maxStacks) {
+      state.combat.damageStacks += 1;
+    }
+  }
+
+  // On-hit heal chance (read from computed)
+  if (computed.healOnDamagedChance > 0 && Math.random() * 100 < computed.healOnDamagedChance) {
+    if (player.health) {
+      const heal = Math.round(player.health.max * (computed.healOnDamagedPercent / 100));
+      player.health.current = Math.min(player.health.max, player.health.current + heal);
+      result.healAmount += heal;
+    }
+  }
+
+  // Grant next attack bonus (read from computed, mutate own state)
+  if (computed.nextAttackBonusOnDamaged > 0) {
+    state.combat.nextAttackBonus = computed.nextAttackBonusOnDamaged;
+  }
+
+  return result;
 }
 
 // ============================================================================

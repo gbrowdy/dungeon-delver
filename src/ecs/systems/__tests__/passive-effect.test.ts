@@ -329,3 +329,192 @@ describe('processPreDamage', () => {
     expect(result.wasCapped).toBe(true);
   });
 });
+
+describe('processOnDamaged', () => {
+  let processOnDamaged: typeof import('../passive-effect').processOnDamaged;
+
+  beforeEach(async () => {
+    for (const entity of world) {
+      world.remove(entity);
+    }
+    const module = await import('../passive-effect');
+    processOnDamaged = module.processOnDamaged;
+  });
+
+  it('should calculate reflect damage from computed and return it', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 10 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: {
+          ...createDefaultComputed(),
+          baseReflectPercent: 30,
+          conditionalReflectMultiplier: 1,
+        },
+      },
+    };
+    world.add(player);
+
+    const result = processOnDamaged(player, 20);
+
+    // (30% base + 10% scaling) * 1 multiplier = 40% of 20 = 8 damage
+    expect(result.reflectDamage).toBe(8);
+    expect(player.passiveEffectState?.combat.hitsTaken).toBe(1);
+  });
+
+  it('should NOT mutate attacker - returns damage for combat.ts to apply', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: { ...createDefaultComputed(), baseReflectPercent: 30 },
+      },
+    };
+    world.add(player);
+
+    const result = processOnDamaged(player, 20);
+
+    // Returns reflect damage, does NOT apply it
+    expect(result.reflectDamage).toBe(6);
+    // The function should not touch attacker - combat.ts will apply reflect damage
+  });
+
+  it('should increment damage stacks using computed config', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: {
+          ...createDefaultComputed(),
+          damageStackConfig: { valuePerStack: 10, maxStacks: 5 },
+        },
+      },
+    };
+    world.add(player);
+
+    processOnDamaged(player, 10);
+    expect(player.passiveEffectState?.combat.damageStacks).toBe(1);
+
+    processOnDamaged(player, 10);
+    expect(player.passiveEffectState?.combat.damageStacks).toBe(2);
+  });
+
+  it('should not exceed max stacks', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 4, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: {
+          ...createDefaultComputed(),
+          damageStackConfig: { valuePerStack: 10, maxStacks: 5 },
+        },
+      },
+    };
+    world.add(player);
+
+    processOnDamaged(player, 10);
+    expect(player.passiveEffectState?.combat.damageStacks).toBe(5);
+
+    // Should not go above max
+    processOnDamaged(player, 10);
+    expect(player.passiveEffectState?.combat.damageStacks).toBe(5);
+  });
+
+  it('should apply reflect scaling per hit', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: {
+          ...createDefaultComputed(),
+          baseReflectPercent: 20,
+          reflectScalingPerHit: 5,
+        },
+      },
+    };
+    world.add(player);
+
+    processOnDamaged(player, 10);
+    expect(player.passiveEffectState?.combat.reflectBonusPercent).toBe(5);
+
+    processOnDamaged(player, 10);
+    expect(player.passiveEffectState?.combat.reflectBonusPercent).toBe(10);
+  });
+
+  it('should set next attack bonus from computed', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: {
+          ...createDefaultComputed(),
+          nextAttackBonusOnDamaged: 25,
+        },
+      },
+    };
+    world.add(player);
+
+    processOnDamaged(player, 10);
+    expect(player.passiveEffectState?.combat.nextAttackBonus).toBe(25);
+  });
+
+  it('should return default result when no passiveEffectState', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+    };
+    world.add(player);
+
+    const result = processOnDamaged(player, 20);
+
+    expect(result.reflectDamage).toBe(0);
+    expect(result.counterAttackTriggered).toBe(false);
+  });
+
+  it('should pass through reflect config flags from computed', () => {
+    const player: Entity = {
+      player: true,
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        combat: { hitsTaken: 0, hitsDealt: 0, nextAttackBonus: 0, damageStacks: 0, reflectBonusPercent: 0 },
+        floor: { survivedLethal: false },
+        permanent: { powerBonusPercent: 0 },
+        computed: {
+          ...createDefaultComputed(),
+          baseReflectPercent: 20,
+          reflectIgnoresArmor: true,
+          reflectCanCrit: true,
+          healOnReflectPercent: 10,
+          healOnReflectKillPercent: 50,
+        },
+      },
+    };
+    world.add(player);
+
+    const result = processOnDamaged(player, 50);
+
+    expect(result.reflectDamage).toBe(10); // 20% of 50
+    expect(result.reflectIgnoresArmor).toBe(true);
+    expect(result.reflectCanCrit).toBe(true);
+    expect(result.healOnReflectPercent).toBe(10);
+    expect(result.healOnReflectKillPercent).toBe(50);
+  });
+});

@@ -12,7 +12,7 @@ import { recordPathTrigger } from './path-ability';
 import { getStanceDamageMultiplier, getStanceBehavior, getStanceStatModifier } from '@/utils/stanceUtils';
 import { queueAnimationEvent, addCombatLog, getEntityName } from '../utils';
 import { calculateEnemyIntent } from '@/data/enemies';
-import { processPreDamage } from './passive-effect';
+import { processPreDamage, processOnDamaged } from './passive-effect';
 
 function getTarget(attacker: Entity): Entity | undefined {
   if (attacker.player) {
@@ -245,6 +245,70 @@ export function CombatSystem(_deltaMs: number): void {
         if (counterDamage > 0 && entity.health) {
           entity.health.current = Math.max(0, entity.health.current - counterDamage);
           addCombatLog(`${targetName} counter-attacks for ${counterDamage} damage!`);
+        }
+      }
+
+      // Process passive effect system on-damaged hooks (Guardian enhancements, etc.)
+      if (target.passiveEffectState) {
+        const onDamagedResult = processOnDamaged(target, damage);
+
+        // Apply reflect damage from passive effects (combat.ts applies, passive-effect.ts returns)
+        if (onDamagedResult.reflectDamage > 0 && entity.health) {
+          let passiveReflect = onDamagedResult.reflectDamage;
+
+          // Apply armor reduction unless reflect ignores armor
+          if (!onDamagedResult.reflectIgnoresArmor) {
+            const attackerDefense = entity.defense?.value ?? 0;
+            passiveReflect = Math.max(1, passiveReflect - attackerDefense);
+          }
+
+          // Check for reflect crit
+          let reflectIsCrit = false;
+          if (onDamagedResult.reflectCanCrit && target.attack?.critChance) {
+            if (Math.random() < target.attack.critChance) {
+              passiveReflect = Math.round(passiveReflect * 2);
+              reflectIsCrit = true;
+            }
+          }
+
+          entity.health.current = Math.max(0, entity.health.current - passiveReflect);
+          const critSuffix = reflectIsCrit ? ' (CRIT!)' : '';
+          addCombatLog(`${targetName} reflects ${passiveReflect} damage${critSuffix}!`);
+
+          // Check if reflect killed the attacker
+          const attackerDiedFromReflect = entity.health.current <= 0;
+
+          // Heal on reflect
+          if (onDamagedResult.healOnReflectPercent > 0 && target.health) {
+            const healFromReflect = Math.round(passiveReflect * (onDamagedResult.healOnReflectPercent / 100));
+            if (healFromReflect > 0) {
+              target.health.current = Math.min(target.health.max, target.health.current + healFromReflect);
+              addCombatLog(`${targetName} heals for ${healFromReflect} from reflect!`);
+            }
+          }
+
+          // Heal on reflect kill
+          if (attackerDiedFromReflect && onDamagedResult.healOnReflectKillPercent > 0 && target.health) {
+            const healFromKill = Math.round(target.health.max * (onDamagedResult.healOnReflectKillPercent / 100));
+            if (healFromKill > 0) {
+              target.health.current = Math.min(target.health.max, target.health.current + healFromKill);
+              addCombatLog(`${targetName} heals for ${healFromKill} from reflect kill!`);
+            }
+          }
+        }
+
+        // Apply counter-attack from passive effects
+        if (onDamagedResult.counterAttackTriggered && target.attack && entity.health) {
+          const passiveCounterDamage = Math.round(target.attack.baseDamage * 0.5);
+          if (passiveCounterDamage > 0) {
+            entity.health.current = Math.max(0, entity.health.current - passiveCounterDamage);
+            addCombatLog(`${targetName} counter-attacks for ${passiveCounterDamage} damage!`);
+          }
+        }
+
+        // Log heal on damaged if it occurred
+        if (onDamagedResult.healAmount > 0) {
+          addCombatLog(`${targetName} heals for ${onDamagedResult.healAmount} on hit!`);
         }
       }
     }
