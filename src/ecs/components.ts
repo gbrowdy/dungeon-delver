@@ -103,6 +103,100 @@ export interface PendingReward {
 }
 
 /**
+ * Pre-computed passive effect values.
+ * Recalculated when stance/enhancements change (recomputePassiveEffects).
+ * Conditional values updated each tick (updateConditionalEffects).
+ * Combat systems READ from this object - never compute on the fly.
+ */
+export interface ComputedPassiveEffects {
+  // Stat modifiers (as percentages, e.g., 25 = +25%)
+  armorPercent: number;
+  powerPercent: number;
+  speedPercent: number;
+  maxHealthPercent: number;
+  healthRegenFlat: number;
+
+  // Damage modification
+  damageReductionPercent: number;
+  maxDamagePerHitPercent: number | null;
+  armorReducesDot: boolean;
+
+  // Reflect
+  baseReflectPercent: number;
+  reflectIgnoresArmor: boolean;
+  reflectCanCrit: boolean;
+  healOnReflectPercent: number;
+  healOnReflectKillPercent: number;
+  reflectScalingPerHit: number;
+
+  // On-damaged
+  counterAttackChance: number;
+  damageStackConfig: { valuePerStack: number; maxStacks: number } | null;
+  healOnDamagedChance: number;
+  healOnDamagedPercent: number;
+  nextAttackBonusOnDamaged: number;
+
+  // On-hit
+  permanentPowerPerHit: number;
+  onHitBurstChance: number;
+  onHitBurstPowerPercent: number;
+
+  // Auras
+  damageAuraPerSecond: number;
+
+  // Death prevention
+  hasSurviveLethal: boolean;
+
+  // Immunities
+  isImmuneToStuns: boolean;
+  isImmuneToSlows: boolean;
+
+  // Speed
+  removeSpeedPenalty: boolean;
+
+  // Conditional thresholds (static - set by recomputePassiveEffects)
+  lowHpArmorThreshold: number;
+  lowHpArmorBonus: number;
+  lowHpReflectThreshold: number;
+  lowHpReflectMultiplier: number;
+  highHpRegenThreshold: number;
+  highHpRegenMultiplier: number;
+
+  // Conditional values (dynamic - updated each tick by updateConditionalEffects)
+  conditionalArmorPercent: number;
+  conditionalDamageReduction: number;
+  conditionalReflectMultiplier: number;
+  conditionalRegenMultiplier: number;
+}
+
+/**
+ * Passive effect runtime state for passive paths (Guardian, Enchanter, etc.)
+ * - combat: Reset when new enemy spawns
+ * - floor: Reset when new floor starts
+ * - permanent: Persists entire run
+ * - computed: Pre-computed effect values (systems read from here)
+ */
+export interface PassiveEffectState {
+  combat: {
+    hitsTaken: number;
+    hitsDealt: number;
+    nextAttackBonus: number;      // Bonus % for next attack (Retaliation)
+    damageStacks: number;         // Current stacks (Vengeful Strikes)
+    reflectBonusPercent: number;  // Accumulated reflect bonus (Escalating Revenge)
+  };
+
+  floor: {
+    survivedLethal: boolean;      // Used Immortal Bulwark this floor?
+  };
+
+  permanent: {
+    powerBonusPercent: number;    // Accumulated power bonus (Wrath Accumulator)
+  };
+
+  computed: ComputedPassiveEffects;
+}
+
+/**
  * Entity type - all possible components an entity can have.
  * miniplex uses this to provide type-safe queries.
  */
@@ -244,6 +338,8 @@ export interface Entity {
   pathResource?: PathResource;
   /** Stance state for passive paths */
   stanceState?: PlayerStanceState;
+  /** Passive effect runtime state (passive paths) */
+  passiveEffectState?: PassiveEffectState;
   /** Ability tracking */
   abilityTracking?: {
     usedCombatAbilities: string[];
