@@ -10,6 +10,7 @@ import type { CharacterClass, Power, Item, ActiveBuff, StatusEffect, PathResourc
 import type { PlayerPath, PlayerStanceState, StanceEnhancement, StanceEffect } from '@/types/paths';
 import { getPlayer, getGameState, enemyQuery } from './queries';
 import { getTick, TICK_MS } from './loop';
+import { getStanceStatModifier } from '@/utils/stanceUtils';
 
 // ============================================================================
 // UTILITY TYPES
@@ -37,6 +38,53 @@ function ticksToMs(tickCount: number): number {
 }
 
 /**
+ * Apply a stat modifier with smart rounding:
+ * - Positive bonuses use Math.ceil (always at least +1)
+ * - Negative penalties use Math.floor (always at least -1)
+ * - Zero modifier returns base value unchanged
+ */
+function applyStatModifier(base: number, modifier: number): number {
+  if (modifier === 0) return base;
+  const modified = base * (1 + modifier);
+  // For positive bonuses, round up to ensure at least +1
+  // For negative penalties, round down to ensure at least -1
+  if (modifier > 0) {
+    return Math.max(base + 1, Math.ceil(modified));
+  } else {
+    return Math.min(base - 1, Math.floor(modified));
+  }
+}
+
+/**
+ * Compute effective stats by applying stance modifiers to base stats.
+ * Returns both the computed value and the modifier for UI display.
+ */
+function computeEffectiveStats(entity: Entity): PlayerSnapshot['effectiveStats'] {
+  const basePower = entity.attack?.baseDamage ?? 0;
+  const baseArmor = entity.defense?.value ?? 0;
+  const baseSpeed = entity.speed?.value ?? 10;
+
+  const powerMod = getStanceStatModifier(entity, 'power');
+  const armorMod = getStanceStatModifier(entity, 'armor');
+  const speedMod = getStanceStatModifier(entity, 'speed');
+
+  return {
+    power: {
+      value: applyStatModifier(basePower, powerMod),
+      modifier: powerMod,
+    },
+    armor: {
+      value: applyStatModifier(baseArmor, armorMod),
+      modifier: armorMod,
+    },
+    speed: {
+      value: applyStatModifier(baseSpeed, speedMod),
+      modifier: speedMod,
+    },
+  };
+}
+
+/**
  * Snapshot of player entity state for React components.
  * Contains all player data needed for rendering.
  */
@@ -47,14 +95,13 @@ export interface PlayerSnapshot {
 
   // Combat stats
   health: { current: number; max: number };
-  mana: { current: number; max: number } | null; // null after path selection (replaced by pathResource)
   attack: {
     baseDamage: number;
     critChance: number;
     critMultiplier: number;
     variance: { min: number; max: number };
   };
-  defense: { value: number; blockReduction: number };
+  defense: { value: number };
   speed: { value: number; attackInterval: number };
 
   // Fortune and derived stats
@@ -63,6 +110,14 @@ export interface PlayerSnapshot {
     critChance: number;
     critDamage: number;
     dodgeChance: number;
+  };
+
+  // Effective stats (base stats modified by stances, buffs, etc.)
+  // Used for display - shows what's actually used in combat
+  effectiveStats: {
+    power: { value: number; modifier: number }; // modifier is percentage (e.g., 0.25 = +25%)
+    armor: { value: number; modifier: number };
+    speed: { value: number; modifier: number };
   };
 
   // Progression
@@ -90,7 +145,6 @@ export interface PlayerSnapshot {
   buffs: ActiveBuff[];
   shield: { value: number; remaining: number; maxDuration: number } | null;
   isDying: boolean;
-  isBlocking: boolean;
 
   // Path
   path: PlayerPath | null;
@@ -132,7 +186,6 @@ export interface PlayerSnapshot {
 
   // Regen
   healthRegen: number;
-  manaRegen: number;
 
   // Animation state
   combatAnimation: {
@@ -146,6 +199,34 @@ export interface PlayerSnapshot {
     shake: boolean;
     hitStop: boolean;
   };
+
+  // Passive effect state for UI display (COPIED from entity, not computed)
+  passiveEffects: {
+    // From combat state
+    damageStacks: number;
+    nextAttackBonus: number;
+    reflectBonusPercent: number;
+
+    // From floor state
+    survivedLethalUsed: boolean;
+
+    // From permanent state
+    permanentPowerBonus: number;
+
+    // From computed (pre-computed by system)
+    hasSurviveLethal: boolean;
+    damageStacksMax: number;
+    totalReflectPercent: number;
+    totalDamageReduction: number;
+    damageAuraPerSecond: number;
+    isImmuneToStuns: boolean;
+    isImmuneToSlows: boolean;
+
+    // Conditional status (from computed conditional values)
+    lastBastionActive: boolean;
+    painConduitActive: boolean;
+    regenSurgeActive: boolean;
+  } | null;
 }
 
 /**
@@ -261,7 +342,6 @@ export interface CombatSnapshot {
  * Returns null if the entity doesn't have required player components.
  */
 export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
-  // Note: mana is optional - it's removed when player selects a path (replaced by pathResource)
   if (!entity.player || !entity.health || !entity.identity) {
     return null;
   }
@@ -273,14 +353,13 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
 
     // Combat stats
     health: { ...entity.health },
-    mana: entity.mana ? { ...entity.mana } : null,
     attack: entity.attack ? { ...entity.attack } : {
       baseDamage: 0,
       critChance: 0,
       critMultiplier: 1,
       variance: { min: 0.85, max: 1.15 },
     },
-    defense: entity.defense ? { ...entity.defense } : { value: 0, blockReduction: 0.4 },
+    defense: entity.defense ? { ...entity.defense } : { value: 0 },
     speed: entity.speed ? {
       value: entity.speed.value,
       attackInterval: entity.speed.attackInterval
@@ -293,6 +372,9 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
       critDamage: 1.5,
       dodgeChance: 0,
     },
+
+    // Effective stats (base stats + stance modifiers)
+    effectiveStats: computeEffectiveStats(entity),
 
     // Progression
     level: entity.progression?.level ?? 1,
@@ -322,7 +404,6 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
     buffs: entity.buffs ? [...entity.buffs] : [],
     shield: entity.shield ? { ...entity.shield } : null,
     isDying: !!entity.dying,
-    isBlocking: !!entity.isBlocking,
 
     // Path
     path: entity.path ?? null,
@@ -366,7 +447,6 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
 
     // Regen
     healthRegen: entity.regen?.healthPerSecond ?? 0,
-    manaRegen: entity.regen?.manaPerSecond ?? 0,
 
     // Animation state
     combatAnimation: entity.combatAnimation ? {
@@ -382,6 +462,42 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
       shake: !!entity.visualEffects?.shake,
       hitStop: !!entity.visualEffects?.hitStop,
     },
+
+    // Passive effects - PURE COPY from entity state
+    passiveEffects: (() => {
+      const state = entity.passiveEffectState;
+      if (entity.pathProgression?.pathType !== 'passive' || !state) {
+        return null;
+      }
+
+      const computed = state.computed;
+      return {
+        // Copy from combat state
+        damageStacks: state.combat.damageStacks,
+        nextAttackBonus: state.combat.nextAttackBonus,
+        reflectBonusPercent: state.combat.reflectBonusPercent,
+
+        // Copy from floor state
+        survivedLethalUsed: state.floor.survivedLethal,
+
+        // Copy from permanent state
+        permanentPowerBonus: state.permanent.powerBonusPercent,
+
+        // Copy from computed
+        hasSurviveLethal: computed.hasSurviveLethal,
+        damageStacksMax: computed.damageStackConfig?.maxStacks ?? 0,
+        totalReflectPercent: computed.baseReflectPercent + state.combat.reflectBonusPercent,
+        totalDamageReduction: computed.damageReductionPercent,
+        damageAuraPerSecond: computed.damageAuraPerSecond,
+        isImmuneToStuns: computed.isImmuneToStuns,
+        isImmuneToSlows: computed.isImmuneToSlows,
+
+        // Conditional status - read from pre-computed conditional values
+        lastBastionActive: computed.conditionalArmorPercent > 0,
+        painConduitActive: computed.conditionalReflectMultiplier > 1,
+        regenSurgeActive: computed.conditionalRegenMultiplier > 1,
+      };
+    })(),
   };
 }
 
