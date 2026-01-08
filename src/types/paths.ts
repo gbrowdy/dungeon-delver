@@ -31,10 +31,8 @@ export type PathAbilityTrigger =
   | 'turn_start'       // At start of each combat turn
   // Path-specific triggers
   | 'on_power_use'     // When player uses a power
-  | 'on_block'         // When player successfully blocks
   | 'on_dodge'         // When player dodges an attack
   | 'on_low_hp'        // When player HP falls below threshold
-  | 'on_low_mana'      // When player mana falls below threshold
   | 'on_full_hp'       // When player is at max HP
   | 'on_combo'         // When player achieves power combo
   | 'on_status_inflict'// When player inflicts status effect
@@ -44,7 +42,7 @@ export type PathAbilityTrigger =
 /**
  * Stat types that can be modified by path abilities
  */
-export type PathStatType = 'health' | 'maxHealth' | 'power' | 'armor' | 'speed' | 'mana' | 'maxMana' | 'fortune';
+export type PathStatType = 'health' | 'maxHealth' | 'power' | 'armor' | 'speed' | 'fortune';
 
 /**
  * Conditional checks for ability activation
@@ -54,8 +52,6 @@ export type PathAbilityCondition =
   | { type: 'hp_below'; value: number }
   | { type: 'hp_above'; value: number }
   | { type: 'hp_threshold'; value: number }
-  | { type: 'mana_below'; value: number }
-  | { type: 'mana_above'; value: number }
   | { type: 'enemy_hp_below'; value: number }
   | { type: 'combo_count'; value: number }
   | { type: 'attack_count'; value: number; counterId: string }  // For attack-based combos like Holy Avenger
@@ -129,7 +125,6 @@ export interface PathAbilityEffect {
   // Direct effects
   heal?: number;                    // Flat heal amount
   damage?: number;                  // Bonus damage
-  manaRestore?: number;             // Mana restoration
 
   // Status effects
   statusApplication?: StatusApplication; // Apply status to enemy
@@ -239,7 +234,6 @@ export interface SubpathChoice {
 export type StanceBehavior =
   | 'reflect_damage'    // Reflect % of damage taken back to attacker
   | 'counter_attack'    // Chance to auto-attack when hit
-  | 'auto_block'        // Chance to automatically negate attacks
   | 'lifesteal'         // Heal for % of damage dealt
   | 'arcane_burn'       // Chance on hit to deal bonus damage + apply burn DoT
   | 'hex_aura';         // Passive: enemies deal reduced damage
@@ -347,6 +341,70 @@ export type StanceEnhancementEffect =
   | { type: 'on_hit_burst_chance'; chance: number; powerPercent: number }
   | { type: 'reflect_can_crit'; value: boolean }
   | { type: 'reflect_kill_heal'; percent: number };
+
+// ============================================================================
+// PASSIVE EFFECT SYSTEM TYPES (Generic Passive Effect Processing)
+// ============================================================================
+
+/**
+ * Stats that can be modified by passive effects
+ */
+export type PassiveStatType = 'power' | 'armor' | 'speed' | 'fortune' | 'maxHealth' | 'healthRegen';
+
+/**
+ * Conditions for conditional passive effects
+ */
+export type PassiveCondition =
+  | { type: 'hp_below_percent'; value: number }
+  | { type: 'hp_above_percent'; value: number };
+
+/**
+ * Passive effect discriminated union
+ * All passive effects are expressed as typed data structures.
+ * New paths add new effect instances, not new code.
+ */
+export type PassiveEffect =
+  // === STAT MODIFIERS (continuous) ===
+  | { type: 'stat_percent'; stat: PassiveStatType; value: number }
+  | { type: 'stat_flat'; stat: PassiveStatType; value: number }
+  | { type: 'stat_percent_when'; stat: PassiveStatType; value: number; condition: PassiveCondition }
+
+  // === DAMAGE MODIFIERS ===
+  | { type: 'damage_reduction_percent'; value: number }
+  | { type: 'damage_reduction_percent_when'; value: number; condition: PassiveCondition }
+  | { type: 'max_damage_per_hit_percent'; value: number }
+  | { type: 'armor_reduces_dot' }
+
+  // === REFLECT SYSTEM ===
+  | { type: 'reflect_percent'; value: number }
+  | { type: 'reflect_percent_when'; value: number; condition: PassiveCondition }
+  | { type: 'reflect_scaling_per_hit'; value: number }
+  | { type: 'reflect_ignores_armor' }
+  | { type: 'reflect_can_crit' }
+  | { type: 'heal_on_reflect_percent'; value: number }
+  | { type: 'heal_on_reflect_kill_percent'; value: number }
+
+  // === ON-DAMAGED PROCS ===
+  | { type: 'counter_attack_percent'; value: number }
+  | { type: 'damage_stack'; valuePerStack: number; maxStacks: number }
+  | { type: 'heal_on_damaged_chance'; chance: number; healPercent: number }
+  | { type: 'grant_next_attack_bonus'; value: number }
+
+  // === ON-HIT PROCS ===
+  | { type: 'permanent_power_per_hit'; value: number }
+  | { type: 'on_hit_burst_chance'; chance: number; powerPercent: number }
+
+  // === AURAS ===
+  | { type: 'damage_aura_per_second'; value: number }
+
+  // === DEATH PREVENTION ===
+  | { type: 'survive_lethal_once_per_floor' }
+
+  // === IMMUNITIES ===
+  | { type: 'cc_immunity'; ccTypes: ('stun' | 'slow')[] }
+
+  // === SPEED MODIFICATIONS ===
+  | { type: 'remove_speed_penalty' };
 
 /**
  * Stance enhancement definition for passive paths
