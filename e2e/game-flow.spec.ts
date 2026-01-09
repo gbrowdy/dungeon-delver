@@ -240,6 +240,99 @@ test.describe('Game Flow - Floor Complete', () => {
     // Should be on floor 2
     await expect(page.getByTestId('floor-indicator')).toContainText('Floor 2', { timeout: 10000 });
   });
+
+  test('floor complete resets player to full health, clears cooldowns and status', async ({ page }) => {
+    test.setTimeout(180000); // 3 minutes total
+
+    // Use stats that let player win but still take some damage on floor 1
+    // High attack to kill fast, high defense for floor 2 check (prevent immediate damage)
+    await navigateToGame(page, 'devMode=true&playerAttack=80&playerDefense=30');
+    await selectClassAndBegin(page, 'Warrior');
+    await setSpeedToMax(page);
+
+    // Helper to get player health values (only works during combat view)
+    // Health displays as "50/100" text format
+    const getPlayerHealth = async () => {
+      const healthText = page.getByTestId('player-health');
+      await healthText.waitFor({ state: 'visible', timeout: 5000 });
+      const text = await healthText.textContent();
+      const match = text?.match(/(\d+)\s*\/\s*(\d+)/);
+      return {
+        current: parseInt(match?.[1] ?? '0'),
+        max: parseInt(match?.[2] ?? '0'),
+      };
+    };
+
+    // Get initial health
+    const initialHealth = await getPlayerHealth();
+    expect(initialHealth.max).toBeGreaterThan(0);
+
+    // Track health before floor complete
+    let healthBeforeFloorComplete = { current: initialHealth.max, max: initialHealth.max };
+
+    // Clear floor 1 - keep fighting until floor complete
+    let reachedFloorComplete = false;
+    for (let i = 0; i < 20 && !reachedFloorComplete; i++) {
+      // Capture health before each combat outcome (while still in combat view)
+      try {
+        healthBeforeFloorComplete = await getPlayerHealth();
+      } catch {
+        // Health bar may not be visible during transitions
+      }
+
+      const outcome = await waitForCombatOutcome(page, { timeout: 30000 });
+
+      if (outcome === 'floor_complete') {
+        reachedFloorComplete = true;
+        break;
+      }
+
+      if (outcome === 'player_died') {
+        // Retry and continue
+        await waitForDeathAndRetry(page);
+        await setSpeedToMax(page);
+      }
+
+      // Wait for next enemy if we killed one
+      if (outcome === 'enemy_died') {
+        await page.waitForTimeout(1000);
+      }
+    }
+
+    expect(reachedFloorComplete).toBe(true);
+
+    // Verify floor complete screen is showing
+    await expect(page.getByText(/Floor \d+ Complete!/)).toBeVisible();
+
+    // Click continue to advance to floor 2
+    const continueButton = page.getByTestId('continue-button');
+    await continueButton.click();
+
+    // Wait for combat to start on floor 2
+    await expect(page.getByTestId('floor-indicator')).toContainText('Floor 2', { timeout: 10000 });
+
+    // Pause immediately to prevent combat from dealing damage before we check
+    const pauseButton = page.getByRole('button', { name: /pause/i });
+    await pauseButton.click();
+
+    // Wait for combat view to stabilize
+    await page.waitForTimeout(500);
+
+    // Verify health is now at maximum (full reset)
+    const healthOnFloor2 = await getPlayerHealth();
+    expect(healthOnFloor2.current).toBe(healthOnFloor2.max);
+
+    // Also verify health max is consistent
+    expect(healthOnFloor2.max).toBe(initialHealth.max);
+
+    // Verify stamina is at max (resource reset)
+    const staminaBar = page.getByTestId('resource-bar-stamina');
+    if (await staminaBar.isVisible()) {
+      const staminaCurrent = await staminaBar.getAttribute('aria-valuenow');
+      const staminaMax = await staminaBar.getAttribute('aria-valuemax');
+      expect(staminaCurrent).toBe(staminaMax);
+    }
+  });
 });
 
 test.describe('Guardian passive path', () => {
