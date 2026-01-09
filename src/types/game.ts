@@ -238,6 +238,24 @@ export interface Power {
   // Multi-stat buffs (for powers that buff multiple stats)
   buffStats?: { stat: 'power' | 'speed' | 'armor' | 'fortune'; value: number }[];
   buffDuration?: number; // Override default 6s duration
+
+  // === Archmage-specific mechanics ===
+
+  // Reset all other power cooldowns on cast (Arcane Surge)
+  resetAllCooldowns?: boolean;
+
+  // Modify charges (for Arcane Charges resource - negative = reduce)
+  chargeModify?: number;
+
+  // Animation-only multi-hit display (Spellstorm visual effect)
+  visualMultiHit?: {
+    count: number;    // Number of visual hits
+    interval: number; // Time between hits in ms
+  };
+
+  // Apply vulnerable status to enemy (% damage amplification)
+  enemyVulnerable?: number;         // Vulnerable amount (e.g., 20 = +20% damage taken)
+  enemyVulnerableDuration?: number; // Duration in seconds
 }
 
 // Represents a power upgrade offer (not the power itself)
