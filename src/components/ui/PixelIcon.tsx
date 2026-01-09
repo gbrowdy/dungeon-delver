@@ -6,7 +6,7 @@ import { type LucideIconName } from '@/lib/icons';
  * IconType - Valid icon type strings for the PixelIcon component.
  *
  * Format: `category-name` where category is one of:
- * - stat: Player/enemy stats (health, mana, power, etc.)
+ * - stat: Player/enemy stats (health, power, resource, etc.)
  * - status: Status effects (poison, stun, bleed, etc.)
  * - power: Player powers/spells
  * - item: Equipment and consumables
@@ -39,7 +39,7 @@ interface PixelIconProps {
 const ICON_MAP: Record<string, LucideIconName> = {
   // Stats
   'stat-health': 'Heart',
-  'stat-mana': 'Droplet',
+  'stat-resource': 'Droplet',
   'stat-power': 'Zap',
   'stat-armor': 'Shield',
   'stat-speed': 'Wind',
@@ -144,7 +144,7 @@ const KEYWORD_ICONS: Array<[RegExp, LucideIconName]> = [
   [/fire|flame|burn|inferno/i, 'Flame'],
   [/ice|frost|freeze|cold/i, 'Snowflake'],
   [/lightning|thunder|shock|electric/i, 'Zap'],
-  [/spell|mana|arcane|magic/i, 'Wand2'],
+  [/spell|arcane|magic/i, 'Wand2'],
 
   // Rogue keywords
   [/shadow|stealth|vanish|phantom/i, 'Moon'],

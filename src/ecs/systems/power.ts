@@ -411,14 +411,11 @@ export function PowerSystem(_deltaMs: number): void {
     }
 
     // Check resource requirements and track value for threshold calculations
-    // Priority: pathResource (active paths) > mana (pre-level-2)
-    // Note: Pre-path players have pathResource.type === 'stamina' but should use mana
     let resourceValueForThreshold: number | undefined;
-    const hasActivePath = entity.path && entity.pathResource && entity.pathResource.type !== 'stamina';
 
-    if (hasActivePath && entity.pathResource) {
+    if (entity.pathResource) {
       const resource = entity.pathResource;
-      const cost = power.resourceCost ?? power.manaCost;
+      const cost = power.resourceCost ?? 0;
 
       if (resource.resourceBehavior === 'gain') {
         // Arcane Charges: casting ADDS to resource
@@ -444,15 +441,8 @@ export function PowerSystem(_deltaMs: number): void {
         }
         resource.current -= cost;
       }
-    } else if (entity.mana) {
-      // Pre-level-2: use mana
-      if (entity.mana.current < power.manaCost) {
-        addCombatLog(`Not enough mana to cast ${power.name}`);
-        world.removeComponent(entity, 'casting');
-        continue;
-      }
-      entity.mana.current = Math.max(0, entity.mana.current - power.manaCost);
     }
+    // No resource check for pre-path players (they can cast freely)
 
     // Get target for damage/debuff powers
     const target = entity.player ? getActiveEnemy() : getPlayer();

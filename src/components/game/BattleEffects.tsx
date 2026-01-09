@@ -335,7 +335,6 @@ export function PixelSpell({ powerId, direction }: PixelSpellProps) {
     'earthquake': { colors: ['#885500', '#aa6600', '#cc8800'], shape: 'earth' },
     'battle-cry': { colors: ['#ff8800', '#ffaa00', '#ffcc00'], shape: 'buff' },
     'shield-wall': { colors: ['#4488ff', '#66aaff', '#88ccff'], shape: 'buff' },
-    'mana-surge': { colors: ['#0044ff', '#0088ff', '#00ccff'], shape: 'holy' },
   };
 
   const config = spellConfig[powerId] || { colors: ['#aa44ff', '#cc66ff', '#ee88ff'], shape: 'fireball' as const };

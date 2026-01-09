@@ -20,8 +20,7 @@ describe('RegenSystem', () => {
     const entity = world.add({
       player: true,
       health: { current: 50, max: 100 },
-      mana: { current: 25, max: 50 },
-      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 0 },
+      regen: { healthPerSecond: 5, accumulated: 0 },
     });
 
     // 16ms tick - not enough for regen
@@ -29,15 +28,13 @@ describe('RegenSystem', () => {
 
     expect(entity.regen?.accumulated).toBe(16);
     expect(entity.health?.current).toBe(50); // No regen yet
-    expect(entity.mana?.current).toBe(25); // No regen yet
   });
 
   it('should apply health regen when 1 second accumulated', () => {
     const entity = world.add({
       player: true,
       health: { current: 50, max: 100 },
-      mana: { current: 25, max: 50 },
-      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 990 },
+      regen: { healthPerSecond: 5, accumulated: 990 },
     });
 
     // 16ms tick - pushes over 1000ms threshold
@@ -48,44 +45,16 @@ describe('RegenSystem', () => {
     expect(entity.regen?.accumulated).toBe(6);
   });
 
-  it('should apply mana regen when 1 second accumulated', () => {
-    const entity = world.add({
-      player: true,
-      health: { current: 50, max: 100 },
-      mana: { current: 25, max: 50 },
-      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 990 },
-    });
-
-    // 16ms tick - pushes over 1000ms threshold
-    RegenSystem(16);
-
-    expect(entity.mana?.current).toBe(27); // 25 + 2
-  });
-
   it('should not exceed max health', () => {
     const entity = world.add({
       player: true,
       health: { current: 98, max: 100 },
-      mana: { current: 25, max: 50 },
-      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 990 },
+      regen: { healthPerSecond: 5, accumulated: 990 },
     });
 
     RegenSystem(16);
 
     expect(entity.health?.current).toBe(100); // Capped at max
-  });
-
-  it('should not exceed max mana', () => {
-    const entity = world.add({
-      player: true,
-      health: { current: 50, max: 100 },
-      mana: { current: 49, max: 50 },
-      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 990 },
-    });
-
-    RegenSystem(16);
-
-    expect(entity.mana?.current).toBe(50); // Capped at max
   });
 
   it('should respect combat speed multiplier', () => {
@@ -98,8 +67,7 @@ describe('RegenSystem', () => {
     const entity = world.add({
       player: true,
       health: { current: 50, max: 100 },
-      mana: { current: 25, max: 50 },
-      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 0 },
+      regen: { healthPerSecond: 5, accumulated: 0 },
     });
 
     // 16ms tick at 2x speed = 32ms effective
@@ -112,8 +80,7 @@ describe('RegenSystem', () => {
     const entity = world.add({
       player: true,
       health: { current: 50, max: 100 },
-      mana: { current: 25, max: 50 },
-      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 990 },
+      regen: { healthPerSecond: 5, accumulated: 990 },
       dying: { startedAtTick: 0, duration: 500 },
     });
 
@@ -121,7 +88,6 @@ describe('RegenSystem', () => {
 
     // Should not have applied regen
     expect(entity.health?.current).toBe(50);
-    expect(entity.mana?.current).toBe(25);
     // Accumulated should not have changed either
     expect(entity.regen?.accumulated).toBe(990);
   });
@@ -136,19 +102,17 @@ describe('RegenSystem', () => {
     const entity = world.add({
       player: true,
       health: { current: 50, max: 100 },
-      mana: { current: 25, max: 50 },
-      regen: { healthPerSecond: 5, manaPerSecond: 2, accumulated: 990 },
+      regen: { healthPerSecond: 5, accumulated: 990 },
     });
 
     RegenSystem(16);
 
     // Should not have applied regen
     expect(entity.health?.current).toBe(50);
-    expect(entity.mana?.current).toBe(25);
     expect(entity.regen?.accumulated).toBe(990);
   });
 
-  it('should handle entities without mana component', () => {
+  it('should handle entities without player component (enemies)', () => {
     const entity = world.add({
       enemy: {
         tier: 'common',
@@ -158,7 +122,7 @@ describe('RegenSystem', () => {
         intent: null,
       },
       health: { current: 50, max: 100 },
-      regen: { healthPerSecond: 3, manaPerSecond: 0, accumulated: 990 },
+      regen: { healthPerSecond: 3, accumulated: 990 },
     });
 
     RegenSystem(16);

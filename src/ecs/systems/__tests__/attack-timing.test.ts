@@ -27,14 +27,13 @@ describe('AttackTimingSystem', () => {
     const entity = world.add({
       player: true,
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 20,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 0 },
     });
 
@@ -51,14 +50,13 @@ describe('AttackTimingSystem', () => {
     const entity = world.add({
       player: true,
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 20,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 2490 },
     });
 
@@ -77,14 +75,13 @@ describe('AttackTimingSystem', () => {
     const entity = world.add({
       player: true,
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 20,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 2490 },
     });
 
@@ -99,14 +96,13 @@ describe('AttackTimingSystem', () => {
     const entity = world.add({
       player: true,
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 20,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 2500 },
       statusEffects: [
         { id: 'stun-1', type: 'stun', remainingTurns: 1, icon: 'stun' },

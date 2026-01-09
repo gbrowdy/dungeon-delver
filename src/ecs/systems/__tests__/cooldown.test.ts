@@ -18,7 +18,6 @@ describe('CooldownSystem', () => {
     const entity = world.add({
       player: true,
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       cooldowns: new Map([['fireball', { remaining: 5, base: 5 }]]),
     });
 
@@ -32,7 +31,6 @@ describe('CooldownSystem', () => {
     const entity = world.add({
       player: true,
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       cooldowns: new Map([['fireball', { remaining: 0.01, base: 5 }]]),
     });
 
@@ -52,7 +50,6 @@ describe('CooldownSystem', () => {
     const entity = world.add({
       player: true,
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       cooldowns: new Map([['fireball', { remaining: 5, base: 5 }]]),
     });
 
@@ -67,7 +64,6 @@ describe('CooldownSystem', () => {
       const player = world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         stanceState: {
           activeStanceId: 'defensive',
           stanceCooldownRemaining: 5000, // 5000ms
@@ -84,7 +80,6 @@ describe('CooldownSystem', () => {
       const player = world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         stanceState: {
           activeStanceId: 'defensive',
           stanceCooldownRemaining: 10, // 10ms
@@ -107,7 +102,6 @@ describe('CooldownSystem', () => {
       const player = world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         stanceState: {
           activeStanceId: 'defensive',
           stanceCooldownRemaining: 5000, // 5000ms
@@ -124,7 +118,6 @@ describe('CooldownSystem', () => {
       const player = world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         stanceState: {
           activeStanceId: 'defensive',
           stanceCooldownRemaining: 0,
@@ -141,7 +134,6 @@ describe('CooldownSystem', () => {
       const player = world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
       });
 
       // Should not throw

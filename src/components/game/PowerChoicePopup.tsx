@@ -30,9 +30,9 @@ export function PowerChoicePopup() {
     }
   };
 
-  // Get the cost to display (resourceCost takes priority over manaCost)
+  // Get the cost to display
   const getResourceCost = (power: Power): number => {
-    return power.resourceCost ?? power.manaCost;
+    return power.resourceCost;
   };
 
   // Get the resource label based on player's path
@@ -42,7 +42,7 @@ export function PowerChoicePopup() {
       const resourceType = player.pathResource.type;
       return resourceType.charAt(0).toUpperCase() + resourceType.slice(1);
     }
-    return 'Mana';
+    return 'Resource';
   };
 
   return (

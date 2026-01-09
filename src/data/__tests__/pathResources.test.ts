@@ -22,9 +22,9 @@ describe('getResourceDisplayName', () => {
 });
 
 describe('getPathResource', () => {
-  it('should return mana for unknown path', () => {
+  it('should return null for unknown path', () => {
     const resource = getPathResource('unknown_path' as any);
-    expect(resource.type).toBe('mana');
+    expect(resource).toBeNull();
   });
 
   it('should return fury for berserker path', () => {

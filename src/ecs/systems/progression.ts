@@ -51,11 +51,6 @@ export function ProgressionSystem(_deltaMs: number): void {
       // Note: Don't restore HP on level up - only increase max
     }
 
-    if (player.mana) {
-      player.mana.max += LEVEL_UP_BONUSES.MAX_MANA;
-      // Note: Don't restore mana on level up - only increase max
-    }
-
     if (player.attack) {
       player.attack.baseDamage += LEVEL_UP_BONUSES.POWER;
     }
@@ -63,7 +58,7 @@ export function ProgressionSystem(_deltaMs: number): void {
     // Log the level up
     addCombatLog(`Level up! Now level ${player.progression.level}`);
     addCombatLog(
-      `+${LEVEL_UP_BONUSES.MAX_HEALTH} Max HP, +${LEVEL_UP_BONUSES.MAX_MANA} Max Mana, +${LEVEL_UP_BONUSES.POWER} Power`
+      `+${LEVEL_UP_BONUSES.MAX_HEALTH} Max HP, +${LEVEL_UP_BONUSES.POWER} Power`
     );
 
     // Queue level-up animation

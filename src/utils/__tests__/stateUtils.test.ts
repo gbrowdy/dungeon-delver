@@ -18,8 +18,6 @@ describe('stateUtils', () => {
           power: 10,
           armor: 5,
           speed: 8,
-          mana: 30,
-          maxMana: 30,
           fortune: 5,
         },
         currentStats: {
@@ -28,8 +26,6 @@ describe('stateUtils', () => {
           power: 10,
           armor: 5,
           speed: 8,
-          mana: 25,
-          maxMana: 30,
           fortune: 5,
         },
         powers: [
@@ -37,7 +33,7 @@ describe('stateUtils', () => {
             id: 'fireball',
             name: 'Fireball',
             description: 'Deals fire damage',
-            manaCost: 15,
+            resourceCost: 15,
             cooldown: 3,
             effect: 'damage',
             value: 25,
@@ -128,8 +124,6 @@ describe('stateUtils', () => {
           power: 10,
           armor: 5,
           speed: 8,
-          mana: 30,
-          maxMana: 30,
           fortune: 5,
         },
         currentStats: {
@@ -138,14 +132,7 @@ describe('stateUtils', () => {
           power: 10,
           armor: 5,
           speed: 8,
-          mana: 30,
-          maxMana: 30,
           fortune: 5,
-          
-          
-          
-          
-          
         },
         powers: [],
         inventory: [],
@@ -196,12 +183,12 @@ describe('stateUtils', () => {
         gold: 0,
         baseStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          mana: 30, maxMana: 30, fortune: 5,
+          fortune: 5,
               
         },
         currentStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          mana: 30, maxMana: 30, fortune: 5,
+          fortune: 5,
               
         },
         powers: [],
@@ -259,12 +246,12 @@ describe('stateUtils', () => {
         gold: 0,
         baseStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          mana: 30, maxMana: 30, fortune: 5,
+          fortune: 5,
               
         },
         currentStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          mana: 30, maxMana: 30, fortune: 5,
+          fortune: 5,
               
         },
         powers: [],
@@ -337,12 +324,12 @@ describe('stateUtils', () => {
         gold: 0,
         baseStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          mana: 30, maxMana: 30, fortune: 5,
+          fortune: 5,
               
         },
         currentStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          mana: 30, maxMana: 30, fortune: 5,
+          fortune: 5,
               
         },
         powers: [],
@@ -397,12 +384,12 @@ describe('stateUtils', () => {
         gold: 0,
         baseStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          mana: 30, maxMana: 30, fortune: 5,
+          fortune: 5,
               
         },
         currentStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 8,
-          mana: 30, maxMana: 30, fortune: 5,
+          fortune: 5,
               
         },
         powers: [
@@ -410,7 +397,7 @@ describe('stateUtils', () => {
             id: 'fireball',
             name: 'Fireball',
             description: 'Deals fire damage',
-            manaCost: 15,
+            resourceCost: 15,
             cooldown: 3,
             effect: 'damage',
             value: 25,
@@ -471,11 +458,11 @@ describe('stateUtils', () => {
         gold: 100,
         baseStats: {
           health: 50, maxHealth: 50, power: 10, armor: 5, speed: 15,
-          mana: 30, maxMana: 30, fortune: 5,
+          fortune: 5,
         },
         currentStats: {
           health: 45, maxHealth: 50, power: 10, armor: 5, speed: 15,
-          mana: 25, maxMana: 30, fortune: 5,
+          fortune: 5,
         },
         powers: [],
         inventory: [],

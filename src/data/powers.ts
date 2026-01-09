@@ -7,7 +7,7 @@ export const POWER_UPGRADE_CONFIG = {
   // Per-level bonuses
   VALUE_INCREASE_PER_LEVEL: 0.25, // +25% power value per upgrade
   COOLDOWN_REDUCTION_PER_LEVEL: 0.5, // -0.5s cooldown per upgrade
-  MANA_COST_REDUCTION_PER_LEVEL: 0.1, // -10% mana cost per upgrade
+  COST_REDUCTION_PER_LEVEL: 0.1, // -10% resource cost per upgrade
   // Chance that one of the power offers will be an upgrade (if player has upgradeable powers)
   UPGRADE_OFFER_CHANCE: 0.5,
 } as const;
@@ -44,8 +44,7 @@ interface PowerDefinition {
   name: string;
   description: string;
   icon: string;
-  manaCost: number;
-  resourceCost?: number; // For active path resources
+  resourceCost: number;
   cooldown: number;
   category: 'strike' | 'burst' | 'execute' | 'control' | 'buff' | 'sacrifice' | 'heal';
   effect: 'damage' | 'heal' | 'buff' | 'debuff';
@@ -70,7 +69,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Crushing Blow',
     description: 'A devastating single strike dealing 150% damage',
     icon: 'power-crushing_blow',
-    manaCost: 30,
+    resourceCost: 30,
     cooldown: 5,
     category: 'strike',
     effect: 'damage',
@@ -86,7 +85,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Power Strike',
     description: 'Basic but effective strike dealing 120% damage',
     icon: 'power-power_strike',
-    manaCost: 20,
+    resourceCost: 20,
     cooldown: 3,
     category: 'strike',
     effect: 'damage',
@@ -105,7 +104,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Fan of Knives',
     description: '5 quick hits of 30% damage each (150% total, procs on-hit effects)',
     icon: 'power-fan_of_knives',
-    manaCost: 35,
+    resourceCost: 35,
     cooldown: 6,
     category: 'burst',
     effect: 'damage',
@@ -121,7 +120,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Flurry',
     description: '3 rapid strikes of 50% damage each (150% total)',
     icon: 'power-flurry',
-    manaCost: 25,
+    resourceCost: 25,
     cooldown: 4,
     category: 'burst',
     effect: 'damage',
@@ -141,7 +140,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Ambush',
     description: 'Deal 100% damage, doubled against enemies below 25% HP',
     icon: 'power-ambush',
-    manaCost: 30,
+    resourceCost: 30,
     cooldown: 5,
     category: 'execute',
     effect: 'damage',
@@ -157,7 +156,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Coup de Grace',
     description: 'Massive 250% damage strike to enemies below 30% HP, else 80%',
     icon: 'power-coup_de_grace',
-    manaCost: 40,
+    resourceCost: 40,
     cooldown: 8,
     category: 'execute',
     effect: 'damage',
@@ -177,7 +176,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Frost Nova',
     description: 'Deal 110% damage and slow enemy attack speed by 30% for 4s',
     icon: 'power-frost_nova',
-    manaCost: 35,
+    resourceCost: 35,
     cooldown: 6,
     category: 'control',
     effect: 'debuff',
@@ -193,7 +192,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Stunning Blow',
     description: 'Deal 100% damage with 40% chance to stun for 2s',
     icon: 'power-stunning_blow',
-    manaCost: 30,
+    resourceCost: 30,
     cooldown: 5,
     category: 'control',
     effect: 'debuff',
@@ -213,7 +212,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Battle Cry',
     description: 'Gain +50% Power and +30% Speed for 6 seconds',
     icon: 'power-battle_cry',
-    manaCost: 40,
+    resourceCost: 40,
     cooldown: 10,
     category: 'buff',
     effect: 'buff',
@@ -229,7 +228,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Inner Focus',
     description: 'Gain +40% Fortune (crit/dodge/proc chance) for 5 seconds',
     icon: 'power-inner_focus',
-    manaCost: 30,
+    resourceCost: 30,
     cooldown: 8,
     category: 'buff',
     effect: 'buff',
@@ -248,7 +247,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Reckless Swing',
     description: 'Spend 15% max HP to deal 200% damage',
     icon: 'power-reckless_swing',
-    manaCost: 25,
+    resourceCost: 25,
     cooldown: 4,
     category: 'sacrifice',
     effect: 'damage',
@@ -262,18 +261,18 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
   {
     id: 'blood-pact',
     name: 'Blood Pact',
-    description: 'Spend 20% max HP to restore 50 mana',
+    description: 'Spend 20% max HP to restore 50 resource',
     icon: 'power-blood_pact',
-    manaCost: 0,
+    resourceCost: 0,
     cooldown: 12,
     category: 'sacrifice',
     effect: 'heal',
     value: 50,
     synergies: [
-      { pathId: 'berserker', description: 'Reckless Fury converts HP to mana' },
+      { pathId: 'berserker', description: 'Enables more power usage' },
       { pathId: 'archmage', description: 'Enables more spell casts' },
     ],
-    additionalEffects: 'Costs 20% max HP, restores mana instead of HP',
+    additionalEffects: 'Costs 20% max HP, restores resource instead of HP',
   },
 
   // ============================================================================
@@ -284,7 +283,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Divine Heal',
     description: 'Restore 60% of max HP',
     icon: 'power-divine_heal',
-    manaCost: 40,
+    resourceCost: 40,
     cooldown: 10,
     category: 'heal',
     effect: 'heal',
@@ -299,7 +298,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Regeneration',
     description: 'Restore 10% max HP immediately, then 3% per second for 5s',
     icon: 'power-regeneration',
-    manaCost: 30,
+    resourceCost: 30,
     cooldown: 8,
     category: 'heal',
     effect: 'heal',
@@ -319,7 +318,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Earthquake',
     description: 'Massive tremor deals 250% damage',
     icon: 'power-earthquake',
-    manaCost: 60,
+    resourceCost: 60,
     cooldown: 12,
     category: 'strike',
     effect: 'damage',
@@ -334,7 +333,7 @@ const POWER_DEFINITIONS: PowerDefinition[] = [
     name: 'Vampiric Touch',
     description: 'Deal 120% damage and heal for 100% of damage dealt',
     icon: 'power-vampiric_touch',
-    manaCost: 45,
+    resourceCost: 45,
     cooldown: 7,
     category: 'heal',
     effect: 'damage',
@@ -352,8 +351,7 @@ export const UNLOCKABLE_POWERS: Power[] = POWER_DEFINITIONS.map(def => ({
   id: def.id,
   name: def.name,
   description: def.description,
-  manaCost: def.manaCost,
-  resourceCost: def.resourceCost, // Pass through
+  resourceCost: def.resourceCost,
   cooldown: def.cooldown,
   effect: def.effect,
   value: def.value,
@@ -398,7 +396,7 @@ export function generatePowerUpgradeOffer(power: Power): PowerUpgradeOffer | nul
   const newLevel = currentLevel + 1;
   const valueIncrease = Math.floor(POWER_UPGRADE_CONFIG.VALUE_INCREASE_PER_LEVEL * 100);
   const cooldownReduction = POWER_UPGRADE_CONFIG.COOLDOWN_REDUCTION_PER_LEVEL;
-  const manaReduction = Math.floor(POWER_UPGRADE_CONFIG.MANA_COST_REDUCTION_PER_LEVEL * 100);
+  const costReduction = Math.floor(POWER_UPGRADE_CONFIG.COST_REDUCTION_PER_LEVEL * 100);
 
   return {
     powerId: power.id,
@@ -406,7 +404,7 @@ export function generatePowerUpgradeOffer(power: Power): PowerUpgradeOffer | nul
     powerIcon: power.icon,
     currentLevel,
     newLevel,
-    description: `+${valueIncrease}% power, -${cooldownReduction}s cooldown, -${manaReduction}% mana`,
+    description: `+${valueIncrease}% power, -${cooldownReduction}s cooldown, -${costReduction}% cost`,
     isUpgrade: true,
   };
 }
@@ -421,7 +419,7 @@ export function applyPowerUpgrade(power: Power): Power {
   // Calculate new values
   const valueMultiplier = 1 + (POWER_UPGRADE_CONFIG.VALUE_INCREASE_PER_LEVEL * (newLevel - 1));
   const cooldownReduction = POWER_UPGRADE_CONFIG.COOLDOWN_REDUCTION_PER_LEVEL * (newLevel - 1);
-  const manaCostMultiplier = 1 - (POWER_UPGRADE_CONFIG.MANA_COST_REDUCTION_PER_LEVEL * (newLevel - 1));
+  const costMultiplier = 1 - (POWER_UPGRADE_CONFIG.COST_REDUCTION_PER_LEVEL * (newLevel - 1));
 
   // Find base power to get original values
   const basePower = UNLOCKABLE_POWERS.find(p => p.id === power.id);
@@ -429,7 +427,7 @@ export function applyPowerUpgrade(power: Power): Power {
 
   const newValue = Number((basePower.value * valueMultiplier).toFixed(2));
   const newCooldown = Math.max(1, basePower.cooldown - cooldownReduction);
-  const newManaCost = Math.max(5, Math.floor(basePower.manaCost * manaCostMultiplier));
+  const newCost = Math.max(5, Math.floor(basePower.resourceCost * costMultiplier));
 
   // Generate new description based on effect type
   let newDescription = power.description;
@@ -441,7 +439,7 @@ export function applyPowerUpgrade(power: Power): Power {
     ...power,
     value: newValue,
     cooldown: newCooldown,
-    manaCost: newManaCost,
+    resourceCost: newCost,
     description: newDescription,
     upgradeLevel: newLevel,
     name: newLevel > 1 ? `${basePower.name} +${newLevel - 1}` : basePower.name,

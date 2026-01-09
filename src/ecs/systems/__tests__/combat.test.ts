@@ -25,14 +25,13 @@ describe('CombatSystem', () => {
       player: true,
       identity: { name: 'Hero', class: 'warrior' },
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 20,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 0 },
       attackReady: { damage: 20, isCrit: false },
     });
@@ -47,7 +46,7 @@ describe('CombatSystem', () => {
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 3, blockReduction: 0 },
+      defense: { value: 3,  },
       speed: { value: 8, attackInterval: 3000, accumulated: 0 },
     });
 
@@ -62,14 +61,13 @@ describe('CombatSystem', () => {
       player: true,
       identity: { name: 'Hero', class: 'warrior' },
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 5,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 0 },
       attackReady: { damage: 5, isCrit: false },
     });
@@ -77,7 +75,7 @@ describe('CombatSystem', () => {
     const enemy = world.add({
       enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
       health: { current: 50, max: 50 },
-      defense: { value: 100, blockReduction: 0 }, // Very high defense
+      defense: { value: 100,  }, // Very high defense
       speed: { value: 8, attackInterval: 3000, accumulated: 0 },
     });
 
@@ -92,14 +90,13 @@ describe('CombatSystem', () => {
       player: true,
       identity: { name: 'Hero', class: 'warrior' },
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 20,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 0 },
       attackReady: { damage: 20, isCrit: false },
     });
@@ -107,7 +104,7 @@ describe('CombatSystem', () => {
     world.add({
       enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
       health: { current: 50, max: 50 },
-      defense: { value: 3, blockReduction: 0 },
+      defense: { value: 3,  },
       speed: { value: 8, attackInterval: 3000, accumulated: 0 },
     });
 
@@ -121,14 +118,13 @@ describe('CombatSystem', () => {
       player: true,
       identity: { name: 'Hero', class: 'warrior' },
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 20,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 0 },
       attackReady: { damage: 20, isCrit: false },
     });
@@ -136,7 +132,7 @@ describe('CombatSystem', () => {
     const enemy = world.add({
       enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
       health: { current: 50, max: 50 },
-      defense: { value: 3, blockReduction: 0 },
+      defense: { value: 3,  },
       speed: { value: 8, attackInterval: 3000, accumulated: 0 },
       dying: { startedAtTick: 0, duration: 500 },
     });
@@ -175,7 +171,7 @@ describe('CombatSystem', () => {
       const enemy = world.add({
         enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
         health: { current: 100, max: 100 },
-        defense: { value: 0, blockReduction: 0 },
+        defense: { value: 0,  },
         statusEffects: [],
       });
 
@@ -221,7 +217,7 @@ describe('CombatSystem', () => {
       const enemy = world.add({
         enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
         health: { current: 100, max: 100 },
-        defense: { value: 0, blockReduction: 0 },
+        defense: { value: 0,  },
         statusEffects: [],
       });
 
@@ -252,7 +248,7 @@ describe('CombatSystem', () => {
       const player = world.add({
         player: true,
         health: { current: 100, max: 100 },
-        defense: { value: 0, blockReduction: 0 },
+        defense: { value: 0,  },
         statusEffects: [],
         path: { pathId: 'enchanter', abilities: [] },
         stanceState: { activeStanceId: 'hex_veil', stanceCooldownRemaining: 0, triggerCooldowns: {} },

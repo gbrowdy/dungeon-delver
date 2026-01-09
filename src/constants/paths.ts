@@ -26,7 +26,7 @@ export function getExpectedAbilityCount(level: number): number {
 }
 
 // Partial stats that can be applied as bonuses
-export type PathStatBonus = Partial<Pick<Stats, 'maxHealth' | 'health' | 'power' | 'armor' | 'speed' | 'maxMana' | 'mana' | 'fortune'>>;
+export type PathStatBonus = Partial<Pick<Stats, 'maxHealth' | 'health' | 'power' | 'armor' | 'speed' | 'fortune'>>;
 
 export const PATH_SELECTION_BONUSES: Record<string, PathStatBonus> = {
   // Warrior paths
@@ -34,8 +34,8 @@ export const PATH_SELECTION_BONUSES: Record<string, PathStatBonus> = {
   guardian: { armor: 2, maxHealth: 10, health: 10 },   // Pure defense
 
   // Mage paths
-  archmage: { power: 3, maxMana: 10, mana: 10 },       // Spell damage focus
-  enchanter: { power: 1, maxMana: 20, mana: 20 },      // Mana sustain focus
+  archmage: { power: 3 },                              // Spell damage focus
+  enchanter: { power: 1, fortune: 3 },                 // Proc focus
 
   // Rogue paths
   assassin: { power: 2, fortune: 5 },                   // Crit/damage focus

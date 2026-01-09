@@ -14,7 +14,6 @@ const mockBasePower: Power = {
   name: 'Rage Strike',
   description: 'Deal 200% damage. +50% damage if below 50% HP.',
   icon: 'power-rage_strike',
-  manaCost: 0,
   resourceCost: 30,
   cooldown: 5,
   effect: 'damage',

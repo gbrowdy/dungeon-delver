@@ -274,7 +274,7 @@ export function ClassSelect({ onSelect }: ClassSelectProps) {
                   </p>
                   <div className="flex gap-3 mt-2 pixel-text text-pixel-2xs">
                     <span className="text-blue-400">
-                      Cost: <span className="text-slate-200">{CLASS_DATA[activeClass].startingPower.manaCost}</span>
+                      Cost: <span className="text-slate-200">{CLASS_DATA[activeClass].startingPower.resourceCost}</span>
                     </span>
                     <span className="text-orange-400">
                       CD: <span className="text-slate-200">{CLASS_DATA[activeClass].startingPower.cooldown}s</span>

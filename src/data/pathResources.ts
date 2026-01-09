@@ -1,7 +1,7 @@
 /**
  * Path Resource Definitions (Phase 6: Active Path Resources)
  *
- * Each active path has a unique resource that replaces mana:
+ * Each active path has a unique resource:
  * - Berserker (Warrior): Fury - Builds from combat, empowers at high stacks
  * - Archmage (Mage): Arcane Charges - Builds from spell casts, stacking damage
  * - Assassin (Rogue): Momentum - Builds from crits/abilities, enables execute
@@ -25,19 +25,6 @@ export const STAMINA_RESOURCE: PathResource = {
   },
 };
 
-/**
- * Default mana resource for pre-level-2 players only
- * Note: Passive paths have NO resource (stances, not powers)
- * Note: Mana regeneration is handled by RegenSystem
- */
-export const DEFAULT_MANA_RESOURCE: PathResource = {
-  type: 'mana',
-  current: 50,
-  max: 50,
-  color: '#3b82f6', // blue-500
-  resourceBehavior: 'spend',
-  generation: {},
-};
 
 /**
  * Resource definitions keyed by path ID
@@ -45,7 +32,7 @@ export const DEFAULT_MANA_RESOURCE: PathResource = {
  *
  * resourceBehavior:
  * - 'spend': Powers cost resource (Fury, Momentum, Zeal)
- * - 'gain': Powers add to resource (Arcane Charges - reverse mana)
+ * - 'gain': Powers add to resource (Arcane Charges)
  */
 export const PATH_RESOURCES: Record<string, PathResource> = {
   berserker: {
@@ -130,7 +117,6 @@ export const PATH_RESOURCES: Record<string, PathResource> = {
     generation: {
       onPowerUse: 2,
       onHit: 1,
-      onBlock: 1,
       onKill: 3,
     },
     // No decay - small pool with combat-based generation
@@ -155,7 +141,6 @@ export const PATH_RESOURCES: Record<string, PathResource> = {
     generation: {
       onPowerUse: 2,
       onHit: 1,
-      onBlock: 1,
       onKill: 3,
     },
     thresholds: [
@@ -173,11 +158,11 @@ export const PATH_RESOURCES: Record<string, PathResource> = {
 /**
  * Get the resource definition for a path
  * Returns stamina for players without a path (level 1)
- * Returns path-specific resource or mana fallback for others
+ * Returns path-specific resource or null for passive paths
  */
-export function getPathResource(pathId: string | undefined): PathResource {
+export function getPathResource(pathId: string | undefined): PathResource | null {
   if (!pathId) return { ...STAMINA_RESOURCE };
-  return PATH_RESOURCES[pathId] ? { ...PATH_RESOURCES[pathId] } : { ...DEFAULT_MANA_RESOURCE };
+  return PATH_RESOURCES[pathId] ? { ...PATH_RESOURCES[pathId] } : null;
 }
 
 /**
@@ -189,7 +174,6 @@ export function getResourceDisplayName(type: PathResource['type']): string {
     case 'arcane_charges': return 'Arcane Charges';
     case 'momentum': return 'Momentum';
     case 'zeal': return 'Zeal';
-    case 'mana': return 'Mana';
     case 'stamina': return 'Stamina';
     default: return 'Resource';
   }

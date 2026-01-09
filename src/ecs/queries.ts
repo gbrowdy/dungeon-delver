@@ -8,7 +8,7 @@ import { world } from './world';
 import type { Entity } from './components';
 
 // Player queries
-// Note: Don't require 'mana' - it's removed when player selects a path (replaced by pathResource or nothing)
+// Note: pathResource starts as stamina, then changes based on path selection (or removed for passive paths)
 export const playerQuery = world.with('player', 'health');
 export const playerWithStatsQuery = world.with('player', 'health', 'attack', 'defense', 'speed');
 

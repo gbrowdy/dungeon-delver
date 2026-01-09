@@ -12,18 +12,16 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       power: 9,
       armor: 4,
       speed: 8,
-      mana: 40,
-      maxMana: 40,
       fortune: 5,
     },
     startingPower: {
       id: 'berserker-rage',
       name: 'Berserker Rage',
       description: 'Enter a fury, dealing 200% damage on next hit',
-      manaCost: 20,    // Reduced for better early game viability
-      cooldown: 4,     // Increased from 3
+      resourceCost: 20,
+      cooldown: 4,
       effect: 'damage',
-      value: 2.0,      // Buffed for competitive early game damage
+      value: 2.0,
       icon: 'power-reckless_swing',
     },
   },
@@ -37,18 +35,16 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       power: 10,
       armor: 2,
       speed: 10,
-      mana: 80,
-      maxMana: 80,
       fortune: 5,
     },
     startingPower: {
       id: 'fireball',
       name: 'Fireball',
       description: 'Launch a devastating fireball dealing 220% damage',
-      manaCost: 40,    // Increased from 30
-      cooldown: 3,     // Increased from 2
+      resourceCost: 40,
+      cooldown: 3,
       effect: 'damage',
-      value: 2.2,      // Reduced from 2.5
+      value: 2.2,
       icon: 'power-fireball',
     },
   },
@@ -62,18 +58,16 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       power: 9,
       armor: 2,
       speed: 14,
-      mana: 50,
-      maxMana: 50,
       fortune: 10,
     },
     startingPower: {
       id: 'shadow-strike',
       name: 'Shadow Strike',
       description: 'Strike from shadows with guaranteed critical hit',
-      manaCost: 25,    // Increased from 20
-      cooldown: 3,     // Increased from 2
+      resourceCost: 25,
+      cooldown: 3,
       effect: 'damage',
-      value: 1.4,      // Reduced from 1.5
+      value: 1.4,
       icon: 'power-ambush',
     },
   },
@@ -87,8 +81,6 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       power: 7,
       armor: 5,
       speed: 7,
-      mana: 60,
-      maxMana: 60,
       fortune: 5,
     },
     hpRegen: 0.5, // Paladin's innate HP regeneration
@@ -96,10 +88,10 @@ export const CLASS_DATA: Record<CharacterClass, ClassData> = {
       id: 'divine-heal',
       name: 'Divine Heal',
       description: 'Restore 40% of maximum health',
-      manaCost: 30,    // Reduced from 45 to be usable at start
-      cooldown: 5,     // Increased from 4
+      resourceCost: 30,
+      cooldown: 5,
       effect: 'heal',
-      value: 0.4,      // Buffed from 0.3 for more impactful healing
+      value: 0.4,
       icon: 'power-divine_heal',
     },
   },

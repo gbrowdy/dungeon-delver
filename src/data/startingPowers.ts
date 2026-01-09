@@ -10,7 +10,7 @@ import type { CharacterClass } from '@/types/game';
  */
 
 const BASE_STARTING_POWER = {
-  manaCost: 15, // Uses stamina at level 1
+  resourceCost: 15, // Uses stamina at level 1
   cooldown: 3,
   effect: 'damage' as const,
   value: 1.2, // 120% damage

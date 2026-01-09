@@ -39,7 +39,6 @@ function createTestPlayerEntity(): Entity {
     player: true,
     identity: { name: 'Test Hero', class: 'warrior' },
     health: { current: 100, max: 100 },
-    mana: { current: 50, max: 50 },
     attack: {
       baseDamage: 10,
       critChance: 0.1,

@@ -59,7 +59,6 @@ export interface GameActions {
 
   // Combat
   usePower: (powerId: string) => void;
-  activateBlock: () => void;
 
   // UI
   togglePause: () => void;
@@ -208,9 +207,6 @@ export function GameProvider({ children, enabled = true }: GameProviderProps) {
     // Combat
     usePower: (powerId: string) => {
       dispatch(Commands.activatePower(powerId));
-    },
-    activateBlock: () => {
-      dispatch(Commands.activateBlock());
     },
 
     // UI

@@ -55,26 +55,26 @@ function getPowerIcon(power: Power): React.ComponentType<{ className?: string }>
 /**
  * Props for the PowerButton component.
  *
- * @property power - The power/ability configuration containing icon, name, cooldown, mana cost
+ * @property power - The power/ability configuration containing icon, name, cooldown, resource cost
  * @property cooldownRemaining - Current cooldown remaining (from cooldowns Map)
  * @property currentResource - Player's current resource value for affordability check
- * @property effectiveCost - Actual cost after path ability reductions (optional, defaults to power.manaCost)
+ * @property effectiveCost - Actual cost after path ability reductions (optional, defaults to power.resourceCost)
  * @property onUse - Callback fired when the power button is clicked
  * @property disabled - Whether the button is disabled (e.g., combat paused, not in combat phase)
  * @property playerPathId - Player's current path ID for synergy checking
  * @property resourceBehavior - 'spend' (default) or 'gain' for Arcane Charges
  * @property resourceMax - Max resource value (required for gain-type to check overflow)
- * @property resourceLabel - Display label for resource (e.g., 'MP', 'Fury', 'Charges')
+ * @property resourceLabel - Display label for resource (e.g., 'Stamina', 'Fury', 'Charges')
  */
 interface PowerButtonProps {
-  /** The power configuration (icon, name, cooldown, mana cost, effect) */
+  /** The power configuration (icon, name, cooldown, resource cost, effect) */
   power: Power;
   /** Current cooldown remaining in seconds (from cooldowns Map, 0 = ready) */
   cooldownRemaining: number;
   /** Player's current resource value for affordability check */
-  currentMana: number;
+  currentResource: number;
   /** Effective cost after path ability reductions */
-  effectiveManaCost?: number;
+  effectiveCost?: number;
   /** Callback when power button is clicked */
   onUse: () => void;
   /** Whether the button is disabled (combat paused, etc.) */
@@ -85,7 +85,7 @@ interface PowerButtonProps {
   resourceBehavior?: 'spend' | 'gain';
   /** Max resource value (required for gain-type to check overflow) */
   resourceMax?: number;
-  /** Display label for resource (e.g., 'MP', 'Fury', 'Charges') */
+  /** Display label for resource (e.g., 'Stamina', 'Fury', 'Charges') */
   resourceLabel?: string;
 }
 
@@ -94,7 +94,7 @@ function getPowerDescription(power: Power): string {
     'battle-cry': '+ATK for 3 turns',
     'whirlwind': 'Heavy damage attack',
     'fireball': 'Magic damage',
-    'mana-surge': 'Restore mana',
+    'mana-surge': 'Restore resource',
     'frost-nova': 'Ice damage',
     'backstab': 'High damage, combos well',
     'smoke-bomb': '+Evasion for 3 turns',
@@ -103,7 +103,7 @@ function getPowerDescription(power: Power): string {
     'divine-shield': '+DEF for 3 turns',
     'smite': 'Holy damage',
   };
-  return descriptions[power.id] || (power.effect === 'damage' ? 'Deal damage' : power.effect === 'heal' ? 'Restore HP/MP' : 'Buff stats');
+  return descriptions[power.id] || (power.effect === 'damage' ? 'Deal damage' : power.effect === 'heal' ? 'Restore HP' : 'Buff stats');
 }
 
 /**
@@ -111,38 +111,38 @@ function getPowerDescription(power: Power): string {
  *
  * Shows:
  * - Power icon and name
- * - Mana cost or cooldown remaining
+ * - Resource cost or cooldown remaining
  * - Visual cooldown overlay that fills from bottom up
  * - Accessible tooltip with power description
  * - Synergy indicator if power matches player's path
  *
  * The button is disabled when:
  * - On cooldown (cooldownRemaining > 0)
- * - Insufficient mana
+ * - Insufficient resource
  * - Explicitly disabled via prop (combat paused, etc.)
  */
 export function PowerButton({
   power,
   cooldownRemaining,
-  currentMana,
-  effectiveManaCost,
+  currentResource,
+  effectiveCost,
   onUse,
   disabled,
   playerPathId,
   resourceBehavior = 'spend',
   resourceMax,
-  resourceLabel = 'MP',
+  resourceLabel = 'Resource',
 }: PowerButtonProps) {
   // Use effective cost if provided, otherwise fall back to base cost
-  const cost = effectiveManaCost ?? power.manaCost;
-  const hasReduction = effectiveManaCost !== undefined && effectiveManaCost < power.manaCost;
+  const cost = effectiveCost ?? power.resourceCost;
+  const hasReduction = effectiveCost !== undefined && effectiveCost < power.resourceCost;
 
   // Check if power can be used based on resource behavior:
   // - spend: Need enough resource (current >= cost)
   // - gain: Need room for more charges (current + cost <= max)
   const canAfford = resourceBehavior === 'gain'
-    ? (resourceMax !== undefined && currentMana + cost <= resourceMax)
-    : currentMana >= cost;
+    ? (resourceMax !== undefined && currentResource + cost <= resourceMax)
+    : currentResource >= cost;
 
   const canUse = cooldownRemaining <= 0 && canAfford && !disabled;
   const isOnCooldown = cooldownRemaining > 0;
@@ -158,8 +158,8 @@ export function PowerButton({
     ? `On cooldown: ${Math.ceil(cooldownRemaining)} seconds remaining`
     : !canAfford
     ? resourceBehavior === 'gain'
-      ? `Resource full: ${Math.floor(currentMana)}/${resourceMax} ${resourceLabel}`
-      : `Insufficient ${resourceLabel.toLowerCase()}: need ${cost}, have ${Math.floor(currentMana)}`
+      ? `Resource full: ${Math.floor(currentResource)}/${resourceMax} ${resourceLabel}`
+      : `Insufficient ${resourceLabel.toLowerCase()}: need ${cost}, have ${Math.floor(currentResource)}`
     : `Ready. ${resourceBehavior === 'gain' ? 'Adds' : 'Costs'} ${cost} ${resourceLabel}.`;
 
   const PowerIcon = getPowerIcon(power);
@@ -201,7 +201,7 @@ export function PowerButton({
             <span className={cn("pixel-text text-pixel-2xs font-medium relative z-10 text-slate-200 truncate max-w-full", isOnCooldown && "opacity-50")}>{power.name}</span>
             <span
               data-testid={isOnCooldown ? `power-cooldown-${power.id}` : undefined}
-              className={cn("pixel-text text-pixel-2xs relative z-10", isOnCooldown ? "text-slate-400" : hasReduction ? "text-emerald-400" : "text-mana")}
+              className={cn("pixel-text text-pixel-2xs relative z-10", isOnCooldown ? "text-slate-400" : hasReduction ? "text-emerald-400" : "text-primary")}
               aria-hidden="true"
             >
               {isOnCooldown ? `${Math.ceil(cooldownRemaining)}s` : `${resourceBehavior === 'gain' ? '+' : ''}${cost} ${resourceLabel}`}
@@ -210,9 +210,9 @@ export function PowerButton({
         </TooltipTrigger>
         <TooltipContent side="top" className="pixel-panel max-w-xs">
           <p className="pixel-text text-pixel-xs font-medium">{getPowerDescription(power)}</p>
-          <p className={cn("pixel-text text-pixel-2xs mt-1", hasReduction ? "text-emerald-400" : "text-mana")}>
+          <p className={cn("pixel-text text-pixel-2xs mt-1", hasReduction ? "text-emerald-400" : "text-primary")}>
             {hasReduction ? (
-              <><span className="line-through text-slate-500">{power.manaCost}</span> {resourceBehavior === 'gain' ? '+' : ''}{cost} {resourceLabel}</>
+              <><span className="line-through text-slate-500">{power.resourceCost}</span> {resourceBehavior === 'gain' ? '+' : ''}{cost} {resourceLabel}</>
             ) : (
               <>{resourceBehavior === 'gain' ? '+' : ''}{cost} {resourceLabel}</>
             )} · {power.cooldown}s cooldown

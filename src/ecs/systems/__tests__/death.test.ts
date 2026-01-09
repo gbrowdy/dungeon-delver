@@ -74,7 +74,6 @@ describe('DeathSystem', () => {
     const player = world.add({
       player: true,
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       progression: { level: 1, xp: 0, xpToNext: 100 },
       inventory: { gold: 0, items: [] },
     });
@@ -95,7 +94,6 @@ describe('DeathSystem', () => {
     world.add({
       player: true,
       health: { current: 0, max: 100 },
-      mana: { current: 50, max: 50 },
     });
 
     DeathSystem(16);
@@ -117,7 +115,6 @@ describe('DeathSystem', () => {
     world.add({
       player: true,
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       progression: { level: 1, xp: 0, xpToNext: 100 },
       inventory: { gold: 0, items: [] },
     });

@@ -15,8 +15,6 @@ const createMockPlayer = (overrides?: Partial<Player>): Player => ({
     power: 10,
     armor: 5,
     speed: 10,
-    mana: 50,
-    maxMana: 50,
     fortune: 5,
   },
   currentStats: {
@@ -25,8 +23,6 @@ const createMockPlayer = (overrides?: Partial<Player>): Player => ({
     power: 10,
     armor: 5,
     speed: 10,
-    mana: 50,
-    maxMana: 50,
     fortune: 5,
   },
   powers: [],

@@ -57,7 +57,6 @@ describe('createPlayerEntity', () => {
 
     // Check combat stats exist
     expect(player.health).toBeDefined();
-    expect(player.mana).toBeDefined();
     expect(player.attack).toBeDefined();
     expect(player.defense).toBeDefined();
     expect(player.speed).toBeDefined();
@@ -125,11 +124,6 @@ describe('createPlayerEntity', () => {
       max: warriorStats.maxHealth,
     });
 
-    expect(player.mana).toEqual({
-      current: warriorStats.maxMana,
-      max: warriorStats.maxMana,
-    });
-
     expect(player.attack!.baseDamage).toBe(warriorStats.power);
     expect(player.defense!.value).toBe(warriorStats.armor);
     expect(player.speed!.value).toBe(warriorStats.speed);
@@ -146,11 +140,6 @@ describe('createPlayerEntity', () => {
     expect(player.health).toEqual({
       current: mageStats.maxHealth,
       max: mageStats.maxHealth,
-    });
-
-    expect(player.mana).toEqual({
-      current: mageStats.maxMana,
-      max: mageStats.maxMana,
     });
 
     expect(player.attack!.baseDamage).toBe(mageStats.power);

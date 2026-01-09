@@ -25,14 +25,13 @@ const TRIGGER_TO_GENERATION: Record<PathAbilityTrigger, keyof NonNullable<typeof
   on_kill: 'onKill',
   on_damaged: 'onDamaged',
   on_power_use: 'onPowerUse',
-  on_block: 'onBlock',
   on_dodge: null,        // No resource generation for dodge
   combat_start: null,    // No resource generation for combat start
   turn_start: null,      // No resource generation for turn start
 };
 
 // Workaround for TypeScript - define the type separately
-type GenerationKey = 'onHit' | 'onCrit' | 'onKill' | 'onDamaged' | 'onPowerUse' | 'onBlock' | 'passive';
+type GenerationKey = 'onHit' | 'onCrit' | 'onKill' | 'onDamaged' | 'onPowerUse' | 'passive';
 const generation: Record<GenerationKey, number | undefined> = {} as Record<GenerationKey, number | undefined>;
 
 /**
@@ -55,8 +54,8 @@ export function ResourceGenerationSystem(_deltaMs: number): void {
   const player = getPlayer();
   if (!player?.pathResource) return;
 
-  // Skip if player has default mana (passive paths or pre-level-2)
-  if (player.pathResource.type === 'mana') return;
+  // Skip if player has stamina (pre-path resource uses passive regen, not trigger-based)
+  if (player.pathResource.type === 'stamina') return;
 
   const resource = player.pathResource;
   const pendingTriggers = getPendingTriggers();

@@ -150,7 +150,7 @@ export const PALADIN_PATHS: PathDefinition[] = [
       {
         id: 'crusader_divine_wrath',
         name: 'Divine Wrath',
-        description: 'Powers cost 25% less mana and deal 40% increased damage',
+        description: 'Powers cost 25% less Zeal and deal 40% increased damage',
         icon: 'ability-paths-paladin-crusader_divine_wrath',
         levelRequired: 6,
         subpath: 'inquisitor',

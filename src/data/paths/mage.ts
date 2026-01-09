@@ -5,7 +5,7 @@ import type { PathDefinition, PathAbility, PathAbilityEffect } from '@/types/pat
  * MAGE CLASS PATHS
  *
  * ARCHMAGE (Active Path) - "Spell timing mastery"
- * - Spell damage bonuses, mana efficiency, cooldown manipulation
+ * - Spell damage bonuses, resource efficiency, cooldown manipulation
  * - Rewards skilled power usage and timing
  *
  * ENCHANTER (Passive Path) - "Magic works for you"
@@ -36,7 +36,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
   {
     id: 'archmage_mana_efficiency',
     name: 'Efficient Casting',
-    description: 'Powers cost 15% less mana.',
+    description: 'Powers cost 15% less resource.',
     icon: 'ability-paths-mage-archmage_mana_efficiency',
     levelRequired: 3,
     subpath: null,
@@ -150,7 +150,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
   {
     id: 'destroyer_overwhelming_power',
     name: 'Overwhelming Power',
-    description: 'Powers deal 35% more damage but cost 20% more mana.',
+    description: 'Powers deal 35% more damage but cost 20% more resource.',
     icon: 'ability-paths-mage-destroyer_overwhelming_power',
     levelRequired: 3,
     subpath: 'destroyer',
@@ -201,7 +201,7 @@ const ARCHMAGE_ABILITIES: PathAbility[] = [
   {
     id: 'destroyer_apocalypse',
     name: 'Apocalypse',
-    description: 'Every 10 seconds, your next power deals triple damage and costs no mana.',
+    description: 'Every 10 seconds, your next power deals triple damage and costs no resource.',
     icon: 'ability-paths-mage-destroyer_apocalypse',
     levelRequired: 6,
     subpath: 'destroyer',
@@ -240,7 +240,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
   {
     id: 'enchanter_mana_regen',
     name: 'Arcane Flow',
-    description: 'Regenerate 2 additional mana per second.',
+    description: 'Build 2 additional Arcane Charges per second.',
     icon: 'ability-paths-mage-enchanter_mana_regen',
     levelRequired: 3,
     subpath: null,
@@ -313,7 +313,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
   {
     id: 'spellweaver_efficient_automation',
     name: 'Efficient Automation',
-    description: 'Powers cost 30% less mana and have 20% faster cooldown recovery.',
+    description: 'Powers cost 30% less resource and have 20% faster cooldown recovery.',
     icon: 'ability-paths-mage-spellweaver_efficient_automation',
     levelRequired: 5,
     subpath: 'spellweaver',
@@ -347,7 +347,7 @@ const ENCHANTER_ABILITIES: PathAbility[] = [
   {
     id: 'sage_wisdom_aura',
     name: 'Aura of Wisdom',
-    description: 'Gain 1 mana per second for each enemy status effect active.',
+    description: 'Build 1 Arcane Charge per second for each enemy status effect active.',
     icon: 'ability-paths-mage-sage_wisdom_aura',
     levelRequired: 3,
     subpath: 'sage',

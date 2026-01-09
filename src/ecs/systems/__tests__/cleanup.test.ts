@@ -149,7 +149,6 @@ describe('CleanupSystem', () => {
       const player = world.add({
         player: true,
         health: { current: 0, max: 100 },
-        mana: { current: 50, max: 50 },
         dying: { startedAtTick: 50, duration: 500 },
       });
 
@@ -165,7 +164,6 @@ describe('CleanupSystem', () => {
       const player = world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         attackReady: { damage: 20, isCrit: false },
       });
 
@@ -190,7 +188,6 @@ describe('CleanupSystem', () => {
       const player = world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         attackReady: { damage: 20, isCrit: true },
       });
       const enemy = world.add({
@@ -234,7 +231,6 @@ describe('CleanupSystem', () => {
       const player = world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         attackReady: { damage: 20, isCrit: false },
       });
 

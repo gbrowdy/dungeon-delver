@@ -41,7 +41,6 @@ export type AnimationEventType =
   | 'enemy_attack'
   | 'player_hit'
   | 'enemy_hit'
-  | 'player_block'
   | 'player_dodge'
   | 'spell_cast'
   | 'death'
@@ -54,13 +53,12 @@ export type AnimationEventType =
 
 // Animation event payload types
 export type AnimationPayload =
-  | { type: 'damage'; value: number; isCrit: boolean; blocked: boolean; targetDied?: boolean }
+  | { type: 'damage'; value: number; isCrit: boolean; targetDied?: boolean }
   | { type: 'heal'; value: number; source: string }
   | { type: 'spell'; powerId: string; value: number }
   | { type: 'death'; isPlayer: boolean }
   | { type: 'status'; effectType: string; applied: boolean }
   | { type: 'item'; itemName: string; effectDescription: string }
-  | { type: 'block'; reduction: number }
   | { type: 'level_up'; newLevel: number }
   | { type: 'dodge' }
   | { type: 'enemy_ability'; abilityType: string; abilityName: string };
@@ -223,10 +221,6 @@ export interface Entity {
     current: number;
     max: number;
   };
-  mana?: {
-    current: number;
-    max: number;
-  };
   attack?: {
     baseDamage: number;
     critChance: number; // 0-1
@@ -235,7 +229,6 @@ export interface Entity {
   };
   defense?: {
     value: number;
-    blockReduction: number;
   };
   speed?: {
     value: number;
@@ -277,7 +270,6 @@ export interface Entity {
   cooldowns?: Map<string, { remaining: number; base: number }>;
   regen?: {
     healthPerSecond: number;
-    manaPerSecond: number;
     accumulated: number; // ms since last regen tick
   };
 
@@ -294,8 +286,6 @@ export interface Entity {
   };
   /** Temporary attack modifiers (shadow_dance, ambush, etc) */
   attackModifiers?: AttackModifier[];
-  /** Set when player is blocking (reduces damage from next attack) */
-  isBlocking?: boolean;
 
   // === PROGRESSION ===
   progression?: {

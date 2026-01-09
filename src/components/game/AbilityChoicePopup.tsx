@@ -408,9 +408,6 @@ function AbilityEffectDisplay({ effect }: { effect: PathAbilityEffect }) {
   if (effect.damage) {
     details.push(`Deal ${effect.damage} damage`);
   }
-  if (effect.manaRestore) {
-    details.push(`Restore ${effect.manaRestore} mana`);
-  }
 
   // Status application
   if (effect.statusApplication) {
@@ -479,8 +476,6 @@ function formatStatName(stat: string): string {
     power: 'Power',
     armor: 'Armor',
     speed: 'Speed',
-    mana: 'Mana',
-    maxMana: 'Max Mana',
     fortune: 'Fortune',
   };
   return statMap[stat] || stat;
@@ -498,10 +493,8 @@ function formatTrigger(trigger: string): string {
     combat_start: 'Combat start',
     turn_start: 'Turn start',
     on_power_use: 'Power use',
-    on_block: 'Successful block',
     on_dodge: 'On dodge',
     on_low_hp: 'Low HP',
-    on_low_mana: 'Low mana',
     on_full_hp: 'Full HP',
     on_combo: 'Power combo',
     on_status_inflict: 'Status inflict',
@@ -522,10 +515,6 @@ function formatCondition(condition: { type: string; value: number }): string {
       return `HP below ${value}%`;
     case 'hp_above':
       return `HP above ${value}%`;
-    case 'mana_below':
-      return `Mana below ${value}%`;
-    case 'mana_above':
-      return `Mana above ${value}%`;
     case 'enemy_hp_below':
       return `Enemy HP below ${value}%`;
     case 'combo_count':

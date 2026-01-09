@@ -21,7 +21,7 @@ describe('Generic Starting Powers', () => {
 
     // Verify all stats are identical across all classes
     const baseStats = {
-      manaCost: powers[0].manaCost,
+      resourceCost: powers[0].resourceCost,
       cooldown: powers[0].cooldown,
       value: powers[0].value,
       effect: powers[0].effect,
@@ -30,7 +30,7 @@ describe('Generic Starting Powers', () => {
     };
 
     powers.forEach((power, i) => {
-      expect(power.manaCost).toBe(baseStats.manaCost);
+      expect(power.resourceCost).toBe(baseStats.resourceCost);
       expect(power.cooldown).toBe(baseStats.cooldown);
       expect(power.value).toBe(baseStats.value);
       expect(power.effect).toBe(baseStats.effect);
@@ -42,7 +42,7 @@ describe('Generic Starting Powers', () => {
   it('should return correct power for class', () => {
     const power = getStartingPower('warrior');
     expect(power.name).toBe('Strike');
-    expect(power.manaCost).toBe(15);
+    expect(power.resourceCost).toBe(15);
     expect(power.cooldown).toBe(3);
     expect(power.value).toBe(1.2);
   });
@@ -52,15 +52,15 @@ describe('Generic Starting Powers', () => {
     const power2 = getStartingPower('warrior');
 
     // Modify the first copy
-    power1.manaCost = 999;
+    power1.resourceCost = 999;
     power1.cooldown = 999;
 
     // Second copy should be unaffected
-    expect(power2.manaCost).toBe(15);
+    expect(power2.resourceCost).toBe(15);
     expect(power2.cooldown).toBe(3);
 
     // Original should also be unaffected
-    expect(GENERIC_STARTING_POWERS.warrior.manaCost).toBe(15);
+    expect(GENERIC_STARTING_POWERS.warrior.resourceCost).toBe(15);
     expect(GENERIC_STARTING_POWERS.warrior.cooldown).toBe(3);
   });
 });

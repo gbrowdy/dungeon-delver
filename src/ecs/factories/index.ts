@@ -77,10 +77,6 @@ export function createPlayerEntity(options: CreatePlayerOptions): Entity {
       current: baseStats.maxHealth,
       max: baseStats.maxHealth,
     },
-    mana: {
-      current: baseStats.maxMana,
-      max: baseStats.maxMana,
-    },
     attack: {
       baseDamage: baseStats.power,
       critChance: baseStats.fortune / 100, // Fortune converts to crit chance
@@ -89,7 +85,6 @@ export function createPlayerEntity(options: CreatePlayerOptions): Entity {
     },
     defense: {
       value: baseStats.armor,
-      blockReduction: 0.4, // 40% damage reduction when blocking
     },
     speed: {
       value: baseStats.speed,
@@ -131,7 +126,6 @@ export function createPlayerEntity(options: CreatePlayerOptions): Entity {
     // Regeneration
     regen: {
       healthPerSecond: classData.hpRegen ?? 0,
-      manaPerSecond: 1,
       accumulated: 0,
     },
 
@@ -245,7 +239,6 @@ export function createEnemyEntity(options: CreateEnemyOptions): Entity {
     },
     defense: {
       value: enemy.armor,
-      blockReduction: 0, // Enemies don't block
     },
     speed: {
       value: enemy.speed,

@@ -12,8 +12,6 @@ export const VALID_STAT_KEYS: ReadonlyArray<keyof Stats> = [
   'armor',
   'speed',
   'fortune',
-  'mana',
-  'maxMana',
 ] as const;
 
 /**
@@ -89,7 +87,7 @@ export function isPower(value: unknown): value is Power {
   return (
     typeof obj['id'] === 'string' &&
     typeof obj['name'] === 'string' &&
-    typeof obj['manaCost'] === 'number' &&
+    typeof obj['resourceCost'] === 'number' &&
     typeof obj['cooldown'] === 'number' &&
     typeof obj['effect'] === 'string'
   );

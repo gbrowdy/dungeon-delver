@@ -53,8 +53,6 @@ const STAT_DISPLAY_NAMES: Record<string, string> = {
   fortune: 'Fortune',
   maxHealth: 'Max Health',
   health: 'Health',
-  maxMana: 'Max Mana',
-  mana: 'Mana',
 };
 
 export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelectionScreenProps) {
@@ -269,7 +267,7 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
                       <div className="flex flex-wrap gap-2">
                         {Object.entries(PATH_SELECTION_BONUSES[path.id]).map(([stat, value]) => {
                           // Skip 'health' since it's redundant with maxHealth display
-                          if (stat === 'health' || stat === 'mana') return null;
+                          if (stat === 'health') return null;
 
                           const isPositive = value > 0;
                           const displayValue = isPositive ? `+${value}` : `${value}`;

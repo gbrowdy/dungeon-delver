@@ -44,8 +44,6 @@ All colors MUST be HSL.
     /* Game-specific semantic colors */
     --health: 0 84% 60%;
     --health-foreground: 0 0% 100%;
-    --mana: 221 83% 53%;
-    --mana-foreground: 0 0% 100%;
     --xp: 45 93% 47%;
     --xp-foreground: 0 0% 0%;
     --gold: 48 96% 53%;
@@ -106,8 +104,6 @@ All colors MUST be HSL.
     /* Game-specific semantic colors (dark) */
     --health: 0 84% 60%;
     --health-foreground: 0 0% 100%;
-    --mana: 221 83% 53%;
-    --mana-foreground: 0 0% 100%;
     --xp: 45 93% 47%;
     --xp-foreground: 0 0% 0%;
     --gold: 48 96% 53%;

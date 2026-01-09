@@ -169,8 +169,7 @@ function ItemCard({ item, isPurchased, canAfford, onPurchase, showPathSynergy, e
       if (key === 'armor') label = 'ARM';
       if (key === 'speed') label = 'SPD';
       if (key === 'fortune') label = 'FOR';
-      if (key === 'maxMana') label = 'MP';
-
+      
       return `${sign}${value} ${label}`;
     });
 
@@ -408,8 +407,7 @@ function EquippedItemCard({ item, slotType, playerGold, onEnhance }: EquippedIte
       if (key === 'armor') label = 'ARM';
       if (key === 'speed') label = 'SPD';
       if (key === 'fortune') label = 'FOR';
-      if (key === 'maxMana') label = 'MP';
-
+      
       return `${sign}${value} ${label}`;
     });
 
@@ -495,8 +493,7 @@ function EquippedItemCard({ item, slotType, playerGold, onEnhance }: EquippedIte
               if (key === 'armor') label = 'ARM';
               if (key === 'speed') label = 'SPD';
               if (key === 'fortune') label = 'FOR';
-              if (key === 'maxMana') label = 'MP';
-
+              
               return (
                 <span
                   key={key}

@@ -45,7 +45,7 @@ export function UpgradeChoicePopup() {
       const resourceType = player.pathResource.type;
       return resourceType.charAt(0).toUpperCase() + resourceType.slice(1);
     }
-    return 'Mana';
+    return 'Resource';
   };
 
   return (
@@ -175,7 +175,7 @@ export function UpgradeChoicePopup() {
                     {/* Stats row */}
                     <div className="flex items-center gap-4 mt-3 pt-2 border-t border-slate-700/50">
                       <span className="pixel-text text-pixel-2xs text-slate-500">
-                        {power.resourceCost ?? power.manaCost} {getResourceLabel()}
+                        {power.resourceCost} {getResourceLabel()}
                       </span>
                       <span className="pixel-text text-pixel-2xs text-slate-500">
                         {power.cooldown}s CD

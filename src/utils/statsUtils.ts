@@ -3,7 +3,7 @@ import { deepClonePlayer } from '@/utils/stateUtils';
 import { BUFF_STAT } from '@/constants/enums';
 
 /**
- * Result of restoring health or mana to a player.
+ * Result of restoring health to a player.
  */
 export interface RestoreResult {
   /** Updated player with restoration applied (cloned, not mutated) */
@@ -65,58 +65,6 @@ export function restorePlayerHealth(
     log = options?.source
       ? `${options.source} restores 0 HP (full health)`
       : 'Restored 0 HP (full health)';
-  }
-
-  return {
-    player: updatedPlayer,
-    actualAmount,
-    log,
-  };
-}
-
-/**
- * Restore mana to a player, capping at maxMana.
- *
- * @param player - The player to restore mana to
- * @param amount - Amount of mana to restore
- * @param options - Optional configuration (source for logging)
- * @returns RestoreResult with updated player and metadata
- *
- * @example
- * ```typescript
- * const result = restorePlayerMana(player, 15, { source: 'Mana Potion' });
- * player = result.player;
- * if (result.log) logs.push(result.log);
- * ```
- */
-export function restorePlayerMana(
-  player: Player,
-  amount: number,
-  options?: RestoreOptions
-): RestoreResult {
-  const updatedPlayer = deepClonePlayer(player);
-  const currentMana = updatedPlayer.currentStats.mana;
-  const maxMana = updatedPlayer.currentStats.maxMana;
-
-  const newMana = Math.min(maxMana, currentMana + amount);
-  const actualAmount = newMana - currentMana;
-  updatedPlayer.currentStats.mana = newMana;
-
-  // Generate log message
-  let log: string | undefined;
-  if (actualAmount > 0) {
-    if (options?.source) {
-      log = `${options.source} restores ${actualAmount} MP`;
-    } else {
-      log = `Restored ${actualAmount} MP`;
-    }
-    if (newMana >= maxMana) {
-      log += ' (full mana)';
-    }
-  } else if (newMana >= maxMana) {
-    log = options?.source
-      ? `${options.source} restores 0 MP (full mana)`
-      : 'Restored 0 MP (full mana)';
   }
 
   return {

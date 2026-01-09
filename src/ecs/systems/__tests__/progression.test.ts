@@ -30,14 +30,12 @@ describe('ProgressionSystem', () => {
     xpToNext?: number;
     level?: number;
     health?: { current: number; max: number };
-    mana?: { current: number; max: number };
     attack?: { baseDamage: number; critChance: number; critMultiplier: number; variance: { min: number; max: number } };
     gold?: number;
   } = {}) {
     return world.add({
       player: true,
       health: overrides.health ?? { current: 100, max: 100 },
-      mana: overrides.mana ?? { current: 50, max: 50 },
       attack: overrides.attack ?? {
         baseDamage: 10,
         critChance: 0.1,
@@ -108,20 +106,6 @@ describe('ProgressionSystem', () => {
       expect(player.health?.current).toBe(80);
     });
 
-    it('should apply max mana bonus on level-up', () => {
-      const player = createPlayer({
-        xp: 100,
-        xpToNext: 100,
-        mana: { current: 30, max: 50 },
-      });
-
-      ProgressionSystem(16);
-
-      expect(player.mana?.max).toBe(50 + LEVEL_UP_BONUSES.MAX_MANA);
-      // Current mana should NOT change (no restore on level up)
-      expect(player.mana?.current).toBe(30);
-    });
-
     it('should apply power bonus on level-up', () => {
       const player = createPlayer({
         xp: 100,
@@ -145,7 +129,6 @@ describe('ProgressionSystem', () => {
         xpToNext: 100,
         level: 1,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         attack: {
           baseDamage: 10,
           critChance: 0.1,
@@ -159,7 +142,6 @@ describe('ProgressionSystem', () => {
       // Should level up twice (level 1 -> 2 -> 3)
       expect(player.progression?.level).toBe(3);
       expect(player.health?.max).toBe(100 + LEVEL_UP_BONUSES.MAX_HEALTH * 2);
-      expect(player.mana?.max).toBe(50 + LEVEL_UP_BONUSES.MAX_MANA * 2);
       expect(player.attack?.baseDamage).toBe(10 + LEVEL_UP_BONUSES.POWER * 2);
     });
   });
@@ -249,7 +231,6 @@ describe('ProgressionSystem', () => {
       );
       expect(statLog).toBeDefined();
       expect(statLog).toContain(`+${LEVEL_UP_BONUSES.MAX_HEALTH} Max HP`);
-      expect(statLog).toContain(`+${LEVEL_UP_BONUSES.MAX_MANA} Max Mana`);
       expect(statLog).toContain(`+${LEVEL_UP_BONUSES.POWER} Power`);
     });
 
@@ -339,7 +320,6 @@ describe('ProgressionSystem', () => {
       world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
       });
 
       // Should not throw

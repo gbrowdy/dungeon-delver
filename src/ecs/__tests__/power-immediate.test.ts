@@ -56,8 +56,8 @@ describe('Power Immediate Execution', () => {
     expect(power).toBeDefined();
     expect(power.effect).toBe('damage');
 
-    // Ensure player has enough mana
-    expect(player!.mana!.current).toBeGreaterThanOrEqual(power.manaCost);
+    // Ensure player has enough resource
+    expect(player!.pathResource!.current).toBeGreaterThanOrEqual(power.resourceCost);
 
     // Activate the power
     dispatch(Commands.activatePower(power.id));
@@ -73,14 +73,14 @@ describe('Power Immediate Execution', () => {
     expect(newEnemyHealth).toBeLessThan(initialEnemyHealth);
   });
 
-  it('should deduct mana immediately when power is activated', () => {
+  it('should deduct resource immediately when power is activated', () => {
     const player = getPlayer();
 
     expect(player).toBeDefined();
     expect(player!.powers).toBeDefined();
 
     const power = player!.powers![0];
-    // Level 1 players use pathResource (stamina) instead of mana
+    // Level 1 players use pathResource (stamina)
     const initialResource = player!.pathResource!.current;
 
     // Activate the power
@@ -91,7 +91,7 @@ describe('Power Immediate Execution', () => {
     PowerSystem(16);
 
     // Resource should be deducted immediately
-    expect(player!.pathResource!.current).toBe(initialResource - power.manaCost);
+    expect(player!.pathResource!.current).toBe(initialResource - power.resourceCost);
   });
 
   it('should set cooldown immediately when power is activated', () => {

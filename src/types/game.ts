@@ -13,8 +13,6 @@ export interface Stats {
   power: number;      // Replaces attack - offensive stat
   armor: number;      // Replaces defense - damage reduction
   speed: number;
-  mana: number;
-  maxMana: number;
   fortune: number;    // Unified luck stat - affects crit, dodge, drops, proc chances
 }
 
@@ -96,10 +94,9 @@ export type AttackModifier =
 
 /**
  * Resource types for active paths
- * Each active path uses a unique resource instead of mana
+ * Each active path uses a unique resource
  */
 export type PathResourceType =
-  | 'mana'           // Default (pre-level 2 or passive paths)
   | 'stamina'        // Generic pre-path resource (level 1)
   | 'fury'           // Berserker (Warrior)
   | 'arcane_charges' // Archmage (Mage)
@@ -129,8 +126,8 @@ export interface PathResource {
 
   /**
    * How powers interact with this resource:
-   * - 'spend': Powers consume resource (Fury, Momentum, Zeal, Mana)
-   * - 'gain': Powers add to resource (Arcane Charges - reverse mana)
+   * - 'spend': Powers consume resource (Fury, Momentum, Zeal)
+   * - 'gain': Powers add to resource (Arcane Charges)
    */
   resourceBehavior: 'spend' | 'gain';
 
@@ -141,7 +138,6 @@ export interface PathResource {
     onCrit?: number;     // Gain per critical hit
     onKill?: number;     // Gain per enemy killed
     onPowerUse?: number; // Gain per power used
-    onBlock?: number;    // Gain per successful block
     passive?: number;    // Gain per second
   };
 
@@ -178,7 +174,7 @@ export type ItemEffectTrigger =
 
 export interface ItemEffect {
   trigger: ItemEffectTrigger;
-  type: 'heal' | 'damage' | 'buff' | 'mana' | 'debuff' | 'special';
+  type: 'heal' | 'damage' | 'buff' | 'debuff' | 'special';
   value: number;
   chance?: number; // Probability (0-1), defaults to 1
   description: string;
@@ -194,14 +190,12 @@ export interface Power {
   id: string;
   name: string;
   description: string;
-  manaCost: number; // Used for pre-level-2 (mana) or as fallback
   /**
    * Resource cost for active paths:
    * - For 'spend' resources (Fury, Momentum, Zeal): Amount deducted when casting
    * - For 'gain' resources (Arcane Charges): Amount ADDED when casting
-   * - If undefined, uses manaCost as fallback
    */
-  resourceCost?: number;
+  resourceCost: number;
   cooldown: number; // Cooldown duration in seconds
   // NOTE: Cooldown state is tracked in entity.cooldowns Map, not on the Power object
   // Use cooldowns.get(power.id)?.remaining to get current cooldown
@@ -318,7 +312,7 @@ export interface Enemy {
 
 /**
  * @deprecated Legacy type - use ECS entities with player component instead.
- * The ECS stores player data as entities in world.ts with health, mana, attack, etc. components.
+ * The ECS stores player data as entities in world.ts with health, attack, etc. components.
  * This type remains for backward compatibility with legacy systems.
  * Prefer using PlayerSnapshot from ecs/snapshot.ts for UI components.
  */
@@ -336,7 +330,6 @@ export interface Player {
   equippedItems: Item[];
   activeBuffs: ActiveBuff[]; // Temporary buffs with duration
   statusEffects: StatusEffect[]; // Active debuffs on player
-  isBlocking: boolean; // Active block/dodge state
   comboCount: number; // Current power combo count
   lastPowerUsed: string | null; // For combo tracking
   // upgradePurchases: UpgradePurchases; // DEPRECATED: Removed in favor of shop system
@@ -358,7 +351,7 @@ export interface Player {
   abilityCounters?: Record<string, number>;
   attackModifiers?: AttackModifier[]; // Temporary attack effects (shadow_dance, ambush)
   hpRegen?: number; // Base HP regen per second from class (e.g., Paladin has 0.5)
-  pathResource?: PathResource; // Active path resource (Phase 6) - replaces mana for active paths
+  pathResource?: PathResource; // Active path resource (Phase 6) for active paths
 }
 
 /**

@@ -2,7 +2,7 @@
  * Resource Bar Component (Phase 6: Active Path Resources)
  *
  * Displays the player's path resource (Fury, Arcane Charges, Momentum, Zeal)
- * or mana for passive paths/pre-level-2 players.
+ * for active path players.
  *
  * Features:
  * - Color-coded fill based on resource type
@@ -97,8 +97,8 @@ export function ResourceBar({
           );
         })}
 
-        {/* Value label (for non-mana resources with integer max) */}
-        {resource.type !== 'mana' && resource.max <= 10 && (
+        {/* Value label (for small-pool resources with integer max) */}
+        {resource.max <= 10 && (
           <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white drop-shadow-md">
             {Math.floor(resource.current)}
           </span>

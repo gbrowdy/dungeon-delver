@@ -4,7 +4,7 @@ interface HealthBarProps {
   current: number;
   max: number;
   label: string;
-  variant?: 'health' | 'mana' | 'xp';
+  variant?: 'health' | 'xp';
   showValues?: boolean;
   className?: string;
   testId?: string;
@@ -23,13 +23,11 @@ export function HealthBar({
   
   const barColors = {
     health: 'bg-health',
-    mana: 'bg-mana',
     xp: 'bg-xp',
   };
 
   const bgColors = {
     health: 'bg-health/20',
-    mana: 'bg-mana/20',
     xp: 'bg-xp/20',
   };
   

@@ -1,6 +1,6 @@
 // src/ecs/systems/regen.ts
 /**
- * RegenSystem - applies health and mana regeneration over time.
+ * RegenSystem - applies health regeneration over time.
  * Runs each tick, accumulating delta time until 1 second passes,
  * then applies regen values.
  */
@@ -39,13 +39,7 @@ export function RegenSystem(deltaMs: number): void {
         );
       }
 
-      // Apply mana regen (capped at max) if entity has mana
-      const mana = entity.mana;
-      if (mana && regen.manaPerSecond > 0) {
-        mana.current = Math.min(mana.max, mana.current + regen.manaPerSecond);
-      }
-
-      // Note: Path resource passive regen is now handled per-tick below for smoothness
+      // Note: Path resource passive regen is handled per-tick below for smoothness
 
       // Reset accumulated time (keeping overflow for precision)
       regen.accumulated -= REGEN_TICK_MS;

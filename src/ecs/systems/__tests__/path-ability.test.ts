@@ -12,22 +12,20 @@ import type { PathAbility, PlayerPath } from '@/types/paths';
 // Helper to create a player entity with path abilities
 function createPlayer(options?: {
   health?: { current: number; max: number };
-  mana?: { current: number; max: number };
   path?: PlayerPath;
   shield?: { value: number; remaining: number; maxDuration: number };
 }): Entity {
   return world.add({
     player: true,
-    identity: { name: 'Hero', class: { id: 'warrior', name: 'Warrior', description: '', baseStats: { health: 100, maxHealth: 100, mana: 50, maxMana: 50, power: 20, armor: 5, speed: 10, fortune: 0 }, abilities: [], startingPower: null } },
+    identity: { name: 'Hero', class: { id: 'warrior', name: 'Warrior', description: '', baseStats: { health: 100, maxHealth: 100, power: 20, armor: 5, speed: 10, fortune: 0 }, abilities: [], startingPower: null } },
     health: options?.health ?? { current: 80, max: 100 },
-    mana: options?.mana ?? { current: 40, max: 50 },
     attack: {
       baseDamage: 20,
       critChance: 0.1,
       critMultiplier: 2,
       variance: { min: 0.9, max: 1.1 },
     },
-    defense: { value: 5, blockReduction: 0.4 },
+    defense: { value: 5,  },
     speed: { value: 10, attackInterval: 2500, accumulated: 0 },
     equipment: { weapon: null, armor: null, accessory: null },
     path: options?.path,
@@ -47,7 +45,7 @@ function createEnemy(health: number = 50): Entity {
       critMultiplier: 2,
       variance: { min: 1, max: 1 },
     },
-    defense: { value: 3, blockReduction: 0 },
+    defense: { value: 3,  },
     speed: { value: 8, attackInterval: 3000, accumulated: 0 },
     statusEffects: [],
     statDebuffs: [],
@@ -342,39 +340,20 @@ describe('PathAbilitySystem', () => {
       const player = createPlayer({
         health: { current: 80, max: 100 },
         path: {
-          pathId: 'guardian',
-          abilities: ['auto_block'],
-          abilityCooldowns: { 'auto_block': 5000 }, // On cooldown for 5000ms (5 seconds)
+          pathId: 'berserker',
+          abilities: ['bloodbath'],
+          abilityCooldowns: { 'bloodbath': 5000 }, // On cooldown for 5000ms (5 seconds)
         },
       });
       createEnemy();
 
-      recordPathTrigger('on_damaged', { damage: 20 });
+      recordPathTrigger('on_kill', { damage: 20 });
 
+      const initialHealth = player.health?.current;
       PathAbilitySystem(16);
 
-      // auto_block should not trigger - on cooldown
-      expect(player.shield?.value).toBeUndefined();
-    });
-
-    it('should set cooldown after ability triggers', () => {
-      createGameState();
-      const player = createPlayer({
-        health: { current: 80, max: 100 },
-        path: {
-          pathId: 'guardian',
-          abilities: ['auto_block'],
-          abilityCooldowns: {},
-        },
-      });
-      createEnemy();
-
-      recordPathTrigger('on_damaged', { damage: 20 });
-
-      PathAbilitySystem(16);
-
-      // auto_block should set cooldown (8 seconds)
-      expect(player.path?.abilityCooldowns?.['auto_block']).toBeGreaterThan(0);
+      // bloodbath should not trigger - on cooldown
+      expect(player.health?.current).toBe(initialHealth);
     });
 
     it('should decrement cooldowns over time', () => {
@@ -382,9 +361,9 @@ describe('PathAbilitySystem', () => {
       const player = createPlayer({
         health: { current: 80, max: 100 },
         path: {
-          pathId: 'guardian',
-          abilities: ['auto_block'],
-          abilityCooldowns: { 'auto_block': 2000 }, // 2 seconds remaining
+          pathId: 'berserker',
+          abilities: ['bloodbath'],
+          abilityCooldowns: { 'bloodbath': 2000 }, // 2 seconds remaining
         },
       });
       createEnemy();
@@ -394,7 +373,7 @@ describe('PathAbilitySystem', () => {
       PathAbilitySystem(16);
 
       // Cooldown should be decremented by effective delta
-      expect(player.path?.abilityCooldowns?.['auto_block']).toBeLessThan(2000);
+      expect(player.path?.abilityCooldowns?.['bloodbath']).toBeLessThan(2000);
     });
   });
 
@@ -522,28 +501,6 @@ describe('PathAbilitySystem', () => {
     });
   });
 
-  describe('shield application', () => {
-    it('should apply shield from auto_block ability', () => {
-      createGameState();
-      const player = createPlayer({
-        health: { current: 80, max: 100 },
-        path: {
-          pathId: 'guardian',
-          abilities: ['auto_block'],
-          abilityCooldowns: {},
-        },
-      });
-      createEnemy();
-
-      recordPathTrigger('on_damaged', { damage: 20 });
-
-      PathAbilitySystem(16);
-
-      // auto_block grants a large shield (999)
-      expect(player.shield?.value).toBe(999);
-    });
-  });
-
   describe('enemy debuff application', () => {
     it('should apply stat debuffs to enemy', () => {
       createGameState();
@@ -567,31 +524,6 @@ describe('PathAbilitySystem', () => {
       // Enemy should have a speed debuff
       // Note: intimidating_presence uses a custom implementation pattern
       // The actual debuff application depends on the specific effect structure
-    });
-  });
-
-  describe('mana restore', () => {
-    it('should restore mana from ability effects', () => {
-      createGameState();
-      // Create a player with an ability that restores mana
-      // Most mana restore abilities are in other paths (like rogue)
-      // For this test, we simulate the effect
-      const player = createPlayer({
-        mana: { current: 20, max: 50 },
-        path: {
-          pathId: 'berserker',
-          abilities: ['bloodbath'], // bloodbath heals HP, not mana
-        },
-      });
-      createEnemy();
-
-      // bloodbath doesn't restore mana, so we test the mana remains unchanged
-      recordPathTrigger('on_kill', { damage: 20 });
-
-      PathAbilitySystem(16);
-
-      // Mana unchanged (bloodbath only heals HP)
-      expect(player.mana?.current).toBe(20);
     });
   });
 

@@ -261,7 +261,6 @@ describe('AnimationSystem', () => {
       const player = world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Hero', class: 'warrior' },
       });
 
@@ -290,7 +289,6 @@ describe('AnimationSystem', () => {
       const player = world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Hero', class: 'warrior' },
       });
 
@@ -320,7 +318,6 @@ describe('AnimationSystem', () => {
       world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Hero', class: 'warrior' },
       });
 
@@ -348,7 +345,6 @@ describe('AnimationSystem', () => {
       world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Hero', class: 'warrior' },
       });
 
