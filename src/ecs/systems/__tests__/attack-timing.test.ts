@@ -114,4 +114,51 @@ describe('AttackTimingSystem', () => {
     expect(entity.attackReady).toBeUndefined();
     expect(entity.speed?.accumulated).toBe(2500); // No accumulation when stunned
   });
+
+  it('should not allow enemies to crit even with high critChance', () => {
+    // Clear existing entities
+    for (const entity of world.entities) {
+      world.remove(entity);
+    }
+
+    // Add game state
+    world.add({
+      gameState: true,
+      phase: 'combat',
+      combatSpeed: { multiplier: 1 },
+    });
+
+    // Add player (required for combat)
+    world.add({
+      player: true,
+      health: { current: 100, max: 100 },
+      attack: { baseDamage: 10, critChance: 0, critMultiplier: 2, variance: { min: 1, max: 1 } },
+      speed: { value: 10, attackInterval: 5000, accumulated: 0 },
+    });
+
+    // Add enemy with 100% crit chance - should still NOT crit
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Test Enemy', isBoss: false, abilities: [], intent: null },
+      health: { current: 50, max: 50 },
+      attack: {
+        baseDamage: 10,
+        critChance: 1.0, // 100% crit chance
+        critMultiplier: 3, // 3x multiplier
+        variance: { min: 1, max: 1 },
+      },
+      speed: { value: 10, attackInterval: 1000, accumulated: 1000 }, // Ready to attack
+    });
+
+    // Mock random to return value that would trigger crit for player
+    vi.spyOn(Math, 'random').mockReturnValue(0.1);
+
+    AttackTimingSystem(16);
+
+    // Enemy should attack but NOT crit
+    expect(enemy.attackReady).toBeDefined();
+    expect(enemy.attackReady?.isCrit).toBe(false);
+    expect(enemy.attackReady?.damage).toBe(10); // Base damage, not 30 (crit)
+
+    vi.restoreAllMocks();
+  });
 });

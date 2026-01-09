@@ -25,8 +25,9 @@ function calculateAttackDamage(entity: Entity): { damage: number; isCrit: boolea
   const variance = min + Math.random() * (max - min);
   let damage = Math.floor(attack.baseDamage * variance);
 
-  // Check for crit
-  const isCrit = Math.random() < attack.critChance;
+  // Check for crit - only player can crit, enemies cannot
+  const canCrit = !entity.enemy;
+  const isCrit = canCrit && Math.random() < attack.critChance;
   if (isCrit) {
     damage = Math.floor(damage * attack.critMultiplier);
   }
