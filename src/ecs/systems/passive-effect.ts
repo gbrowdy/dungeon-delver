@@ -71,6 +71,33 @@ function createDefaultComputed(): ComputedPassiveEffects {
     conditionalDamageReduction: 0,
     conditionalReflectMultiplier: 1,
     conditionalRegenMultiplier: 1,
+
+    // Burn effects
+    burnDamagePercent: 100,
+    burnProcChance: 0,
+    burnDurationBonus: 0,
+    burnMaxStacks: 1,
+    burnTickRateMultiplier: 1,
+    damageVsBurning: 0,
+    critRefreshesBurn: false,
+    lifestealFromBurns: 0,
+    burnExecuteThreshold: 0,
+    burnExecuteBonus: 0,
+    burnIgnoresArmor: false,
+    burnCanCrit: false,
+
+    // Hex effects
+    hexDamageReduction: 0,
+    hexSlowPercent: 0,
+    hexDamageAmp: 0,
+    hexRegen: 0,
+    hexIntensityMultiplier: 1,
+    hexLifesteal: 0,
+    hexArmorReduction: 0,
+    hexReflect: 0,
+    hexDamageAura: 0,
+    hexHealOnEnemyAttack: 0,
+    hexDisableAbilities: false,
   };
 }
 
