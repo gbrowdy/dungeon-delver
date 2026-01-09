@@ -173,3 +173,69 @@ const ARCANE_WEAKNESS: ArchmagePower = {
     },
   ],
 };
+
+// =============================================================================
+// LEVEL 6 POWERS (Choose Power 3)
+// =============================================================================
+
+/**
+ * Siphon Soul - Damage with lifesteal
+ * Sustain option - heal based on damage dealt
+ */
+const SIPHON_SOUL: ArchmagePower = {
+  id: 'siphon_soul',
+  name: 'Siphon Soul',
+  description: 'Deal 200% damage. Heal 50% of damage dealt.',
+  icon: 'power-siphon_soul',
+  resourceCost: 35,
+  cooldown: 8,
+  effect: 'damage',
+  value: 2.0,
+  category: 'sustain',
+  synergies: [],
+  lifestealPercent: 50,
+  upgrades: [
+    {
+      tier: 1,
+      description: '250% damage, heal 75% of damage dealt',
+      value: 2.5,
+      lifestealPercent: 75,
+    },
+    {
+      tier: 2,
+      description: 'If this heals you to full, gain 15% max HP as shield',
+      shieldOnFullHeal: 15,
+    },
+  ],
+};
+
+/**
+ * Arcane Surge - Damage with cooldown reset
+ * Utility option - enable combo chains by resetting other powers
+ */
+const ARCANE_SURGE_POWER: ArchmagePower = {
+  id: 'arcane_surge_power',
+  name: 'Arcane Surge',
+  description: 'Deal 180% damage. Reset all other power cooldowns.',
+  icon: 'power-arcane_surge',
+  resourceCost: 50,
+  cooldown: 15,
+  effect: 'damage',
+  value: 1.8,
+  category: 'utility',
+  synergies: [],
+  resetAllCooldowns: true,
+  upgrades: [
+    {
+      tier: 1,
+      description: '220% damage, also restores 30 charges',
+      value: 2.2,
+      chargeModify: -30,
+    },
+    {
+      tier: 2,
+      description: 'Cooldown reduced to 12s',
+      cooldown: 12,
+    },
+  ],
+};
