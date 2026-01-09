@@ -101,3 +101,75 @@ const METEOR_STRIKE: ArchmagePower = {
     },
   ],
 };
+
+// =============================================================================
+// LEVEL 4 POWERS (Choose Power 2)
+// =============================================================================
+
+/**
+ * Arcane Empowerment - Self-buff for power and speed
+ * Offensive support - boost your own damage output
+ */
+const ARCANE_EMPOWERMENT: ArchmagePower = {
+  id: 'arcane_empowerment',
+  name: 'Arcane Empowerment',
+  description: '+35% Power, +20% Speed for 6s.',
+  icon: 'power-arcane_empowerment',
+  resourceCost: 25,
+  cooldown: 12,
+  effect: 'buff',
+  value: 0.35,
+  category: 'buff',
+  synergies: [],
+  buffStats: [
+    { stat: 'power', value: 0.35 },
+    { stat: 'speed', value: 0.20 },
+  ],
+  buffDuration: 6,
+  upgrades: [
+    {
+      tier: 1,
+      description: '+45% Power, +30% Speed, 8s duration',
+      buffPower: 0.45,
+      buffSpeed: 0.30,
+      buffDuration: 8,
+    },
+    {
+      tier: 2,
+      description: 'Also grants +15% critical hit chance',
+      buffCritChance: 0.15,
+    },
+  ],
+};
+
+/**
+ * Arcane Weakness - Debuff enemy to take more damage
+ * Amplifies all damage sources - good for sustained fights
+ */
+const ARCANE_WEAKNESS: ArchmagePower = {
+  id: 'arcane_weakness',
+  name: 'Arcane Weakness',
+  description: 'Enemy takes 25% more damage for 8s.',
+  icon: 'power-arcane_weakness',
+  resourceCost: 20,
+  cooldown: 10,
+  effect: 'debuff',
+  value: 0,
+  category: 'debuff',
+  synergies: [],
+  enemyVulnerable: 25,
+  enemyVulnerableDuration: 8,
+  upgrades: [
+    {
+      tier: 1,
+      description: '35% more damage, 10s duration',
+      enemyVulnerable: 35,
+      enemyVulnerableDuration: 10,
+    },
+    {
+      tier: 2,
+      description: 'Enemy also attacks 20% slower',
+      enemySlowPercent: 20,
+    },
+  ],
+};
