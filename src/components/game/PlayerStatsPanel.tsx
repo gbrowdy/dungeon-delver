@@ -23,6 +23,7 @@ import {
   CLASS_COLORS,
   type CharacterClassKey,
 } from '@/lib/icons';
+import { ActiveEffectsBar } from './ActiveEffectsBar';
 
 const ALL_ITEM_TYPES: ItemType[] = ['weapon', 'armor', 'accessory'];
 
@@ -47,12 +48,11 @@ export function PlayerStatsPanel({ player }: PlayerStatsPanelProps) {
     ...player,
     class: player.characterClass,
     currentStats: {
-      power: player.attack.baseDamage,
-      armor: player.defense.value,
-      speed: player.speed.value,
+      // Use effective stats (with stance modifiers applied)
+      power: player.effectiveStats.power.value,
+      armor: player.effectiveStats.armor.value,
+      speed: player.effectiveStats.speed.value,
       fortune: player.attack.critChance * 100, // Convert back to fortune approximation
-      mana: player.mana?.current ?? 0, // null after path selection
-      maxMana: player.mana?.max ?? 0,
     },
     experience: player.xp,
     experienceToNext: player.xpToNext,
@@ -82,12 +82,20 @@ export function PlayerStatsPanel({ player }: PlayerStatsPanelProps) {
         speed={playerForUtils.currentStats.speed}
         fortune={playerForUtils.currentStats.fortune}
         derivedStats={player.derivedStats}
+        modifiers={{
+          power: player.effectiveStats.power.modifier,
+          armor: player.effectiveStats.armor.modifier,
+          speed: player.effectiveStats.speed.modifier,
+        }}
       />
 
       {/* Path Abilities Display */}
       {player.path && player.path.abilities.length > 0 && (
         <AbilitiesDisplay abilityIds={player.path.abilities} />
       )}
+
+      {/* Active Passive Effects Display */}
+      {player.passiveEffects && <ActiveEffectsBar player={player} />}
 
       {/* Gold and XP Progress */}
       <div className="mt-1.5 xs:mt-2 space-y-1">
@@ -347,6 +355,11 @@ interface StatsGridProps {
     critDamage: number;
     dodgeChance: number;
   };
+  modifiers?: {
+    power: number;
+    armor: number;
+    speed: number;
+  };
 }
 
 function StatsGrid({
@@ -355,6 +368,7 @@ function StatsGrid({
   speed,
   fortune,
   derivedStats,
+  modifiers,
 }: StatsGridProps) {
   // Use precomputed derived stats from snapshot
   const critChance = Math.floor(derivedStats.critChance * 100);
@@ -369,6 +383,7 @@ function StatsGrid({
         value={power}
         tooltip="Power - determines attack damage"
         iconColor="text-amber-400"
+        modifier={modifiers?.power}
       />
       <StatItemWithTooltip
         iconName={STAT_ICONS.ARMOR}
@@ -376,6 +391,7 @@ function StatsGrid({
         value={armor}
         tooltip="Armor - reduces incoming damage"
         iconColor="text-sky-400"
+        modifier={modifiers?.armor}
       />
       <StatItemWithTooltip
         iconName={STAT_ICONS.SPEED}
@@ -383,6 +399,7 @@ function StatsGrid({
         value={speed}
         tooltip="Speed - affects attack rate"
         iconColor="text-emerald-400"
+        modifier={modifiers?.speed}
       />
       <StatItemWithTooltip
         iconName={STAT_ICONS.FORTUNE}
@@ -403,6 +420,7 @@ function StatsGrid({
 
 /**
  * StatItemWithTooltip - A single stat display with icon, label, value, and tooltip in pixel style.
+ * When modifier is provided and non-zero, shows colored text and arrow indicator.
  */
 interface StatItemWithTooltipProps {
   iconName: string;
@@ -410,16 +428,33 @@ interface StatItemWithTooltipProps {
   value: string | number;
   tooltip: ReactNode;
   iconColor?: string;
+  modifier?: number; // Percentage modifier (e.g., 0.25 = +25%, -0.15 = -15%)
 }
 
-function StatItemWithTooltip({ iconName, label, value, tooltip, iconColor }: StatItemWithTooltipProps) {
+function StatItemWithTooltip({ iconName, label, value, tooltip, iconColor, modifier }: StatItemWithTooltipProps) {
   const IconComponent = getIcon(iconName);
+
+  // Determine text color and arrow based on modifier
+  const hasModifier = modifier !== undefined && modifier !== 0;
+  const isPositive = modifier !== undefined && modifier > 0;
+
+  // Color: green for positive, red for negative, default slate for no modifier
+  const valueColor = hasModifier
+    ? isPositive
+      ? 'text-emerald-400'
+      : 'text-red-400'
+    : 'text-slate-200';
+
+  // Arrow indicator
+  const arrow = hasModifier ? (isPositive ? ' \u2191' : ' \u2193') : '';
 
   const content = (
     <div className="pixel-panel-dark flex flex-col items-center text-center rounded p-1 xs:p-1.5 sm:p-2">
       <IconComponent className={cn("w-5 h-5 xs:w-6 xs:h-6 mb-0.5", iconColor)} />
       <span className="pixel-text text-pixel-2xs xs:text-pixel-xs text-slate-400">{label}</span>
-      <span className="pixel-text text-pixel-2xs xs:text-pixel-xs sm:text-pixel-sm font-medium text-slate-200">{value}</span>
+      <span className={cn("pixel-text text-pixel-2xs xs:text-pixel-xs sm:text-pixel-sm font-medium", valueColor)}>
+        {value}{arrow}
+      </span>
     </div>
   );
 
