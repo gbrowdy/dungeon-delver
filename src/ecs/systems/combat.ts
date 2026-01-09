@@ -105,6 +105,23 @@ export function CombatSystem(_deltaMs: number): void {
       }
     }
 
+    // Check for vulnerable status on target (only when player attacks enemy)
+    if (entity.player && target.statusEffects?.some(s => s.type === 'vulnerable')) {
+      const vulnEffect = target.statusEffects.find(s => s.type === 'vulnerable');
+      if (vulnEffect) {
+        damage = Math.round(damage * (1 + vulnEffect.value / 100));
+      }
+    }
+
+    // Check for hex damage amp (player in hex stance attacking)
+    // Use `entity` directly - it's the attacker already in scope
+    if (entity.player && entity.stanceState?.activeStanceId === 'hex_veil') {
+      const computed = entity.passiveEffectState?.computed;
+      if (computed?.hexDamageAmp) {
+        damage = Math.round(damage * (1 + computed.hexDamageAmp / 100));
+      }
+    }
+
     // Apply defense
     const defense = target.defense?.value ?? 0;
     // Apply stance armor modifier to defense (when player is target)
@@ -123,6 +140,16 @@ export function CombatSystem(_deltaMs: number): void {
       const incomingMult = getStanceDamageMultiplier(target, 'incoming');
       if (incomingMult !== 1) {
         damage = Math.round(damage * incomingMult);
+        damage = Math.max(1, damage); // Still minimum 1
+      }
+    }
+
+    // Check hex damage reduction (when player is the target)
+    if (target.player && target.stanceState?.activeStanceId === 'hex_veil') {
+      const computed = target.passiveEffectState?.computed;
+      if (computed?.hexDamageReduction) {
+        const reduction = computed.hexDamageReduction * (computed.hexIntensityMultiplier ?? 1);
+        damage = Math.round(damage * (1 - reduction / 100));
         damage = Math.max(1, damage); // Still minimum 1
       }
     }

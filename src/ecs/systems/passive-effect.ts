@@ -672,4 +672,17 @@ export function PassiveEffectSystem(deltaMs: number): void {
       }
     }
   }
+
+  // 3. Process hex damage aura (only in hex_veil stance)
+  // Note: getActiveEnemy() uses activeEnemyQuery which already excludes dying enemies
+  if (player.stanceState?.activeStanceId === 'hex_veil' && computed.hexDamageAura > 0) {
+    const enemy = getActiveEnemy();
+    if (enemy?.health) {
+      const hexAuraDamage = computed.hexDamageAura * computed.hexIntensityMultiplier;
+      const auraDamage = Math.round(hexAuraDamage * (effectiveDelta / 1000));
+      if (auraDamage > 0) {
+        enemy.health.current = Math.max(0, enemy.health.current - auraDamage);
+      }
+    }
+  }
 }
