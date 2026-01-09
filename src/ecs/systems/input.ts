@@ -591,15 +591,28 @@ export function InputSystem(_deltaMs: number): void {
           floor.room = 1;
           floor.totalRooms = FLOOR_CONFIG.ROOMS_PER_FLOOR[floor.number - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
 
-          // Reset player combat state for new floor
+          // Full reset for new floor (same as retry: health, cooldowns, status, resource)
           if (player) {
+            // Reset health to full
+            if (player.health) {
+              player.health.current = player.health.max;
+            }
+
+            // Clear cooldowns
+            if (player.cooldowns) {
+              player.cooldowns.clear();
+            }
+
+            // Clear status effects
+            player.statusEffects = [];
+
             // Reset passive effect floor state for new floor
             if (player.passiveEffectState) {
               resetFloorState(player);
             }
 
+            // Reset pathResource (stamina to max, others to 0)
             if (player.pathResource) {
-              // Stamina resets to max, other resources reset to 0
               player.pathResource.current = player.pathResource.type === 'stamina'
                 ? player.pathResource.max
                 : 0;
@@ -715,14 +728,27 @@ export function InputSystem(_deltaMs: number): void {
           floor.room = 1;
           floor.totalRooms = FLOOR_CONFIG.ROOMS_PER_FLOOR[floor.number - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
 
+          // Full reset for new floor (same as retry: health, cooldowns, status, resource)
+          // Reset health to full
+          if (player.health) {
+            player.health.current = player.health.max;
+          }
+
+          // Clear cooldowns
+          if (player.cooldowns) {
+            player.cooldowns.clear();
+          }
+
+          // Clear status effects
+          player.statusEffects = [];
+
           // Reset passive effect floor state for new floor
           if (player.passiveEffectState) {
             resetFloorState(player);
           }
 
-          // Reset player combat state for new floor
+          // Reset pathResource (stamina to max, others to 0)
           if (player.pathResource) {
-            // Stamina resets to max, other resources reset to 0
             player.pathResource.current = player.pathResource.type === 'stamina'
               ? player.pathResource.max
               : 0;
