@@ -239,3 +239,110 @@ const ARCANE_SURGE_POWER: ArchmagePower = {
     },
   ],
 };
+
+// =============================================================================
+// LEVEL 8 POWERS (Subpath Capstone Powers)
+// =============================================================================
+
+/**
+ * Spellstorm (Battlemage) - Sustained damage with visual multi-hit
+ * Low charge cost, rapid hits - fits Battlemage's sustained casting style
+ */
+const SPELLSTORM: ArchmagePower = {
+  id: 'spellstorm',
+  name: 'Spellstorm',
+  description: 'Deal 480% damage (shown as 4 rapid hits). Low charge cost.',
+  icon: 'power-spellstorm',
+  resourceCost: 20,
+  cooldown: 10,
+  effect: 'damage',
+  value: 4.8,
+  category: 'sustained',
+  synergies: [],
+  visualMultiHit: { count: 4, interval: 750 },
+  upgrades: [
+    {
+      tier: 1,
+      description: '600% damage (5 hits visually), 15 charge cost',
+      value: 6.0,
+      resourceCost: 15,
+      visualMultiHit: { count: 5, interval: 600 },
+    },
+    {
+      tier: 2,
+      description: 'Cooldown reduced to 8s',
+      cooldown: 8,
+    },
+  ],
+};
+
+/**
+ * Annihilate (Destroyer) - Massive nuke with unique cast condition
+ * Can only cast at 0 charges (fills to max), rewards full discharge gameplay
+ */
+const ANNIHILATE: ArchmagePower = {
+  id: 'annihilate',
+  name: 'Annihilate',
+  description: 'Deal 700% damage. Can only cast at 0 charges (fills to max).',
+  icon: 'power-annihilate',
+  resourceCost: 100,
+  cooldown: 18,
+  effect: 'damage',
+  value: 7.0,
+  category: 'nuke',
+  synergies: [],
+  upgrades: [
+    {
+      tier: 1,
+      description: '900% damage',
+      value: 9.0,
+    },
+    {
+      tier: 2,
+      description: 'If this kills, restore 50% HP',
+      healOnKill: 50,
+    },
+  ],
+};
+
+// =============================================================================
+// EXPORTS
+// =============================================================================
+
+// Power choices by level (for level-up selection UI)
+const POWER_CHOICES_BY_LEVEL: Record<number, ArchmagePower[]> = {
+  2: [ARCANE_BOLT, METEOR_STRIKE],
+  4: [ARCANE_EMPOWERMENT, ARCANE_WEAKNESS],
+  6: [SIPHON_SOUL, ARCANE_SURGE_POWER],
+};
+
+// Subpath capstone powers
+const SUBPATH_POWERS: Record<string, ArchmagePower> = {
+  battlemage: SPELLSTORM,
+  destroyer: ANNIHILATE,
+};
+
+export const ARCHMAGE_POWERS = {
+  arcane_bolt: ARCANE_BOLT,
+  meteor_strike: METEOR_STRIKE,
+  arcane_empowerment: ARCANE_EMPOWERMENT,
+  arcane_weakness: ARCANE_WEAKNESS,
+  siphon_soul: SIPHON_SOUL,
+  arcane_surge_power: ARCANE_SURGE_POWER,
+  spellstorm: SPELLSTORM,
+  annihilate: ANNIHILATE,
+};
+
+export function getArchmagePowerChoices(level: number): ArchmagePower[] {
+  return POWER_CHOICES_BY_LEVEL[level] ?? [];
+}
+
+export function getArchmageSubpathPower(subpathId: string): ArchmagePower | undefined {
+  return SUBPATH_POWERS[subpathId];
+}
+
+export function getArchmagePowerUpgrade(powerId: string, tier: number): PowerUpgrade | undefined {
+  const power = ARCHMAGE_POWERS[powerId as keyof typeof ARCHMAGE_POWERS];
+  if (!power || tier < 1 || tier > 2) return undefined;
+  return power.upgrades[tier - 1];
+}
