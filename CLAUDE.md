@@ -253,6 +253,197 @@ refactor(ecs): extract combat damage calculation
 
 Task planning documents should be stored in the `tasks/` directory (gitignored).
 
+## Adding Path Powers
+
+Each class has two paths available at level 2. Paths are either **Active** (power-based gameplay) or **Passive** (stance-based, auto-mechanics).
+
+### Path Types Overview
+
+| Type | Example | Gameplay | UI | Key System |
+|------|---------|----------|----|----|
+| **Active** | Berserker | Powers with cooldowns, resource costs | PowerButton grid | `power.ts` |
+| **Passive** | Guardian | Stance toggle, auto-triggering effects | StanceToggle UI | `passive-effect.ts` |
+
+### File Structure
+
+```
+src/data/paths/
+├── warrior.ts              # Path definitions (PathDefinition, abilities)
+├── berserker-powers.ts     # Active path: Power definitions with upgrades
+├── guardian-enhancements.ts # Passive path: Stance enhancement definitions
+├── mage.ts                 # Mage paths (Archmage=active, Enchanter=passive)
+├── rogue.ts                # Rogue paths (Assassin=active, Duelist=passive)
+└── paladin.ts              # Paladin paths
+```
+
+### Adding an Active Path (like Berserker)
+
+**1. Define Powers in `src/data/paths/{class}-powers.ts`:**
+
+```typescript
+// Example: src/data/paths/assassin-powers.ts
+import type { Power } from '@/types/game';
+
+export interface AssassinPower extends Power {
+  upgrades: [PowerUpgrade, PowerUpgrade]; // T1, T2 upgrades
+}
+
+const SHADOW_STRIKE: AssassinPower = {
+  id: 'shadow_strike',
+  name: 'Shadow Strike',
+  description: 'Deal 180% damage from stealth. Guaranteed crit.',
+  icon: 'power-shadow_strike',
+  resourceCost: 40,        // Path resource cost (Momentum for Assassin)
+  cooldown: 6,
+  effect: 'damage',
+  value: 1.8,
+  category: 'strike',
+  synergies: [],
+  guaranteedCrit: true,    // Special mechanic
+  upgrades: [
+    { tier: 1, description: '220% damage', value: 2.2 },
+    { tier: 2, description: 'Refund 50% cost on kill', costRefundOnKill: 0.5 },
+  ],
+};
+
+export const ASSASSIN_POWERS = {
+  level2: [SHADOW_STRIKE, POISON_BLADE],
+  level4: [...],
+  level6: [...],
+};
+```
+
+**2. Add Power Processing in `src/ecs/systems/power.ts`:**
+
+```typescript
+// In processPowerEffect(), add case for new mechanics:
+if (power.guaranteedCrit) {
+  // Force crit logic
+}
+```
+
+**3. Register in `src/data/powers.ts`:**
+
+```typescript
+import { ASSASSIN_POWERS } from './paths/assassin-powers';
+// Add to POWER_DATA or appropriate lookup
+```
+
+**4. Add Resource Type in `src/data/pathResources.ts`:**
+
+```typescript
+export const PATH_RESOURCES: Record<string, PathResourceConfig> = {
+  assassin: {
+    type: 'momentum',
+    max: 100,
+    startingValue: 0,
+    generation: { passive: 5, onHit: 15, onCrit: 25 },
+    resourceBehavior: 'spend',
+  },
+};
+```
+
+### Adding a Passive Path (like Guardian)
+
+**1. Define Enhancements in `src/data/paths/{class}-enhancements.ts`:**
+
+```typescript
+// Example: src/data/paths/enchanter-enhancements.ts
+import type { StanceEnhancement } from '@/types/paths';
+
+export const ENCHANTER_AURA_ENHANCEMENTS: StanceEnhancement[] = [
+  {
+    id: 'aura_1_magic_shield',
+    name: 'Magic Shield',
+    tier: 1,
+    description: '+15% spell damage reduction',
+    stanceId: 'aura_stance',
+    effects: [{ type: 'damage_reduction', value: 15 }],
+  },
+  // ... more enhancements
+];
+```
+
+**2. Map Effects to PassiveEffectState in `src/ecs/systems/passive-effect.ts`:**
+
+The `recomputePassiveEffects()` function maps enhancement effects to computed values:
+
+```typescript
+// In recomputePassiveEffects(), add cases for new effect types:
+case 'spell_damage_reduction':
+  computed.spellDamageReductionPercent += effect.value;
+  break;
+```
+
+**3. Add Computed Fields to `src/ecs/components.ts`:**
+
+```typescript
+export interface ComputedPassiveEffects {
+  // ... existing fields
+  spellDamageReductionPercent: number;  // New field for Enchanter
+}
+```
+
+**4. Define Stances in `src/data/stances.ts`:**
+
+```typescript
+export const ENCHANTER_STANCES: PassiveStance[] = [
+  {
+    id: 'aura_stance',
+    name: 'Aura Stance',
+    description: 'Protective magical aura',
+    effects: [{ behavior: 'spell_shield', value: 0.1 }],
+  },
+];
+```
+
+**5. Update Snapshot in `src/ecs/snapshot.ts`:**
+
+```typescript
+// In createPlayerSnapshot(), add new computed values:
+passiveEffects: {
+  // ... existing
+  spellDamageReduction: computed.spellDamageReductionPercent,
+},
+```
+
+### Key Integration Points
+
+| System | Active Paths | Passive Paths |
+|--------|--------------|---------------|
+| `input.ts` | `USE_POWER` command | `CHANGE_STANCE` command |
+| `power.ts` | Executes power effects | — |
+| `passive-effect.ts` | — | `recomputePassiveEffects()`, combat hooks |
+| `combat.ts` | — | Reads from `passiveEffectState.computed` |
+| `resource-generation.ts` | Generates path resource | — |
+| `snapshot.ts` | Powers, cooldowns | `passiveEffects` object |
+
+### ECS Boundaries for Passive Effects
+
+**CRITICAL:** Passive effect hooks must respect ECS boundaries:
+
+```typescript
+// ✅ CORRECT: Hook returns values, system applies them
+export function processOnDamaged(player, damage): OnDamagedResult {
+  // Read from computed, mutate only passiveEffectState
+  // RETURN values for combat.ts to apply
+  return { reflectDamage: 10, healAmount: 5 };
+}
+
+// ❌ WRONG: Hook directly mutates other entities
+export function processOnDamaged(player, damage, enemy) {
+  enemy.health.current -= 10;  // NO! Return value instead
+}
+```
+
+### Testing Path Powers
+
+1. **Unit tests** in `src/data/paths/__tests__/` for data validation
+2. **ECS tests** in `src/ecs/systems/__tests__/` for system behavior
+3. **E2E tests** in `e2e/` for full integration (required for completion)
+
+See `docs/plans/2026-01-08-passive-effect-system-implementation.md` for the Guardian implementation as a reference.
+
 ## Additional References
 
 - Design documents in `docs/plans/`
