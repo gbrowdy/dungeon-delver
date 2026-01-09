@@ -253,6 +253,90 @@ refactor(ecs): extract combat damage calculation
 
 Task planning documents should be stored in the `tasks/` directory (gitignored).
 
+## Path Design Principles
+
+Each class has two paths representing different playstyles. Based on the Warrior implementation (Berserker/Guardian), follow these principles:
+
+### Active vs Passive Path Philosophy
+
+| Aspect | Active Path (Berserker) | Passive Path (Guardian) |
+|--------|-------------------------|-------------------------|
+| **Player agency** | High - choose when to use powers | Low - effects trigger automatically |
+| **Skill expression** | Timing, resource management | Stance selection, build choices |
+| **Risk/reward** | Powers have costs and cooldowns | Tradeoffs baked into stances |
+| **Complexity** | Learn power combos | Understand passive synergies |
+| **Power fantasy** | "I unleash devastating attacks" | "I'm an immovable wall" |
+
+### Active Path Design (like Berserker)
+
+**Core Resource Design:**
+- Resource should create tension (spend vs save)
+- Generation should reward the path's playstyle (Fury: taking/dealing damage)
+- Powers should have meaningful cost/cooldown tradeoffs
+
+**Power Progression:**
+```
+Level 2: Choose Power 1 (two options) - Core identity
+Level 4: Choose Power 2 (two options) - Expand toolkit
+Level 6: Choose Power 3 (two options) - Specialization
+Level 8: Subpath grants Power 4 - Capstone
+```
+
+**Power Design Rules:**
+- Each choice should be viable (no trap options)
+- Options should appeal to different playstyles (burst vs sustain, offense vs utility)
+- Upgrades (T1, T2) should feel impactful but not mandatory
+- Special mechanics (guaranteed crit, lifesteal) create memorable moments
+
+### Passive Path Design (like Guardian)
+
+**Stance Design:**
+- Two stances with clear, opposite identities
+- Each stance should be viable in different situations
+- Stance-switching should feel meaningful, not constant
+
+**Enhancement Progression:**
+- Linear paths (one per stance), 13 tiers each
+- Early tiers: foundational bonuses (+armor, +reflect)
+- Mid tiers: interesting mechanics (on-hit procs, scaling)
+- Late tiers: powerful capstones (survive lethal, damage auras)
+
+**Effect Categories (Guardian example):**
+```
+Iron Stance: Defense → Mitigation → Sustain → Immunity
+Retribution Stance: Reflect → Scaling → Counter → Aura
+```
+
+**Design Rules:**
+- Effects must be expressible as data (no custom code per enhancement)
+- Computed values are pre-calculated, systems just read them
+- Conditional effects (low HP bonuses) create dynamic gameplay
+- Capstones should feel "build-defining"
+
+### Creating Meaningful Choices
+
+**At Path Selection (Level 2):**
+- Paths should feel like different games, not just stat variations
+- Active path: "I want to press buttons and make decisions"
+- Passive path: "I want to optimize my build and watch it work"
+
+**At Each Level-Up:**
+- Choices should be interesting, not obvious
+- Consider: "Would a player agonize over this choice?" (good)
+- Avoid: Clear best option or purely numerical differences (bad)
+
+**Subpath Design:**
+- Narrow the fantasy further (Berserker → Warlord vs Ravager)
+- Should synergize with earlier choices
+- Capstone power/enhancement should feel earned
+
+### Balance Principles
+
+- Test with E2E before considering complete
+- Passive paths should match active path effectiveness
+- Floor clear time is the primary balance metric
+- "Feels good" matters more than perfect math
+
 ## Adding Path Powers
 
 Each class has two paths available at level 2. Paths are either **Active** (power-based gameplay) or **Passive** (stance-based, auto-mechanics).
