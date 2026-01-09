@@ -116,21 +116,21 @@ export function estimateEffectValue(item: ShopItem): number {
     return 4.0;
   }
 
-  // Mana effects - check mana + dodge before general dodge
-  if (desc.includes('mana') && desc.includes('dodge')) {
-    // Mana restoration on dodge (e.g., "50% chance to restore 5 mana on dodge")
+  // Resource effects - check resource + dodge before general dodge
+  if (desc.includes('resource') && desc.includes('dodge')) {
+    // Resource restoration on dodge (e.g., "50% chance to restore 5 resource on dodge")
     return 0.5 * value * chance;
   }
-  if (desc.includes('mana') && desc.includes('on kill')) {
+  if (desc.includes('resource') && desc.includes('on kill')) {
     return 0.3;
   }
-  if (desc.includes('mana') && desc.includes('on crit')) {
+  if (desc.includes('resource') && desc.includes('on crit')) {
     return 0.5;
   }
-  if (desc.includes('mana') && (desc.includes('per second') || desc.includes('/sec'))) {
+  if (desc.includes('resource') && (desc.includes('per second') || desc.includes('/sec'))) {
     return 1.0 * value;
   }
-  if (desc.includes('mana') && desc.includes('regeneration')) {
+  if (desc.includes('resource') && desc.includes('regeneration')) {
     return 1.0 * value;
   }
   if (desc.includes('cost') && desc.includes('less')) {
@@ -202,8 +202,8 @@ export function estimateEffectValue(item: ShopItem): number {
     return 0.8 * chance;
   }
 
-  // Crit-based mana restore
-  if (desc.includes('crit') && desc.includes('restore') && desc.includes('mana')) {
+  // Crit-based resource restore
+  if (desc.includes('crit') && desc.includes('restore') && desc.includes('resource')) {
     return 1.0;
   }
 

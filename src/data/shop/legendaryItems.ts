@@ -122,16 +122,16 @@ export const LEGENDARY_ITEMS: ShopItem[] = [
     name: 'Crown of Fortune',
     type: 'accessory',
     price: 340,
-    stats: { fortune: 15 },
+    stats: { fortune: 15, power: 5 },
     effect: {
       trigger: 'on_crit',
-      type: 'mana',
-      value: 20,
-      description: 'Critical hits restore 20 mana',
+      type: 'damage',
+      value: 15,
+      description: 'Critical hits deal 15 bonus damage',
     },
     tier: 'legendary',
     icon: 'Crown',
-    description: 'A golden crown that turns lucky strikes into endless power.',
+    description: 'A golden crown that turns lucky strikes into devastating blows.',
     pathSynergies: ['assassin', 'archmage'],
   },
   {
@@ -171,22 +171,22 @@ export const LEGENDARY_ITEMS: ShopItem[] = [
     pathSynergies: ['duelist', 'assassin'],
   },
 
-  // NEW: Mana sustain legendary for spell-heavy builds
+  // Spell amplification legendary for casters
   {
     id: 'arcane_reservoir',
     name: 'Arcane Reservoir',
     type: 'accessory',
     price: 340,
-    stats: { mana: 50, maxMana: 50 },
+    stats: { power: 8, fortune: 8 },
     effect: {
       trigger: 'on_power_cast',
-      type: 'mana',
+      type: 'damage_boost',
       value: 0.15,
-      description: 'Powers refund 15% of their mana cost',
+      description: 'Powers deal 15% increased damage',
     },
     tier: 'legendary',
     icon: 'Droplets',
-    description: 'An endless wellspring of magical energy, rewarding rapid spellcasting.',
+    description: 'A crystalline conduit that amplifies magical energy.',
     pathSynergies: ['archmage', 'enchanter'],
   },
 

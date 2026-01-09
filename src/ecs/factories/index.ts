@@ -9,6 +9,9 @@ import { CLASS_DATA } from '@/data/classes';
 import { generateEnemy } from '@/data/enemies';
 import { FLOOR_CONFIG } from '@/constants/game';
 import { COMBAT_BALANCE } from '@/constants/balance';
+import { getStartingPower } from '@/data/startingPowers';
+import { STAMINA_RESOURCE } from '@/data/pathResources';
+import { computeDerivedStats } from '@/utils/statUtils';
 
 // ============================================================================
 // Helper Functions
@@ -57,7 +60,7 @@ export function createPlayerEntity(options: CreatePlayerOptions): Entity {
   const baseStats = classData.baseStats;
 
   // Deep clone the starting power to avoid mutation
-  const startingPower: Power = { ...classData.startingPower };
+  const startingPower: Power = getStartingPower(characterClass);
 
   const entity: Entity = {
     // Identity tag
@@ -74,10 +77,6 @@ export function createPlayerEntity(options: CreatePlayerOptions): Entity {
       current: baseStats.maxHealth,
       max: baseStats.maxHealth,
     },
-    mana: {
-      current: baseStats.maxMana,
-      max: baseStats.maxMana,
-    },
     attack: {
       baseDamage: baseStats.power,
       critChance: baseStats.fortune / 100, // Fortune converts to crit chance
@@ -86,7 +85,6 @@ export function createPlayerEntity(options: CreatePlayerOptions): Entity {
     },
     defense: {
       value: baseStats.armor,
-      blockReduction: 0.4, // 40% damage reduction when blocking
     },
     speed: {
       value: baseStats.speed,
@@ -94,12 +92,19 @@ export function createPlayerEntity(options: CreatePlayerOptions): Entity {
       accumulated: 0,
     },
 
+    // Fortune and derived stats
+    fortune: baseStats.fortune,
+    derivedStats: computeDerivedStats(baseStats.fortune),
+
     // Progression
     progression: {
       level: 1,
       xp: 0,
       xpToNext: FLOOR_CONFIG.STARTING_EXP_TO_LEVEL,
     },
+
+    // Path resource (stamina at level 1, changes with path selection at level 2)
+    pathResource: { ...STAMINA_RESOURCE },
 
     // Powers and equipment
     powers: [startingPower],
@@ -121,7 +126,6 @@ export function createPlayerEntity(options: CreatePlayerOptions): Entity {
     // Regeneration
     regen: {
       healthPerSecond: classData.hpRegen ?? 0,
-      manaPerSecond: 1,
       accumulated: 0,
     },
 
@@ -235,7 +239,6 @@ export function createEnemyEntity(options: CreateEnemyOptions): Entity {
     },
     defense: {
       value: enemy.armor,
-      blockReduction: 0, // Enemies don't block
     },
     speed: {
       value: enemy.speed,

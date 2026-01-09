@@ -31,10 +31,8 @@ export type PathAbilityTrigger =
   | 'turn_start'       // At start of each combat turn
   // Path-specific triggers
   | 'on_power_use'     // When player uses a power
-  | 'on_block'         // When player successfully blocks
   | 'on_dodge'         // When player dodges an attack
   | 'on_low_hp'        // When player HP falls below threshold
-  | 'on_low_mana'      // When player mana falls below threshold
   | 'on_full_hp'       // When player is at max HP
   | 'on_combo'         // When player achieves power combo
   | 'on_status_inflict'// When player inflicts status effect
@@ -44,7 +42,7 @@ export type PathAbilityTrigger =
 /**
  * Stat types that can be modified by path abilities
  */
-export type PathStatType = 'health' | 'maxHealth' | 'power' | 'armor' | 'speed' | 'mana' | 'maxMana' | 'fortune';
+export type PathStatType = 'health' | 'maxHealth' | 'power' | 'armor' | 'speed' | 'fortune';
 
 /**
  * Conditional checks for ability activation
@@ -54,8 +52,6 @@ export type PathAbilityCondition =
   | { type: 'hp_below'; value: number }
   | { type: 'hp_above'; value: number }
   | { type: 'hp_threshold'; value: number }
-  | { type: 'mana_below'; value: number }
-  | { type: 'mana_above'; value: number }
   | { type: 'enemy_hp_below'; value: number }
   | { type: 'combo_count'; value: number }
   | { type: 'attack_count'; value: number; counterId: string }  // For attack-based combos like Holy Avenger
@@ -129,7 +125,6 @@ export interface PathAbilityEffect {
   // Direct effects
   heal?: number;                    // Flat heal amount
   damage?: number;                  // Bonus damage
-  manaRestore?: number;             // Mana restoration
 
   // Status effects
   statusApplication?: StatusApplication; // Apply status to enemy
@@ -239,7 +234,6 @@ export interface SubpathChoice {
 export type StanceBehavior =
   | 'reflect_damage'    // Reflect % of damage taken back to attacker
   | 'counter_attack'    // Chance to auto-attack when hit
-  | 'auto_block'        // Chance to automatically negate attacks
   | 'lifesteal'         // Heal for % of damage dealt
   | 'arcane_burn'       // Chance on hit to deal bonus damage + apply burn DoT
   | 'hex_aura';         // Passive: enemies deal reduced damage
@@ -310,4 +304,147 @@ export interface PlayerStanceState {
   activeStanceId: string;
   stanceCooldownRemaining: number;  // milliseconds until can switch
   triggerCooldowns: Record<string, number>;  // triggerId → remaining ms
+}
+
+// ============================================================================
+// PATH PROGRESSION TYPES (Phase 4: Path Progression State)
+// ============================================================================
+
+/**
+ * Stance enhancement effect types for passive path progression
+ * Guardian passive paths gain incremental enhancements to their stances
+ */
+export type StanceEnhancementEffect =
+  | { type: 'armor_percent'; value: number }
+  | { type: 'damage_reduction'; value: number }
+  | { type: 'hp_regen'; value: number }
+  | { type: 'cc_immunity'; value: boolean }
+  | { type: 'armor_scaling_dr'; perArmor: number }
+  | { type: 'low_hp_armor'; threshold: number; value: number }
+  | { type: 'on_hit_heal_chance'; chance: number; healPercent: number }
+  | { type: 'max_damage_per_hit'; percent: number }
+  | { type: 'remove_speed_penalty'; value: boolean }
+  | { type: 'max_hp_percent'; value: number }
+  | { type: 'regen_multiplier_above_hp'; threshold: number; multiplier: number }
+  | { type: 'armor_reduces_dot'; value: boolean }
+  | { type: 'survive_lethal'; value: boolean }
+  | { type: 'reflect_percent'; value: number }
+  | { type: 'damage_per_hit_stack'; valuePerStack: number; maxStacks: number }
+  | { type: 'heal_from_reflect'; percent: number }
+  | { type: 'reflect_scaling_per_hit'; value: number }
+  | { type: 'counter_attack_chance'; chance: number }
+  | { type: 'low_hp_reflect_multiplier'; threshold: number; multiplier: number }
+  | { type: 'passive_damage_aura'; damagePerSecond: number }
+  | { type: 'next_attack_bonus_after_hit'; value: number }
+  | { type: 'permanent_power_per_hit'; value: number }
+  | { type: 'reflect_ignores_armor'; value: boolean }
+  | { type: 'on_hit_burst_chance'; chance: number; powerPercent: number }
+  | { type: 'reflect_can_crit'; value: boolean }
+  | { type: 'reflect_kill_heal'; percent: number };
+
+// ============================================================================
+// PASSIVE EFFECT SYSTEM TYPES (Generic Passive Effect Processing)
+// ============================================================================
+
+/**
+ * Stats that can be modified by passive effects
+ */
+export type PassiveStatType = 'power' | 'armor' | 'speed' | 'fortune' | 'maxHealth' | 'healthRegen';
+
+/**
+ * Conditions for conditional passive effects
+ */
+export type PassiveCondition =
+  | { type: 'hp_below_percent'; value: number }
+  | { type: 'hp_above_percent'; value: number };
+
+/**
+ * Passive effect discriminated union
+ * All passive effects are expressed as typed data structures.
+ * New paths add new effect instances, not new code.
+ */
+export type PassiveEffect =
+  // === STAT MODIFIERS (continuous) ===
+  | { type: 'stat_percent'; stat: PassiveStatType; value: number }
+  | { type: 'stat_flat'; stat: PassiveStatType; value: number }
+  | { type: 'stat_percent_when'; stat: PassiveStatType; value: number; condition: PassiveCondition }
+
+  // === DAMAGE MODIFIERS ===
+  | { type: 'damage_reduction_percent'; value: number }
+  | { type: 'damage_reduction_percent_when'; value: number; condition: PassiveCondition }
+  | { type: 'max_damage_per_hit_percent'; value: number }
+  | { type: 'armor_reduces_dot' }
+
+  // === REFLECT SYSTEM ===
+  | { type: 'reflect_percent'; value: number }
+  | { type: 'reflect_percent_when'; value: number; condition: PassiveCondition }
+  | { type: 'reflect_scaling_per_hit'; value: number }
+  | { type: 'reflect_ignores_armor' }
+  | { type: 'reflect_can_crit' }
+  | { type: 'heal_on_reflect_percent'; value: number }
+  | { type: 'heal_on_reflect_kill_percent'; value: number }
+
+  // === ON-DAMAGED PROCS ===
+  | { type: 'counter_attack_percent'; value: number }
+  | { type: 'damage_stack'; valuePerStack: number; maxStacks: number }
+  | { type: 'heal_on_damaged_chance'; chance: number; healPercent: number }
+  | { type: 'grant_next_attack_bonus'; value: number }
+
+  // === ON-HIT PROCS ===
+  | { type: 'permanent_power_per_hit'; value: number }
+  | { type: 'on_hit_burst_chance'; chance: number; powerPercent: number }
+
+  // === AURAS ===
+  | { type: 'damage_aura_per_second'; value: number }
+
+  // === DEATH PREVENTION ===
+  | { type: 'survive_lethal_once_per_floor' }
+
+  // === IMMUNITIES ===
+  | { type: 'cc_immunity'; ccTypes: ('stun' | 'slow')[] }
+
+  // === SPEED MODIFICATIONS ===
+  | { type: 'remove_speed_penalty' };
+
+/**
+ * Stance enhancement definition for passive paths
+ * Passive paths (like Guardian) acquire stance enhancements linearly
+ */
+export interface StanceEnhancement {
+  id: string;
+  name: string;
+  tier: number;
+  description: string;
+  stanceId: 'iron_stance' | 'retribution_stance';
+  effects: StanceEnhancementEffect[];
+}
+
+/**
+ * Tracks player's power upgrade state (active paths)
+ */
+export interface PowerUpgradeState {
+  powerId: string;
+  currentTier: 0 | 1 | 2; // 0 = base, 1 = T1, 2 = T2 (max)
+}
+
+/**
+ * Tracks player's stance enhancement state (passive paths)
+ */
+export interface StanceProgressionState {
+  ironTier: number;        // Current tier in Iron path (0-13)
+  retributionTier: number; // Current tier in Retribution path (0-13)
+  acquiredEnhancements: string[]; // IDs of acquired enhancements
+}
+
+/**
+ * Extended PlayerPath with progression tracking
+ */
+export interface PlayerPathProgression {
+  pathId: string;
+  pathType: 'active' | 'passive';
+  subpathId?: string;
+  // Active path state
+  powerUpgrades?: PowerUpgradeState[];
+  // Passive path state
+  stanceProgression?: StanceProgressionState;
 }

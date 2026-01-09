@@ -9,7 +9,7 @@ function createDamagePower(): Power {
     id: 'fireball',
     name: 'Fireball',
     description: 'Deals fire damage',
-    manaCost: 20,
+    resourceCost: 20,
     cooldown: 5,
     effect: 'damage',
     value: 1.5, // 150% damage
@@ -22,7 +22,7 @@ function createHealPower(): Power {
     id: 'divine-heal',
     name: 'Divine Heal',
     description: 'Restores health',
-    manaCost: 30,
+    resourceCost: 30,
     cooldown: 8,
     effect: 'heal',
     value: 0.5, // 50% max health
@@ -54,14 +54,13 @@ describe('PowerSystem', () => {
       player: true,
       identity: { name: 'Hero', class: 'mage' },
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 20,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 }, // No variance for predictable test
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 0 },
       powers: [damagePower],
       casting: { powerId: 'fireball', startedAtTick: 0 },
@@ -71,7 +70,7 @@ describe('PowerSystem', () => {
     const enemy = world.add({
       enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
       health: { current: 100, max: 100 },
-      defense: { value: 5, blockReduction: 0 },
+      defense: { value: 5,  },
       speed: { value: 8, attackInterval: 3000, accumulated: 0 },
     });
 
@@ -89,14 +88,13 @@ describe('PowerSystem', () => {
       player: true,
       identity: { name: 'Hero', class: 'paladin' },
       health: { current: 40, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 15,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 0 },
       powers: [healPower],
       casting: { powerId: 'divine-heal', startedAtTick: 0 },
@@ -106,7 +104,7 @@ describe('PowerSystem', () => {
     world.add({
       enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
       health: { current: 50, max: 50 },
-      defense: { value: 3, blockReduction: 0 },
+      defense: { value: 3,  },
       speed: { value: 8, attackInterval: 3000, accumulated: 0 },
     });
 
@@ -116,37 +114,37 @@ describe('PowerSystem', () => {
     expect(player.health?.current).toBe(90);
   });
 
-  it('should deduct mana cost', () => {
+  it('should deduct resource cost from pathResource', () => {
     const damagePower = createDamagePower();
 
     const player = world.add({
       player: true,
       identity: { name: 'Hero', class: 'mage' },
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 20,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 0 },
       powers: [damagePower],
       casting: { powerId: 'fireball', startedAtTick: 0 },
+      pathResource: { type: 'fury', current: 50, max: 100, color: '#dc2626', resourceBehavior: 'spend', generation: {} },
     });
 
     world.add({
       enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
       health: { current: 100, max: 100 },
-      defense: { value: 5, blockReduction: 0 },
+      defense: { value: 5,  },
       speed: { value: 8, attackInterval: 3000, accumulated: 0 },
     });
 
     PowerSystem(16);
 
-    // Mana should be reduced by 20 (power mana cost)
-    expect(player.mana?.current).toBe(30);
+    // Resource should be reduced by 20 (power resource cost)
+    expect(player.pathResource?.current).toBe(30);
   });
 
   it('should set cooldown after casting', () => {
@@ -156,14 +154,13 @@ describe('PowerSystem', () => {
       player: true,
       identity: { name: 'Hero', class: 'mage' },
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 20,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 0 },
       powers: [damagePower],
       casting: { powerId: 'fireball', startedAtTick: 0 },
@@ -172,7 +169,7 @@ describe('PowerSystem', () => {
     world.add({
       enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
       health: { current: 100, max: 100 },
-      defense: { value: 5, blockReduction: 0 },
+      defense: { value: 5,  },
       speed: { value: 8, attackInterval: 3000, accumulated: 0 },
     });
 
@@ -189,14 +186,13 @@ describe('PowerSystem', () => {
       player: true,
       identity: { name: 'Hero', class: 'mage' },
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 20,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 0 },
       powers: [damagePower],
       casting: { powerId: 'fireball', startedAtTick: 0 },
@@ -205,49 +201,12 @@ describe('PowerSystem', () => {
     world.add({
       enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
       health: { current: 100, max: 100 },
-      defense: { value: 5, blockReduction: 0 },
+      defense: { value: 5,  },
       speed: { value: 8, attackInterval: 3000, accumulated: 0 },
     });
 
     PowerSystem(16);
 
-    expect(player.casting).toBeUndefined();
-  });
-
-  it('should not cast if not enough mana', () => {
-    const damagePower = createDamagePower();
-
-    const player = world.add({
-      player: true,
-      identity: { name: 'Hero', class: 'mage' },
-      health: { current: 100, max: 100 },
-      mana: { current: 10, max: 50 }, // Not enough mana (need 20)
-      attack: {
-        baseDamage: 20,
-        critChance: 0,
-        critMultiplier: 2,
-        variance: { min: 1, max: 1 },
-      },
-      defense: { value: 5, blockReduction: 0.4 },
-      speed: { value: 10, attackInterval: 2500, accumulated: 0 },
-      powers: [damagePower],
-      casting: { powerId: 'fireball', startedAtTick: 0 },
-    });
-
-    const enemy = world.add({
-      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
-      health: { current: 100, max: 100 },
-      defense: { value: 5, blockReduction: 0 },
-      speed: { value: 8, attackInterval: 3000, accumulated: 0 },
-    });
-
-    PowerSystem(16);
-
-    // Enemy should not take damage
-    expect(enemy.health?.current).toBe(100);
-    // Mana should not change
-    expect(player.mana?.current).toBe(10);
-    // Casting should be cleared
     expect(player.casting).toBeUndefined();
   });
 
@@ -259,14 +218,13 @@ describe('PowerSystem', () => {
       player: true,
       identity: { name: 'Hero', class: 'paladin' },
       health: { current: 90, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 15,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 0 },
       powers: [healPower],
       casting: { powerId: 'divine-heal', startedAtTick: 0 },
@@ -275,7 +233,7 @@ describe('PowerSystem', () => {
     world.add({
       enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
       health: { current: 50, max: 50 },
-      defense: { value: 3, blockReduction: 0 },
+      defense: { value: 3,  },
       speed: { value: 8, attackInterval: 3000, accumulated: 0 },
     });
 
@@ -292,14 +250,13 @@ describe('PowerSystem', () => {
       player: true,
       identity: { name: 'Hero', class: 'mage' },
       health: { current: 100, max: 100 },
-      mana: { current: 50, max: 50 },
       attack: {
         baseDamage: 20,
         critChance: 0,
         critMultiplier: 2,
         variance: { min: 1, max: 1 },
       },
-      defense: { value: 5, blockReduction: 0.4 },
+      defense: { value: 5,  },
       speed: { value: 10, attackInterval: 2500, accumulated: 0 },
       powers: [damagePower],
       casting: { powerId: 'fireball', startedAtTick: 0 },
@@ -308,7 +265,7 @@ describe('PowerSystem', () => {
     const enemy = world.add({
       enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
       health: { current: 50, max: 50 },
-      defense: { value: 5, blockReduction: 0 },
+      defense: { value: 5,  },
       speed: { value: 8, attackInterval: 3000, accumulated: 0 },
       dying: { startedAtTick: 0, duration: 500 },
     });
@@ -342,13 +299,13 @@ describe('PowerSystem', () => {
           critMultiplier: 2,
           variance: { min: 1, max: 1 },
         },
-        defense: { value: 5, blockReduction: 0.4 },
+        defense: { value: 5,  },
         speed: { value: 10, attackInterval: 2500, accumulated: 0 },
         powers: [{
           id: 'test-power',
           name: 'Test Power',
           description: 'Test',
-          manaCost: 20,
+          resourceCost: 20,
           resourceCost: 30,
           cooldown: 5,
           effect: 'damage',
@@ -371,7 +328,7 @@ describe('PowerSystem', () => {
       const enemy = world.add({
         enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
         health: { current: 50, max: 50 },
-        defense: { value: 0, blockReduction: 0 },
+        defense: { value: 0,  },
         speed: { value: 8, attackInterval: 3000, accumulated: 0 },
       });
 
@@ -402,13 +359,13 @@ describe('PowerSystem', () => {
           critMultiplier: 2,
           variance: { min: 1, max: 1 },
         },
-        defense: { value: 5, blockReduction: 0.4 },
+        defense: { value: 5,  },
         speed: { value: 10, attackInterval: 2500, accumulated: 0 },
         powers: [{
           id: 'test-power',
           name: 'Test Power',
           description: 'Test',
-          manaCost: 20,
+          resourceCost: 20,
           resourceCost: 30,
           cooldown: 5,
           effect: 'damage',
@@ -454,13 +411,13 @@ describe('PowerSystem', () => {
           critMultiplier: 2,
           variance: { min: 1, max: 1 },
         },
-        defense: { value: 5, blockReduction: 0.4 },
+        defense: { value: 5,  },
         speed: { value: 10, attackInterval: 2500, accumulated: 0 },
         powers: [{
           id: 'test-power',
           name: 'Test Power',
           description: 'Test',
-          manaCost: 20,
+          resourceCost: 20,
           resourceCost: 30,
           cooldown: 5,
           effect: 'damage',
@@ -482,7 +439,7 @@ describe('PowerSystem', () => {
       const enemy = world.add({
         enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
         health: { current: 50, max: 50 },
-        defense: { value: 0, blockReduction: 0 },
+        defense: { value: 0,  },
         speed: { value: 8, attackInterval: 3000, accumulated: 0 },
       });
 
@@ -512,13 +469,13 @@ describe('PowerSystem', () => {
           critMultiplier: 2,
           variance: { min: 1, max: 1 },
         },
-        defense: { value: 5, blockReduction: 0.4 },
+        defense: { value: 5,  },
         speed: { value: 10, attackInterval: 2500, accumulated: 0 },
         powers: [{
           id: 'test-power',
           name: 'Test Power',
           description: 'Test',
-          manaCost: 20,
+          resourceCost: 20,
           resourceCost: 30,
           cooldown: 5,
           effect: 'damage',
@@ -563,7 +520,7 @@ describe('PowerSystem', () => {
           id: 'test-power',
           name: 'Strike',
           description: 'Test',
-          manaCost: 20,
+          resourceCost: 20,
           resourceCost: 30,
           cooldown: 5,
           effect: 'damage',

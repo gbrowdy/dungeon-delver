@@ -5,7 +5,7 @@
  * When accumulated time >= interval, mark entity as ready to attack.
  */
 
-import { attackersQuery, getGameState } from '../queries';
+import { attackersQuery, getGameState, getPlayer, getActiveEnemy } from '../queries';
 import { getEffectiveDelta } from '../loop';
 import { world } from '../world';
 import type { Entity } from '../components';
@@ -25,8 +25,9 @@ function calculateAttackDamage(entity: Entity): { damage: number; isCrit: boolea
   const variance = min + Math.random() * (max - min);
   let damage = Math.floor(attack.baseDamage * variance);
 
-  // Check for crit
-  const isCrit = Math.random() < attack.critChance;
+  // Check for crit - only player can crit, enemies cannot
+  const canCrit = !entity.enemy;
+  const isCrit = canCrit && Math.random() < attack.critChance;
   if (isCrit) {
     damage = Math.floor(damage * attack.critMultiplier);
   }
@@ -39,9 +40,18 @@ export function AttackTimingSystem(deltaMs: number): void {
 
   if (gameState?.phase !== 'combat') return;
 
+  // Stop all combat when either combatant is dead/dying
+  const player = getPlayer();
+  const enemy = getActiveEnemy();
+  if (player?.dying || (player?.health && player.health.current <= 0)) return;
+  if (!enemy) return; // No enemy to fight
+
   const effectiveDelta = getEffectiveDelta(deltaMs);
 
   for (const entity of attackersQuery) {
+    // Skip if dying or dead - no more attacks from dead entities
+    if (entity.dying || (entity.health && entity.health.current <= 0)) continue;
+
     // Skip if stunned
     if (isStunned(entity)) continue;
 

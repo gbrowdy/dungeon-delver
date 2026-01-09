@@ -261,7 +261,6 @@ describe('AnimationSystem', () => {
       const player = world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Hero', class: 'warrior' },
       });
 
@@ -290,7 +289,6 @@ describe('AnimationSystem', () => {
       const player = world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Hero', class: 'warrior' },
       });
 
@@ -320,7 +318,6 @@ describe('AnimationSystem', () => {
       world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Hero', class: 'warrior' },
       });
 
@@ -348,7 +345,6 @@ describe('AnimationSystem', () => {
       world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Hero', class: 'warrior' },
       });
 
@@ -373,6 +369,25 @@ describe('AnimationSystem', () => {
       expect(gameState.floatingEffects?.length).toBe(1);
       expect(gameState.floatingEffects?.[0].value).toBe(25);
       expect(gameState.floatingEffects?.[0].isCrit).toBe(true);
+    });
+
+    it('should set powerImpact on enemy for spell_cast events', () => {
+      // Add enemy
+      const enemy = world.add({
+        enemy: { id: 'goblin-1', tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+        health: { current: 50, max: 50 },
+      });
+
+      queueAnimationEvent('spell_cast', {
+        type: 'spell',
+        powerId: 'rage-strike',
+        value: 30,
+      }, 400);
+
+      AnimationSystem(16);
+
+      expect(enemy.visualEffects?.powerImpact).toBeDefined();
+      expect(enemy.visualEffects?.powerImpact?.powerId).toBe('rage-strike');
     });
   });
 

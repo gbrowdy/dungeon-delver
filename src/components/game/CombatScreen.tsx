@@ -8,6 +8,9 @@ import { PlayerStatsPanel } from './PlayerStatsPanel';
 import { PowersPanel } from './PowersPanel';
 import { LevelUpPopup } from './LevelUpPopup';
 import { AbilityChoicePopup } from './AbilityChoicePopup';
+import { PowerChoicePopup } from './PowerChoicePopup';
+import { UpgradeChoicePopup } from './UpgradeChoicePopup';
+import { StanceEnhancementPopup } from './StanceEnhancementPopup';
 import { useGameKeyboard } from '@/hooks/useGameKeyboard';
 import { useGameActions } from '@/ecs/context/GameContext';
 import type { PlayerSnapshot, EnemySnapshot, GameStateSnapshot } from '@/ecs/snapshot';
@@ -45,11 +48,6 @@ export function CombatScreen({
       const power = player.powers[index];
       if (power && canUsePowers) {
         actions.usePower(power.id);
-      }
-    },
-    activateBlock: () => {
-      if (canUsePowers) {
-        actions.activateBlock();
       }
     },
     setCombatSpeed: actions.setCombatSpeed,
@@ -114,7 +112,6 @@ export function CombatScreen({
           player={player}
           canUsePowers={canUsePowers}
           onUsePower={actions.usePower}
-          onActivateBlock={actions.activateBlock}
         />
 
         <PlayerStatsPanel player={player} />
@@ -122,19 +119,22 @@ export function CombatScreen({
         <CombatLog logs={gameState.combatLog} />
       </div>
 
-      {/* Level Up Popup */}
-      {gameState.pendingLevelUp && (
+      {/* Popups - show one at a time, level up takes priority */}
+      {gameState.pendingLevelUp ? (
         <LevelUpPopup newLevel={gameState.pendingLevelUp} onContinue={actions.dismissLevelUp} />
-      )}
-
-      {/* Ability Choice Popup */}
-      {abilityChoices && onSelectAbility && (
+      ) : abilityChoices && onSelectAbility ? (
         <AbilityChoicePopup
           abilities={abilityChoices}
           onSelectAbility={onSelectAbility}
           playerLevel={player.level}
         />
-      )}
+      ) : player.pendingPowerChoice ? (
+        <PowerChoicePopup />
+      ) : player.pendingUpgradeChoice ? (
+        <UpgradeChoicePopup />
+      ) : player.pendingStanceEnhancement ? (
+        <StanceEnhancementPopup />
+      ) : null}
     </div>
   );
 }

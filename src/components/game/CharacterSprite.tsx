@@ -1,6 +1,8 @@
 import { ActiveBuff, StatusEffect, EnemyIntent } from '@/types/game';
 import { PixelSprite } from './PixelSprite';
 import { PixelSlash, PixelSpell, PixelShield } from './BattleEffects';
+import { PowerImpactEffect } from './PowerImpactEffect';
+import { BuffAura } from './BuffAura';
 import { BATTLE_PHASE } from '@/constants/enums';
 import { cn } from '@/lib/utils';
 import { SpriteStateType, BattlePhaseType } from '@/constants/enums';
@@ -30,9 +32,11 @@ interface CharacterSpriteProps {
   isCasting?: boolean;
   castingPowerId?: string | null;
   isFlashing?: boolean;
+  flashColor?: 'white' | 'red' | 'green' | 'gold';
   hitStop?: boolean;
   enemyCasting?: boolean;
   enemyAuraColor?: 'red' | 'blue' | 'green' | null;
+  powerImpact?: { powerId: string } | null;
 
   // Progress bars
   turnProgress?: number;
@@ -57,9 +61,11 @@ export function CharacterSprite({
   isCasting = false,
   castingPowerId = null,
   isFlashing = false,
+  flashColor,
   hitStop = false,
   enemyCasting = false,
   enemyAuraColor = null,
+  powerImpact = null,
   turnProgress = 0,
   isStunned = false,
   statusEffects = [],
@@ -153,6 +159,11 @@ export function CharacterSprite({
         )}
         style={hitStop ? { animationPlayState: 'paused' } : undefined}
       >
+        {/* Buff aura - hero only */}
+        {isHero && activeBuffs.length > 0 && (
+          <BuffAura buffs={activeBuffs} />
+        )}
+
         <PixelSprite
           type={spriteType}
           state={spriteState}
@@ -163,10 +174,15 @@ export function CharacterSprite({
 
         {/* Flash overlay */}
         {isFlashing && (
-          <div className={cn(
-            "absolute inset-0 mix-blend-overlay pointer-events-none",
-            isHero ? "bg-health/40" : "bg-white/60"
-          )} />
+          <div
+            className={cn(
+              'absolute inset-0 pointer-events-none rounded animate-flash',
+              flashColor === 'green' && 'bg-green-500/50',
+              flashColor === 'gold' && 'bg-yellow-400/50',
+              flashColor === 'red' && 'bg-red-500/50',
+              (!flashColor || flashColor === 'white') && 'bg-white/50'
+            )}
+          />
         )}
 
         {/* Enemy casting aura */}
@@ -188,6 +204,11 @@ export function CharacterSprite({
             active={player.isBlocking || player.buffs.some(buff => buff.stat === 'armor')}
             variant="block"
           />
+        )}
+
+        {/* Power impact effect - enemy only */}
+        {!isHero && powerImpact && (
+          <PowerImpactEffect powerId={powerImpact.powerId} />
         )}
       </div>
 
@@ -316,6 +337,22 @@ export function CharacterSprite({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Enemy status effects (stun, etc.) - displayed same as player */}
+      {!isHero && !isDying && enemy && enemy.statusEffects && enemy.statusEffects.length > 0 && (
+        <div className="absolute -top-16 left-1/2 -translate-x-1/2 flex gap-1">
+          {enemy.statusEffects.map(effect => {
+            const iconName = STATUS_ICONS[effect.type?.toUpperCase() as keyof typeof STATUS_ICONS] || 'Skull';
+            const IconComponent = getIcon(iconName);
+            return (
+              <div key={effect.id} className="bg-black/70 rounded px-1 py-0.5 text-xs flex items-center gap-0.5 border border-accent/50">
+                <IconComponent className="w-4 h-4" />
+                <span className="text-accent/90">{Math.ceil(effect.remainingTurns)}</span>
+              </div>
+            );
+          })}
         </div>
       )}
 

@@ -9,13 +9,32 @@ import { getPlayer, getGameState } from '../queries';
 import { getTick } from '../loop';
 import { world } from '../world';
 import { createPlayerEntity, createEnemyEntity } from '../factories';
-import { COMBAT_BALANCE } from '@/constants/balance';
 import { FLOOR_CONFIG } from '@/constants/game';
 import type { CharacterClass } from '@/types/game';
 import { getDevModeParams } from '@/utils/devMode';
 import { getPathResource, PATH_RESOURCES } from '@/data/pathResources';
 import { getPathById } from '@/utils/pathUtils';
 import { getStancesForPath, getDefaultStanceId } from '@/data/stances';
+import { getBerserkerPowerChoices } from '@/data/paths/berserker-powers';
+import { computeAllEffectivePowers } from '@/utils/powerUpgrades';
+import { computeEffectiveStanceEffects } from '@/utils/stanceUtils';
+import { recomputeDerivedStats } from '@/utils/statUtils';
+import { initializePassiveEffectState, recomputePassiveEffects, resetFloorState } from './passive-effect';
+import type { Entity } from '../components';
+
+/**
+ * Recompute effectivePowers after power changes or upgrades
+ */
+function recomputeEffectivePowers(player: Entity): void {
+  player.effectivePowers = computeAllEffectivePowers(player);
+}
+
+/**
+ * Recompute effectiveStanceEffects after stance changes
+ */
+function recomputeEffectiveStanceEffects(player: Entity): void {
+  player.effectiveStanceEffects = computeEffectiveStanceEffects(player);
+}
 
 export function InputSystem(_deltaMs: number): void {
   const commands = drainCommands();
@@ -27,6 +46,9 @@ export function InputSystem(_deltaMs: number): void {
       case 'ACTIVATE_POWER': {
         if (!player || !player.powers) break;
 
+        // Cannot use powers while dying or dead
+        if (player.dying || (player.health && player.health.current <= 0)) break;
+
         const power = player.powers.find((p) => p.id === cmd.powerId);
         if (!power) break;
 
@@ -34,9 +56,10 @@ export function InputSystem(_deltaMs: number): void {
         const cooldown = player.cooldowns?.get(cmd.powerId);
         if (cooldown && cooldown.remaining > 0) break;
 
-        // Check resource - pathResource takes priority over mana
-        if (player.pathResource && player.pathResource.type !== 'mana') {
-          const cost = power.resourceCost ?? power.manaCost;
+        // Check resource - active paths use pathResource
+        if (player.pathResource) {
+          // Active path: use path resource (fury, momentum, arcane charges, etc.)
+          const cost = power.resourceCost ?? 0;
           if (player.pathResource.resourceBehavior === 'spend') {
             // Fury/Momentum/Zeal: check if enough resource to spend
             if (player.pathResource.current < cost) break;
@@ -44,13 +67,8 @@ export function InputSystem(_deltaMs: number): void {
             // Arcane Charges: check if would overflow
             if (player.pathResource.current + cost > player.pathResource.max) break;
           }
-        } else if (player.mana) {
-          // Pre-level-2: use mana
-          if (player.mana.current < power.manaCost) break;
-        } else {
-          // No resource system - can't cast (passive paths shouldn't have powers)
-          break;
         }
+        // No resource check for pre-path players (they can cast freely)
 
         // Mark as casting - PowerSystem will handle the effect
         // IMPORTANT: Use world.addComponent for miniplex query reactivity
@@ -58,26 +76,6 @@ export function InputSystem(_deltaMs: number): void {
           powerId: cmd.powerId,
           startedAtTick: getTick(),
         });
-        break;
-      }
-
-      case 'BLOCK': {
-        if (!player) break;
-        if (player.blocking) break; // Already blocking
-
-        // Active paths (pathResource): Block is FREE
-        // Pre-level-2 (mana): Block costs mana
-        // Passive paths (no mana, no pathResource): Cannot block
-        if (player.pathResource && player.pathResource.type !== 'mana') {
-          // Active path - free block
-          player.blocking = { reduction: COMBAT_BALANCE.BLOCK_DAMAGE_REDUCTION };
-        } else if (player.mana) {
-          // Pre-level-2 - costs mana
-          if (player.mana.current < COMBAT_BALANCE.BLOCK_MANA_COST) break;
-          player.blocking = { reduction: COMBAT_BALANCE.BLOCK_DAMAGE_REDUCTION };
-          player.mana.current -= COMBAT_BALANCE.BLOCK_MANA_COST;
-        }
-        // Passive paths have no block ability
         break;
       }
 
@@ -116,9 +114,16 @@ export function InputSystem(_deltaMs: number): void {
             // Always clear pendingLevelUp after dismissing level-up popup
             gameState.pendingLevelUp = null;
 
-            // IMPORTANT: Unpause combat after level-up popup is dismissed
-            // (ProgressionSystem pauses when level-up occurs)
-            gameState.paused = false;
+            // Only unpause if no other popups are pending
+            // (power choice, upgrade choice, stance enhancement need the game paused)
+            const hasOtherPendingPopup =
+              player.pendingPowerChoice ||
+              player.pendingUpgradeChoice ||
+              player.pendingStanceEnhancement;
+
+            if (!hasOtherPendingPopup) {
+              gameState.paused = false;
+            }
           }
         }
         break;
@@ -174,9 +179,10 @@ export function InputSystem(_deltaMs: number): void {
             // Recalculate attack interval
             player.speed.attackInterval = Math.floor(2500 * (10 / player.speed.value));
           }
-          if (player.mana && item.statBonus.maxMana) {
-            player.mana.max += item.statBonus.maxMana;
-            player.mana.current += item.statBonus.maxMana;
+          if (item.statBonus.fortune) {
+            // Apply fortune bonus and recompute derived stats
+            player.fortune = (player.fortune ?? 0) + item.statBonus.fortune;
+            recomputeDerivedStats(player);
           }
         }
         break;
@@ -224,6 +230,7 @@ export function InputSystem(_deltaMs: number): void {
         const bonusPerStat = enhancementConfig.perStatPerLevel;
 
         // Apply stat bonuses to player (one level's worth)
+        let fortuneChanged = false;
         if (equippedItem.statBonus) {
           if (player.health && equippedItem.statBonus.maxHealth) {
             player.health.max += bonusPerStat;
@@ -240,10 +247,15 @@ export function InputSystem(_deltaMs: number): void {
             // Recalculate attack interval
             player.speed.attackInterval = Math.floor(2500 * (10 / player.speed.value));
           }
-          if (player.mana && equippedItem.statBonus.maxMana) {
-            player.mana.max += bonusPerStat;
-            player.mana.current += bonusPerStat;
+          if (equippedItem.statBonus.fortune) {
+            player.fortune = (player.fortune ?? 0) + bonusPerStat;
+            fortuneChanged = true;
           }
+        }
+
+        // Recompute derived stats if fortune changed
+        if (fortuneChanged) {
+          recomputeDerivedStats(player);
         }
 
         // Upgrade the item's enhancement level
@@ -345,14 +357,33 @@ export function InputSystem(_deltaMs: number): void {
           abilityCooldowns: {}, // Initialize cooldowns map
         };
 
-        // Remove mana for ALL paths (active uses pathResource, passive uses nothing)
-        if (player.mana) {
-          world.removeComponent(player, 'mana');
+        // Initialize pathProgression based on path type
+        if (pathDef?.type === 'active') {
+          player.pathProgression = {
+            pathId: cmd.pathId,
+            pathType: 'active',
+            powerUpgrades: [],
+          };
+        } else if (pathDef?.type === 'passive') {
+          player.pathProgression = {
+            pathId: cmd.pathId,
+            pathType: 'passive',
+            stanceProgression: {
+              ironTier: 0,
+              retributionTier: 0,
+              acquiredEnhancements: [],
+            },
+          };
         }
 
         // Initialize pathResource for active paths
         if (pathDef?.type === 'active' && PATH_RESOURCES[cmd.pathId]) {
           player.pathResource = getPathResource(cmd.pathId);
+        } else if (pathDef?.type === 'passive') {
+          // Remove pathResource for passive paths (they use stances, not powers/resource)
+          if (player.pathResource) {
+            world.removeComponent(player, 'pathResource');
+          }
         }
 
         // Initialize stance state for passive paths
@@ -367,6 +398,28 @@ export function InputSystem(_deltaMs: number): void {
               stanceCooldownRemaining: 0,
               triggerCooldowns: {},
             };
+          }
+
+          // Initialize and compute passive effects for passive paths
+          initializePassiveEffectState(player);
+          recomputePassiveEffects(player);
+        }
+
+        // For active paths, trigger power choice if at a power level
+        if (pathDef?.type === 'active' && player.progression) {
+          const currentLevel = player.progression.level;
+          const isPowerLevel = [2, 4, 6, 8].includes(currentLevel);
+
+          if (isPowerLevel) {
+            const choices = getBerserkerPowerChoices(currentLevel);
+            if (choices.length > 0) {
+              world.addComponent(player, 'pendingPowerChoice', {
+                level: currentLevel,
+                choices,
+              });
+              // Pause combat while player makes their power choice
+              gameState.paused = true;
+            }
           }
         }
 
@@ -411,6 +464,114 @@ export function InputSystem(_deltaMs: number): void {
         // Switch stance and set cooldown
         player.stanceState.activeStanceId = cmd.stanceId;
         player.stanceState.stanceCooldownRemaining = newStance.switchCooldown;
+
+        // Recompute effective stance effects after switching
+        recomputeEffectiveStanceEffects(player);
+
+        // Recompute passive effects for new stance
+        if (player.passiveEffectState) {
+          recomputePassiveEffects(player);
+        }
+        break;
+      }
+
+      case 'SELECT_POWER': {
+        if (!player?.pendingPowerChoice || !gameState) break;
+
+        const selectedPower = player.pendingPowerChoice.choices.find(
+          (p) => p.id === cmd.powerId
+        );
+        if (!selectedPower) break;
+
+        // Remove starting power (Strike/Zap/Slash/Smite) - they have id starting with 'basic-'
+        const powersWithoutStarter = (player.powers ?? []).filter(
+          (p) => !p.id.startsWith('basic-')
+        );
+
+        // Add new power to player's powers array
+        player.powers = [...powersWithoutStarter, selectedPower];
+
+        // Initialize power upgrade tracking if pathProgression exists
+        if (player.pathProgression?.powerUpgrades) {
+          player.pathProgression.powerUpgrades.push({
+            powerId: selectedPower.id,
+            currentTier: 0,
+          });
+        }
+
+        // Clear pending choice
+        world.removeComponent(player, 'pendingPowerChoice');
+
+        // Unpause combat now that choice is made
+        gameState.paused = false;
+
+        // Recompute effective powers with new power
+        recomputeEffectivePowers(player);
+        break;
+      }
+
+      case 'UPGRADE_POWER': {
+        if (!player?.pendingUpgradeChoice || !gameState) break;
+
+        // Verify the power is in the upgrade choices
+        if (!player.pendingUpgradeChoice.powerIds.includes(cmd.powerId)) break;
+
+        // Find and upgrade the power if pathProgression exists
+        if (player.pathProgression?.powerUpgrades) {
+          const powerState = player.pathProgression.powerUpgrades.find(
+            (p) => p.powerId === cmd.powerId
+          );
+          if (powerState && powerState.currentTier < 2) {
+            powerState.currentTier = (powerState.currentTier + 1) as 0 | 1 | 2;
+          }
+        }
+
+        // Clear pending choice
+        world.removeComponent(player, 'pendingUpgradeChoice');
+
+        // Unpause combat now that choice is made
+        gameState.paused = false;
+
+        // Recompute effective powers with upgraded stats
+        recomputeEffectivePowers(player);
+        break;
+      }
+
+      case 'SELECT_STANCE_ENHANCEMENT': {
+        if (!player?.pendingStanceEnhancement || !gameState) break;
+
+        // Apply enhancement if pathProgression exists
+        if (player.pathProgression?.stanceProgression) {
+          const stanceState = player.pathProgression.stanceProgression;
+          const enhancement =
+            cmd.stanceId === 'iron'
+              ? player.pendingStanceEnhancement.ironChoice
+              : player.pendingStanceEnhancement.retributionChoice;
+
+          // Update stance tier
+          if (cmd.stanceId === 'iron') {
+            stanceState.ironTier = enhancement.tier;
+          } else {
+            stanceState.retributionTier = enhancement.tier;
+          }
+
+          // Track acquired enhancement
+          stanceState.acquiredEnhancements.push(enhancement.id);
+        }
+
+        // Clear pending choice
+        world.removeComponent(player, 'pendingStanceEnhancement');
+
+        // Unpause combat now that choice is made
+        gameState.paused = false;
+
+        // Recompute effective stance effects with new enhancement
+        recomputeEffectiveStanceEffects(player);
+
+        // Recompute passive effects with new enhancement
+        if (player.passiveEffectState) {
+          recomputePassiveEffects(player);
+        }
         break;
       }
 
@@ -430,13 +591,31 @@ export function InputSystem(_deltaMs: number): void {
           floor.room = 1;
           floor.totalRooms = FLOOR_CONFIG.ROOMS_PER_FLOOR[floor.number - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
 
-          // Reset player combat state for new floor
+          // Full reset for new floor (same as retry: health, cooldowns, status, resource)
           if (player) {
-            if (player.blocking) {
-              world.removeComponent(player, 'blocking');
+            // Reset health to full
+            if (player.health) {
+              player.health.current = player.health.max;
             }
+
+            // Clear cooldowns
+            if (player.cooldowns) {
+              player.cooldowns.clear();
+            }
+
+            // Clear status effects
+            player.statusEffects = [];
+
+            // Reset passive effect floor state for new floor
+            if (player.passiveEffectState) {
+              resetFloorState(player);
+            }
+
+            // Reset pathResource (stamina to max, others to 0)
             if (player.pathResource) {
-              player.pathResource.current = 0;
+              player.pathResource.current = player.pathResource.type === 'stamina'
+                ? player.pathResource.max
+                : 0;
             }
           }
 
@@ -523,17 +702,9 @@ export function InputSystem(_deltaMs: number): void {
             world.removeComponent(player, 'dying');
           }
 
-          // Came from defeat: retry floor (reset health/mana, stay on same floor)
+          // Came from defeat: retry floor (reset health, stay on same floor)
           if (player.health) {
             player.health.current = player.health.max;
-          }
-          if (player.mana) {
-            player.mana.current = player.mana.max;
-          }
-
-          // Reset attack timing so player starts fresh
-          if (player.speed) {
-            player.speed.accumulated = 0;
           }
 
           // Clear cooldowns
@@ -543,14 +714,11 @@ export function InputSystem(_deltaMs: number): void {
 
           player.statusEffects = [];
 
-          // Clear blocking state (use removeComponent for query reactivity)
-          if (player.blocking) {
-            world.removeComponent(player, 'blocking');
-          }
-
-          // Reset pathResource to starting value (0 for all path resources)
+          // Reset pathResource (stamina to max, others to 0)
           if (player.pathResource) {
-            player.pathResource.current = 0;
+            player.pathResource.current = player.pathResource.type === 'stamina'
+              ? player.pathResource.max
+              : 0;
           }
 
           floor.room = 1;
@@ -560,12 +728,30 @@ export function InputSystem(_deltaMs: number): void {
           floor.room = 1;
           floor.totalRooms = FLOOR_CONFIG.ROOMS_PER_FLOOR[floor.number - 1] ?? FLOOR_CONFIG.DEFAULT_ROOMS_PER_FLOOR;
 
-          // Reset player combat state for new floor
-          if (player.blocking) {
-            world.removeComponent(player, 'blocking');
+          // Full reset for new floor (same as retry: health, cooldowns, status, resource)
+          // Reset health to full
+          if (player.health) {
+            player.health.current = player.health.max;
           }
+
+          // Clear cooldowns
+          if (player.cooldowns) {
+            player.cooldowns.clear();
+          }
+
+          // Clear status effects
+          player.statusEffects = [];
+
+          // Reset passive effect floor state for new floor
+          if (player.passiveEffectState) {
+            resetFloorState(player);
+          }
+
+          // Reset pathResource (stamina to max, others to 0)
           if (player.pathResource) {
-            player.pathResource.current = 0;
+            player.pathResource.current = player.pathResource.type === 'stamina'
+              ? player.pathResource.max
+              : 0;
           }
         }
 
@@ -600,17 +786,9 @@ export function InputSystem(_deltaMs: number): void {
           world.removeComponent(player, 'dying');
         }
 
-        // Reset player health/mana
+        // Reset player health
         if (player.health) {
           player.health.current = player.health.max;
-        }
-        if (player.mana) {
-          player.mana.current = player.mana.max;
-        }
-
-        // Reset attack timing so player starts fresh
-        if (player.speed) {
-          player.speed.accumulated = 0;
         }
 
         // Clear cooldowns
@@ -621,14 +799,11 @@ export function InputSystem(_deltaMs: number): void {
         // Clear status effects
         player.statusEffects = [];
 
-        // Clear blocking state (use removeComponent for query reactivity)
-        if (player.blocking) {
-          world.removeComponent(player, 'blocking');
-        }
-
-        // Reset pathResource to starting value (0 for all path resources)
+        // Reset pathResource (stamina to max, others to 0)
         if (player.pathResource) {
-          player.pathResource.current = 0;
+          player.pathResource.current = player.pathResource.type === 'stamina'
+            ? player.pathResource.max
+            : 0;
         }
 
         // Reset room to 1

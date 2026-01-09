@@ -72,7 +72,7 @@ export interface PowerLevelEffect {
   level: number;
   valueBonus?: number;        // +X to base value
   cooldownReduction?: number; // -X seconds
-  costReduction?: number;     // -X mana
+  costReduction?: number;     // -X resource cost
   additionalEffect?: string;  // Description of new effect at this level
 }
 
@@ -85,7 +85,7 @@ export interface PowerDefinition {
   name: string;
   description: string;
   icon: string;
-  manaCost: number;
+  resourceCost: number;
   cooldown: number;
 
   // NEW: Category and synergies

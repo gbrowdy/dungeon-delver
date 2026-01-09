@@ -230,7 +230,7 @@ function formatStanceEffect(effect: PassiveStance['effects'][number]): string {
 }
 
 function formatStatName(stat: string): string {
-  // Note: No mana mappings - passive paths (which use stances) have no mana resource
+  // Note: No resource mappings - passive paths (which use stances) have no path resource
   const names: Record<string, string> = {
     health: 'HP',
     maxHealth: 'Max HP',
@@ -249,8 +249,6 @@ function formatBehavior(behavior: string, value: number): string {
       return `Reflect ${percent}% damage`;
     case 'counter_attack':
       return `${percent}% counter-attack chance`;
-    case 'auto_block':
-      return `${percent}% auto-negate chance`;
     case 'lifesteal':
       return `${percent}% lifesteal`;
     case 'arcane_burn':

@@ -8,7 +8,6 @@
  * - on_kill: When player kills an enemy
  * - on_damaged: When player takes damage
  * - on_dodge: When player dodges an attack
- * - on_block: When player blocks an attack
  * - on_power_use: When player uses a power
  * - combat_start: At the start of combat
  * - turn_start: At the start of each combat turn
@@ -47,7 +46,6 @@ export interface TriggerContext {
   isCrit?: boolean;
   powerId?: string;
   isDodge?: boolean;
-  isBlock?: boolean;
 }
 
 export interface PathTriggerEvent {
@@ -155,16 +153,6 @@ function checkCondition(
       const hpRatio = player.health.current / player.health.max;
       return hpRatio <= condition.value;
     }
-    case 'mana_below': {
-      if (!player.mana) return false;
-      const manaPercent = (player.mana.current / player.mana.max) * 100;
-      return manaPercent < condition.value;
-    }
-    case 'mana_above': {
-      if (!player.mana) return false;
-      const manaPercent = (player.mana.current / player.mana.max) * 100;
-      return manaPercent > condition.value;
-    }
     case 'enemy_hp_below': {
       if (!enemy?.health) return false;
       const enemyHpPercent = (enemy.health.current / enemy.health.max) * 100;
@@ -241,22 +229,6 @@ function applyHeal(player: Entity, amount: number, abilityName: string, isPercen
       value: actualHeal,
       source: abilityName,
     });
-  }
-}
-
-/**
- * Apply mana restore to player.
- */
-function applyManaRestore(player: Entity, amount: number, abilityName: string): void {
-  if (!player.mana) return;
-
-  const oldMana = player.mana.current;
-  const newMana = Math.min(player.mana.max, oldMana + amount);
-  const actualMana = newMana - oldMana;
-
-  if (actualMana > 0) {
-    player.mana.current = newMana;
-    addCombatLog(`${abilityName}: Restored ${actualMana} mana`);
   }
 }
 
@@ -425,11 +397,6 @@ function processEffect(
   // Process damage effect (bonus damage)
   if (effect.damage !== undefined && effect.damage > 0 && enemy) {
     applyDamageToEnemy(enemy, effect.damage, ability.name);
-  }
-
-  // Process mana restore
-  if (effect.manaRestore !== undefined && effect.manaRestore > 0) {
-    applyManaRestore(player, effect.manaRestore, ability.name);
   }
 
   // Process damage modifier

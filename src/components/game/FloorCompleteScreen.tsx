@@ -154,14 +154,6 @@ export function FloorCompleteScreen({
                   max={player.health.max}
                   color="red"
                 />
-                {player.mana && (
-                  <PixelStatBar
-                    label="MP"
-                    current={player.mana.max}
-                    max={player.mana.max}
-                    color="blue"
-                  />
-                )}
               </div>
 
               {/* Stat Boxes - Core Stats */}
@@ -254,7 +246,7 @@ export function FloorCompleteScreen({
                   {player.powers.map((power) => (
                     <div
                       key={power.id}
-                      className="pixel-panel-dark flex items-center gap-1 border border-mana/30 rounded px-2 py-1"
+                      className="pixel-panel-dark flex items-center gap-1 border border-primary/30 rounded px-2 py-1"
                       title={power.description}
                     >
                       <PixelIcon type={getPowerIconType(power.id)} size={16} />

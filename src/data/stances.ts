@@ -87,11 +87,11 @@ export const DUELIST_STANCES: PassiveStance[] = [
   {
     id: 'evasion_stance',
     name: 'Evasion Stance',
-    description: '+20% Speed. Auto-negate 15% of attacks.',
+    description: '+20% Speed. 15% chance to counter-attack when hit.',
     icon: 'wind',
     effects: [
       { type: 'stat_modifier', stat: 'speed', percentBonus: 0.20 },
-      { type: 'behavior_modifier', behavior: 'auto_block', value: 0.15 },
+      { type: 'behavior_modifier', behavior: 'counter_attack', value: 0.15 },
     ],
     switchCooldown: DEFAULT_STANCE_COOLDOWN,
   },

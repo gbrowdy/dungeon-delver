@@ -31,7 +31,23 @@ function calculatePowerDamage(
   resourceValueForThreshold?: number
 ): number {
   const baseDamage = caster.attack?.baseDamage ?? 10;
-  const multiplier = power.value;
+  let multiplier = power.value;
+
+  // === Execute mechanics: bonus damage vs low HP enemies ===
+  if (power.executeThreshold && power.executeMultiplier && target.health) {
+    const targetHpPercent = target.health.current / target.health.max;
+    if (targetHpPercent < power.executeThreshold) {
+      multiplier *= power.executeMultiplier;
+    }
+  }
+
+  // === Conditional damage bonus: bonus damage if player below HP threshold ===
+  if (power.hpThreshold && power.bonusMultiplier && caster.health) {
+    const casterHpPercent = caster.health.current / caster.health.max;
+    if (casterHpPercent < power.hpThreshold) {
+      multiplier *= (1 + power.bonusMultiplier);
+    }
+  }
 
   // Apply variance (similar to combat)
   const variance = caster.attack?.variance ?? { min: 0.85, max: 1.15 };
@@ -66,6 +82,7 @@ function calculatePowerDamage(
 
 /**
  * Apply a damage power effect to the target enemy.
+ * Handles special mechanics: stun, self-damage, lifesteal, death immunity, CD reset
  */
 function applyDamagePower(
   caster: Entity,
@@ -74,6 +91,7 @@ function applyDamagePower(
   resourceValueForThreshold?: number
 ): void {
   const damage = calculatePowerDamage(caster, power, target, resourceValueForThreshold);
+  const oldTargetHealth = target.health?.current ?? 0;
 
   if (target.health) {
     target.health.current = Math.max(0, target.health.current - damage);
@@ -81,13 +99,91 @@ function applyDamagePower(
 
   const casterName = getEntityName(caster);
   const targetName = getEntityName(target);
-  addCombatLog(`${casterName} uses ${power.name} for ${damage} damage to ${targetName}`);
+  const targetDied = (target.health?.current ?? 0) <= 0;
+
+  // Build log message with any special effects
+  let logMessage = `${casterName} uses ${power.name} for ${damage} damage to ${targetName}`;
+
+  // === Stun application ===
+  if (power.stunDuration && power.stunDuration > 0) {
+    if (!target.statusEffects) {
+      target.statusEffects = [];
+    }
+    target.statusEffects.push({
+      id: `stun-${power.id}-${Date.now()}`,
+      type: 'stun',
+      value: 0,
+      remainingTurns: power.stunDuration,
+      icon: 'shield-alert',
+    });
+    logMessage += ` (stunned for ${power.stunDuration}s)`;
+
+    queueAnimationEvent('status_applied', {
+      type: 'status',
+      effectType: 'stun',
+      applied: true,
+    });
+  }
+
+  // === Lifesteal: heal based on damage dealt ===
+  if (power.lifestealPercent && power.lifestealPercent > 0 && caster.health) {
+    const healAmount = Math.round(damage * (power.lifestealPercent / 100));
+    if (healAmount > 0) {
+      const oldHealth = caster.health.current;
+      caster.health.current = Math.min(caster.health.max, caster.health.current + healAmount);
+      const actualHeal = caster.health.current - oldHealth;
+      if (actualHeal > 0) {
+        logMessage += ` (healed ${actualHeal} HP)`;
+      }
+    }
+  }
+
+  // === Self-damage (sacrifice powers) ===
+  if (power.selfDamagePercent && power.selfDamagePercent > 0 && caster.health) {
+    const selfDamage = Math.round(caster.health.max * (power.selfDamagePercent / 100));
+    caster.health.current = Math.max(1, caster.health.current - selfDamage); // Min 1 HP to avoid instant death
+    logMessage += ` (lost ${selfDamage} HP)`;
+  }
+
+  // === Death immunity: apply status effect ===
+  if (power.deathImmunityDuration && power.deathImmunityDuration > 0) {
+    if (!caster.statusEffects) {
+      caster.statusEffects = [];
+    }
+    caster.statusEffects.push({
+      id: `death_immunity-${power.id}-${Date.now()}`,
+      type: 'death_immunity',
+      value: 0,
+      remainingTurns: power.deathImmunityDuration,
+      icon: 'shield-check',
+    });
+    logMessage += ` (death immune for ${power.deathImmunityDuration}s)`;
+  }
+
+  // === Cooldown reset on kill ===
+  if (power.resetCooldownsOnKill && targetDied && caster.cooldowns) {
+    caster.cooldowns.clear();
+    logMessage += ' (all cooldowns reset!)';
+  }
+
+  addCombatLog(logMessage);
 
   queueAnimationEvent('spell_cast', {
     type: 'spell',
     powerId: power.id,
     value: damage,
   });
+
+  // If target died, queue enemy_hit event with targetDied=true for death animation
+  // This ensures the death animation plays even for power kills (not just auto-attacks)
+  if (targetDied) {
+    queueAnimationEvent('enemy_hit', {
+      type: 'damage',
+      value: damage,
+      isCrit: false,
+      targetDied: true,
+    });
+  }
 }
 
 /**
@@ -117,33 +213,55 @@ function applyHealPower(caster: Entity, power: Power): void {
 
 /**
  * Apply a buff power effect to the caster.
+ * Handles multi-stat buffs via buffStats array.
  */
 function applyBuffPower(caster: Entity, power: Power): void {
   if (!caster.buffs) {
     caster.buffs = [];
   }
 
-  // Default buff duration is 6 seconds
-  const duration = 6;
-
-  // Determine which stat to buff based on power
-  // Default to 'power' stat if not specified
-  const stat: 'power' | 'armor' | 'speed' | 'fortune' = 'power';
-
-  const buff = {
-    id: `buff-${power.id}-${Date.now()}`,
-    name: power.name,
-    stat,
-    multiplier: 1 + power.value, // e.g., value of 0.5 = 1.5x multiplier
-    remainingTurns: duration, // Using remainingTurns for seconds
-    icon: power.icon,
-  };
-
-  caster.buffs.push(buff);
-
+  // Use power's custom duration or default to 6 seconds
+  const duration = power.buffDuration ?? 6;
   const casterName = getEntityName(caster);
-  const percentBonus = Math.round(power.value * 100);
-  addCombatLog(`${casterName} uses ${power.name} (+${percentBonus}% ${stat} for ${duration}s)`);
+
+  // === Multi-stat buffs (buffStats array) ===
+  if (power.buffStats && power.buffStats.length > 0) {
+    const buffDescriptions: string[] = [];
+
+    for (const statBuff of power.buffStats) {
+      const buff = {
+        id: `buff-${power.id}-${statBuff.stat}-${Date.now()}`,
+        name: power.name,
+        stat: statBuff.stat,
+        multiplier: 1 + statBuff.value,
+        remainingTurns: duration,
+        icon: power.icon,
+      };
+      caster.buffs.push(buff);
+
+      const percentBonus = Math.round(statBuff.value * 100);
+      buffDescriptions.push(`+${percentBonus}% ${statBuff.stat}`);
+    }
+
+    addCombatLog(`${casterName} uses ${power.name} (${buffDescriptions.join(', ')} for ${duration}s)`);
+  } else {
+    // Fallback: single stat buff using power.value
+    const stat: 'power' | 'armor' | 'speed' | 'fortune' = 'power';
+
+    const buff = {
+      id: `buff-${power.id}-${Date.now()}`,
+      name: power.name,
+      stat,
+      multiplier: 1 + power.value,
+      remainingTurns: duration,
+      icon: power.icon,
+    };
+
+    caster.buffs.push(buff);
+
+    const percentBonus = Math.round(power.value * 100);
+    addCombatLog(`${casterName} uses ${power.name} (+${percentBonus}% ${stat} for ${duration}s)`);
+  }
 
   queueAnimationEvent('spell_cast', {
     type: 'spell',
@@ -154,6 +272,7 @@ function applyBuffPower(caster: Entity, power: Power): void {
 
 /**
  * Apply a debuff power effect to the target enemy.
+ * Handles special mechanics: stun, enemy damage debuff
  */
 function applyDebuffPower(
   caster: Entity,
@@ -165,27 +284,84 @@ function applyDebuffPower(
     target.statusEffects = [];
   }
 
-  // Also deal damage for debuff powers (they typically do damage + debuff)
-  const damage = calculatePowerDamage(caster, power, target, resourceValueForThreshold);
+  // Deal damage for debuff powers (if value > 0)
+  const damage = power.value > 0
+    ? calculatePowerDamage(caster, power, target, resourceValueForThreshold)
+    : 0;
 
-  if (target.health) {
+  if (damage > 0 && target.health) {
     target.health.current = Math.max(0, target.health.current - damage);
   }
 
-  // Apply a slow effect as default debuff (can be customized per power)
-  const debuff: StatusEffect = {
-    id: `debuff-${power.id}-${Date.now()}`,
-    type: 'slow',
-    value: 30, // 30% slow
-    remainingTurns: 4, // 4 seconds
-    icon: power.icon,
-  };
-
-  target.statusEffects.push(debuff);
-
+  const targetDied = (target.health?.current ?? 0) <= 0;
   const casterName = getEntityName(caster);
   const targetName = getEntityName(target);
-  addCombatLog(`${casterName} uses ${power.name} for ${damage} damage and slows ${targetName}`);
+  const effects: string[] = [];
+
+  // === Stun application ===
+  if (power.stunDuration && power.stunDuration > 0) {
+    target.statusEffects.push({
+      id: `stun-${power.id}-${Date.now()}`,
+      type: 'stun',
+      value: 0,
+      remainingTurns: power.stunDuration,
+      icon: 'shield-alert',
+    });
+    effects.push(`stunned for ${power.stunDuration}s`);
+
+    queueAnimationEvent('status_applied', {
+      type: 'status',
+      effectType: 'stun',
+      applied: true,
+    });
+  }
+
+  // === Enemy damage debuff ===
+  if (power.enemyDamageDebuff && power.enemyDamageDebuff > 0) {
+    const debuffDuration = power.enemyDebuffDuration ?? 8;
+    target.statusEffects.push({
+      id: `damage_debuff-${power.id}-${Date.now()}`,
+      type: 'weaken',
+      value: power.enemyDamageDebuff,
+      remainingTurns: debuffDuration,
+      icon: 'arrow-down',
+    });
+    effects.push(`-${power.enemyDamageDebuff}% damage for ${debuffDuration}s`);
+
+    queueAnimationEvent('status_applied', {
+      type: 'status',
+      effectType: 'weaken',
+      applied: true,
+    });
+  }
+
+  // Fallback: default slow effect if no special debuffs
+  if (!power.stunDuration && !power.enemyDamageDebuff) {
+    target.statusEffects.push({
+      id: `debuff-${power.id}-${Date.now()}`,
+      type: 'slow',
+      value: 30,
+      remainingTurns: 4,
+      icon: power.icon,
+    });
+    effects.push('slowed');
+
+    queueAnimationEvent('status_applied', {
+      type: 'status',
+      effectType: 'slow',
+      applied: true,
+    });
+  }
+
+  // Build log message
+  let logMessage = `${casterName} uses ${power.name}`;
+  if (damage > 0) {
+    logMessage += ` for ${damage} damage`;
+  }
+  if (effects.length > 0) {
+    logMessage += damage > 0 ? ` (${effects.join(', ')})` : `: ${effects.join(', ')}`;
+  }
+  addCombatLog(logMessage);
 
   queueAnimationEvent('spell_cast', {
     type: 'spell',
@@ -193,11 +369,15 @@ function applyDebuffPower(
     value: damage,
   });
 
-  queueAnimationEvent('status_applied', {
-    type: 'status',
-    effectType: 'slow',
-    applied: true,
-  });
+  // If target died from debuff damage, queue enemy_hit event for death animation
+  if (targetDied && damage > 0) {
+    queueAnimationEvent('enemy_hit', {
+      type: 'damage',
+      value: damage,
+      isCrit: false,
+      targetDied: true,
+    });
+  }
 }
 
 /**
@@ -221,7 +401,9 @@ export function PowerSystem(_deltaMs: number): void {
     if (!castingData) continue;
 
     // Find the power being cast
-    const power = entity.powers?.find(p => p.id === castingData.powerId);
+    // Prefer effectivePowers (with upgrades) over base powers
+    const power = entity.effectivePowers?.find(p => p.id === castingData.powerId)
+      ?? entity.powers?.find(p => p.id === castingData.powerId);
     if (!power) {
       // Power not found - clear casting and continue
       world.removeComponent(entity, 'casting');
@@ -229,12 +411,11 @@ export function PowerSystem(_deltaMs: number): void {
     }
 
     // Check resource requirements and track value for threshold calculations
-    // Priority: pathResource (active paths) > mana (pre-level-2)
     let resourceValueForThreshold: number | undefined;
 
-    if (entity.pathResource && entity.pathResource.type !== 'mana') {
+    if (entity.pathResource) {
       const resource = entity.pathResource;
-      const cost = power.resourceCost ?? power.manaCost;
+      const cost = power.resourceCost ?? 0;
 
       if (resource.resourceBehavior === 'gain') {
         // Arcane Charges: casting ADDS to resource
@@ -260,15 +441,8 @@ export function PowerSystem(_deltaMs: number): void {
         }
         resource.current -= cost;
       }
-    } else if (entity.mana) {
-      // Pre-level-2: use mana
-      if (entity.mana.current < power.manaCost) {
-        addCombatLog(`Not enough mana to cast ${power.name}`);
-        world.removeComponent(entity, 'casting');
-        continue;
-      }
-      entity.mana.current = Math.max(0, entity.mana.current - power.manaCost);
     }
+    // No resource check for pre-path players (they can cast freely)
 
     // Get target for damage/debuff powers
     const target = entity.player ? getActiveEnemy() : getPlayer();

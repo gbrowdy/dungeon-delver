@@ -11,6 +11,7 @@ import { getTick } from '../loop';
 import type { Entity } from '../components';
 import { getDevModeParams } from '@/utils/devMode';
 import { queueAnimationEvent, addCombatLog } from '../utils';
+import { checkSurviveLethal } from './passive-effect';
 
 // Player death needs longer animation than enemy death
 const ENEMY_DEATH_ANIMATION_MS = 500;
@@ -35,6 +36,30 @@ export function DeathSystem(_deltaMs: number): void {
   for (const entity of world.with('health').without('dying')) {
     if (entity.health!.current <= 0) {
       const isPlayer = !!entity.player;
+
+      // === Death immunity check (for player only) ===
+      if (isPlayer && entity.statusEffects) {
+        const hasDeathImmunity = entity.statusEffects.some(
+          effect => effect.type === 'death_immunity' && effect.remainingTurns > 0
+        );
+        if (hasDeathImmunity) {
+          // Survive at 1 HP instead of dying
+          entity.health!.current = 1;
+          addCombatLog('Death immunity saves you!');
+          continue;
+        }
+      }
+
+      // === Passive effect survive lethal check (Immortal Bulwark) ===
+      if (isPlayer && entity.passiveEffectState) {
+        const surviveResult = checkSurviveLethal(entity);
+        if (surviveResult.survived) {
+          // death.ts applies health change (ECS: systems apply mutations, hooks return values)
+          entity.health!.current = surviveResult.healthToSet;
+          continue;
+        }
+      }
+
       const deathDuration = isPlayer ? PLAYER_DEATH_ANIMATION_MS : ENEMY_DEATH_ANIMATION_MS;
 
       // Mark as dying - MUST use addComponent for query reactivity
@@ -42,6 +67,16 @@ export function DeathSystem(_deltaMs: number): void {
         startedAtTick: getTick(),
         duration: deathDuration,
       });
+
+      // Clear any pending attack to prevent posthumous hits
+      if (entity.attackReady) {
+        world.removeComponent(entity, 'attackReady');
+      }
+
+      // Stop attack timer accumulation by resetting it
+      if (entity.speed) {
+        entity.speed.accumulated = 0;
+      }
 
       // NOTE: We do NOT queue a death animation event here anymore!
       // The combat system already queues player_hit/enemy_hit events with targetDied=true,

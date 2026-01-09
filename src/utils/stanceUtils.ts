@@ -6,7 +6,75 @@
 
 import type { Entity } from '@/ecs/components';
 import { getStancesForPath } from '@/data/stances';
-import type { StanceEffect, PassiveStance } from '@/types/paths';
+import type { StanceEffect, PassiveStance, StanceEnhancement, StanceEnhancementEffect } from '@/types/paths';
+import { getGuardianEnhancementById } from '@/data/paths/guardian-enhancements';
+
+// Registry for enhancement lookups
+type EnhancementLookup = (enhancementId: string) => StanceEnhancement | undefined;
+
+const enhancementRegistry: Record<string, EnhancementLookup> = {
+  guardian: getGuardianEnhancementById,
+  // Future paths:
+  // chronomancer: getChronomancerEnhancement,
+  // shadow: getShadowEnhancement,
+  // templar: getTemplarEnhancement,
+};
+
+/**
+ * Convert a stance enhancement effect to the StanceEffect format
+ */
+function convertEnhancementToStanceEffect(
+  effect: StanceEnhancementEffect
+): StanceEffect | null {
+  switch (effect.type) {
+    case 'armor_percent':
+      return { type: 'stat_modifier', stat: 'armor', percentBonus: effect.value / 100 };
+    case 'damage_reduction':
+      // damage_reduction is incoming damage reduced by X%
+      return { type: 'damage_modifier', damageType: 'incoming', multiplier: 1 - effect.value / 100 };
+    case 'hp_regen':
+      // hp_regen is flat regen, convert to stat_modifier with flatBonus
+      return { type: 'stat_modifier', stat: 'health', flatBonus: effect.value, applyTo: 'regen' };
+    case 'reflect_percent':
+      return { type: 'behavior_modifier', behavior: 'reflect_damage', value: effect.value / 100 };
+    case 'cc_immunity':
+      // This doesn't map cleanly to current StanceEffect types - skip for now
+      return null;
+    case 'max_hp_percent':
+      return { type: 'stat_modifier', stat: 'maxHealth', percentBonus: effect.value / 100 };
+    // Add other effect types as needed - many guardian effects are complex and may need new effect types
+    // For now, only convert the simple ones that map directly to existing StanceEffect types
+    default:
+      return null;
+  }
+}
+
+/**
+ * Get all stance effects from acquired enhancements
+ */
+function getEnhancementEffects(entity: Entity): StanceEffect[] {
+  const stanceProgression = entity.pathProgression?.stanceProgression;
+  const pathId = entity.pathProgression?.pathId;
+  if (!stanceProgression || !pathId) return [];
+
+  const lookup = enhancementRegistry[pathId];
+  if (!lookup) return [];
+
+  const effects: StanceEffect[] = [];
+  for (const enhancementId of stanceProgression.acquiredEnhancements) {
+    const enhancement = lookup(enhancementId);
+    if (enhancement?.effects) {
+      // Note: enhancement.effects is an array
+      for (const enhEffect of enhancement.effects) {
+        const converted = convertEnhancementToStanceEffect(enhEffect);
+        if (converted) {
+          effects.push(converted);
+        }
+      }
+    }
+  }
+  return effects;
+}
 
 /**
  * Get the currently active stance for an entity
@@ -19,11 +87,16 @@ export function getActiveStance(entity: Entity): PassiveStance | null {
 }
 
 /**
- * Get all effects from the active stance
+ * Get all effects from the active stance (base + enhancements)
+ * Reads from precomputed component if available
  */
 export function getActiveStanceEffects(entity: Entity): StanceEffect[] {
-  const stance = getActiveStance(entity);
-  return stance?.effects ?? [];
+  // Use precomputed value if available
+  if (entity.effectiveStanceEffects) {
+    return entity.effectiveStanceEffects;
+  }
+  // Fallback: compute on demand (for backward compatibility)
+  return computeEffectiveStanceEffects(entity);
 }
 
 /**
@@ -105,4 +178,15 @@ export function applyStanceStatModifiers(
     armor: Math.round(baseArmor * (1 + armorMod)),
     speed: Math.round(baseSpeed * (1 + speedMod)),
   };
+}
+
+/**
+ * Compute all effective stance effects (base + enhancements)
+ * This merges base stance effects with acquired enhancement effects
+ */
+export function computeEffectiveStanceEffects(entity: Entity): StanceEffect[] {
+  const stance = getActiveStance(entity);
+  const baseEffects = stance?.effects ?? [];
+  const enhancementEffects = getEnhancementEffects(entity);
+  return [...baseEffects, ...enhancementEffects];
 }

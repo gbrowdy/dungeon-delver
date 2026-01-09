@@ -133,8 +133,7 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
   // From Spec: Lucky Charm
   // Value budget: ~13 points
   // Stats: +12 Fortune (6) + +6 Speed (3) = 9 points
-  // Effect: 50% chance to restore 5 mana on dodge ≈ 1.25 points
-  // Total: ~10.25 points (within budget variance)
+  // Effect: 50% chance to deal bonus damage on dodge ≈ 3 points
   {
     id: 'lucky_charm',
     name: 'Lucky Charm',
@@ -146,15 +145,15 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     },
     effect: {
       trigger: 'on_dodge',
-      type: 'mana',
-      value: 5,
+      type: 'damage',
+      value: 10,
       chance: 0.50,
-      description: '50% chance to restore 5 mana on dodge',
+      description: '50% chance to counter for 10 damage on dodge',
     },
     tier: 'specialty',
     icon: 'Clover',
     description: 'A mystical charm blessed by fortune itself.',
-    pathSynergies: ['assassin', 'gambler'],
+    pathSynergies: ['assassin', 'duelist'],
   },
 
   // From Spec: Executioner's Blade
@@ -207,29 +206,29 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     pathSynergies: ['guardian', 'protector', 'vampire'],
   },
 
-  // NEW: Mana-focused items
+  // Arcane-focused item (now resource-neutral)
   // Value budget: ~13 points
-  // Stats: +40 Mana (6) + +3 Power (3) = 9 points
-  // Effect: +2 mana/sec ≈ 2 points
+  // Stats: +6 Power (6) + +6 Fortune (3) = 9 points
+  // Effect: +10% spell damage ≈ 4 points
   {
     id: 'arcane_crystal',
     name: 'Arcane Crystal',
     type: 'accessory',
     price: 160,
     stats: {
-      maxMana: 40,
-      power: 3,
+      power: 6,
+      fortune: 6,
     },
     effect: {
       trigger: 'passive',
-      type: 'mana',
-      value: 2, // +2 mana per second
-      description: '+2 mana regeneration per second',
+      type: 'damage_boost',
+      value: 10, // +10% spell damage
+      description: '+10% spell damage',
     },
     tier: 'specialty',
     icon: 'Sparkles',
-    description: 'A glowing crystal that channels pure magical energy.',
-    pathSynergies: ['spellblade', 'elementalist'],
+    description: 'A glowing crystal that amplifies arcane power.',
+    pathSynergies: ['archmage', 'spellblade'],
   },
 
   // Value budget: ~13 points
@@ -247,13 +246,13 @@ export const SPECIALTY_ITEMS: ShopItem[] = [
     effect: {
       trigger: 'passive',
       type: 'buff',
-      value: 0.20, // -20% spell cost
-      description: 'Powers cost 20% less mana',
+      value: 0.20, // -20% resource cost
+      description: 'Powers cost 20% less resources',
     },
     tier: 'specialty',
     icon: 'Ring',
     description: 'A ring that makes spell casting more efficient.',
-    pathSynergies: ['spellblade', 'elementalist', 'guardian'],
+    pathSynergies: ['archmage', 'berserker', 'assassin'],
   },
 
   // NEW: Fortune items (crit damage, proc chance)

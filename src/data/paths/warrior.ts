@@ -121,16 +121,14 @@ const BERSERKER_ABILITIES: PathAbility[] = [
   {
     id: 'reckless_fury',
     name: 'Reckless Fury',
-    description: 'Powers cost HP instead of Mana (50% of mana cost)',
+    description: 'Powers cost 50% less resource',
     icon: 'ability-paths-warrior-reckless_fury',
     levelRequired: 5,
     isCapstone: false,
     subpath: null,
     effects: [
       {
-        trigger: 'on_power_use',
-        // This is a special mechanic that needs custom implementation
-        // The effect modifies power cost type from mana to HP
+        trigger: 'passive',
         powerModifiers: [{ type: 'cost_reduction', value: 0.5 }]
       }
     ]
@@ -362,22 +360,6 @@ const GUARDIAN_ABILITIES: PathAbility[] = [
       {
         trigger: 'passive',
         damageModifier: { type: 'damage_reduction', value: 10 }
-      }
-    ]
-  },
-  {
-    id: 'auto_block',
-    name: 'Auto Block',
-    description: 'Automatically block the first attack every 8 seconds',
-    icon: 'ability-paths-warrior-auto_block',
-    levelRequired: 4,
-    isCapstone: false,
-    subpath: null,
-    effects: [
-      {
-        trigger: 'on_damaged',
-        cooldown: 8,
-        shield: 999 // Block entire attack
       }
     ]
   },

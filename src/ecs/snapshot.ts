@@ -7,9 +7,10 @@
 
 import type { Entity, GamePhase, PopupState, PendingReward, AnimationEvent } from './components';
 import type { CharacterClass, Power, Item, ActiveBuff, StatusEffect, PathResource, AttackModifier, EnemyAbility, EnemyIntent, ModifierEffect, EnemyStatDebuff } from '@/types/game';
-import type { PlayerPath, PlayerStanceState } from '@/types/paths';
+import type { PlayerPath, PlayerStanceState, StanceEnhancement, StanceEffect } from '@/types/paths';
 import { getPlayer, getGameState, enemyQuery } from './queries';
 import { getTick, TICK_MS } from './loop';
+import { getStanceStatModifier } from '@/utils/stanceUtils';
 
 // ============================================================================
 // UTILITY TYPES
@@ -37,6 +38,53 @@ function ticksToMs(tickCount: number): number {
 }
 
 /**
+ * Apply a stat modifier with smart rounding:
+ * - Positive bonuses use Math.ceil (always at least +1)
+ * - Negative penalties use Math.floor (always at least -1)
+ * - Zero modifier returns base value unchanged
+ */
+function applyStatModifier(base: number, modifier: number): number {
+  if (modifier === 0) return base;
+  const modified = base * (1 + modifier);
+  // For positive bonuses, round up to ensure at least +1
+  // For negative penalties, round down to ensure at least -1
+  if (modifier > 0) {
+    return Math.max(base + 1, Math.ceil(modified));
+  } else {
+    return Math.min(base - 1, Math.floor(modified));
+  }
+}
+
+/**
+ * Compute effective stats by applying stance modifiers to base stats.
+ * Returns both the computed value and the modifier for UI display.
+ */
+function computeEffectiveStats(entity: Entity): PlayerSnapshot['effectiveStats'] {
+  const basePower = entity.attack?.baseDamage ?? 0;
+  const baseArmor = entity.defense?.value ?? 0;
+  const baseSpeed = entity.speed?.value ?? 10;
+
+  const powerMod = getStanceStatModifier(entity, 'power');
+  const armorMod = getStanceStatModifier(entity, 'armor');
+  const speedMod = getStanceStatModifier(entity, 'speed');
+
+  return {
+    power: {
+      value: applyStatModifier(basePower, powerMod),
+      modifier: powerMod,
+    },
+    armor: {
+      value: applyStatModifier(baseArmor, armorMod),
+      modifier: armorMod,
+    },
+    speed: {
+      value: applyStatModifier(baseSpeed, speedMod),
+      modifier: speedMod,
+    },
+  };
+}
+
+/**
  * Snapshot of player entity state for React components.
  * Contains all player data needed for rendering.
  */
@@ -47,15 +95,30 @@ export interface PlayerSnapshot {
 
   // Combat stats
   health: { current: number; max: number };
-  mana: { current: number; max: number } | null; // null after path selection (replaced by pathResource)
   attack: {
     baseDamage: number;
     critChance: number;
     critMultiplier: number;
     variance: { min: number; max: number };
   };
-  defense: { value: number; blockReduction: number };
+  defense: { value: number };
   speed: { value: number; attackInterval: number };
+
+  // Fortune and derived stats
+  fortune: number;
+  derivedStats: {
+    critChance: number;
+    critDamage: number;
+    dodgeChance: number;
+  };
+
+  // Effective stats (base stats modified by stances, buffs, etc.)
+  // Used for display - shows what's actually used in combat
+  effectiveStats: {
+    power: { value: number; modifier: number }; // modifier is percentage (e.g., 0.25 = +25%)
+    armor: { value: number; modifier: number };
+    speed: { value: number; modifier: number };
+  };
 
   // Progression
   level: number;
@@ -65,6 +128,8 @@ export interface PlayerSnapshot {
 
   // Abilities
   powers: Power[];
+  effectivePowers: Power[];
+  effectiveStanceEffects: StanceEffect[];
   cooldowns: Map<string, { remaining: number; base: number }>;
 
   // Equipment
@@ -79,7 +144,6 @@ export interface PlayerSnapshot {
   statusEffects: StatusEffect[];
   buffs: ActiveBuff[];
   shield: { value: number; remaining: number; maxDuration: number } | null;
-  isBlocking: boolean;
   isDying: boolean;
 
   // Path
@@ -87,6 +151,25 @@ export interface PlayerSnapshot {
   pathResource: PathResource | null;
   stanceState: PlayerStanceState | null;
   pendingAbilityChoice: boolean;
+  pendingPowerChoice: {
+    level: number;
+    choices: Power[];
+  } | null;
+  pendingUpgradeChoice: {
+    powerIds: string[];
+  } | null;
+  pendingStanceEnhancement: {
+    ironChoice: StanceEnhancement;
+    retributionChoice: StanceEnhancement;
+  } | null;
+
+  // Path progression tracking
+  pathProgression: {
+    pathId: string;
+    pathType: 'active' | 'passive';
+    subpathId?: string;
+    powerUpgrades?: Array<{ powerId: string; currentTier: 0 | 1 | 2 }>;
+  } | null;
 
   // Combat modifiers
   attackModifiers: AttackModifier[];
@@ -103,7 +186,6 @@ export interface PlayerSnapshot {
 
   // Regen
   healthRegen: number;
-  manaRegen: number;
 
   // Animation state
   combatAnimation: {
@@ -113,10 +195,38 @@ export interface PlayerSnapshot {
   } | null;
 
   visualEffects: {
-    flash: boolean;
+    flash: { color?: 'white' | 'red' | 'green' | 'gold' } | null;
     shake: boolean;
     hitStop: boolean;
   };
+
+  // Passive effect state for UI display (COPIED from entity, not computed)
+  passiveEffects: {
+    // From combat state
+    damageStacks: number;
+    nextAttackBonus: number;
+    reflectBonusPercent: number;
+
+    // From floor state
+    survivedLethalUsed: boolean;
+
+    // From permanent state
+    permanentPowerBonus: number;
+
+    // From computed (pre-computed by system)
+    hasSurviveLethal: boolean;
+    damageStacksMax: number;
+    totalReflectPercent: number;
+    totalDamageReduction: number;
+    damageAuraPerSecond: number;
+    isImmuneToStuns: boolean;
+    isImmuneToSlows: boolean;
+
+    // Conditional status (from computed conditional values)
+    lastBastionActive: boolean;
+    painConduitActive: boolean;
+    regenSurgeActive: boolean;
+  } | null;
 }
 
 /**
@@ -163,6 +273,7 @@ export interface EnemySnapshot {
   visualEffects: {
     flash: boolean;
     aura: 'red' | 'blue' | 'green' | null;
+    powerImpact: { powerId: string; untilTick: number } | null;
   };
 }
 
@@ -231,7 +342,6 @@ export interface CombatSnapshot {
  * Returns null if the entity doesn't have required player components.
  */
 export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
-  // Note: mana is optional - it's removed when player selects a path (replaced by pathResource)
   if (!entity.player || !entity.health || !entity.identity) {
     return null;
   }
@@ -243,18 +353,28 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
 
     // Combat stats
     health: { ...entity.health },
-    mana: entity.mana ? { ...entity.mana } : null,
     attack: entity.attack ? { ...entity.attack } : {
       baseDamage: 0,
       critChance: 0,
       critMultiplier: 1,
       variance: { min: 0.85, max: 1.15 },
     },
-    defense: entity.defense ? { ...entity.defense } : { value: 0, blockReduction: 0.4 },
+    defense: entity.defense ? { ...entity.defense } : { value: 0 },
     speed: entity.speed ? {
       value: entity.speed.value,
       attackInterval: entity.speed.attackInterval
     } : { value: 10, attackInterval: 2500 },
+
+    // Fortune and derived stats
+    fortune: entity.fortune ?? 0,
+    derivedStats: entity.derivedStats ?? {
+      critChance: 0,
+      critDamage: 1.5,
+      dodgeChance: 0,
+    },
+
+    // Effective stats (base stats + stance modifiers)
+    effectiveStats: computeEffectiveStats(entity),
 
     // Progression
     level: entity.progression?.level ?? 1,
@@ -264,6 +384,8 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
 
     // Abilities
     powers: entity.powers ? [...entity.powers] : [],
+    effectivePowers: entity.effectivePowers ?? entity.powers ?? [],
+    effectiveStanceEffects: entity.effectiveStanceEffects ?? [],
     // Deep-copy cooldowns Map so mutations to entity don't affect snapshot
     cooldowns: entity.cooldowns
       ? new Map(Array.from(entity.cooldowns.entries()).map(([k, v]) => [k, { ...v }]))
@@ -281,7 +403,6 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
     statusEffects: entity.statusEffects ? [...entity.statusEffects] : [],
     buffs: entity.buffs ? [...entity.buffs] : [],
     shield: entity.shield ? { ...entity.shield } : null,
-    isBlocking: !!entity.blocking,
     isDying: !!entity.dying,
 
     // Path
@@ -289,6 +410,27 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
     pathResource: entity.pathResource ?? null,
     stanceState: entity.stanceState ?? null,
     pendingAbilityChoice: entity.pendingAbilityChoice ?? false,
+    pendingPowerChoice: entity.pendingPowerChoice ? {
+      level: entity.pendingPowerChoice.level,
+      choices: [...entity.pendingPowerChoice.choices],
+    } : null,
+    pendingUpgradeChoice: entity.pendingUpgradeChoice ? {
+      powerIds: [...entity.pendingUpgradeChoice.powerIds],
+    } : null,
+    pendingStanceEnhancement: entity.pendingStanceEnhancement ? {
+      ironChoice: { ...entity.pendingStanceEnhancement.ironChoice },
+      retributionChoice: { ...entity.pendingStanceEnhancement.retributionChoice },
+    } : null,
+
+    // Path progression tracking
+    pathProgression: entity.pathProgression ? {
+      pathId: entity.pathProgression.pathId,
+      pathType: entity.pathProgression.pathType,
+      subpathId: entity.pathProgression.subpathId,
+      powerUpgrades: entity.pathProgression.powerUpgrades
+        ? entity.pathProgression.powerUpgrades.map(u => ({ ...u }))
+        : undefined,
+    } : null,
 
     // Combat modifiers
     attackModifiers: entity.attackModifiers ? [...entity.attackModifiers] : [],
@@ -305,7 +447,6 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
 
     // Regen
     healthRegen: entity.regen?.healthPerSecond ?? 0,
-    manaRegen: entity.regen?.manaPerSecond ?? 0,
 
     // Animation state
     combatAnimation: entity.combatAnimation ? {
@@ -315,10 +456,48 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
     } : null,
 
     visualEffects: {
-      flash: !!entity.visualEffects?.flash,
+      flash: entity.visualEffects?.flash
+        ? { color: entity.visualEffects.flash.color }
+        : null,
       shake: !!entity.visualEffects?.shake,
       hitStop: !!entity.visualEffects?.hitStop,
     },
+
+    // Passive effects - PURE COPY from entity state
+    passiveEffects: (() => {
+      const state = entity.passiveEffectState;
+      if (entity.pathProgression?.pathType !== 'passive' || !state) {
+        return null;
+      }
+
+      const computed = state.computed;
+      return {
+        // Copy from combat state
+        damageStacks: state.combat.damageStacks,
+        nextAttackBonus: state.combat.nextAttackBonus,
+        reflectBonusPercent: state.combat.reflectBonusPercent,
+
+        // Copy from floor state
+        survivedLethalUsed: state.floor.survivedLethal,
+
+        // Copy from permanent state
+        permanentPowerBonus: state.permanent.powerBonusPercent,
+
+        // Copy from computed (pure copy, no computation)
+        hasSurviveLethal: computed.hasSurviveLethal,
+        damageStacksMax: computed.damageStackConfig?.maxStacks ?? 0,
+        totalReflectPercent: computed.currentTotalReflectPercent,
+        totalDamageReduction: computed.damageReductionPercent,
+        damageAuraPerSecond: computed.damageAuraPerSecond,
+        isImmuneToStuns: computed.isImmuneToStuns,
+        isImmuneToSlows: computed.isImmuneToSlows,
+
+        // Conditional status - read from pre-computed conditional values
+        lastBastionActive: computed.conditionalArmorPercent > 0,
+        painConduitActive: computed.conditionalReflectMultiplier > 1,
+        regenSurgeActive: computed.conditionalRegenMultiplier > 1,
+      };
+    })(),
   };
 }
 
@@ -375,6 +554,7 @@ export function createEnemySnapshot(entity: Entity): EnemySnapshot | null {
     visualEffects: {
       flash: !!entity.visualEffects?.flash,
       aura: entity.visualEffects?.aura?.color ?? null,
+      powerImpact: entity.visualEffects?.powerImpact ?? null,
     },
   };
 }

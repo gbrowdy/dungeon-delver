@@ -3,6 +3,52 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { world } from '../../world';
 import { FlowSystem } from '../flow';
 import { resetTick } from '../../loop';
+import type { Entity, ComputedPassiveEffects } from '../../components';
+
+/**
+ * Create default computed passive effects (all zeroed/neutral).
+ */
+function createDefaultComputed(): ComputedPassiveEffects {
+  return {
+    armorPercent: 0,
+    powerPercent: 0,
+    speedPercent: 0,
+    maxHealthPercent: 0,
+    healthRegenFlat: 0,
+    damageReductionPercent: 0,
+    maxDamagePerHitPercent: null,
+    armorReducesDot: false,
+    baseReflectPercent: 0,
+    reflectIgnoresArmor: false,
+    reflectCanCrit: false,
+    healOnReflectPercent: 0,
+    healOnReflectKillPercent: 0,
+    reflectScalingPerHit: 0,
+    counterAttackChance: 0,
+    damageStackConfig: null,
+    healOnDamagedChance: 0,
+    healOnDamagedPercent: 0,
+    nextAttackBonusOnDamaged: 0,
+    permanentPowerPerHit: 0,
+    onHitBurstChance: 0,
+    onHitBurstPowerPercent: 0,
+    damageAuraPerSecond: 0,
+    hasSurviveLethal: false,
+    isImmuneToStuns: false,
+    isImmuneToSlows: false,
+    removeSpeedPenalty: false,
+    lowHpArmorThreshold: 0,
+    lowHpArmorBonus: 0,
+    lowHpReflectThreshold: 0,
+    lowHpReflectMultiplier: 1,
+    highHpRegenThreshold: 100,
+    highHpRegenMultiplier: 1,
+    conditionalArmorPercent: 0,
+    conditionalDamageReduction: 0,
+    conditionalReflectMultiplier: 1,
+    conditionalRegenMultiplier: 1,
+  };
+}
 
 // Mock generateEnemy to avoid randomness in tests
 vi.mock('@/data/enemies', () => ({
@@ -442,6 +488,96 @@ describe('FlowSystem', () => {
       FlowSystem(16);
 
       expect(gameState.phase).toBe('defeat');
+    });
+  });
+
+  describe('passive effect integration', () => {
+    it('should reset combat state when new enemy spawns', () => {
+      // Setup player with existing combat state
+      const player: Entity = {
+        player: true,
+        health: { current: 100, max: 100 },
+        passiveEffectState: {
+          combat: {
+            hitsTaken: 5,
+            hitsDealt: 3,
+            nextAttackBonus: 50,
+            damageStacks: 3,
+            reflectBonusPercent: 15,
+          },
+          floor: { survivedLethal: true },
+          permanent: { powerBonusPercent: 10 },
+          computed: createDefaultComputed(),
+        },
+      };
+      world.add(player);
+
+      const gameState = world.with('gameState').first!;
+      gameState.scheduledSpawns = [{ delay: 10 }];
+      gameState.floor = { number: 1, room: 1, totalRooms: 5 };
+
+      FlowSystem(16);
+
+      // Combat state should be reset
+      expect(player.passiveEffectState?.combat.hitsTaken).toBe(0);
+      expect(player.passiveEffectState?.combat.hitsDealt).toBe(0);
+      expect(player.passiveEffectState?.combat.nextAttackBonus).toBe(0);
+      expect(player.passiveEffectState?.combat.damageStacks).toBe(0);
+      expect(player.passiveEffectState?.combat.reflectBonusPercent).toBe(0);
+
+      // Floor state should be preserved
+      expect(player.passiveEffectState?.floor.survivedLethal).toBe(true);
+
+      // Permanent state should be preserved
+      expect(player.passiveEffectState?.permanent.powerBonusPercent).toBe(10);
+    });
+
+    it('should not fail when player has no passiveEffectState', () => {
+      // Setup player without passiveEffectState
+      const player: Entity = {
+        player: true,
+        health: { current: 100, max: 100 },
+      };
+      world.add(player);
+
+      const gameState = world.with('gameState').first!;
+      gameState.scheduledSpawns = [{ delay: 10 }];
+      gameState.floor = { number: 1, room: 1, totalRooms: 5 };
+
+      // Should not throw
+      expect(() => FlowSystem(16)).not.toThrow();
+    });
+
+    it('should reset combat state even for boss enemies', () => {
+      // Setup player with existing combat state
+      const player: Entity = {
+        player: true,
+        health: { current: 100, max: 100 },
+        passiveEffectState: {
+          combat: {
+            hitsTaken: 10,
+            hitsDealt: 8,
+            nextAttackBonus: 100,
+            damageStacks: 5,
+            reflectBonusPercent: 25,
+          },
+          floor: { survivedLethal: false },
+          permanent: { powerBonusPercent: 5 },
+          computed: createDefaultComputed(),
+        },
+      };
+      world.add(player);
+
+      const gameState = world.with('gameState').first!;
+      gameState.scheduledSpawns = [{ delay: 10 }];
+      // Room 4 so next room (5) is the boss
+      gameState.floor = { number: 1, room: 4, totalRooms: 5 };
+
+      FlowSystem(16);
+
+      // Combat state should be reset for boss fight
+      expect(player.passiveEffectState?.combat.hitsTaken).toBe(0);
+      expect(player.passiveEffectState?.combat.damageStacks).toBe(0);
     });
   });
 });

@@ -53,7 +53,6 @@ export const EFFECT_TYPE = {
   HEAL: 'heal',
   DAMAGE: 'damage',
   BUFF: 'buff',
-  MANA: 'mana',
   DEBUFF: 'debuff',
   SPECIAL: 'special', // For unique effects like "survive lethal", "ignore dodge"
 } as const;

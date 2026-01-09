@@ -72,10 +72,6 @@ export default {
           DEFAULT: "hsl(var(--health))",
           foreground: "hsl(var(--health-foreground))",
         },
-        mana: {
-          DEFAULT: "hsl(var(--mana))",
-          foreground: "hsl(var(--mana-foreground))",
-        },
         xp: {
           DEFAULT: "hsl(var(--xp))",
           foreground: "hsl(var(--xp-foreground))",

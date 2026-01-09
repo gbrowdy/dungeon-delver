@@ -17,7 +17,7 @@ const ITEM_TEMPLATES: Record<ItemType, { name: string; stat: keyof Stats; icon: 
     { name: 'Plate Armor', stat: 'armor', icon: 'item-plate_armor' },
     { name: 'Chainmail', stat: 'armor', icon: 'item-chainmail' },
     { name: 'Leather Armor', stat: 'speed', icon: 'item-leather_armor' },
-    { name: 'Robe', stat: 'maxMana', icon: 'item-robe' },
+    { name: 'Robe', stat: 'fortune', icon: 'item-robe' },
   ],
   accessory: [
     { name: 'Ring', stat: 'fortune', icon: 'item-ring' },
@@ -50,19 +50,15 @@ const ITEM_EFFECTS: Record<ItemType, ItemEffect[]> = {
   weapon: [
     { trigger: ITEM_EFFECT_TRIGGER.ON_CRIT, type: EFFECT_TYPE.DAMAGE, value: ITEM_EFFECT_VALUES.WEAPON.ON_CRIT_DAMAGE_BONUS, chance: 1, description: `Critical hits deal ${Math.floor(ITEM_EFFECT_VALUES.WEAPON.ON_CRIT_DAMAGE_BONUS * 100)}% bonus damage` },
     { trigger: ITEM_EFFECT_TRIGGER.ON_HIT, type: EFFECT_TYPE.HEAL, value: ITEM_EFFECT_VALUES.WEAPON.ON_HIT_HEAL, chance: ITEM_EFFECT_VALUES.WEAPON.ON_HIT_HEAL_CHANCE, description: `${Math.floor(ITEM_EFFECT_VALUES.WEAPON.ON_HIT_HEAL_CHANCE * 100)}% chance to heal ${ITEM_EFFECT_VALUES.WEAPON.ON_HIT_HEAL} HP on hit` },
-    { trigger: ITEM_EFFECT_TRIGGER.ON_KILL, type: EFFECT_TYPE.MANA, value: ITEM_EFFECT_VALUES.WEAPON.ON_KILL_MANA, chance: 1, description: `Restore ${ITEM_EFFECT_VALUES.WEAPON.ON_KILL_MANA} mana on kill` },
     { trigger: ITEM_EFFECT_TRIGGER.ON_HIT, type: EFFECT_TYPE.DAMAGE, value: ITEM_EFFECT_VALUES.WEAPON.ON_HIT_DAMAGE, chance: ITEM_EFFECT_VALUES.WEAPON.ON_HIT_DAMAGE_CHANCE, description: `${Math.floor(ITEM_EFFECT_VALUES.WEAPON.ON_HIT_DAMAGE_CHANCE * 100)}% chance to deal ${ITEM_EFFECT_VALUES.WEAPON.ON_HIT_DAMAGE} bonus damage` },
   ],
   armor: [
     { trigger: ITEM_EFFECT_TRIGGER.COMBAT_START, type: EFFECT_TYPE.BUFF, value: ITEM_EFFECT_VALUES.ARMOR.COMBAT_START_DEFENSE, chance: 1, description: `Start combat with +${ITEM_EFFECT_VALUES.ARMOR.COMBAT_START_DEFENSE} defense` },
     { trigger: ITEM_EFFECT_TRIGGER.ON_DAMAGED, type: EFFECT_TYPE.HEAL, value: ITEM_EFFECT_VALUES.ARMOR.ON_DAMAGED_HEAL, chance: ITEM_EFFECT_VALUES.ARMOR.ON_DAMAGED_HEAL_CHANCE, description: `${Math.floor(ITEM_EFFECT_VALUES.ARMOR.ON_DAMAGED_HEAL_CHANCE * 100)}% chance to heal ${ITEM_EFFECT_VALUES.ARMOR.ON_DAMAGED_HEAL} HP when hit` },
     { trigger: ITEM_EFFECT_TRIGGER.TURN_START, type: EFFECT_TYPE.HEAL, value: ITEM_EFFECT_VALUES.ARMOR.TURN_START_HEAL, chance: 1, description: `Regenerate ${ITEM_EFFECT_VALUES.ARMOR.TURN_START_HEAL} HP per turn` },
-    { trigger: ITEM_EFFECT_TRIGGER.ON_DAMAGED, type: EFFECT_TYPE.MANA, value: ITEM_EFFECT_VALUES.ARMOR.ON_DAMAGED_MANA, chance: ITEM_EFFECT_VALUES.ARMOR.ON_DAMAGED_MANA_CHANCE, description: `${Math.floor(ITEM_EFFECT_VALUES.ARMOR.ON_DAMAGED_MANA_CHANCE * 100)}% chance to gain ${ITEM_EFFECT_VALUES.ARMOR.ON_DAMAGED_MANA} mana when hit` },
   ],
   accessory: [
-    { trigger: ITEM_EFFECT_TRIGGER.COMBAT_START, type: EFFECT_TYPE.MANA, value: ITEM_EFFECT_VALUES.ACCESSORY.COMBAT_START_MANA, chance: 1, description: `Start combat with +${ITEM_EFFECT_VALUES.ACCESSORY.COMBAT_START_MANA} mana` },
     { trigger: ITEM_EFFECT_TRIGGER.ON_CRIT, type: EFFECT_TYPE.HEAL, value: ITEM_EFFECT_VALUES.ACCESSORY.ON_CRIT_HEAL, chance: 1, description: `Critical hits heal ${ITEM_EFFECT_VALUES.ACCESSORY.ON_CRIT_HEAL} HP` },
-    { trigger: ITEM_EFFECT_TRIGGER.TURN_START, type: EFFECT_TYPE.MANA, value: ITEM_EFFECT_VALUES.ACCESSORY.TURN_START_MANA, chance: 1, description: `Regenerate ${ITEM_EFFECT_VALUES.ACCESSORY.TURN_START_MANA} mana per turn` },
     { trigger: ITEM_EFFECT_TRIGGER.ON_KILL, type: EFFECT_TYPE.HEAL, value: ITEM_EFFECT_VALUES.ACCESSORY.ON_KILL_HEAL, chance: 1, description: `Heal ${ITEM_EFFECT_VALUES.ACCESSORY.ON_KILL_HEAL} HP on kill` },
   ],
 };

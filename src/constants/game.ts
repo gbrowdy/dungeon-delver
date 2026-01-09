@@ -27,8 +27,6 @@ export const COMBAT_TIMING = {
 
 // Combat mechanics
 export const COMBAT_MECHANICS = {
-  /** Mana regenerated per combat tick */
-  MANA_REGEN_PER_TICK: 1, // Reduced from 2 - mana is more precious
   /** Damage variance minimum multiplier (0.8 = -20%) */
   DAMAGE_VARIANCE_MIN: 0.85,
   /** Damage variance range (0.3 = up to +15%) */
@@ -43,7 +41,6 @@ export const COMBAT_MECHANICS = {
 export const LEVEL_UP_BONUSES = {
   MAX_HEALTH: 5, // +5 Health per level
   POWER: 2, // +2 Power per level
-  MAX_MANA: 8, // +8 Mana per level
   // No other stat gains - real power comes from path abilities
   /** Experience required multiplier per level */
   EXP_MULTIPLIER: 1.5, // Reduced from 1.8 - faster leveling pace

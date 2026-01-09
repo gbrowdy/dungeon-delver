@@ -233,39 +233,6 @@ function processDamageEffect(
 }
 
 /**
- * Process a mana effect on the player.
- */
-function processManaEffect(
-  player: Entity,
-  effect: ItemEffect,
-  item: Item,
-  trigger: string
-): void {
-  if (!player.mana) return;
-
-  const manaAmount = effect.value;
-  if (manaAmount <= 0) return;
-
-  const oldMana = player.mana.current;
-  const newMana = Math.min(player.mana.max, oldMana + manaAmount);
-  const actualMana = newMana - oldMana;
-
-  if (actualMana > 0) {
-    player.mana.current = newMana;
-
-    let logMessage = `${item.icon} `;
-    if (trigger === ITEM_EFFECT_TRIGGER.ON_KILL) {
-      logMessage += `Mana restored: +${actualMana}`;
-    } else if (trigger === ITEM_EFFECT_TRIGGER.ON_CRIT) {
-      logMessage += `Mana on crit: +${actualMana}`;
-    } else {
-      logMessage += `+${actualMana} mana`;
-    }
-    addCombatLog(logMessage);
-  }
-}
-
-/**
  * Process item effects for a specific trigger.
  */
 function processItemsForTrigger(
@@ -292,9 +259,6 @@ function processItemsForTrigger(
         break;
       case EFFECT_TYPE.DAMAGE:
         processDamageEffect(player, enemy, item.effect, item, trigger, damage);
-        break;
-      case EFFECT_TYPE.MANA:
-        processManaEffect(player, item.effect, item, trigger);
         break;
       case EFFECT_TYPE.BUFF:
         // Buff effects just log for visibility

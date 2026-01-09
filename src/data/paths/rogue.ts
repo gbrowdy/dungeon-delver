@@ -92,7 +92,7 @@ const ASSASSIN_PATH: PathDefinition = {
     {
       id: 'rogue_assassin_ruthless_efficiency',
       name: 'Ruthless Efficiency',
-      description: 'Killing an enemy reduces all power cooldowns by 50% and restores 25 mana.',
+      description: 'Killing an enemy reduces all power cooldowns by 50% and restores 25 Momentum.',
       icon: 'ability-paths-rogue-rogue_assassin_ruthless_efficiency',
       levelRequired: 3,
       subpath: 'nightstalker',
@@ -144,7 +144,7 @@ const ASSASSIN_PATH: PathDefinition = {
     {
       id: 'rogue_assassin_shadow_dance',
       name: 'Shadow Dance',
-      description: 'Powers cost 50% less mana and deal 50% more damage. Your next 3 attacks after using a power are guaranteed critical hits.',
+      description: 'Powers cost 50% less resource and deal 50% more damage. Your next 3 attacks after using a power are guaranteed critical hits.',
       icon: 'ability-paths-rogue-rogue_assassin_shadow_dance',
       levelRequired: 6,
       subpath: 'shadowblade',

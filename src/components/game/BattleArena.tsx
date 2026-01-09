@@ -132,8 +132,8 @@ export function BattleArena({
   const enemyCasting = enemySpriteState === SPRITE_STATE.IDLE && !!enemy?.visualEffects?.aura;
 
   // Read visual effects from snapshots
-  const heroFlash = player.visualEffects.flash;
-  const enemyFlash = enemy?.visualEffects.flash ?? false;
+  const heroFlash = !!player.visualEffects.flash;
+  const enemyFlash = !!enemy?.visualEffects.flash;
   const hitStop = player.visualEffects.hitStop;
   const isShaking = player.visualEffects.shake;
   const enemyAuraColor = enemy?.visualEffects.aura ?? null;
@@ -210,11 +210,12 @@ export function BattleArena({
             isCasting={heroCasting}
             castingPowerId={castingPowerId}
             isFlashing={heroFlash}
+            flashColor={player?.visualEffects?.flash?.color}
             hitStop={hitStop}
             turnProgress={heroProgress}
             isStunned={isStunned}
             statusEffects={player.statusEffects}
-            activeBuffs={player.activeBuffs}
+            activeBuffs={player.buffs}
           />
 
           {/* Enemy */}
@@ -234,6 +235,7 @@ export function BattleArena({
                 hitStop={hitStop}
                 turnProgress={enemyProgress}
                 intent={displayEnemy.intent}
+                powerImpact={displayEnemy.visualEffects?.powerImpact ?? null}
               />
 
               {/* Boss death effect - only for boss enemies when dying */}

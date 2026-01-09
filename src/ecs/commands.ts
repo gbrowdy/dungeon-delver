@@ -11,7 +11,6 @@ import type { Item } from '@/types/game';
 export type Command =
   // Combat actions
   | { type: 'ACTIVATE_POWER'; powerId: string }
-  | { type: 'BLOCK' }
   // Game speed
   | { type: 'SET_COMBAT_SPEED'; speed: 1 | 2 | 3 }
   | { type: 'TOGGLE_PAUSE' }
@@ -23,6 +22,10 @@ export type Command =
   | { type: 'SELECT_ABILITY'; abilityId: string }
   | { type: 'SELECT_SUBPATH'; subpathId: string }
   | { type: 'SWITCH_STANCE'; stanceId: string }
+  // Path progression
+  | { type: 'SELECT_POWER'; powerId: string }
+  | { type: 'UPGRADE_POWER'; powerId: string }
+  | { type: 'SELECT_STANCE_ENHANCEMENT'; stanceId: 'iron' | 'retribution' }
   // Room/floor progression
   | { type: 'ADVANCE_ROOM' }
   | { type: 'GO_TO_SHOP' }
@@ -73,9 +76,6 @@ export const Commands = {
     type: 'ACTIVATE_POWER',
     powerId,
   }),
-  block: (): Command => ({
-    type: 'BLOCK',
-  }),
 
   // Game speed
   setCombatSpeed: (speed: 1 | 2 | 3): Command => ({
@@ -110,6 +110,20 @@ export const Commands = {
   }),
   switchStance: (stanceId: string): Command => ({
     type: 'SWITCH_STANCE',
+    stanceId,
+  }),
+
+  // Path progression
+  selectPower: (powerId: string): Command => ({
+    type: 'SELECT_POWER',
+    powerId,
+  }),
+  upgradePower: (powerId: string): Command => ({
+    type: 'UPGRADE_POWER',
+    powerId,
+  }),
+  selectStanceEnhancement: (stanceId: 'iron' | 'retribution'): Command => ({
+    type: 'SELECT_STANCE_ENHANCEMENT',
     stanceId,
   }),
 

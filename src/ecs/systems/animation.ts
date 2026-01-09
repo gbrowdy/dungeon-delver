@@ -179,6 +179,37 @@ function processAnimationEvent(event: AnimationEvent): void {
       }
       break;
     }
+    case 'spell_cast': {
+      if (event.payload.type === 'spell' && event.payload.powerId) {
+        // Damage spell - impact on enemy
+        const enemy = enemyQuery.first;
+        if (enemy) {
+          // Set power impact effect on enemy
+          if (!enemy.visualEffects) {
+            enemy.visualEffects = {};
+          }
+          enemy.visualEffects.powerImpact = {
+            powerId: event.payload.powerId,
+            untilTick: event.displayUntilTick,
+          };
+        }
+      } else if (event.payload.type === 'heal') {
+        // Heal spell - green flash on player
+        const player = getPlayer();
+        if (player) {
+          if (!player.visualEffects) {
+            player.visualEffects = {};
+          }
+          player.visualEffects.flash = {
+            color: 'green',
+            untilTick: currentTick + 3, // ~48ms green flash
+          };
+          // Add floating heal text
+          addFloatingEffect(gameState, event.payload, 'player');
+        }
+      }
+      break;
+    }
     // Add more event types as needed
   }
 }
@@ -200,9 +231,9 @@ function addFloatingEffect(
 
   const currentTick = getTick();
 
-  // Position based on target (these are relative positions that UI will use)
-  const x = target === 'enemy' ? 0.7 : 0.3; // 70% right for enemy, 30% for player
-  const y = 0.5; // Middle vertically
+  // Position based on target (percentage values for CSS positioning)
+  const x = target === 'enemy' ? 70 : 30; // 70% right for enemy, 30% for player
+  const y = 50; // Middle vertically
 
   gameState.floatingEffects.push({
     id: getNextAnimationId(),

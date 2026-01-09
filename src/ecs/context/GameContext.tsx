@@ -53,10 +53,12 @@ export interface GameActions {
   selectAbility: (abilityId: string) => void;
   selectSubpath: (subpathId: string) => void;
   switchStance: (stanceId: string) => void;
+  selectPower: (powerId: string) => void;
+  upgradePower: (powerId: string) => void;
+  selectStanceEnhancement: (stanceId: 'iron' | 'retribution') => void;
 
   // Combat
   usePower: (powerId: string) => void;
-  activateBlock: () => void;
 
   // UI
   togglePause: () => void;
@@ -133,26 +135,27 @@ export interface GameProviderProps {
  */
 export function GameProvider({ children, enabled = true }: GameProviderProps) {
   // Use the game engine hook to manage the game loop
-  const { tick, isRunning } = useGameEngine({ enabled });
+  const { tick, renderVersion, isRunning } = useGameEngine({ enabled });
 
   // Create memoized snapshots from ECS state.
-  // These depend on `tick` to trigger recomputation each game tick.
+  // These depend on `renderVersion` to trigger recomputation whenever systems run
+  // (including while paused, when UI commands like dismiss popup are processed).
   const player = useMemo(() => {
     const entity = getPlayer();
     return entity ? createPlayerSnapshot(entity) : null;
-  }, [tick]);
+  }, [renderVersion]);
 
   const enemy = useMemo(() => {
     // Use enemyQuery.first to include dying enemies (for death animation)
     // instead of getActiveEnemy() which excludes them
     const entity = enemyQuery.first;
     return entity ? createEnemySnapshot(entity) : null;
-  }, [tick]);
+  }, [renderVersion]);
 
   const gameState = useMemo(() => {
     const entity = getGameState();
     return entity ? createGameStateSnapshot(entity) : createDefaultGameStateSnapshot();
-  }, [tick]);
+  }, [renderVersion]);
 
   // Calculate progress from speed components
   const heroProgress = useMemo(() => {
@@ -160,14 +163,14 @@ export function GameProvider({ children, enabled = true }: GameProviderProps) {
     if (!entity?.speed) return 0;
     const progress = entity.speed.accumulated / entity.speed.attackInterval;
     return Math.min(1, Math.max(0, progress));
-  }, [tick]);
+  }, [renderVersion]);
 
   const enemyProgress = useMemo(() => {
     const entity = enemyQuery.first;
     if (!entity?.speed) return 0;
     const progress = entity.speed.accumulated / entity.speed.attackInterval;
     return Math.min(1, Math.max(0, progress));
-  }, [tick]);
+  }, [renderVersion]);
 
   // Action implementations - dispatch commands to ECS
   // Memoized since they don't depend on tick
@@ -191,13 +194,19 @@ export function GameProvider({ children, enabled = true }: GameProviderProps) {
     switchStance: (stanceId: string) => {
       dispatch(Commands.switchStance(stanceId));
     },
+    selectPower: (powerId: string) => {
+      dispatch(Commands.selectPower(powerId));
+    },
+    upgradePower: (powerId: string) => {
+      dispatch(Commands.upgradePower(powerId));
+    },
+    selectStanceEnhancement: (stanceId: 'iron' | 'retribution') => {
+      dispatch(Commands.selectStanceEnhancement(stanceId));
+    },
 
     // Combat
     usePower: (powerId: string) => {
       dispatch(Commands.activatePower(powerId));
-    },
-    activateBlock: () => {
-      dispatch(Commands.block());
     },
 
     // UI

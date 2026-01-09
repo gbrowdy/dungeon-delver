@@ -10,8 +10,6 @@ interface ShopItem {
     power: number;
     armor: number;
     speed: number;
-    mana: number;
-    maxMana: number;
     fortune: number;
   }>;
   tier: 'starter' | 'class' | 'specialty' | 'legendary';

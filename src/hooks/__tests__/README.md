@@ -54,7 +54,7 @@ The test suite covers:
 - Items without effects
 - Items with wrong trigger types
 - Multiple items with same/different triggers
-- Health/mana capped at maximum values
+- Health/resource capped at maximum values
 - Original player object immutability
 - Missing damage context for damage calculations
 

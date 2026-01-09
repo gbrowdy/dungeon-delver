@@ -11,6 +11,8 @@ import { getDodgeChance } from '@/utils/fortuneUtils';
 import { recordPathTrigger } from './path-ability';
 import { getStanceDamageMultiplier, getStanceBehavior, getStanceStatModifier } from '@/utils/stanceUtils';
 import { queueAnimationEvent, addCombatLog, getEntityName } from '../utils';
+import { calculateEnemyIntent } from '@/data/enemies';
+import { processPreDamage, processOnDamaged } from './passive-effect';
 
 function getTarget(attacker: Entity): Entity | undefined {
   if (attacker.player) {
@@ -65,15 +67,6 @@ export function CombatSystem(_deltaMs: number): void {
         continue;
       }
 
-      // Check for stance auto-block (passive paths)
-      const autoBlockChance = getStanceBehavior(target, 'auto_block');
-      if (autoBlockChance > 0 && Math.random() < autoBlockChance) {
-        addCombatLog(`${targetName} auto-blocks ${attackerName}'s attack!`);
-        queueAnimationEvent('player_block', { type: 'block', reduction: 1 });
-        recordPathTrigger('on_block', { isBlock: true });
-        world.removeComponent(entity, 'attackReady');
-        continue;
-      }
     }
 
     let damage = attackData.damage;
@@ -83,6 +76,18 @@ export function CombatSystem(_deltaMs: number): void {
       const hexReduction = getStanceBehavior(target, 'hex_aura');
       if (hexReduction > 0) {
         damage = Math.round(damage * (1 - hexReduction));
+        damage = Math.max(1, damage);
+      }
+    }
+
+    // Apply weaken status effect (enemy attacking with damage debuff)
+    if (entity.enemy && entity.statusEffects) {
+      const weakenEffect = entity.statusEffects.find(
+        effect => effect.type === 'weaken' && effect.remainingTurns > 0
+      );
+      if (weakenEffect && weakenEffect.value) {
+        const reduction = weakenEffect.value / 100; // Convert percentage to decimal
+        damage = Math.round(damage * (1 - reduction));
         damage = Math.max(1, damage);
       }
     }
@@ -122,25 +127,14 @@ export function CombatSystem(_deltaMs: number): void {
       }
     }
 
-    // Check for block
-    let blocked = false;
-    if (target.blocking) {
-      damage = Math.floor(damage * (1 - target.blocking.reduction));
-      blocked = true;
-
-      // Save reduction before removing component
-      const blockReduction = target.blocking.reduction;
-      world.removeComponent(target, 'blocking');
-
-      // Queue block animation
-      queueAnimationEvent('player_block', {
-        type: 'block',
-        reduction: blockReduction,
-      });
-
-      // Record path ability trigger for blocking
-      if (target.player) {
-        recordPathTrigger('on_block', { isBlock: true });
+    // Process passive damage reduction (Guardian enhancements, etc.)
+    if (target.player && target.passiveEffectState) {
+      const preDamageResult = processPreDamage(target, damage);
+      if (preDamageResult.damageReduced > 0 || preDamageResult.wasCapped) {
+        damage = preDamageResult.finalDamage;
+        if (preDamageResult.wasCapped) {
+          addCombatLog(`Unbreakable caps damage to ${damage}!`);
+        }
       }
     }
 
@@ -171,15 +165,12 @@ export function CombatSystem(_deltaMs: number): void {
       type: 'damage',
       value: damage,
       isCrit: attackData.isCrit,
-      blocked,
-      targetDied,
     });
 
     // Combat log
     const critText = attackData.isCrit ? ' (CRIT!)' : '';
-    const blockText = blocked ? ' (blocked)' : '';
     addCombatLog(
-      `${attackerName} attacks ${targetName} for ${damage} damage${critText}${blockText}`
+      `${attackerName} attacks ${targetName} for ${damage} damage${critText}`
     );
 
     // Record path ability triggers
@@ -244,6 +235,12 @@ export function CombatSystem(_deltaMs: number): void {
         if (reflectDamage > 0) {
           entity.health.current = Math.max(0, entity.health.current - reflectDamage);
           addCombatLog(`${targetName} reflects ${reflectDamage} damage!`);
+          // Queue visual feedback for reflect damage on enemy
+          queueAnimationEvent('enemy_hit', {
+            type: 'damage',
+            value: reflectDamage,
+            isCrit: false,
+          });
         }
       }
 
@@ -256,6 +253,82 @@ export function CombatSystem(_deltaMs: number): void {
           addCombatLog(`${targetName} counter-attacks for ${counterDamage} damage!`);
         }
       }
+
+      // Process passive effect system on-damaged hooks (Guardian enhancements, etc.)
+      if (target.passiveEffectState) {
+        const onDamagedResult = processOnDamaged(target, damage);
+
+        // Apply reflect damage from passive effects (combat.ts applies, passive-effect.ts returns)
+        if (onDamagedResult.reflectDamage > 0 && entity.health) {
+          let passiveReflect = onDamagedResult.reflectDamage;
+
+          // Apply armor reduction unless reflect ignores armor
+          if (!onDamagedResult.reflectIgnoresArmor) {
+            const attackerDefense = entity.defense?.value ?? 0;
+            passiveReflect = Math.max(1, passiveReflect - attackerDefense);
+          }
+
+          // Check for reflect crit
+          let reflectIsCrit = false;
+          if (onDamagedResult.reflectCanCrit && target.attack?.critChance) {
+            if (Math.random() < target.attack.critChance) {
+              passiveReflect = Math.round(passiveReflect * 2);
+              reflectIsCrit = true;
+            }
+          }
+
+          entity.health.current = Math.max(0, entity.health.current - passiveReflect);
+          const critSuffix = reflectIsCrit ? ' (CRIT!)' : '';
+          addCombatLog(`${targetName} reflects ${passiveReflect} damage${critSuffix}!`);
+          // Queue visual feedback for reflect damage on enemy
+          queueAnimationEvent('enemy_hit', {
+            type: 'damage',
+            value: passiveReflect,
+            isCrit: reflectIsCrit,
+          });
+
+          // Check if reflect killed the attacker
+          const attackerDiedFromReflect = entity.health.current <= 0;
+
+          // Heal on reflect
+          if (onDamagedResult.healOnReflectPercent > 0 && target.health) {
+            const healFromReflect = Math.round(passiveReflect * (onDamagedResult.healOnReflectPercent / 100));
+            if (healFromReflect > 0) {
+              target.health.current = Math.min(target.health.max, target.health.current + healFromReflect);
+              addCombatLog(`${targetName} heals for ${healFromReflect} from reflect!`);
+            }
+          }
+
+          // Heal on reflect kill
+          if (attackerDiedFromReflect && onDamagedResult.healOnReflectKillPercent > 0 && target.health) {
+            const healFromKill = Math.round(target.health.max * (onDamagedResult.healOnReflectKillPercent / 100));
+            if (healFromKill > 0) {
+              target.health.current = Math.min(target.health.max, target.health.current + healFromKill);
+              addCombatLog(`${targetName} heals for ${healFromKill} from reflect kill!`);
+            }
+          }
+        }
+
+        // Apply counter-attack from passive effects
+        if (onDamagedResult.counterAttackTriggered && target.attack && entity.health) {
+          const passiveCounterDamage = Math.round(target.attack.baseDamage * 0.5);
+          if (passiveCounterDamage > 0) {
+            entity.health.current = Math.max(0, entity.health.current - passiveCounterDamage);
+            addCombatLog(`${targetName} counter-attacks for ${passiveCounterDamage} damage!`);
+          }
+        }
+
+        // Apply heal on damaged (combat.ts applies, passive-effect.ts returns amount)
+        if (onDamagedResult.healAmount > 0 && target.health) {
+          target.health.current = Math.min(target.health.max, target.health.current + onDamagedResult.healAmount);
+          addCombatLog(`${targetName} heals for ${onDamagedResult.healAmount} on hit!`);
+        }
+      }
+    }
+
+    // Recalculate enemy intent after attack so UI shows next action
+    if (entity.enemy?.abilities && entity.enemy.abilities.length > 0) {
+      entity.enemy.intent = calculateEnemyIntent(entity.enemy);
     }
 
     // Clear attack ready

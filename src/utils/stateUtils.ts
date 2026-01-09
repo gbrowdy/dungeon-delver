@@ -24,8 +24,6 @@ function cloneStats(stats: Stats): Stats {
     power: stats.power,
     armor: stats.armor,
     speed: stats.speed,
-    mana: stats.mana,
-    maxMana: stats.maxMana,
     fortune: stats.fortune,
   };
 }
@@ -66,7 +64,7 @@ function clonePowers(powers: Power[]): Power[] {
     id: power.id,
     name: power.name,
     description: power.description,
-    manaCost: power.manaCost,
+    resourceCost: power.resourceCost,
     cooldown: power.cooldown,
     effect: power.effect,
     value: power.value,

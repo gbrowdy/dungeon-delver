@@ -50,14 +50,13 @@ function createPlayer(equipment?: {
     player: true,
     identity: { name: 'Hero', class: 'warrior' },
     health: { current: 80, max: 100 },
-    mana: { current: 40, max: 50 },
     attack: {
       baseDamage: 20,
       critChance: 0,
       critMultiplier: 2,
       variance: { min: 1, max: 1 },
     },
-    defense: { value: 5, blockReduction: 0.4 },
+    defense: { value: 5,  },
     speed: { value: 10, attackInterval: 2500, accumulated: 0 },
     equipment: equipment ?? { weapon: null, armor: null, accessory: null },
   });
@@ -74,7 +73,7 @@ function createEnemy(health: number = 50): Entity {
       critMultiplier: 2,
       variance: { min: 1, max: 1 },
     },
-    defense: { value: 3, blockReduction: 0 },
+    defense: { value: 3,  },
     speed: { value: 8, attackInterval: 3000, accumulated: 0 },
   });
 }
@@ -219,30 +218,6 @@ describe('ItemEffectSystem', () => {
       expect(enemy.health?.current).toBe(80);
     });
 
-    it('should process ON_CRIT mana restore effect', () => {
-      const critManaItem = createTestItem(
-        'Arcane Edge',
-        ITEM_EFFECT_TRIGGER.ON_CRIT,
-        EFFECT_TYPE.MANA,
-        10
-      );
-
-      const player = createPlayer({
-        weapon: critManaItem,
-        armor: null,
-        accessory: null,
-      });
-      createEnemy();
-
-      // Record critical attack
-      recordPlayerAttack(30, true);
-
-      ItemEffectSystem(16);
-
-      // Player should gain mana
-      expect(player.mana?.current).toBe(50); // 40 + 10, capped at max
-    });
-
     it('should not process ON_CRIT effects on non-critical hits', () => {
       const critHealItem = createTestItem(
         'Critical Lifebringer',
@@ -315,30 +290,6 @@ describe('ItemEffectSystem', () => {
 
       // Player should heal 10% of max HP = 10
       expect(player.health?.current).toBe(90); // 80 + 10
-    });
-
-    it('should process ON_KILL mana restore effect', () => {
-      const killManaItem = createTestItem(
-        'Spirit Blade',
-        ITEM_EFFECT_TRIGGER.ON_KILL,
-        EFFECT_TYPE.MANA,
-        15
-      );
-
-      const player = createPlayer({
-        weapon: killManaItem,
-        armor: null,
-        accessory: null,
-      });
-      createEnemy();
-
-      // Record enemy killed
-      recordEnemyKilled();
-
-      ItemEffectSystem(16);
-
-      // Player should gain mana (capped at max 50)
-      expect(player.mana?.current).toBe(50);
     });
 
     it('should not process ON_KILL effects when enemy not killed', () => {
@@ -546,27 +497,6 @@ describe('ItemEffectSystem', () => {
       expect(gameState?.combatLog).toContain('T Bonus damage: +10');
     });
 
-    it('should add combat log entry for mana effects', () => {
-      const manaItem = createTestItem(
-        'Arcane Blade',
-        ITEM_EFFECT_TRIGGER.ON_KILL,
-        EFFECT_TYPE.MANA,
-        10
-      );
-
-      createPlayer({
-        weapon: manaItem,
-        armor: null,
-        accessory: null,
-      });
-      createEnemy();
-
-      recordEnemyKilled();
-      ItemEffectSystem(16);
-
-      const gameState = world.with('gameState').first;
-      expect(gameState?.combatLog).toContain('T Mana restored: +10');
-    });
   });
 
   describe('multiple items', () => {
@@ -584,9 +514,9 @@ describe('ItemEffectSystem', () => {
         3
       );
       const accessoryItem = createTestItem(
-        'Mana Ring',
+        'Lifesteal Ring',
         ITEM_EFFECT_TRIGGER.ON_KILL,
-        EFFECT_TYPE.MANA,
+        EFFECT_TYPE.HEAL,
         15
       );
 
@@ -608,7 +538,7 @@ describe('ItemEffectSystem', () => {
       recordEnemyKilled();
       ItemEffectSystem(16);
 
-      expect(player.mana?.current).toBe(50); // 40 + 10, capped at max
+      expect(player.health?.current).toBe(100); // 85 + 15, capped at max
     });
   });
 
@@ -699,28 +629,6 @@ describe('ItemEffectSystem', () => {
 
       // Capped at max health
       expect(player.health?.current).toBe(100);
-    });
-
-    it('should cap mana at max mana', () => {
-      const bigManaItem = createTestItem(
-        'Mana Fountain',
-        ITEM_EFFECT_TRIGGER.ON_KILL,
-        EFFECT_TYPE.MANA,
-        100
-      );
-
-      const player = createPlayer({
-        weapon: bigManaItem,
-        armor: null,
-        accessory: null,
-      });
-      createEnemy();
-
-      recordEnemyKilled();
-      ItemEffectSystem(16);
-
-      // Capped at max mana
-      expect(player.mana?.current).toBe(50);
     });
 
     it('should not damage dying enemies', () => {

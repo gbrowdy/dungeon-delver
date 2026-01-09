@@ -58,7 +58,7 @@ export function Shop({ player, items, availablePower, onBuyItem, onLearnPower, o
                 <h4 className="font-bold text-primary">{availablePower.name}</h4>
                 <p className="text-pixel-sm text-muted-foreground">{availablePower.description}</p>
                 <p className="text-pixel-xs text-muted-foreground mt-1">
-                  Mana: {availablePower.manaCost} | Cooldown: {availablePower.cooldown}
+                  Cost: {availablePower.resourceCost} | Cooldown: {availablePower.cooldown}
                 </p>
               </div>
               <Button onClick={onLearnPower} className="w-full">

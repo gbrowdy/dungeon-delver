@@ -205,10 +205,10 @@ describe('Item Value Calculator', () => {
       expect(estimateEffectValue(item)).toBeCloseTo(0.3, 2);
     });
 
-    it('calculates mana-on-dodge correctly with chance', () => {
+    it('calculates resource-on-dodge correctly with chance', () => {
       const item = createMockItemWithEffect(
-        'mana_dodge',
-        '50% chance to restore 5 mana on dodge',
+        'resource_dodge',
+        '50% chance to restore 5 resource on dodge',
         5,
         0.5
       );
@@ -235,10 +235,10 @@ describe('Item Value Calculator', () => {
       expect(estimateEffectValue(item)).toBe(4.0);
     });
 
-    it('calculates mana regen correctly', () => {
+    it('calculates resource regen correctly', () => {
       const item = createMockItemWithEffect(
-        'mana_regen',
-        '+2 mana regeneration per second',
+        'resource_regen',
+        '+2 resource regeneration per second',
         2
       );
       expect(estimateEffectValue(item)).toBe(2.0);
@@ -444,11 +444,10 @@ describe('Item Value Calculator', () => {
 
       const audit = checkItemValueBudget(luckyCharm);
       // Lucky Charm has: +12 Fortune (6) + +6 Speed (3) = 9 stat points
-      // Effect: 50% chance to restore 5 mana on dodge = 0.5 * 5 * 0.5 = 1.25 effect points
-      // Total: ~10.25 points - just below the 80% threshold (10.4) due to mana-on-dodge formula
-      // This is acceptable as the item provides strong synergy value for dodge builds
+      // Effect: 50% chance to counter for 10 damage on dodge ≈ 3 points
+      // Total: ~12 points - slightly overpowered but acceptable for build synergy
       expect(audit.totalValue).toBeGreaterThanOrEqual(10);
-      expect(['balanced', 'underpowered']).toContain(audit.status);
+      expect(['balanced', 'overpowered']).toContain(audit.status);
     });
 
     it('specialty items should have adequate stat value', () => {

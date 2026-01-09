@@ -6,10 +6,6 @@
 // === COMBAT BALANCE ===
 
 export const COMBAT_BALANCE = {
-  // Block ability - more expensive but still useful
-  BLOCK_MANA_COST: 15, // Increased from 10
-  BLOCK_DAMAGE_REDUCTION: 0.4, // Reduced from 0.5 - 40% damage reduction
-
   // Power cooldowns (time-based)
   COOLDOWN_TICK_INTERVAL: 100, // How often to tick cooldowns (ms)
   BASE_COOLDOWN_SPEED: 1.0, // Default cooldown recovery speed multiplier
@@ -69,7 +65,6 @@ export interface PathPlaystyleModifiers {
   readonly procChanceMultiplier: number;
   readonly procDamageMultiplier: number;
   readonly armorEffectiveness: number;
-  readonly blockEffectiveness: number;
 }
 
 /**
@@ -91,7 +86,6 @@ export const PATH_PLAYSTYLE_MODIFIERS: {
     procChanceMultiplier: 1.50,       // +50% item proc chance
     procDamageMultiplier: 1.75,       // +75% proc damage
     armorEffectiveness: 1.25,         // +25% armor value
-    blockEffectiveness: 1.25,         // +25% block reduction
   },
   active: {
     autoDamageMultiplier: 0.60,       // -40% auto-attack damage
@@ -101,7 +95,6 @@ export const PATH_PLAYSTYLE_MODIFIERS: {
     procChanceMultiplier: 1.0,        // No proc bonus (neutral)
     procDamageMultiplier: 1.0,        // No proc damage bonus (neutral)
     armorEffectiveness: 1.0,          // No armor bonus (neutral)
-    blockEffectiveness: 1.0,          // No block bonus (neutral)
   },
 };
 
@@ -198,14 +191,10 @@ export const EFFECT_VALUES = {
   EXECUTE_50_BELOW_25: 3.0,     // +50% damage vs low HP ≈ 3 stat points
   LOW_HP_DAMAGE_10: 1.0,        // +10% damage below 50% HP ≈ 1 stat point
 
-  // Mana effects
-  ON_KILL_MANA_5: 0.3,          // +5 mana on kill ≈ 0.3 stat points
-  ON_CRIT_MANA_3: 0.5,          // +3 mana on crit ≈ 0.5 stat points
-  MANA_REGEN_2: 1.0,            // +2 mana/sec ≈ 1 stat point
+  // Power cost effects
   POWER_COST_REDUCTION_20: 2.0, // -20% power cost ≈ 2 stat points
 
   // Defensive effects
-  BLOCK_ENHANCEMENT_50: 2.0,    // Block 50% more effective ≈ 2 stat points
   DAMAGE_REFLECT_3: 1.0,        // Reflect 3 damage ≈ 1 stat point
   DAMAGE_REDUCTION_5: 2.5,      // -5% damage taken ≈ 2.5 stat points
   DODGE_CHANCE_5: 1.5,          // +5% dodge chance ≈ 1.5 stat points
@@ -231,8 +220,6 @@ export const STAT_POINT_VALUES = {
   fortune: 0.5,    // 2 fortune = 1 stat point (crit chance)
   maxHealth: 0.2,  // 5 health = 1 stat point
   health: 0.2,     // 5 health = 1 stat point
-  maxMana: 0.15,   // 6-7 mana = 1 stat point
-  mana: 0.15,      // 6-7 mana = 1 stat point
 } as const;
 
 // === ITEM BALANCE ===
@@ -285,7 +272,6 @@ export const ITEM_EFFECTS = {
     ON_CRIT_DAMAGE_BONUS: 0.2, // +20% damage on crit
     ON_HIT_HEAL: 2,
     ON_HIT_HEAL_CHANCE: 0.10,
-    ON_KILL_MANA: 5,
     ON_HIT_DAMAGE: 5,
     ON_HIT_DAMAGE_CHANCE: 0.1,
   },
@@ -296,15 +282,11 @@ export const ITEM_EFFECTS = {
     ON_DAMAGED_HEAL: 2,
     ON_DAMAGED_HEAL_CHANCE: 0.2,
     TURN_START_HEAL: 1,
-    ON_DAMAGED_MANA: 3,
-    ON_DAMAGED_MANA_CHANCE: 0.25,
   },
 
   // Accessory effects
   ACCESSORY: {
-    COMBAT_START_MANA: 15,
     ON_CRIT_HEAL: 5,
-    TURN_START_MANA: 2,
     ON_KILL_HEAL: 4,
   },
 } as const;
@@ -342,9 +324,6 @@ export const POWER_BALANCE = {
 
   // Shield Wall
   SHIELD_WALL_DEFENSE_BOOST: 1.0, // +100% defense (double)
-
-  // Mana Surge
-  MANA_SURGE_RESTORE_RATIO: 0.5, // Restore 50% of max mana
 } as const;
 
 // === COMBAT EVENT TIMING ===

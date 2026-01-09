@@ -103,30 +103,22 @@ test.describe('Combat Animations', () => {
     }
   });
 
-  test('block button is visible and clickable', async ({ page }) => {
+  // Note: Block button was removed - blocking is now handled by path abilities/stances
+  test('power buttons are visible during combat', async ({ page }) => {
     await navigateToGame(page, 'devMode=true');
     await selectClassAndBegin(page, 'Warrior');
 
     // Wait for combat to start
     await expect(page.getByTestId('floor-indicator')).toBeVisible();
 
-    // Find block button
-    const blockButton = page.getByRole('button', { name: /block/i });
+    // Find power button (Warriors start with Strike)
+    const powerButton = page.locator('[data-testid^="power-"]').first();
 
-    // Block button should be visible
-    await expect(blockButton).toBeVisible();
+    // Power button should be visible
+    await expect(powerButton).toBeVisible();
 
-    // Click block
-    await blockButton.click();
-
-    // After blocking, the button might be disabled or have a cooldown
-    // Just verify the click was accepted (no error)
-    await page.waitForTimeout(300);
-
-    // Check that combat log shows block message
-    const blockMessage = page.locator('text=/block/i');
-    const hasBlockText = await blockMessage.count();
-    expect(hasBlockText).toBeGreaterThanOrEqual(0);
+    // Verify we can interact with it when enabled
+    await expect(powerButton).toBeEnabled({ timeout: 3000 });
   });
 
   test('damage numbers appear during combat', async ({ page }) => {

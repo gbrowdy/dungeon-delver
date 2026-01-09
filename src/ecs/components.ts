@@ -18,7 +18,7 @@ import type {
   EnemyStatDebuff,
   ModifierEffect,
 } from '@/types/game';
-import type { PlayerPath, PlayerStanceState } from '@/types/paths';
+import type { PlayerPath, PlayerStanceState, PlayerPathProgression, StanceEnhancement, StanceEffect } from '@/types/paths';
 import type { CombatAnimationType, FloatingEffectType } from '@/constants/enums';
 
 // Game phases
@@ -41,7 +41,6 @@ export type AnimationEventType =
   | 'enemy_attack'
   | 'player_hit'
   | 'enemy_hit'
-  | 'player_block'
   | 'player_dodge'
   | 'spell_cast'
   | 'death'
@@ -54,13 +53,12 @@ export type AnimationEventType =
 
 // Animation event payload types
 export type AnimationPayload =
-  | { type: 'damage'; value: number; isCrit: boolean; blocked: boolean; targetDied?: boolean }
+  | { type: 'damage'; value: number; isCrit: boolean; targetDied?: boolean }
   | { type: 'heal'; value: number; source: string }
   | { type: 'spell'; powerId: string; value: number }
   | { type: 'death'; isPlayer: boolean }
   | { type: 'status'; effectType: string; applied: boolean }
   | { type: 'item'; itemName: string; effectDescription: string }
-  | { type: 'block'; reduction: number }
   | { type: 'level_up'; newLevel: number }
   | { type: 'dodge' }
   | { type: 'enemy_ability'; abilityType: string; abilityName: string };
@@ -103,6 +101,101 @@ export interface PendingReward {
 }
 
 /**
+ * Pre-computed passive effect values.
+ * Recalculated when stance/enhancements change (recomputePassiveEffects).
+ * Conditional values updated each tick (updateConditionalEffects).
+ * Combat systems READ from this object - never compute on the fly.
+ */
+export interface ComputedPassiveEffects {
+  // Stat modifiers (as percentages, e.g., 25 = +25%)
+  armorPercent: number;
+  powerPercent: number;
+  speedPercent: number;
+  maxHealthPercent: number;
+  healthRegenFlat: number;
+
+  // Damage modification
+  damageReductionPercent: number;
+  maxDamagePerHitPercent: number | null;
+  armorReducesDot: boolean;
+
+  // Reflect
+  baseReflectPercent: number;
+  currentTotalReflectPercent: number; // base + combat bonus (updated by processOnDamaged)
+  reflectIgnoresArmor: boolean;
+  reflectCanCrit: boolean;
+  healOnReflectPercent: number;
+  healOnReflectKillPercent: number;
+  reflectScalingPerHit: number;
+
+  // On-damaged
+  counterAttackChance: number;
+  damageStackConfig: { valuePerStack: number; maxStacks: number } | null;
+  healOnDamagedChance: number;
+  healOnDamagedPercent: number;
+  nextAttackBonusOnDamaged: number;
+
+  // On-hit
+  permanentPowerPerHit: number;
+  onHitBurstChance: number;
+  onHitBurstPowerPercent: number;
+
+  // Auras
+  damageAuraPerSecond: number;
+
+  // Death prevention
+  hasSurviveLethal: boolean;
+
+  // Immunities
+  isImmuneToStuns: boolean;
+  isImmuneToSlows: boolean;
+
+  // Speed
+  removeSpeedPenalty: boolean;
+
+  // Conditional thresholds (static - set by recomputePassiveEffects)
+  lowHpArmorThreshold: number;
+  lowHpArmorBonus: number;
+  lowHpReflectThreshold: number;
+  lowHpReflectMultiplier: number;
+  highHpRegenThreshold: number;
+  highHpRegenMultiplier: number;
+
+  // Conditional values (dynamic - updated each tick by updateConditionalEffects)
+  conditionalArmorPercent: number;
+  conditionalDamageReduction: number;
+  conditionalReflectMultiplier: number;
+  conditionalRegenMultiplier: number;
+}
+
+/**
+ * Passive effect runtime state for passive paths (Guardian, Enchanter, etc.)
+ * - combat: Reset when new enemy spawns
+ * - floor: Reset when new floor starts
+ * - permanent: Persists entire run
+ * - computed: Pre-computed effect values (systems read from here)
+ */
+export interface PassiveEffectState {
+  combat: {
+    hitsTaken: number;
+    hitsDealt: number;
+    nextAttackBonus: number;      // Bonus % for next attack (Retaliation)
+    damageStacks: number;         // Current stacks (Vengeful Strikes)
+    reflectBonusPercent: number;  // Accumulated reflect bonus (Escalating Revenge)
+  };
+
+  floor: {
+    survivedLethal: boolean;      // Used Immortal Bulwark this floor?
+  };
+
+  permanent: {
+    powerBonusPercent: number;    // Accumulated power bonus (Wrath Accumulator)
+  };
+
+  computed: ComputedPassiveEffects;
+}
+
+/**
  * Entity type - all possible components an entity can have.
  * miniplex uses this to provide type-safe queries.
  */
@@ -129,10 +222,6 @@ export interface Entity {
     current: number;
     max: number;
   };
-  mana?: {
-    current: number;
-    max: number;
-  };
   attack?: {
     baseDamage: number;
     critChance: number; // 0-1
@@ -141,13 +230,20 @@ export interface Entity {
   };
   defense?: {
     value: number;
-    blockReduction: number;
   };
   speed?: {
     value: number;
     attackInterval: number; // calculated from value
     accumulated: number; // ms toward next attack
   };
+  /** Cached derived stats computed from fortune */
+  derivedStats?: {
+    critChance: number;    // 0-1, e.g., 0.15 = 15%
+    critDamage: number;    // multiplier, e.g., 1.5 = 150%
+    dodgeChance: number;   // 0-1
+  };
+  /** Fortune stat - base value from class + equipment bonuses */
+  fortune?: number;
 
   // === STATUS ===
   statusEffects?: StatusEffect[];
@@ -158,9 +254,6 @@ export interface Entity {
     maxDuration: number;
   };
   buffs?: ActiveBuff[];
-  blocking?: {
-    reduction: number;
-  };
   dying?: {
     startedAtTick: number;
     duration: number; // ms
@@ -178,7 +271,6 @@ export interface Entity {
   cooldowns?: Map<string, { remaining: number; base: number }>;
   regen?: {
     healthPerSecond: number;
-    manaPerSecond: number;
     accumulated: number; // ms since last regen tick
   };
 
@@ -203,8 +295,22 @@ export interface Entity {
     xpToNext: number;
   };
   path?: PlayerPath;
+  pathProgression?: PlayerPathProgression;
   pendingAbilityChoice?: boolean;
+  pendingPowerChoice?: {
+    level: number;
+    choices: Power[];
+  };
+  pendingUpgradeChoice?: {
+    powerIds: string[]; // IDs of powers that can be upgraded
+  };
+  pendingStanceEnhancement?: {
+    ironChoice: StanceEnhancement;
+    retributionChoice: StanceEnhancement;
+  };
   powers?: Power[];
+  effectivePowers?: Power[];
+  effectiveStanceEffects?: StanceEffect[];
   equipment?: {
     weapon: Item | null;
     armor: Item | null;
@@ -223,6 +329,8 @@ export interface Entity {
   pathResource?: PathResource;
   /** Stance state for passive paths */
   stanceState?: PlayerStanceState;
+  /** Passive effect runtime state (passive paths) */
+  passiveEffectState?: PassiveEffectState;
   /** Ability tracking */
   abilityTracking?: {
     usedCombatAbilities: string[];
@@ -267,10 +375,11 @@ export interface Entity {
 
   // Visual effects overlay
   visualEffects?: {
-    flash?: { untilTick: number };
+    flash?: { color?: 'white' | 'red' | 'green' | 'gold'; untilTick: number };
     shake?: { untilTick: number };
     hitStop?: { untilTick: number };
     aura?: { color: 'red' | 'blue' | 'green'; untilTick: number };
+    powerImpact?: { powerId: string; untilTick: number };
   };
 
   // Floating text effects (on gameState entity)

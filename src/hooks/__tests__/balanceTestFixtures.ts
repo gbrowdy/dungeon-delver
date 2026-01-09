@@ -52,8 +52,6 @@ export function createTestPlayer(
     health: baseStats.maxHealth + (levelBonus * LEVEL_UP_BONUSES.maxHealth),
     maxHealth: baseStats.maxHealth + (levelBonus * LEVEL_UP_BONUSES.maxHealth),
     power: baseStats.power + (levelBonus * LEVEL_UP_BONUSES.power),
-    mana: baseStats.maxMana + (levelBonus * LEVEL_UP_BONUSES.maxMana),
-    maxMana: baseStats.maxMana + (levelBonus * LEVEL_UP_BONUSES.maxMana),
   };
 
   const startingPower: Power = {

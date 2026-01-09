@@ -115,7 +115,6 @@ export function LevelUpPopup({ newLevel, onContinue }: LevelUpPopupProps) {
           <div className="grid grid-cols-1 gap-2">
             <StatGain Icon={Heart} label="Max HP" value={`+${LEVEL_UP_BONUSES.MAX_HEALTH}`} iconColor="text-health" />
             <StatGain Icon={Zap} label="Power" value={`+${LEVEL_UP_BONUSES.POWER}`} iconColor="text-amber-400" />
-            <StatGain Icon={Droplet} label="Max Mana" value={`+${LEVEL_UP_BONUSES.MAX_MANA}`} iconColor="text-mana" />
           </div>
         </div>
 

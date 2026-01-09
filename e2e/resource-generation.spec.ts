@@ -64,6 +64,19 @@ test.describe('Path Resource Generation', () => {
     await expect(confirmButton).toBeVisible({ timeout: 2000 });
     await confirmButton.click();
 
+    // At level 2, selecting an active path triggers power selection
+    // Wait for power choice popup and select the first power
+    const powerChoicePopup = page.getByTestId('power-choice-popup');
+    await expect(powerChoicePopup).toBeVisible({ timeout: 5000 });
+
+    // Click the first power choice to select it
+    const firstPowerChoice = page.getByRole('button', { name: /Rage Strike|Savage Slam/i }).first();
+    await firstPowerChoice.click();
+
+    // Click confirm button to finalize the selection
+    const powerConfirmButton = page.getByRole('button', { name: /Confirm.*Strike|Confirm.*Slam/i });
+    await powerConfirmButton.click();
+
     // Should be back in combat with Fury resource (not mana)
     await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
 

@@ -1,6 +1,6 @@
 // src/ecs/systems/regen.ts
 /**
- * RegenSystem - applies health and mana regeneration over time.
+ * RegenSystem - applies health regeneration over time.
  * Runs each tick, accumulating delta time until 1 second passes,
  * then applies regen values.
  */
@@ -39,19 +39,26 @@ export function RegenSystem(deltaMs: number): void {
         );
       }
 
-      // Apply mana regen (capped at max) if entity has mana
-      const mana = entity.mana;
-      if (mana && regen.manaPerSecond > 0) {
-        mana.current = Math.min(mana.max, mana.current + regen.manaPerSecond);
-      }
+      // Note: Path resource passive regen is handled per-tick below for smoothness
 
       // Reset accumulated time (keeping overflow for precision)
       regen.accumulated -= REGEN_TICK_MS;
     }
   }
 
-  // Path resource decay (out of combat only)
+  // Path resource passive regeneration (smooth per-tick application)
+  // Applied every tick proportionally for smooth bar fill instead of chunky 1-second jumps
   const player = getPlayer();
+  if (player?.pathResource?.generation?.passive && player.pathResource.generation.passive > 0) {
+    const regenPerMs = player.pathResource.generation.passive / 1000;
+    const regenAmount = regenPerMs * effectiveDelta;
+    player.pathResource.current = Math.min(
+      player.pathResource.max,
+      player.pathResource.current + regenAmount
+    );
+  }
+
+  // Path resource decay (out of combat only)
   if (player?.pathResource?.decay) {
     const decay = player.pathResource.decay;
     if (!decay.outOfCombatOnly || !inCombat) {

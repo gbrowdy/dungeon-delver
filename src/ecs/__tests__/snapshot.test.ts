@@ -33,7 +33,6 @@ describe('Snapshot Types', () => {
     it('should return null if entity lacks player tag', () => {
       const entity: Entity = {
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Test', class: 'warrior' },
       };
       world.add(entity);
@@ -45,7 +44,6 @@ describe('Snapshot Types', () => {
     it('should return null if entity lacks health component', () => {
       const entity: Entity = {
         player: true,
-        mana: { current: 50, max: 50 },
         identity: { name: 'Test', class: 'warrior' },
       };
       world.add(entity);
@@ -54,8 +52,8 @@ describe('Snapshot Types', () => {
       expect(snapshot).toBeNull();
     });
 
-    it('should create snapshot with null mana when entity lacks mana component', () => {
-      // Mana is optional - it's removed when player selects a path (replaced by pathResource)
+    it('should create snapshot with null pathResource when entity lacks pathResource component', () => {
+      // pathResource is optional - it's added when player selects a path
       const entity: Entity = {
         player: true,
         health: { current: 100, max: 100 },
@@ -65,14 +63,13 @@ describe('Snapshot Types', () => {
 
       const snapshot = createPlayerSnapshot(entity);
       expect(snapshot).not.toBeNull();
-      expect(snapshot!.mana).toBeNull();
+      expect(snapshot!.pathResource).toBeNull();
     });
 
     it('should return null if entity lacks identity component', () => {
       const entity: Entity = {
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
       };
       world.add(entity);
 
@@ -84,7 +81,6 @@ describe('Snapshot Types', () => {
       const entity: Entity = {
         player: true,
         health: { current: 80, max: 100 },
-        mana: { current: 30, max: 50 },
         identity: { name: 'Hero', class: 'mage' },
         attack: {
           baseDamage: 15,
@@ -92,7 +88,7 @@ describe('Snapshot Types', () => {
           critMultiplier: 2.0,
           variance: { min: 0.9, max: 1.1 },
         },
-        defense: { value: 5, blockReduction: 0.4 },
+        defense: { value: 5,  },
         speed: { value: 12, attackInterval: 2000, accumulated: 500 },
         progression: { level: 3, xp: 150, xpToNext: 300 },
         inventory: { gold: 100, items: [] },
@@ -101,7 +97,7 @@ describe('Snapshot Types', () => {
             id: 'fireball',
             name: 'Fireball',
             description: 'Throws fire',
-            manaCost: 20,
+            resourceCost: 20,
             cooldown: 5,
             effect: 'damage',
             value: 30,
@@ -128,8 +124,6 @@ describe('Snapshot Types', () => {
       expect(snapshot!.characterClass).toBe('mage');
       expect(snapshot!.health.current).toBe(80);
       expect(snapshot!.health.max).toBe(100);
-      expect(snapshot!.mana.current).toBe(30);
-      expect(snapshot!.mana.max).toBe(50);
       expect(snapshot!.attack.baseDamage).toBe(15);
       expect(snapshot!.attack.critChance).toBe(0.1);
       expect(snapshot!.defense.value).toBe(5);
@@ -151,7 +145,6 @@ describe('Snapshot Types', () => {
       const entity: Entity = {
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Basic', class: 'warrior' },
       };
       world.add(entity);
@@ -186,7 +179,6 @@ describe('Snapshot Types', () => {
       const entity: Entity = {
         player: true,
         health: { current: 0, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Dying', class: 'warrior' },
         dying: { startedAtTick: 100, duration: 1000 },
       };
@@ -198,27 +190,10 @@ describe('Snapshot Types', () => {
       expect(snapshot!.isDying).toBe(true);
     });
 
-    it('should correctly identify isBlocking flag from blocking component', () => {
-      const entity: Entity = {
-        player: true,
-        health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
-        identity: { name: 'Blocking', class: 'warrior' },
-        blocking: { reduction: 0.4 },
-      };
-      world.add(entity);
-
-      const snapshot = createPlayerSnapshot(entity);
-
-      expect(snapshot).not.toBeNull();
-      expect(snapshot!.isBlocking).toBe(true);
-    });
-
     it('should copy shield info when present', () => {
       const entity: Entity = {
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Shielded', class: 'paladin' },
         shield: { value: 25, remaining: 3, maxDuration: 5 },
       };
@@ -231,6 +206,89 @@ describe('Snapshot Types', () => {
       expect(snapshot!.shield!.value).toBe(25);
       expect(snapshot!.shield!.remaining).toBe(3);
       expect(snapshot!.shield!.maxDuration).toBe(5);
+    });
+
+    it('should compute effectiveStats with no modifiers when no stance', () => {
+      const entity: Entity = {
+        player: true,
+        health: { current: 100, max: 100 },
+        identity: { name: 'Test', class: 'warrior' },
+        attack: { baseDamage: 10, critChance: 0.1, critMultiplier: 1.5, variance: { min: 0.9, max: 1.1 } },
+        defense: { value: 8 },
+        speed: { value: 12, attackInterval: 2000, accumulated: 0 },
+      };
+      world.add(entity);
+
+      const snapshot = createPlayerSnapshot(entity);
+
+      expect(snapshot).not.toBeNull();
+      // Without stance, effective stats should equal base stats with no modifier
+      expect(snapshot!.effectiveStats.power.value).toBe(10);
+      expect(snapshot!.effectiveStats.power.modifier).toBe(0);
+      expect(snapshot!.effectiveStats.armor.value).toBe(8);
+      expect(snapshot!.effectiveStats.armor.modifier).toBe(0);
+      expect(snapshot!.effectiveStats.speed.value).toBe(12);
+      expect(snapshot!.effectiveStats.speed.modifier).toBe(0);
+    });
+
+    it('should compute effectiveStats with stance modifiers applied', () => {
+      const entity: Entity = {
+        player: true,
+        health: { current: 100, max: 100 },
+        identity: { name: 'Guardian', class: 'warrior' },
+        attack: { baseDamage: 10, critChance: 0.1, critMultiplier: 1.5, variance: { min: 0.9, max: 1.1 } },
+        defense: { value: 8 },
+        speed: { value: 12, attackInterval: 2000, accumulated: 0 },
+        path: { pathId: 'guardian', pathType: 'passive', abilities: [] },
+        stanceState: { activeStanceId: 'iron_stance', stanceCooldownRemaining: 0 },
+        // effectiveStanceEffects would be computed by input system, but we can simulate
+        effectiveStanceEffects: [
+          { type: 'stat_modifier', stat: 'armor', percentBonus: 0.25 },
+          { type: 'stat_modifier', stat: 'speed', percentBonus: -0.15 },
+        ],
+      };
+      world.add(entity);
+
+      const snapshot = createPlayerSnapshot(entity);
+
+      expect(snapshot).not.toBeNull();
+      // Power: no modifier, should stay at base
+      expect(snapshot!.effectiveStats.power.value).toBe(10);
+      expect(snapshot!.effectiveStats.power.modifier).toBe(0);
+      // Armor: +25% (8 * 1.25 = 10), ceil for positive = 10
+      expect(snapshot!.effectiveStats.armor.value).toBe(10);
+      expect(snapshot!.effectiveStats.armor.modifier).toBe(0.25);
+      // Speed: -15% (12 * 0.85 = 10.2), floor for negative = 10
+      expect(snapshot!.effectiveStats.speed.value).toBe(10);
+      expect(snapshot!.effectiveStats.speed.modifier).toBe(-0.15);
+    });
+
+    it('should round up positive modifiers to ensure at least +1', () => {
+      const entity: Entity = {
+        player: true,
+        health: { current: 100, max: 100 },
+        identity: { name: 'Test', class: 'warrior' },
+        attack: { baseDamage: 3, critChance: 0.1, critMultiplier: 1.5, variance: { min: 0.9, max: 1.1 } },
+        defense: { value: 3 },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+        path: { pathId: 'guardian', pathType: 'passive', abilities: [] },
+        stanceState: { activeStanceId: 'retribution_stance', stanceCooldownRemaining: 0 },
+        effectiveStanceEffects: [
+          { type: 'stat_modifier', stat: 'power', percentBonus: 0.15 },  // 3 * 1.15 = 3.45
+          { type: 'stat_modifier', stat: 'armor', percentBonus: 0.10 },  // 3 * 1.10 = 3.3
+        ],
+      };
+      world.add(entity);
+
+      const snapshot = createPlayerSnapshot(entity);
+
+      expect(snapshot).not.toBeNull();
+      // Power: 3 * 1.15 = 3.45 -> ceil = 4, but also ensure min +1 (base+1=4)
+      expect(snapshot!.effectiveStats.power.value).toBe(4);
+      expect(snapshot!.effectiveStats.power.modifier).toBe(0.15);
+      // Armor: 3 * 1.10 = 3.3 -> ceil = 4, ensure min +1 (base+1=4)
+      expect(snapshot!.effectiveStats.armor.value).toBe(4);
+      expect(snapshot!.effectiveStats.armor.modifier).toBe(0.10);
     });
   });
 
@@ -291,7 +349,7 @@ describe('Snapshot Types', () => {
           critMultiplier: 1.5,
           variance: { min: 0.9, max: 1.1 },
         },
-        defense: { value: 15, blockReduction: 0 },
+        defense: { value: 15,  },
         speed: { value: 8, attackInterval: 3000, accumulated: 1000 },
         statusEffects: [
           {
@@ -498,7 +556,6 @@ describe('Snapshot Types', () => {
       world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Hero', class: 'warrior' },
         speed: { value: 10, attackInterval: 2000, accumulated: 500 },
       });
@@ -547,7 +604,6 @@ describe('Snapshot Types', () => {
       world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Hero', class: 'warrior' },
         speed: { value: 10, attackInterval: 2000, accumulated: 1000 },
       });
@@ -584,7 +640,6 @@ describe('Snapshot Types', () => {
       world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Hero', class: 'warrior' },
         speed: { value: 10, attackInterval: 2000, accumulated: 3000 }, // Over 1
       });
@@ -602,7 +657,6 @@ describe('Snapshot Types', () => {
       world.add({
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Hero', class: 'warrior' },
       });
       world.add({
@@ -636,14 +690,13 @@ describe('Snapshot Types', () => {
       const entity: Entity = {
         player: true,
         health: { current: 100, max: 100 },
-        mana: { current: 50, max: 50 },
         identity: { name: 'Hero', class: 'warrior' },
         powers: [
           {
             id: 'slash',
             name: 'Slash',
             description: 'A basic attack',
-            manaCost: 10,
+            resourceCost: 10,
             cooldown: 3,
             effect: 'damage',
             value: 20,
@@ -721,6 +774,98 @@ describe('Snapshot Types', () => {
 
       // Snapshot should have independent copy
       expect(snapshot.combatLog).toHaveLength(2);
+    });
+  });
+
+  describe('PlayerSnapshot passiveEffects', () => {
+    // Helper to create default computed passive effects
+    function createDefaultComputed() {
+      return {
+        armorPercent: 0,
+        powerPercent: 0,
+        speedPercent: 0,
+        maxHealthPercent: 0,
+        healthRegenFlat: 0,
+        damageReductionPercent: 0,
+        maxDamagePerHitPercent: null,
+        armorReducesDot: false,
+        baseReflectPercent: 0,
+        reflectIgnoresArmor: false,
+        reflectCanCrit: false,
+        healOnReflectPercent: 0,
+        healOnReflectKillPercent: 0,
+        reflectScalingPerHit: 0,
+        counterAttackChance: 0,
+        damageStackConfig: null,
+        healOnDamagedChance: 0,
+        healOnDamagedPercent: 0,
+        nextAttackBonusOnDamaged: 0,
+        permanentPowerPerHit: 0,
+        onHitBurstChance: 0,
+        onHitBurstPowerPercent: 0,
+        damageAuraPerSecond: 0,
+        hasSurviveLethal: false,
+        isImmuneToStuns: false,
+        isImmuneToSlows: false,
+        removeSpeedPenalty: false,
+        lowHpArmorThreshold: 0,
+        lowHpArmorBonus: 0,
+        lowHpReflectThreshold: 0,
+        lowHpReflectMultiplier: 1,
+        highHpRegenThreshold: 0,
+        highHpRegenMultiplier: 1,
+        conditionalArmorPercent: 0,
+        conditionalDamageReduction: 0,
+        conditionalReflectMultiplier: 1,
+        conditionalRegenMultiplier: 1,
+      };
+    }
+
+    it('should COPY passiveEffectState without computation', () => {
+      const player: Entity = {
+        player: true,
+        identity: { name: 'Test', class: 'warrior' },
+        health: { current: 50, max: 100 },
+        pathProgression: { pathId: 'guardian', pathType: 'passive' },
+        passiveEffectState: {
+          combat: { hitsTaken: 3, hitsDealt: 5, nextAttackBonus: 75, damageStacks: 2, reflectBonusPercent: 10 },
+          floor: { survivedLethal: false },
+          permanent: { powerBonusPercent: 4 },
+          computed: {
+            ...createDefaultComputed(),
+            hasSurviveLethal: true,
+            damageStackConfig: { valuePerStack: 10, maxStacks: 5 },
+            baseReflectPercent: 30,
+            conditionalArmorPercent: 50, // Pre-computed by system
+            conditionalReflectMultiplier: 2, // Pre-computed by system
+          },
+        },
+      };
+      world.add(player);
+
+      const snapshot = createPlayerSnapshot(player);
+
+      // Should be pure copies, no computation
+      expect(snapshot?.passiveEffects?.hasSurviveLethal).toBe(true);
+      expect(snapshot?.passiveEffects?.survivedLethalUsed).toBe(false);
+      expect(snapshot?.passiveEffects?.damageStacks).toBe(2);
+      expect(snapshot?.passiveEffects?.damageStacksMax).toBe(5);
+      expect(snapshot?.passiveEffects?.lastBastionActive).toBe(true); // conditionalArmorPercent > 0
+      expect(snapshot?.passiveEffects?.painConduitActive).toBe(true); // conditionalReflectMultiplier > 1
+    });
+
+    it('should return null passiveEffects for non-passive paths', () => {
+      const player: Entity = {
+        player: true,
+        identity: { name: 'Test', class: 'warrior' },
+        health: { current: 100, max: 100 },
+        pathProgression: { pathId: 'berserker', pathType: 'active' },
+      };
+      world.add(player);
+
+      const snapshot = createPlayerSnapshot(player);
+
+      expect(snapshot?.passiveEffects).toBeNull();
     });
   });
 });
