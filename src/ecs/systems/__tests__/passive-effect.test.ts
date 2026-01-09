@@ -176,7 +176,7 @@ function createDefaultComputed() {
   return {
     armorPercent: 0, powerPercent: 0, speedPercent: 0, maxHealthPercent: 0, healthRegenFlat: 0,
     damageReductionPercent: 0, maxDamagePerHitPercent: null, armorReducesDot: false,
-    baseReflectPercent: 0, reflectIgnoresArmor: false, reflectCanCrit: false,
+    baseReflectPercent: 0, currentTotalReflectPercent: 0, reflectIgnoresArmor: false, reflectCanCrit: false,
     healOnReflectPercent: 0, healOnReflectKillPercent: 0, reflectScalingPerHit: 0,
     counterAttackChance: 0, damageStackConfig: null, healOnDamagedChance: 0, healOnDamagedPercent: 0,
     nextAttackBonusOnDamaged: 0, permanentPowerPerHit: 0, onHitBurstChance: 0, onHitBurstPowerPercent: 0,
@@ -527,7 +527,7 @@ describe('checkSurviveLethal', () => {
     }
   });
 
-  it('should return true and set HP to 1 when computed.hasSurviveLethal is true', () => {
+  it('should return survived=true and healthToSet=1 when computed.hasSurviveLethal is true', () => {
     const player: Entity = {
       player: true,
       health: { current: 0, max: 100 },
@@ -540,14 +540,17 @@ describe('checkSurviveLethal', () => {
     };
     world.add(player);
 
-    const survived = checkSurviveLethal(player);
+    const result = checkSurviveLethal(player);
 
-    expect(survived).toBe(true);
+    // ECS fix: function returns result, does NOT mutate health
+    expect(result.survived).toBe(true);
+    expect(result.healthToSet).toBe(1);
     expect(player.passiveEffectState?.floor.survivedLethal).toBe(true);
-    expect(player.health?.current).toBe(1);
+    // Health is NOT mutated by checkSurviveLethal - caller (death.ts) applies the change
+    expect(player.health?.current).toBe(0);
   });
 
-  it('should return false if already used this floor', () => {
+  it('should return survived=false if already used this floor', () => {
     const player: Entity = {
       player: true,
       health: { current: 0, max: 100 },
@@ -560,12 +563,12 @@ describe('checkSurviveLethal', () => {
     };
     world.add(player);
 
-    const survived = checkSurviveLethal(player);
+    const result = checkSurviveLethal(player);
 
-    expect(survived).toBe(false);
+    expect(result.survived).toBe(false);
   });
 
-  it('should return false when hasSurviveLethal is false', () => {
+  it('should return survived=false when hasSurviveLethal is false', () => {
     const player: Entity = {
       player: true,
       health: { current: 0, max: 100 },
@@ -578,20 +581,20 @@ describe('checkSurviveLethal', () => {
     };
     world.add(player);
 
-    const survived = checkSurviveLethal(player);
+    const result = checkSurviveLethal(player);
 
-    expect(survived).toBe(false);
+    expect(result.survived).toBe(false);
   });
 
-  it('should return false when no passiveEffectState', () => {
+  it('should return survived=false when no passiveEffectState', () => {
     const player: Entity = {
       player: true,
       health: { current: 0, max: 100 },
     };
     world.add(player);
 
-    const survived = checkSurviveLethal(player);
+    const result = checkSurviveLethal(player);
 
-    expect(survived).toBe(false);
+    expect(result.survived).toBe(false);
   });
 });

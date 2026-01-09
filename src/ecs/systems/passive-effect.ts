@@ -42,6 +42,7 @@ function createDefaultComputed(): ComputedPassiveEffects {
     maxDamagePerHitPercent: null,
     armorReducesDot: false,
     baseReflectPercent: 0,
+    currentTotalReflectPercent: 0,
     reflectIgnoresArmor: false,
     reflectCanCrit: false,
     healOnReflectPercent: 0,
@@ -123,6 +124,10 @@ export function resetCombatState(player: Entity): void {
     damageStacks: 0,
     reflectBonusPercent: 0,
   };
+
+  // Reset currentTotalReflectPercent to base (combat bonus is now 0)
+  const computed = player.passiveEffectState.computed;
+  computed.currentTotalReflectPercent = computed.baseReflectPercent;
 }
 
 /**
@@ -298,6 +303,9 @@ export function recomputePassiveEffects(player: Entity): void {
     }
   }
 
+  // Set currentTotalReflectPercent = base + combat bonus (combat bonus is preserved during recompute)
+  computed.currentTotalReflectPercent = computed.baseReflectPercent + state.combat.reflectBonusPercent;
+
   // Write computed values to entity
   state.computed = computed;
 }
@@ -447,6 +455,8 @@ export function processOnDamaged(player: Entity, damage: number): OnDamagedResul
   // Increment reflect scaling (mutate own entity state)
   if (computed.reflectScalingPerHit > 0) {
     state.combat.reflectBonusPercent += computed.reflectScalingPerHit;
+    // Update pre-computed total for snapshot (ECS: systems compute, snapshots copy)
+    computed.currentTotalReflectPercent = computed.baseReflectPercent + state.combat.reflectBonusPercent;
   }
 
   // Counter-attack check (read from computed)
@@ -461,11 +471,11 @@ export function processOnDamaged(player: Entity, damage: number): OnDamagedResul
     }
   }
 
-  // On-hit heal chance (read from computed)
+  // On-hit heal chance (read from computed, return heal for combat.ts to apply)
   if (computed.healOnDamagedChance > 0 && Math.random() * 100 < computed.healOnDamagedChance) {
     if (player.health) {
       const heal = Math.round(player.health.max * (computed.healOnDamagedPercent / 100));
-      player.health.current = Math.min(player.health.max, player.health.current + heal);
+      // DO NOT mutate player.health here - return heal amount for combat.ts to apply
       result.healAmount += heal;
     }
   }
@@ -482,30 +492,35 @@ export function processOnDamaged(player: Entity, damage: number): OnDamagedResul
 // SURVIVE LETHAL HOOK
 // ============================================================================
 
+export interface SurviveLethalResult {
+  survived: boolean;
+  healthToSet: number;
+}
+
 /**
  * Check if player should survive lethal damage.
  * Called by death.ts when player HP reaches 0.
  *
  * READS from entity.passiveEffectState.computed.hasSurviveLethal
- * MUTATES own entity state (floor.survivedLethal, health.current)
+ * MUTATES only own passiveEffectState (floor.survivedLethal)
+ * RETURNS result for death.ts to apply health change
  *
- * @returns true if player survives (Immortal Bulwark triggers)
+ * @returns { survived: boolean, healthToSet: number } for death.ts to apply
  */
-export function checkSurviveLethal(player: Entity): boolean {
+export function checkSurviveLethal(player: Entity): SurviveLethalResult {
   const state = player.passiveEffectState;
   const computed = state?.computed;
 
   if (!computed?.hasSurviveLethal || !state || !player.health) {
-    return false;
+    return { survived: false, healthToSet: 0 };
   }
 
   // Check if already used this floor
   if (state.floor.survivedLethal) {
-    return false;
+    return { survived: false, healthToSet: 0 };
   }
 
-  // Survive at 1 HP
-  player.health.current = 1;
+  // Mark as used (mutate own entity state only)
   state.floor.survivedLethal = true;
 
   addCombatLog('Immortal Bulwark prevents death!');
@@ -515,7 +530,8 @@ export function checkSurviveLethal(player: Entity): boolean {
     effectDescription: 'Survived lethal!',
   });
 
-  return true;
+  // Return result for death.ts to apply (DO NOT mutate health here)
+  return { survived: true, healthToSet: 1 };
 }
 
 // ============================================================================

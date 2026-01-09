@@ -121,6 +121,7 @@ export interface ComputedPassiveEffects {
 
   // Reflect
   baseReflectPercent: number;
+  currentTotalReflectPercent: number; // base + combat bonus (updated by processOnDamaged)
   reflectIgnoresArmor: boolean;
   reflectCanCrit: boolean;
   healOnReflectPercent: number;

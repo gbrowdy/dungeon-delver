@@ -483,10 +483,10 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
         // Copy from permanent state
         permanentPowerBonus: state.permanent.powerBonusPercent,
 
-        // Copy from computed
+        // Copy from computed (pure copy, no computation)
         hasSurviveLethal: computed.hasSurviveLethal,
         damageStacksMax: computed.damageStackConfig?.maxStacks ?? 0,
-        totalReflectPercent: computed.baseReflectPercent + state.combat.reflectBonusPercent,
+        totalReflectPercent: computed.currentTotalReflectPercent,
         totalDamageReduction: computed.damageReductionPercent,
         damageAuraPerSecond: computed.damageAuraPerSecond,
         isImmuneToStuns: computed.isImmuneToStuns,

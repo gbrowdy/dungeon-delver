@@ -306,8 +306,9 @@ export function CombatSystem(_deltaMs: number): void {
           }
         }
 
-        // Log heal on damaged if it occurred
-        if (onDamagedResult.healAmount > 0) {
+        // Apply heal on damaged (combat.ts applies, passive-effect.ts returns amount)
+        if (onDamagedResult.healAmount > 0 && target.health) {
+          target.health.current = Math.min(target.health.max, target.health.current + onDamagedResult.healAmount);
           addCombatLog(`${targetName} heals for ${onDamagedResult.healAmount} on hit!`);
         }
       }

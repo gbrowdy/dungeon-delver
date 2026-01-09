@@ -51,8 +51,13 @@ export function DeathSystem(_deltaMs: number): void {
       }
 
       // === Passive effect survive lethal check (Immortal Bulwark) ===
-      if (isPlayer && entity.passiveEffectState && checkSurviveLethal(entity)) {
-        continue;
+      if (isPlayer && entity.passiveEffectState) {
+        const surviveResult = checkSurviveLethal(entity);
+        if (surviveResult.survived) {
+          // death.ts applies health change (ECS: systems apply mutations, hooks return values)
+          entity.health!.current = surviveResult.healthToSet;
+          continue;
+        }
       }
 
       const deathDuration = isPlayer ? PLAYER_DEATH_ANIMATION_MS : ENEMY_DEATH_ANIMATION_MS;
