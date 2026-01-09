@@ -335,8 +335,27 @@ function applyDebuffPower(
     });
   }
 
+  // === Apply vulnerable status (enemy takes more damage) ===
+  if (power.enemyVulnerable && power.enemyVulnerable > 0) {
+    const vulnDuration = power.enemyVulnerableDuration ?? 8;
+    target.statusEffects.push({
+      id: `vulnerable-${power.id}-${Date.now()}`,
+      type: 'vulnerable',
+      value: power.enemyVulnerable,
+      remainingTurns: vulnDuration,
+      icon: 'target',
+    });
+    effects.push(`vulnerable (+${power.enemyVulnerable}% damage taken) for ${vulnDuration}s`);
+
+    queueAnimationEvent('status_applied', {
+      type: 'status',
+      effectType: 'vulnerable',
+      applied: true,
+    });
+  }
+
   // Fallback: default slow effect if no special debuffs
-  if (!power.stunDuration && !power.enemyDamageDebuff) {
+  if (!power.stunDuration && !power.enemyDamageDebuff && !power.enemyVulnerable) {
     target.statusEffects.push({
       id: `debuff-${power.id}-${Date.now()}`,
       type: 'slow',
@@ -468,6 +487,20 @@ export function PowerSystem(_deltaMs: number): void {
           applyDebuffPower(entity, power, target, resourceValueForThreshold);
         }
         break;
+    }
+
+    // Reset all other cooldowns
+    // Note: We use .clear() here because setCooldown() is called immediately after this block,
+    // which will add the current power's cooldown. This follows the existing pattern in power.ts:165.
+    if (power.resetAllCooldowns && entity.cooldowns) {
+      entity.cooldowns.clear();
+      addCombatLog('All cooldowns reset!');
+    }
+
+    // Modify charges (for gain-type resources, negative = reduce)
+    if (power.chargeModify && entity.pathResource?.resourceBehavior === 'gain') {
+      entity.pathResource.current = Math.max(0,
+        Math.min(entity.pathResource.max, entity.pathResource.current + power.chargeModify));
     }
 
     // Set cooldown on the power
