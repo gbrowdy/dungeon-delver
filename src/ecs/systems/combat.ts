@@ -235,6 +235,12 @@ export function CombatSystem(_deltaMs: number): void {
         if (reflectDamage > 0) {
           entity.health.current = Math.max(0, entity.health.current - reflectDamage);
           addCombatLog(`${targetName} reflects ${reflectDamage} damage!`);
+          // Queue visual feedback for reflect damage on enemy
+          queueAnimationEvent('enemy_hit', {
+            type: 'damage',
+            value: reflectDamage,
+            isCrit: false,
+          });
         }
       }
 
@@ -274,6 +280,12 @@ export function CombatSystem(_deltaMs: number): void {
           entity.health.current = Math.max(0, entity.health.current - passiveReflect);
           const critSuffix = reflectIsCrit ? ' (CRIT!)' : '';
           addCombatLog(`${targetName} reflects ${passiveReflect} damage${critSuffix}!`);
+          // Queue visual feedback for reflect damage on enemy
+          queueAnimationEvent('enemy_hit', {
+            type: 'damage',
+            value: passiveReflect,
+            isCrit: reflectIsCrit,
+          });
 
           // Check if reflect killed the attacker
           const attackerDiedFromReflect = entity.health.current <= 0;
