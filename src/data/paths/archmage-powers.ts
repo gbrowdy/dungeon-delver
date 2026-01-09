@@ -38,3 +38,66 @@ export interface PowerUpgrade {
 export interface ArchmagePower extends Power {
   upgrades: [PowerUpgrade, PowerUpgrade];
 }
+
+// =============================================================================
+// LEVEL 2 POWERS (Choose Power 1)
+// =============================================================================
+
+/**
+ * Arcane Bolt - Efficient spammable spell
+ * Low cost, fast cooldown - good for sustained damage
+ */
+const ARCANE_BOLT: ArchmagePower = {
+  id: 'arcane_bolt',
+  name: 'Arcane Bolt',
+  description: 'Deal 150% damage. Low charge cost.',
+  icon: 'power-arcane_bolt',
+  resourceCost: 15,
+  cooldown: 4,
+  effect: 'damage',
+  value: 1.5,
+  category: 'spell',
+  synergies: [],
+  upgrades: [
+    {
+      tier: 1,
+      description: '180% damage, 12 charge cost',
+      value: 1.8,
+      resourceCost: 12,
+    },
+    {
+      tier: 2,
+      description: 'Cooldown reduced to 3s',
+      cooldown: 3,
+    },
+  ],
+};
+
+/**
+ * Meteor Strike - High damage nuke
+ * High cost, slow cooldown - good for burst damage
+ */
+const METEOR_STRIKE: ArchmagePower = {
+  id: 'meteor_strike',
+  name: 'Meteor Strike',
+  description: 'Deal 450% damage. High charge cost.',
+  icon: 'power-meteor_strike',
+  resourceCost: 60,
+  cooldown: 12,
+  effect: 'damage',
+  value: 4.5,
+  category: 'spell',
+  synergies: [],
+  upgrades: [
+    {
+      tier: 1,
+      description: '550% damage',
+      value: 5.5,
+    },
+    {
+      tier: 2,
+      description: 'Stuns enemy for 2s on hit',
+      stunDuration: 2,
+    },
+  ],
+};
