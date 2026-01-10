@@ -4,6 +4,27 @@
  * Two linear progression paths, one per stance.
  * At each level-up (3-15), player chooses which path to advance.
  * Enhancements only apply while in that stance.
+ *
+ * Implementation Status:
+ *
+ * ARCANE SURGE (burn effects):
+ * - All burn effects are defined but burn DoT processing uses hardcoded values.
+ * - TODO: Integrate burnDamagePercent, burnProcChance, burnDurationBonus, etc.
+ *   into status-effect.ts burn tick processing.
+ *
+ * HEX VEIL (debuff effects) - Implemented:
+ * - hexDamageReduction: combat.ts - reduces enemy damage
+ * - hexDamageAmp: combat.ts - increases damage to hexed enemy
+ * - hexDisableAbilities: enemy-ability.ts - prevents enemy abilities
+ * - hexDamageAura: passive-effect.ts - deals damage per second
+ *
+ * HEX VEIL (debuff effects) - TODO:
+ * - hexSlowPercent: enemy attack speed reduction (tier 2)
+ * - hexRegen: HP regen while in hex stance (tier 4)
+ * - hexLifesteal: heal on damage to hexed enemy (tier 6)
+ * - hexArmorReduction: reduce enemy armor (tier 7)
+ * - hexReflect: reflect damage from hexed enemy (tier 8)
+ * - hexHealOnEnemyAttack: heal when enemy attacks (tier 12)
  */
 
 import type { StanceEnhancement } from '@/types/paths';
