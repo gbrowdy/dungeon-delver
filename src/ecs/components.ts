@@ -166,6 +166,33 @@ export interface ComputedPassiveEffects {
   conditionalDamageReduction: number;
   conditionalReflectMultiplier: number;
   conditionalRegenMultiplier: number;
+
+  // === BURN EFFECTS (Arcane Surge) ===
+  burnDamagePercent: number;
+  burnProcChance: number;
+  burnDurationBonus: number;
+  burnMaxStacks: number;
+  burnTickRateMultiplier: number;
+  damageVsBurning: number;
+  critRefreshesBurn: boolean;
+  lifestealFromBurns: number;
+  burnExecuteThreshold: number;
+  burnExecuteBonus: number;
+  burnIgnoresArmor: boolean;
+  burnCanCrit: boolean;
+
+  // === HEX EFFECTS (Hex Veil) ===
+  hexDamageReduction: number;
+  hexSlowPercent: number;
+  hexDamageAmp: number;
+  hexRegen: number;
+  hexIntensityMultiplier: number;
+  hexLifesteal: number;
+  hexArmorReduction: number;
+  hexReflect: number;
+  hexDamageAura: number;
+  hexHealOnEnemyAttack: number;
+  hexDisableAbilities: boolean;
 }
 
 /**

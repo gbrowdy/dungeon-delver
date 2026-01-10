@@ -225,8 +225,16 @@ export function EnemyAbilitySystem(_deltaMs: number): void {
   const gameState = getGameState();
   if (gameState?.phase !== 'combat') return;
 
-  const enemy = getActiveEnemy();
+  // Check if hex disables enemy abilities (before entity scope is established)
   const player = getPlayer();
+  if (player && !player.dying && player.stanceState?.activeStanceId === 'hex_veil') {
+    const computed = player.passiveEffectState?.computed;
+    if (computed?.hexDisableAbilities) {
+      return; // Skip all enemy ability processing
+    }
+  }
+
+  const enemy = getActiveEnemy();
 
   if (!enemy || !player || enemy.dying || player.dying) return;
 

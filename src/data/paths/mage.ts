@@ -437,16 +437,18 @@ const ARCHMAGE_PATH: PathDefinition = {
   abilities: ARCHMAGE_ABILITIES,
   subpaths: [
     {
-      id: 'elementalist',
-      name: 'Elementalist',
-      description: 'Multi-element mastery with combo effects',
-      icon: 'ability-paths-mage-elementalist',
+      id: 'battlemage',
+      name: 'Battlemage',
+      description: 'Sustained spell pressure - never stop casting',
+      icon: 'ability-paths-mage-battlemage',
+      theme: 'sustained',
     },
     {
       id: 'destroyer',
       name: 'Destroyer',
-      description: 'Raw spell power and devastating damage',
+      description: 'Explosive burst damage - wait for the perfect moment',
       icon: 'ability-paths-mage-destroyer',
+      theme: 'burst',
     },
   ],
   hasComboMechanic: true
@@ -455,25 +457,12 @@ const ARCHMAGE_PATH: PathDefinition = {
 const ENCHANTER_PATH: PathDefinition = {
   id: 'enchanter',
   name: 'Enchanter',
-  description: 'Magic works for you automatically. Passive auras, auto-casting powers, and damage over time.',
+  description: 'Magic works for you automatically. Passive auras, damage over time, and hex effects.',
   className: 'Mage',
   type: 'passive',
   icon: 'ability-paths-mage-enchanter',
   abilities: ENCHANTER_ABILITIES,
-  subpaths: [
-    {
-      id: 'spellweaver',
-      name: 'Spellweaver',
-      description: 'Powers auto-cast and chain together',
-      icon: 'ability-paths-mage-spellweaver',
-    },
-    {
-      id: 'sage',
-      name: 'Sage',
-      description: 'Passive auras and damage fields',
-      icon: 'ability-paths-mage-sage',
-    },
-  ],
+  subpaths: [], // Passive paths don't use subpaths (they use stances)
   hasComboMechanic: false
 };
 
