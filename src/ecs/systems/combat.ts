@@ -277,7 +277,7 @@ export function CombatSystem(_deltaMs: number): void {
             target.statusEffects.push({
               id: `burn-${Date.now()}`,
               type: 'burn',
-              damage: 5,
+              damage: bonusDamage,
               remainingTurns: burnDuration,
               icon: 'flame',
             });
@@ -285,7 +285,7 @@ export function CombatSystem(_deltaMs: number): void {
             // Refresh oldest burn (first in array)
             const oldestBurn = existingBurns[0];
             oldestBurn.remainingTurns = burnDuration;
-            oldestBurn.damage = Math.max(oldestBurn.damage, 5);
+            oldestBurn.damage = Math.max(oldestBurn.damage, bonusDamage);
           }
 
           addCombatLog(`Arcane Burn! ${bonusDamage} bonus damage + burning`);
