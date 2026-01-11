@@ -37,6 +37,7 @@ export interface StatusEffect {
   type: 'poison' | 'stun' | 'slow' | 'bleed' | 'burn' | 'death_immunity' | 'weaken' | 'vulnerable';
   damage?: number; // For DoT effects (damage per second)
   accumulatedDamage?: number; // Tracks fractional damage between ticks
+  tickAccumulated?: number; // Tracks time accumulated for burn tick rate modifier (ms)
   value?: number; // For slow (speed reduction %), stun (chance), weaken (damage reduction %), etc.
   remainingTurns: number;
   icon: string;

@@ -19,47 +19,77 @@ import { queueAnimationEvent, addCombatLog, getEntityName } from '../utils';
 function processStatusEffect(
   entity: Entity,
   effect: StatusEffect,
-  deltaSeconds: number
+  deltaSeconds: number,
+  deltaMs: number
 ): boolean {
   const entityName = getEntityName(entity);
 
   // Process DoT effects (poison, bleed, burn)
   if ((effect.type === 'poison' || effect.type === 'bleed' || effect.type === 'burn') && effect.damage) {
-    // Calculate base damage
-    let baseDamage = effect.damage;
-
-    // Apply burnDamagePercent modifier from player for burn effects on enemies
-    if (effect.type === 'burn' && !entity.player) {
+    // Burns use discrete tick system, poison/bleed use continuous DPS
+    if (effect.type === 'burn') {
+      // Get tick rate multiplier from player's passive effects
       const player = getPlayer();
-      if (player?.passiveEffectState?.computed) {
-        const damageBonus = player.passiveEffectState.computed.burnDamagePercent ?? 0;
-        if (damageBonus > 0) {
-          baseDamage = baseDamage * (1 + damageBonus / 100);
+      const tickRateMultiplier = player?.passiveEffectState?.computed?.burnTickRateMultiplier ?? 1.0;
+      const tickInterval = 1000 / tickRateMultiplier; // Base 1000ms, divide by multiplier
+
+      // Accumulate time for discrete tick
+      effect.tickAccumulated = (effect.tickAccumulated ?? 0) + deltaMs;
+
+      // Process ticks while we have enough accumulated time
+      while (effect.tickAccumulated >= tickInterval) {
+        effect.tickAccumulated -= tickInterval;
+
+        // Calculate burn damage with burnDamagePercent modifier for enemies
+        let burnDamage = effect.damage ?? 0;
+        if (!entity.player && player?.passiveEffectState?.computed) {
+          const damageBonus = player.passiveEffectState.computed.burnDamagePercent ?? 0;
+          if (damageBonus > 0) {
+            burnDamage = Math.round(burnDamage * (1 + damageBonus / 100));
+          }
+        }
+
+        if (entity.health) {
+          entity.health.current = Math.max(0, entity.health.current - burnDamage);
+
+          addCombatLog(`${entityName} takes ${burnDamage} burn damage`);
+
+          // Queue damage animation
+          const isPlayer = !!entity.player;
+          queueAnimationEvent(isPlayer ? 'player_hit' : 'enemy_hit', {
+            type: 'damage',
+            value: burnDamage,
+            isCrit: false,
+            blocked: false,
+          });
         }
       }
-    }
+    } else {
+      // Poison and bleed use continuous DPS model
+      const baseDamage = effect.damage;
 
-    // Accumulate fractional damage to handle small deltas
-    const rawDamage = baseDamage * deltaSeconds;
-    effect.accumulatedDamage = (effect.accumulatedDamage ?? 0) + rawDamage;
+      // Accumulate fractional damage to handle small deltas
+      const rawDamage = baseDamage * deltaSeconds;
+      effect.accumulatedDamage = (effect.accumulatedDamage ?? 0) + rawDamage;
 
-    // Only apply when we've accumulated at least 1 damage
-    const tickDamage = Math.floor(effect.accumulatedDamage);
-    if (tickDamage >= 1 && entity.health) {
-      effect.accumulatedDamage -= tickDamage;
-      entity.health.current = Math.max(0, entity.health.current - tickDamage);
+      // Only apply when we've accumulated at least 1 damage
+      const tickDamage = Math.floor(effect.accumulatedDamage);
+      if (tickDamage >= 1 && entity.health) {
+        effect.accumulatedDamage -= tickDamage;
+        entity.health.current = Math.max(0, entity.health.current - tickDamage);
 
-      const effectName = effect.type === 'poison' ? 'Poison' : effect.type === 'bleed' ? 'Bleed' : 'Burn';
-      addCombatLog(`${entityName} takes ${tickDamage} ${effectName.toLowerCase()} damage`);
+        const effectName = effect.type === 'poison' ? 'Poison' : 'Bleed';
+        addCombatLog(`${entityName} takes ${tickDamage} ${effectName.toLowerCase()} damage`);
 
-      // Queue damage animation
-      const isPlayer = !!entity.player;
-      queueAnimationEvent(isPlayer ? 'player_hit' : 'enemy_hit', {
-        type: 'damage',
-        value: tickDamage,
-        isCrit: false,
-        blocked: false,
-      });
+        // Queue damage animation
+        const isPlayer = !!entity.player;
+        queueAnimationEvent(isPlayer ? 'player_hit' : 'enemy_hit', {
+          type: 'damage',
+          value: tickDamage,
+          isCrit: false,
+          blocked: false,
+        });
+      }
     }
   }
 
@@ -215,7 +245,7 @@ export function StatusEffectSystem(deltaMs: number): void {
     const expiredEffects: StatusEffect[] = [];
 
     for (const effect of effects) {
-      const expired = processStatusEffect(entity, effect, deltaSeconds);
+      const expired = processStatusEffect(entity, effect, deltaSeconds, effectiveDelta);
       if (expired) {
         expiredEffects.push(effect);
       }
