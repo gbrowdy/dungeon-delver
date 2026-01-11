@@ -16,6 +16,7 @@ import { getPathResource, PATH_RESOURCES } from '@/data/pathResources';
 import { getPathById } from '@/utils/pathUtils';
 import { getStancesForPath, getDefaultStanceId } from '@/data/stances';
 import { getBerserkerPowerChoices } from '@/data/paths/berserker-powers';
+import { getArchmagePowerChoices } from '@/data/paths/archmage-powers';
 import { computeAllEffectivePowers } from '@/utils/powerUpgrades';
 import { computeEffectiveStanceEffects } from '@/utils/stanceUtils';
 import { recomputeDerivedStats } from '@/utils/statUtils';
@@ -411,7 +412,16 @@ export function InputSystem(_deltaMs: number): void {
           const isPowerLevel = [2, 4, 6, 8].includes(currentLevel);
 
           if (isPowerLevel) {
-            const choices = getBerserkerPowerChoices(currentLevel);
+            let choices: import('@/types/game').Power[] = [];
+            const pathId = player.path?.pathId;
+
+            if (pathId === 'berserker') {
+              choices = getBerserkerPowerChoices(currentLevel);
+            } else if (pathId === 'archmage') {
+              choices = getArchmagePowerChoices(currentLevel);
+            }
+            // TODO: Add assassin, crusader when implemented
+
             if (choices.length > 0) {
               world.addComponent(player, 'pendingPowerChoice', {
                 level: currentLevel,
