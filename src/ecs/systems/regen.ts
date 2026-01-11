@@ -66,4 +66,13 @@ export function RegenSystem(deltaMs: number): void {
       player.pathResource.current = Math.max(0, player.pathResource.current - decayAmount);
     }
   }
+
+  // Hex regen (player in hex_veil stance)
+  if (player && !player.dying && player.health && player.stanceState?.activeStanceId === 'hex_veil') {
+    const hexRegen = player.passiveEffectState?.computed?.hexRegen ?? 0;
+    if (hexRegen > 0) {
+      const regenAmount = (hexRegen * effectiveDelta) / 1000;
+      player.health.current = Math.min(player.health.max, player.health.current + regenAmount);
+    }
+  }
 }
