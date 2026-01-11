@@ -228,6 +228,18 @@ export function CombatSystem(_deltaMs: number): void {
         }
       }
 
+      // Hex lifesteal
+      if (entity.stanceState?.activeStanceId === 'hex_veil') {
+        const lifesteal = entity.passiveEffectState?.computed?.hexLifesteal ?? 0;
+        if (lifesteal > 0 && entity.health) {
+          const healAmount = Math.round(damage * (lifesteal / 100));
+          if (healAmount > 0) {
+            entity.health.current = Math.min(entity.health.max, entity.health.current + healAmount);
+            addCombatLog(`Hex lifesteal heals for ${healAmount}`);
+          }
+        }
+      }
+
       // Apply arcane burn from stance (chance to deal bonus damage + apply burn DoT)
       const arcaneBurnChance = getStanceBehavior(entity, 'arcane_burn');
       if (arcaneBurnChance > 0 && Math.random() < arcaneBurnChance) {

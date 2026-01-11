@@ -237,6 +237,42 @@ describe('CombatSystem', () => {
     });
   });
 
+  describe('Hex Lifesteal', () => {
+    it('should heal player when dealing damage with hexLifesteal', () => {
+      world.add({
+        gameState: true,
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+        animationEvents: [],
+        combatSpeed: { multiplier: 1 },
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'mage' },
+        health: { current: 50, max: 100 },
+        attack: { baseDamage: 100, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        defense: { value: 0 },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+        stanceState: { activeStanceId: 'hex_veil', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+        passiveEffectState: { computed: { hexLifesteal: 10 } as any, lastComputedTick: 0 },
+      });
+      world.addComponent(player, 'attackReady', { damage: 100, isCrit: false });
+
+      world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 200, max: 200 },
+        defense: { value: 0 },
+      });
+
+      CombatSystem(16);
+
+      // 100 damage * 10% = 10 HP healed (50 -> 60)
+      expect(player.health?.current).toBe(60);
+    });
+  });
+
   describe('Hex Aura stance behavior', () => {
     it('should reduce enemy damage by 15% when hex_aura is active', () => {
       const gameState = world.add({
