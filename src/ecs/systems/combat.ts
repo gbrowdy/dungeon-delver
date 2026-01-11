@@ -371,6 +371,16 @@ export function CombatSystem(_deltaMs: number): void {
           addCombatLog(`${targetName} heals for ${onDamagedResult.healAmount} on hit!`);
         }
       }
+
+      // Hex reflect - when enemy damages player in hex_veil stance
+      if (target.stanceState?.activeStanceId === 'hex_veil') {
+        const reflect = target.passiveEffectState?.computed?.hexReflect ?? 0;
+        if (reflect > 0 && entity.health) {
+          const reflectDmg = Math.round(damage * (reflect / 100));
+          entity.health.current = Math.max(0, entity.health.current - reflectDmg);
+          addCombatLog(`Hex reflects ${reflectDmg} damage`);
+        }
+      }
     }
 
     // Recalculate enemy intent after attack so UI shows next action

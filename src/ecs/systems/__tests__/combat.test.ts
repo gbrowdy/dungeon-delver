@@ -310,6 +310,64 @@ describe('CombatSystem', () => {
     });
   });
 
+  describe('Hex Reflect', () => {
+    it('should reflect damage to enemy when player is hit in hex_veil', () => {
+      world.add({
+        gameState: true,
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+        animationEvents: [],
+        combatSpeed: { multiplier: 1 },
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'mage' },
+        health: { current: 100, max: 100 },
+        defense: { value: 0 },
+        stanceState: { activeStanceId: 'hex_veil', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+        passiveEffectState: {
+          computed: {
+            hexReflect: 20,
+            // Required fields for processOnDamaged
+            baseReflectPercent: 0,
+            counterAttackChance: 0,
+            damageStackConfig: null,
+            healOnDamagedChance: 0,
+            healOnDamagedPercent: 0,
+            nextAttackBonusOnDamaged: 0,
+            reflectScalingPerHit: 0,
+            conditionalReflectMultiplier: 1,
+          } as any,
+          combat: {
+            hitsTaken: 0,
+            hitsDealt: 0,
+            nextAttackBonus: 0,
+            damageStacks: 0,
+            reflectBonusPercent: 0,
+          },
+          lastComputedTick: 0,
+        } as any,
+      });
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 50, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+      });
+      world.addComponent(enemy, 'attackReady', { damage: 50, isCrit: false });
+
+      CombatSystem(16);
+
+      // Enemy dealt 50, reflects 20% = 10 damage back
+      expect(enemy.health?.current).toBe(90);
+      // Player takes full damage (50)
+      expect(player.health?.current).toBe(50);
+    });
+  });
+
   describe('Hex Aura stance behavior', () => {
     it('should reduce enemy damage by 15% when hex_aura is active', () => {
       const gameState = world.add({
