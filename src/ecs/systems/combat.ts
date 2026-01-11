@@ -262,21 +262,33 @@ export function CombatSystem(_deltaMs: number): void {
             target.health.current = Math.max(0, target.health.current - bonusDamage);
           }
 
-          // Apply burn DoT: 5 damage per second for 3 seconds (+ duration bonus)
+          // Apply burn DoT with stack limit
           if (!target.statusEffects) {
             target.statusEffects = [];
           }
           const durationBonus = entity.passiveEffectState?.computed?.burnDurationBonus ?? 0;
           const burnDuration = 3 + durationBonus; // 3 seconds base + bonus
-          target.statusEffects.push({
-            id: `burn-${Date.now()}`,
-            type: 'burn',
-            damage: 5,
-            remainingTurns: burnDuration,
-            icon: 'flame',
-          });
+          const maxStacks = entity.passiveEffectState?.computed?.burnMaxStacks ?? 1;
 
-          addCombatLog(`Arcane Burn! ${bonusDamage} bonus damage + burning for 15`);
+          const existingBurns = target.statusEffects.filter(e => e.type === 'burn');
+
+          if (existingBurns.length < maxStacks) {
+            // Add new burn stack
+            target.statusEffects.push({
+              id: `burn-${Date.now()}`,
+              type: 'burn',
+              damage: 5,
+              remainingTurns: burnDuration,
+              icon: 'flame',
+            });
+          } else {
+            // Refresh oldest burn (first in array)
+            const oldestBurn = existingBurns[0];
+            oldestBurn.remainingTurns = burnDuration;
+            oldestBurn.damage = Math.max(oldestBurn.damage, 5);
+          }
+
+          addCombatLog(`Arcane Burn! ${bonusDamage} bonus damage + burning`);
         }
       }
     } else {
