@@ -288,3 +288,96 @@ describe('StatusEffectSystem', () => {
     expect(entity.health?.current).toBe(95);
   });
 });
+
+describe('StatusEffectSystem - Burn Damage Percent', () => {
+  beforeEach(() => {
+    // Copy array before iterating to avoid mutation issues during iteration
+    for (const entity of [...world.entities]) {
+      world.remove(entity);
+    }
+    resetTick();
+
+    // Add game state
+    world.add({
+      gameState: true,
+      phase: 'combat',
+      combatSpeed: { multiplier: 1 },
+      floor: { number: 1, room: 1, totalRooms: 5 },
+      animationEvents: [],
+      combatLog: [],
+    });
+  });
+
+  it('should increase burn tick damage with burnDamagePercent', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: { burnDamagePercent: 50 } as any, // +50% burn damage
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame' },
+      ],
+    });
+
+    // Simulate 1 second (1 burn tick)
+    StatusEffectSystem(1000);
+
+    // Base 10 damage + 50% = 15 damage, health = 100 - 15 = 85
+    expect(enemy.health?.current).toBe(85);
+  });
+
+  it('should not modify burn damage without burnDamagePercent', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: { computed: {} as any, lastComputedTick: 0 },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame' },
+      ],
+    });
+
+    StatusEffectSystem(1000);
+
+    // Base 10 damage only
+    expect(enemy.health?.current).toBe(90);
+  });
+
+  it('should only apply burnDamagePercent to burn effects, not poison or bleed', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: { burnDamagePercent: 100 } as any, // +100% burn damage
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'poison-1', type: 'poison', damage: 10, remainingTurns: 3, icon: 'skull' },
+      ],
+    });
+
+    StatusEffectSystem(1000);
+
+    // Poison should not be affected by burnDamagePercent - still base 10 damage
+    expect(enemy.health?.current).toBe(90);
+  });
+});

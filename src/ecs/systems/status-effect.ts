@@ -25,8 +25,22 @@ function processStatusEffect(
 
   // Process DoT effects (poison, bleed, burn)
   if ((effect.type === 'poison' || effect.type === 'bleed' || effect.type === 'burn') && effect.damage) {
+    // Calculate base damage
+    let baseDamage = effect.damage;
+
+    // Apply burnDamagePercent modifier from player for burn effects on enemies
+    if (effect.type === 'burn' && !entity.player) {
+      const player = getPlayer();
+      if (player?.passiveEffectState?.computed) {
+        const damageBonus = player.passiveEffectState.computed.burnDamagePercent ?? 0;
+        if (damageBonus > 0) {
+          baseDamage = baseDamage * (1 + damageBonus / 100);
+        }
+      }
+    }
+
     // Accumulate fractional damage to handle small deltas
-    const rawDamage = effect.damage * deltaSeconds;
+    const rawDamage = baseDamage * deltaSeconds;
     effect.accumulatedDamage = (effect.accumulatedDamage ?? 0) + rawDamage;
 
     // Only apply when we've accumulated at least 1 damage
