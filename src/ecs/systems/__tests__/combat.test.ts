@@ -501,6 +501,58 @@ describe('CombatSystem', () => {
     });
   });
 
+  describe('Burn Duration Bonus', () => {
+    beforeEach(() => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.05); // Always proc burn
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should extend burn duration with burnDurationBonus', () => {
+      world.add({
+        gameState: true,
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+        animationEvents: [],
+        combatSpeed: { multiplier: 1 },
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'mage' },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 50, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        defense: { value: 0 },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+        stanceState: { activeStanceId: 'arcane_surge', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+        effectiveStanceEffects: [
+          { type: 'behavior_modifier', behavior: 'arcane_burn', value: 0.20 }
+        ],
+        passiveEffectState: {
+          computed: { burnDurationBonus: 2 } as any, // +2 seconds
+          lastComputedTick: 0,
+        },
+      });
+      world.addComponent(player, 'attackReady', { damage: 50, isCrit: false });
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 100, max: 100 },
+        defense: { value: 0 },
+        statusEffects: [],
+      });
+
+      CombatSystem(16);
+
+      const burn = enemy.statusEffects?.find(e => e.type === 'burn');
+      expect(burn).toBeDefined();
+      expect(burn?.remainingTurns).toBe(5); // 3 base + 2 bonus
+    });
+  });
+
   describe('Hex Aura stance behavior', () => {
     it('should reduce enemy damage by 15% when hex_aura is active', () => {
       const gameState = world.add({

@@ -262,15 +262,17 @@ export function CombatSystem(_deltaMs: number): void {
             target.health.current = Math.max(0, target.health.current - bonusDamage);
           }
 
-          // Apply burn DoT: 5 damage per second for 3 seconds
+          // Apply burn DoT: 5 damage per second for 3 seconds (+ duration bonus)
           if (!target.statusEffects) {
             target.statusEffects = [];
           }
+          const durationBonus = entity.passiveEffectState?.computed?.burnDurationBonus ?? 0;
+          const burnDuration = 3 + durationBonus; // 3 seconds base + bonus
           target.statusEffects.push({
             id: `burn-${Date.now()}`,
             type: 'burn',
             damage: 5,
-            remainingTurns: 3,
+            remainingTurns: burnDuration,
             icon: 'flame',
           });
 
