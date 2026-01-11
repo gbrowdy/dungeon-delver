@@ -413,6 +413,94 @@ describe('CombatSystem', () => {
     });
   });
 
+  describe('Burn Proc Enhancement', () => {
+    it('should increase burn chance with burnProcChance enhancement', () => {
+      // 20% base + 15% enhancement = 35% chance. Roll 0.30 should succeed.
+      vi.spyOn(Math, 'random').mockReturnValue(0.30);
+
+      world.add({
+        gameState: true,
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+        animationEvents: [],
+        combatSpeed: { multiplier: 1 },
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'mage' },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 50, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        defense: { value: 0 },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+        stanceState: { activeStanceId: 'arcane_surge', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+        // Setup stance effects so getStanceBehavior returns the base value
+        effectiveStanceEffects: [
+          { type: 'behavior_modifier', behavior: 'arcane_burn', value: 0.20 }
+        ],
+        passiveEffectState: {
+          computed: { burnProcChance: 15 } as any, // +15% = 35% total
+          lastComputedTick: 0,
+        },
+      });
+      world.addComponent(player, 'attackReady', { damage: 50, isCrit: false });
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 100, max: 100 },
+        defense: { value: 0 },
+        statusEffects: [],
+      });
+
+      CombatSystem(16);
+
+      expect(enemy.statusEffects?.some(e => e.type === 'burn')).toBe(true);
+      vi.restoreAllMocks();
+    });
+
+    it('should NOT proc burn without enhancement when roll is between base and enhanced chance', () => {
+      // Roll 0.25 is above 20% base, should fail without enhancement
+      vi.spyOn(Math, 'random').mockReturnValue(0.25);
+
+      world.add({
+        gameState: true,
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+        animationEvents: [],
+        combatSpeed: { multiplier: 1 },
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'mage' },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 50, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        defense: { value: 0 },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+        stanceState: { activeStanceId: 'arcane_surge', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+        effectiveStanceEffects: [
+          { type: 'behavior_modifier', behavior: 'arcane_burn', value: 0.20 }
+        ],
+        passiveEffectState: { computed: {} as any, lastComputedTick: 0 }, // No enhancement
+      });
+      world.addComponent(player, 'attackReady', { damage: 50, isCrit: false });
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 100, max: 100 },
+        defense: { value: 0 },
+        statusEffects: [],
+      });
+
+      CombatSystem(16);
+
+      expect(enemy.statusEffects?.some(e => e.type === 'burn')).toBe(false);
+      vi.restoreAllMocks();
+    });
+  });
+
   describe('Hex Aura stance behavior', () => {
     it('should reduce enemy damage by 15% when hex_aura is active', () => {
       const gameState = world.add({
