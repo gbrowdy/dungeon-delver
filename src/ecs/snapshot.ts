@@ -158,10 +158,18 @@ export interface PlayerSnapshot {
   pendingUpgradeChoice: {
     powerIds: string[];
   } | null;
-  pendingStanceEnhancement: {
-    ironChoice: StanceEnhancement;
-    retributionChoice: StanceEnhancement;
-  } | null;
+  pendingStanceEnhancement:
+    | {
+        pathId: 'guardian';
+        ironChoice: StanceEnhancement;
+        retributionChoice: StanceEnhancement;
+      }
+    | {
+        pathId: 'enchanter';
+        arcaneSurgeChoice: StanceEnhancement;
+        hexVeilChoice: StanceEnhancement;
+      }
+    | null;
 
   // Path progression tracking
   pathProgression: {
@@ -417,10 +425,19 @@ export function createPlayerSnapshot(entity: Entity): PlayerSnapshot | null {
     pendingUpgradeChoice: entity.pendingUpgradeChoice ? {
       powerIds: [...entity.pendingUpgradeChoice.powerIds],
     } : null,
-    pendingStanceEnhancement: entity.pendingStanceEnhancement ? {
-      ironChoice: { ...entity.pendingStanceEnhancement.ironChoice },
-      retributionChoice: { ...entity.pendingStanceEnhancement.retributionChoice },
-    } : null,
+    pendingStanceEnhancement: entity.pendingStanceEnhancement
+      ? entity.pendingStanceEnhancement.pathId === 'guardian'
+        ? {
+            pathId: 'guardian' as const,
+            ironChoice: { ...entity.pendingStanceEnhancement.ironChoice },
+            retributionChoice: { ...entity.pendingStanceEnhancement.retributionChoice },
+          }
+        : {
+            pathId: 'enchanter' as const,
+            arcaneSurgeChoice: { ...entity.pendingStanceEnhancement.arcaneSurgeChoice },
+            hexVeilChoice: { ...entity.pendingStanceEnhancement.hexVeilChoice },
+          }
+      : null,
 
     // Path progression tracking
     pathProgression: entity.pathProgression ? {

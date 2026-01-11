@@ -331,10 +331,17 @@ export interface Entity {
   pendingUpgradeChoice?: {
     powerIds: string[]; // IDs of powers that can be upgraded
   };
-  pendingStanceEnhancement?: {
-    ironChoice: StanceEnhancement;
-    retributionChoice: StanceEnhancement;
-  };
+  pendingStanceEnhancement?:
+    | {
+        pathId: 'guardian';
+        ironChoice: StanceEnhancement;
+        retributionChoice: StanceEnhancement;
+      }
+    | {
+        pathId: 'enchanter';
+        arcaneSurgeChoice: StanceEnhancement;
+        hexVeilChoice: StanceEnhancement;
+      };
   powers?: Power[];
   effectivePowers?: Power[];
   effectiveStanceEffects?: StanceEffect[];

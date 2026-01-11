@@ -457,8 +457,13 @@ export interface PowerUpgradeState {
  * Tracks player's stance enhancement state (passive paths)
  */
 export interface StanceProgressionState {
-  ironTier: number;        // Current tier in Iron path (0-13)
-  retributionTier: number; // Current tier in Retribution path (0-13)
+  // Guardian path tiers
+  ironTier?: number;        // Current tier in Iron path (0-13)
+  retributionTier?: number; // Current tier in Retribution path (0-13)
+  // Enchanter path tiers
+  arcaneSurgeTier?: number; // Current tier in Arcane Surge path (0-13)
+  hexVeilTier?: number;     // Current tier in Hex Veil path (0-13)
+  // Shared
   acquiredEnhancements: string[]; // IDs of acquired enhancements
 }
 
