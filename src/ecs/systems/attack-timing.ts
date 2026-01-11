@@ -61,8 +61,20 @@ export function AttackTimingSystem(deltaMs: number): void {
     // Accumulate time
     speed.accumulated += effectiveDelta;
 
+    // Calculate effective attack interval (may be modified by hex slow for enemies)
+    let effectiveInterval = speed.attackInterval;
+
+    // Apply hex slow to enemies when player is in hex_veil stance
+    if (entity.enemy && player?.stanceState?.activeStanceId === 'hex_veil') {
+      const hexSlow = player.passiveEffectState?.computed?.hexSlowPercent ?? 0;
+      if (hexSlow > 0) {
+        const slowMultiplier = 1 + hexSlow / 100;
+        effectiveInterval = speed.attackInterval * slowMultiplier;
+      }
+    }
+
     // Check if attack should fire
-    if (speed.accumulated >= speed.attackInterval) {
+    if (speed.accumulated >= effectiveInterval) {
       const { damage, isCrit } = calculateAttackDamage(entity);
 
       // Mark as ready to attack - CombatSystem will process
@@ -70,7 +82,7 @@ export function AttackTimingSystem(deltaMs: number): void {
       world.addComponent(entity, 'attackReady', { damage, isCrit });
 
       // Carry over excess time (prevents drift)
-      speed.accumulated -= speed.attackInterval;
+      speed.accumulated -= effectiveInterval;
     }
   }
 }
