@@ -17,6 +17,7 @@ import { LEVEL_UP_BONUSES } from '@/constants/game';
 import type { AnimationEvent, AnimationPayload } from '../components';
 import { queueAnimationEvent, addCombatLog } from '../utils';
 import { getBerserkerPowerChoices } from '@/data/paths/berserker-powers';
+import { getArchmagePowerChoices } from '@/data/paths/archmage-powers';
 import { getGuardianEnhancementChoices } from '@/data/paths/guardian-enhancements';
 import { world } from '../world';
 
@@ -96,7 +97,16 @@ export function ProgressionSystem(_deltaMs: number): void {
         const isPowerLevel = [2, 4, 6, 8].includes(newLevel);
 
         if (isPowerLevel) {
-          const choices = getBerserkerPowerChoices(newLevel);
+          let choices: import('@/types/game').Power[] = [];
+          const pathId = player.pathProgression.pathId;
+
+          if (pathId === 'berserker') {
+            choices = getBerserkerPowerChoices(newLevel);
+          } else if (pathId === 'archmage') {
+            choices = getArchmagePowerChoices(newLevel);
+          }
+          // TODO: Add assassin, crusader when implemented
+
           if (choices.length > 0) {
             world.addComponent(player, 'pendingPowerChoice', {
               level: newLevel,
