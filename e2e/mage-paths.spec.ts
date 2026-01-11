@@ -327,6 +327,79 @@ test.describe('Mage Path Selection', () => {
   });
 });
 
+test.describe('Archmage Power Verification', () => {
+  test.beforeEach(async ({ page }) => {
+    await navigateToGame(page, 'devMode=true&xpMultiplier=8&playerAttack=50&playerDefense=15');
+  });
+
+  test('Archmage at level 2 shows Arcane Bolt and Meteor Strike, NOT Berserker powers', async ({ page }) => {
+    test.setTimeout(120000); // 2 minutes
+
+    await selectClassAndBegin(page, 'Mage');
+    await setSpeedToMax(page);
+
+    // Progress to level 2 naturally
+    let reachedLevel2 = false;
+    for (let attempt = 0; attempt < 30 && !reachedLevel2; attempt++) {
+      const outcome = await waitForCombatOutcome(page, { timeout: 30000 });
+
+      if (outcome === 'player_died') {
+        await waitForDeathAndRetry(page);
+        await setSpeedToMax(page);
+        continue;
+      }
+
+      const levelUpVisible = await page.getByTestId('level-up-popup').isVisible().catch(() => false);
+      if (levelUpVisible) {
+        const levelText = await page.getByTestId('level-up-new-level').textContent();
+        const level = parseInt(levelText?.match(/\d+/)?.[0] ?? '1');
+
+        // Dismiss level up popup
+        await page.getByRole('button', { name: /continue|close|ok/i }).first().click();
+        await page.waitForTimeout(500);
+
+        if (level === 2) {
+          // Wait for path selection
+          await expect(page.getByTestId('path-selection')).toBeVisible({ timeout: 5000 });
+
+          // Select Archmage path (first path option for Mage)
+          const selectPathButton = page.getByRole('button', { name: /Select Path/i }).first();
+          await selectPathButton.click();
+          await page.waitForTimeout(300);
+
+          // Confirm path selection
+          const confirmButton = page.getByTestId('path-confirm-button');
+          await expect(confirmButton).toBeEnabled({ timeout: 2000 });
+          await confirmButton.click();
+
+          // Wait for power choice popup
+          await expect(page.getByTestId('power-choice-popup')).toBeVisible({ timeout: 5000 });
+
+          // Scope all assertions to the power choice popup
+          const powerPopup = page.getByTestId('power-choice-popup');
+
+          // Verify CORRECT powers are shown (Archmage)
+          await expect(powerPopup.getByText('Arcane Bolt')).toBeVisible({ timeout: 3000 });
+          await expect(powerPopup.getByText('Meteor Strike')).toBeVisible({ timeout: 3000 });
+
+          // Verify WRONG powers are NOT shown (Berserker)
+          await expect(powerPopup.getByText('Rage Strike')).not.toBeVisible();
+          await expect(powerPopup.getByText('Savage Slam')).not.toBeVisible();
+
+          reachedLevel2 = true;
+          break; // Exit the loop immediately after successful verification
+        }
+      }
+
+      if (outcome === 'enemy_died') {
+        await waitForEnemySpawn(page).catch(() => {});
+      }
+    }
+
+    expect(reachedLevel2).toBe(true);
+  });
+});
+
 test.describe('Mage Path Resource Mechanics', () => {
   test.beforeEach(async ({ page }) => {
     await navigateToGame(page, 'devMode=true&xpMultiplier=10&playerAttack=60&playerDefense=20');
