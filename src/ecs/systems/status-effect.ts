@@ -47,6 +47,16 @@ function processStatusEffect(
           if (damageBonus > 0) {
             burnDamage = Math.round(burnDamage * (1 + damageBonus / 100));
           }
+
+          // Execute bonus for low HP enemies
+          const executeBonus = player.passiveEffectState.computed.burnExecuteBonus ?? 0;
+          const executeThreshold = player.passiveEffectState.computed.burnExecuteThreshold ?? 0;
+          if (executeBonus > 0 && executeThreshold > 0 && entity.health) {
+            const hpPercent = (entity.health.current / entity.health.max) * 100;
+            if (hpPercent < executeThreshold) {
+              burnDamage = Math.round(burnDamage * (1 + executeBonus / 100));
+            }
+          }
         }
 
         if (entity.health) {

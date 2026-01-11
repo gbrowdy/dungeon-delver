@@ -555,3 +555,141 @@ describe('StatusEffectSystem - Burn Tick Rate', () => {
     expect(enemy.health?.current).toBe(100); // No damage yet
   });
 });
+
+describe('StatusEffectSystem - Burn Execute Bonus', () => {
+  beforeEach(() => {
+    // Copy array before iterating to avoid mutation issues during iteration
+    for (const entity of [...world.entities]) {
+      world.remove(entity);
+    }
+    resetTick();
+
+    // Add game state
+    world.add({
+      gameState: true,
+      phase: 'combat',
+      combatSpeed: { multiplier: 1 },
+      floor: { number: 1, room: 1, totalRooms: 5 },
+      animationEvents: [],
+      combatLog: [],
+    });
+  });
+
+  it('should deal bonus burn damage to low HP enemies', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnExecuteBonus: 50,
+          burnExecuteThreshold: 30,
+        } as any, // +50% below 30% HP
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 25, max: 100 }, // 25% HP, below threshold
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0); // Process tick (tickAccumulated already at 1000)
+
+    // 10 base + 50% execute bonus = 15 damage, 25 - 15 = 10 HP
+    expect(enemy.health?.current).toBe(10);
+  });
+
+  it('should NOT apply execute bonus above HP threshold', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnExecuteBonus: 50,
+          burnExecuteThreshold: 30,
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 50, max: 100 }, // 50% HP, above threshold
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // Only base damage, 50 - 10 = 40 HP
+    expect(enemy.health?.current).toBe(40);
+  });
+
+  it('should stack burnExecuteBonus with burnDamagePercent', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnDamagePercent: 50, // +50% base
+          burnExecuteBonus: 100, // +100% execute
+          burnExecuteThreshold: 30,
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 20, max: 100 }, // 20% HP, below threshold
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 10 base * 1.5 (burnDamagePercent) = 15, then 15 * 2.0 (execute bonus) = 30 damage
+    // 20 - 30 = -10, clamped to 0
+    expect(enemy.health?.current).toBe(0);
+  });
+
+  it('should not apply execute bonus when threshold is 0 (disabled)', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnExecuteBonus: 50,
+          burnExecuteThreshold: 0, // disabled
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 10, max: 100 }, // 10% HP, but threshold is 0
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // No execute bonus when threshold is 0, just base 10 damage
+    expect(enemy.health?.current).toBe(0); // 10 - 10 = 0
+  });
+});
