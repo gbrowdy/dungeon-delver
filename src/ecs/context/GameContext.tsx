@@ -23,10 +23,12 @@ import {
   useMemo,
   ReactNode,
 } from 'react';
-import type { CharacterClass, Item } from '@/types/game';
+import type { CharacterClass, Item, Power } from '@/types/game';
 import { useGameEngine } from '../hooks/useGameEngine';
 import { dispatch, Commands } from '../commands';
-import { getPlayer, getGameState, enemyQuery } from '../queries';
+import { getPlayer, getGameState, enemyQuery, getActiveEnemy } from '../queries';
+import { ARCHMAGE_POWERS } from '@/data/paths/archmage-powers';
+import { BERSERKER_POWERS } from '@/data/paths/berserker-powers';
 import {
   PlayerSnapshot,
   EnemySnapshot,
@@ -349,4 +351,56 @@ export function useGameActions(): GameActions {
 export function useAttackProgress(): { heroProgress: number; enemyProgress: number } {
   const { heroProgress, enemyProgress } = useGame();
   return { heroProgress, enemyProgress };
+}
+
+// ============================================================================
+// TEST HOOKS (exposed via window.__TEST_HOOKS__ when ?testMode=true)
+// ============================================================================
+
+// Combine all power maps for lookup
+const ALL_POWERS: Record<string, Power> = {
+  ...ARCHMAGE_POWERS,
+  ...BERSERKER_POWERS,
+  // Add other path powers as they're implemented
+};
+
+// Type declaration for test hooks
+declare global {
+  interface Window {
+    __TEST_HOOKS__?: {
+      setPlayerLevel: (level: number) => void;
+      grantPower: (powerId: string) => void;
+      getEnemyHealth: () => number;
+      getPlayerResource: () => number;
+    };
+  }
+}
+
+// Expose test hooks in development/test mode
+if (typeof window !== 'undefined' && window.location.search.includes('testMode=true')) {
+  window.__TEST_HOOKS__ = {
+    setPlayerLevel: (level: number) => {
+      const player = getPlayer();
+      if (player?.progression) {
+        player.progression.level = level;
+        player.progression.xp = 0;
+      }
+    },
+    grantPower: (powerId: string) => {
+      const player = getPlayer();
+      const power = ALL_POWERS[powerId];
+      if (player && power && !player.powers?.some(p => p.id === powerId)) {
+        if (!player.powers) player.powers = [];
+        player.powers.push({ ...power });
+      }
+    },
+    getEnemyHealth: () => {
+      const enemy = getActiveEnemy();
+      return enemy?.health?.current ?? 0;
+    },
+    getPlayerResource: () => {
+      const player = getPlayer();
+      return player?.pathResource?.current ?? 0;
+    },
+  };
 }
