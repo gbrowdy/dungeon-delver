@@ -381,6 +381,16 @@ export function CombatSystem(_deltaMs: number): void {
           addCombatLog(`Hex reflects ${reflectDmg} damage`);
         }
       }
+
+      // Hex heal on enemy attack - heals player for % of max HP when enemy attacks
+      if (target.stanceState?.activeStanceId === 'hex_veil') {
+        const healPct = target.passiveEffectState?.computed?.hexHealOnEnemyAttack ?? 0;
+        if (healPct > 0 && target.health) {
+          const healAmt = Math.round(target.health.max * (healPct / 100));
+          target.health.current = Math.min(target.health.max, target.health.current + healAmt);
+          addCombatLog(`Hex aura heals ${healAmt}`);
+        }
+      }
     }
 
     // Recalculate enemy intent after attack so UI shows next action

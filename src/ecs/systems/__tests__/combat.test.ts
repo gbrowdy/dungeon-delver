@@ -368,6 +368,51 @@ describe('CombatSystem', () => {
     });
   });
 
+  describe('Hex Heal On Enemy Attack', () => {
+    it('should heal player % max HP when enemy attacks', () => {
+      world.add({
+        gameState: true,
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+        animationEvents: [],
+        combatSpeed: { multiplier: 1 },
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'mage' },
+        health: { current: 50, max: 100 },
+        defense: { value: 0 },
+        stanceState: { activeStanceId: 'hex_veil', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+        passiveEffectState: {
+          computed: { hexHealOnEnemyAttack: 5 } as any,
+          combat: {
+            hitsTaken: 0,
+            hitsDealt: 0,
+            nextAttackBonus: 0,
+            damageStacks: 0,
+            reflectBonusPercent: 0,
+          },
+          lastComputedTick: 0,
+        } as any,
+      });
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 20, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+      });
+      world.addComponent(enemy, 'attackReady', { damage: 20, isCrit: false });
+
+      CombatSystem(16);
+
+      // Took 20 damage (50->30), healed 5% of 100 = 5 (30->35)
+      expect(player.health?.current).toBe(35);
+    });
+  });
+
   describe('Hex Aura stance behavior', () => {
     it('should reduce enemy damage by 15% when hex_aura is active', () => {
       const gameState = world.add({
