@@ -132,6 +132,14 @@ export function CombatSystem(_deltaMs: number): void {
         effectiveDefense = Math.round(defense * (1 + armorMod));
       }
     }
+
+    // Apply hex armor reduction when player attacks enemy in hex_veil stance
+    if (entity.player && target.enemy && entity.stanceState?.activeStanceId === 'hex_veil') {
+      const reduction = entity.passiveEffectState?.computed?.hexArmorReduction ?? 0;
+      if (reduction > 0) {
+        effectiveDefense = Math.round(effectiveDefense * (1 - reduction / 100));
+      }
+    }
     damage -= effectiveDefense;
     damage = Math.max(1, damage); // Minimum 1 damage
 

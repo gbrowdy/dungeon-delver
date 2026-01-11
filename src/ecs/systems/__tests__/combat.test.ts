@@ -273,6 +273,43 @@ describe('CombatSystem', () => {
     });
   });
 
+  describe('Hex Armor Reduction', () => {
+    it('should reduce enemy armor when player in hex_veil', () => {
+      world.add({
+        gameState: true,
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+        animationEvents: [],
+        combatSpeed: { multiplier: 1 },
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'mage' },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 100, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        defense: { value: 0 },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+        stanceState: { activeStanceId: 'hex_veil', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+        passiveEffectState: { computed: { hexArmorReduction: 50 } as any, lastComputedTick: 0 },
+      });
+      world.addComponent(player, 'attackReady', { damage: 100, isCrit: false });
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 200, max: 200 },
+        defense: { value: 20 },
+      });
+
+      // Without reduction: 100 - 20 = 80 damage -> 120 HP
+      // With 50% reduction: 100 - 10 = 90 damage -> 110 HP
+      CombatSystem(16);
+
+      expect(enemy.health?.current).toBe(110);
+    });
+  });
+
   describe('Hex Aura stance behavior', () => {
     it('should reduce enemy damage by 15% when hex_aura is active', () => {
       const gameState = world.add({
