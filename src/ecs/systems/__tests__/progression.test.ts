@@ -600,4 +600,65 @@ describe('ProgressionSystem', () => {
       expect(player.pendingStanceEnhancement).toBeUndefined();
     });
   });
+
+  describe('Path-Aware Power Choices', () => {
+    it('should offer Archmage powers when player is Archmage at level 2', () => {
+      // Setup player at level 1 with Archmage path
+      const player = createPlayer({
+        xp: 100,
+        xpToNext: 100,
+        level: 1,
+      });
+
+      // Add path for Archmage
+      player.path = { pathId: 'archmage', abilities: [] };
+      player.pathProgression = {
+        pathId: 'archmage',
+        pathType: 'active',
+        powerUpgrades: [],
+      };
+
+      // Run progression system
+      ProgressionSystem(16);
+
+      // Should have leveled to 2
+      expect(player.progression?.level).toBe(2);
+
+      // Check that pendingPowerChoice has Archmage powers
+      expect(player.pendingPowerChoice).toBeDefined();
+      expect(player.pendingPowerChoice?.choices.some(p => p.id === 'arcane_bolt')).toBe(true);
+      expect(player.pendingPowerChoice?.choices.some(p => p.id === 'meteor_strike')).toBe(true);
+      // Negative: should NOT have Berserker powers
+      expect(player.pendingPowerChoice?.choices.some(p => p.id === 'rage_strike')).toBe(false);
+    });
+
+    it('should offer Berserker powers when player is Berserker at level 2', () => {
+      // Setup player at level 1 with Berserker path
+      const player = createPlayer({
+        xp: 100,
+        xpToNext: 100,
+        level: 1,
+      });
+
+      // Add path for Berserker
+      player.path = { pathId: 'berserker', abilities: [] };
+      player.pathProgression = {
+        pathId: 'berserker',
+        pathType: 'active',
+        powerUpgrades: [],
+      };
+
+      // Run progression system
+      ProgressionSystem(16);
+
+      // Should have leveled to 2
+      expect(player.progression?.level).toBe(2);
+
+      // Check that pendingPowerChoice has Berserker powers
+      expect(player.pendingPowerChoice).toBeDefined();
+      expect(player.pendingPowerChoice?.choices.some(p => p.id === 'rage_strike')).toBe(true);
+      // Negative: should NOT have Archmage powers
+      expect(player.pendingPowerChoice?.choices.some(p => p.id === 'arcane_bolt')).toBe(false);
+    });
+  });
 });
