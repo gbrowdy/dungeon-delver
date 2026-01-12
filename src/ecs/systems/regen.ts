@@ -19,12 +19,15 @@ export function RegenSystem(deltaMs: number): void {
   const inCombat = gameState?.phase === 'combat';
 
   for (const entity of entitiesWithRegen) {
-    // Skip dying entities
+    // Skip dying entities or entities at 0 HP (dead, waiting for DeathSystem)
     if (entity.dying) continue;
 
     const regen = entity.regen;
     const health = entity.health;
     if (!regen || !health) continue;
+
+    // Don't regen if HP <= 0 - regen shouldn't resurrect
+    if (health.current <= 0) continue;
 
     // Accumulate time
     regen.accumulated += effectiveDelta;
@@ -68,7 +71,8 @@ export function RegenSystem(deltaMs: number): void {
   }
 
   // Hex regen (player in hex_veil stance)
-  if (player && !player.dying && player.health && player.stanceState?.activeStanceId === 'hex_veil') {
+  // Don't regen if HP <= 0 (dead) - regen shouldn't resurrect
+  if (player && !player.dying && player.health && player.health.current > 0 && player.stanceState?.activeStanceId === 'hex_veil') {
     const hexRegen = player.passiveEffectState?.computed?.hexRegen ?? 0;
     if (hexRegen > 0) {
       const regenAmount = (hexRegen * effectiveDelta) / 1000;
