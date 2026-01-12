@@ -279,9 +279,9 @@ export interface PowerUpgrade {
   buffSpeed?: number;
   buffDuration?: number;
   buffCritChance?: number;
-  // Debuff upgrades
-  enemyDamageAmp?: number;
-  debuffDuration?: number;
+  // Debuff upgrades (field names must match base power properties)
+  enemyVulnerable?: number;
+  enemyVulnerableDuration?: number;
   enemySlowPercent?: number;
   // Sustain upgrades
   lifestealPercent?: number;
@@ -452,8 +452,9 @@ const ARCANE_WEAKNESS: ArchmagePower = {
     {
       tier: 1,
       description: '35% more damage, 10s duration',
-      enemyDamageAmp: 35,
-      debuffDuration: 10,
+      // Note: Upgrade fields must match base power fields (enemyVulnerable, not enemyDamageAmp)
+      enemyVulnerable: 35,
+      enemyVulnerableDuration: 10,
     },
     {
       tier: 2,
@@ -1451,12 +1452,10 @@ Find the section after `switch (power.effect)` and before `setCooldown`, add:
 // After applying power effect, before setCooldown:
 
 // Reset all other cooldowns
+// Note: We use .clear() here because setCooldown() is called immediately after this block,
+// which will add the current power's cooldown. This follows the existing pattern in power.ts:165.
 if (power.resetAllCooldowns && entity.cooldowns) {
-  for (const [powerId] of entity.cooldowns) {
-    if (powerId !== power.id) {
-      entity.cooldowns.delete(powerId);
-    }
-  }
+  entity.cooldowns.clear();
   addCombatLog('All cooldowns reset!');
 }
 
@@ -1523,10 +1522,12 @@ git commit -m "feat(ecs): add Archmage power mechanics (resetAllCooldowns, charg
 Find where player damage is calculated before applying to enemy, add:
 
 ```typescript
-// When calculating damage to enemy, after base damage calculation:
+// When calculating damage to enemy (player attacking), after base damage calculation:
+// Place this in the player attack section (after line 96 in combat.ts)
+// Use `entity` (the attacker) and `target` (the defender) already in scope - do NOT call getPlayer()
 
-// Check for vulnerable status on target
-if (target.statusEffects?.some(s => s.type === 'vulnerable')) {
+// Check for vulnerable status on target (only when player attacks enemy)
+if (entity.player && target.statusEffects?.some(s => s.type === 'vulnerable')) {
   const vulnEffect = target.statusEffects.find(s => s.type === 'vulnerable');
   if (vulnEffect) {
     damage = Math.round(damage * (1 + vulnEffect.value / 100));
@@ -1534,9 +1535,9 @@ if (target.statusEffects?.some(s => s.type === 'vulnerable')) {
 }
 
 // Check for hex damage amp (player in hex stance attacking)
-const player = getPlayer();
-if (player?.stanceState?.activeStanceId === 'hex_veil') {
-  const computed = player.passiveEffectState?.computed;
+// Use `entity` directly - it's the attacker already in scope
+if (entity.player && entity.stanceState?.activeStanceId === 'hex_veil') {
+  const computed = entity.passiveEffectState?.computed;
   if (computed?.hexDamageAmp) {
     damage = Math.round(damage * (1 + computed.hexDamageAmp / 100));
   }
@@ -1548,11 +1549,12 @@ if (player?.stanceState?.activeStanceId === 'hex_veil') {
 Find where enemy damage is calculated before applying to player, add:
 
 ```typescript
-// When enemy attacks player, after base damage calculation:
+// When enemy attacks player (after line 72 in combat.ts):
+// Use `target` (the player being attacked) already in scope - do NOT call getPlayer()
 
-// Check hex damage reduction
-if (player.stanceState?.activeStanceId === 'hex_veil') {
-  const computed = player.passiveEffectState?.computed;
+// Check hex damage reduction (when player is the target)
+if (target.player && target.stanceState?.activeStanceId === 'hex_veil') {
+  const computed = target.passiveEffectState?.computed;
   if (computed?.hexDamageReduction) {
     const reduction = computed.hexDamageReduction * (computed.hexIntensityMultiplier ?? 1);
     damage = Math.round(damage * (1 - reduction / 100));
@@ -1589,11 +1591,13 @@ git commit -m "feat(ecs): add vulnerable status and hex effects to combat system
 At the beginning of the EnemyAbilitySystem function, add:
 
 ```typescript
-// At start of EnemyAbilitySystem, after phase check:
+// At start of EnemyAbilitySystem, after phase check but BEFORE the existing dying checks:
+// Note: This runs before the line `if (!enemy || !player || enemy.dying || player.dying) return;`
+// so we must include our own dying check
 
 // Check if hex disables enemy abilities
 const player = getPlayer();
-if (player?.stanceState?.activeStanceId === 'hex_veil') {
+if (player && !player.dying && player.stanceState?.activeStanceId === 'hex_veil') {
   const computed = player.passiveEffectState?.computed;
   if (computed?.hexDisableAbilities) {
     return; // Skip all enemy ability processing
@@ -1633,9 +1637,11 @@ In the PassiveEffectSystem function, after the existing damage aura processing, 
 // After existing damageAuraPerSecond processing:
 
 // Process hex damage aura (only in hex_veil stance)
+// Note: getActiveEnemy() uses activeEnemyQuery which already excludes dying enemies,
+// so we don't need to check !enemy.dying here
 if (player.stanceState?.activeStanceId === 'hex_veil' && computed.hexDamageAura > 0) {
   const enemy = getActiveEnemy();
-  if (enemy?.health && !enemy.dying) {
+  if (enemy?.health) {
     const hexAuraDamage = computed.hexDamageAura * computed.hexIntensityMultiplier;
     const auraDamage = Math.round(hexAuraDamage * (effectiveDelta / 1000));
     if (auraDamage > 0) {
