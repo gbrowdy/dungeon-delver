@@ -59,7 +59,7 @@ export function StanceToggle({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2" data-testid="stance-toggle">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="pixel-text text-pixel-xs text-slate-400">Stance</h3>
@@ -137,7 +137,10 @@ export function StanceToggle({
                       {stance.name}
                     </span>
                     {isActive && (
-                      <span className="pixel-text text-pixel-2xs text-emerald-500 relative z-10">
+                      <span
+                        className="pixel-text text-pixel-2xs text-emerald-500 relative z-10"
+                        data-testid="active-stance"
+                      >
                         Active
                       </span>
                     )}
