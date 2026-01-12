@@ -17,7 +17,9 @@ import { LEVEL_UP_BONUSES } from '@/constants/game';
 import type { AnimationEvent, AnimationPayload } from '../components';
 import { queueAnimationEvent, addCombatLog } from '../utils';
 import { getBerserkerPowerChoices } from '@/data/paths/berserker-powers';
+import { getArchmagePowerChoices } from '@/data/paths/archmage-powers';
 import { getGuardianEnhancementChoices } from '@/data/paths/guardian-enhancements';
+import { getEnchanterEnhancementChoices } from '@/data/paths/enchanter-enhancements';
 import { world } from '../world';
 
 export function ProgressionSystem(_deltaMs: number): void {
@@ -96,7 +98,16 @@ export function ProgressionSystem(_deltaMs: number): void {
         const isPowerLevel = [2, 4, 6, 8].includes(newLevel);
 
         if (isPowerLevel) {
-          const choices = getBerserkerPowerChoices(newLevel);
+          let choices: import('@/types/game').Power[] = [];
+          const pathId = player.pathProgression.pathId;
+
+          if (pathId === 'berserker') {
+            choices = getBerserkerPowerChoices(newLevel);
+          } else if (pathId === 'archmage') {
+            choices = getArchmagePowerChoices(newLevel);
+          }
+          // TODO: Add assassin, crusader when implemented
+
           if (choices.length > 0) {
             world.addComponent(player, 'pendingPowerChoice', {
               level: newLevel,
@@ -119,17 +130,35 @@ export function ProgressionSystem(_deltaMs: number): void {
       } else if (player.pathProgression.pathType === 'passive') {
         // Passive path: Stance enhancement choice every level from 3-15
         if (newLevel >= 3 && newLevel <= 15) {
+          const pathId = player.path?.pathId;
           const stanceState = player.pathProgression.stanceProgression;
-          const choices = getGuardianEnhancementChoices(
-            stanceState?.ironTier ?? 0,
-            stanceState?.retributionTier ?? 0
-          );
 
-          if (choices.iron && choices.retribution) {
-            world.addComponent(player, 'pendingStanceEnhancement', {
-              ironChoice: choices.iron,
-              retributionChoice: choices.retribution,
-            });
+          if (pathId === 'guardian' && stanceState) {
+            const choices = getGuardianEnhancementChoices(
+              stanceState.ironTier ?? 0,
+              stanceState.retributionTier ?? 0
+            );
+
+            if (choices.iron && choices.retribution) {
+              world.addComponent(player, 'pendingStanceEnhancement', {
+                pathId: 'guardian',
+                ironChoice: choices.iron,
+                retributionChoice: choices.retribution,
+              });
+            }
+          } else if (pathId === 'enchanter' && stanceState) {
+            const choices = getEnchanterEnhancementChoices(
+              stanceState.arcaneSurgeTier ?? 0,
+              stanceState.hexVeilTier ?? 0
+            );
+
+            if (choices.arcaneSurge && choices.hexVeil) {
+              world.addComponent(player, 'pendingStanceEnhancement', {
+                pathId: 'enchanter',
+                arcaneSurgeChoice: choices.arcaneSurge,
+                hexVeilChoice: choices.hexVeil,
+              });
+            }
           }
         }
       }

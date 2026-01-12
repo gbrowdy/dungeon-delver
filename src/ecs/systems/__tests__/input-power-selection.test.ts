@@ -324,6 +324,7 @@ describe('InputSystem - Power Selection Commands', () => {
           },
         },
         pendingStanceEnhancement: {
+          pathId: 'guardian',
           ironChoice: {
             id: 'iron_1_fortified_skin',
             tier: 1,
@@ -376,6 +377,7 @@ describe('InputSystem - Power Selection Commands', () => {
           },
         },
         pendingStanceEnhancement: {
+          pathId: 'guardian',
           ironChoice: {
             id: 'iron_1_fortified_skin',
             tier: 1,
@@ -445,6 +447,7 @@ describe('InputSystem - Power Selection Commands', () => {
         identity: { name: 'Hero', class: 'warrior' },
         health: { current: 100, max: 100 },
         pendingStanceEnhancement: {
+          pathId: 'guardian',
           ironChoice: {
             id: 'iron_1_fortified_skin',
             tier: 1,
@@ -468,8 +471,9 @@ describe('InputSystem - Power Selection Commands', () => {
       dispatch(Commands.selectStanceEnhancement('iron'));
       InputSystem(16);
 
-      // Should still clear pending choice
-      expect(player.pendingStanceEnhancement).toBeUndefined();
+      // Should NOT clear pending choice since pathProgression is missing
+      // (can't process without stanceProgression to update)
+      expect(player.pendingStanceEnhancement).toBeDefined();
     });
 
     it('should handle multiple enhancements in sequence', () => {
@@ -487,6 +491,7 @@ describe('InputSystem - Power Selection Commands', () => {
           },
         },
         pendingStanceEnhancement: {
+          pathId: 'guardian',
           ironChoice: {
             id: 'iron_2_steel_resolve',
             tier: 2,

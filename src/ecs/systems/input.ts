@@ -16,6 +16,7 @@ import { getPathResource, PATH_RESOURCES } from '@/data/pathResources';
 import { getPathById } from '@/utils/pathUtils';
 import { getStancesForPath, getDefaultStanceId } from '@/data/stances';
 import { getBerserkerPowerChoices } from '@/data/paths/berserker-powers';
+import { getArchmagePowerChoices } from '@/data/paths/archmage-powers';
 import { computeAllEffectivePowers } from '@/utils/powerUpgrades';
 import { computeEffectiveStanceEffects } from '@/utils/stanceUtils';
 import { recomputeDerivedStats } from '@/utils/statUtils';
@@ -365,14 +366,29 @@ export function InputSystem(_deltaMs: number): void {
             powerUpgrades: [],
           };
         } else if (pathDef?.type === 'passive') {
-          player.pathProgression = {
-            pathId: cmd.pathId,
-            pathType: 'passive',
-            stanceProgression: {
+          let stanceProgression: import('@/types/paths').StanceProgressionState;
+
+          if (cmd.pathId === 'guardian') {
+            stanceProgression = {
               ironTier: 0,
               retributionTier: 0,
               acquiredEnhancements: [],
-            },
+            };
+          } else if (cmd.pathId === 'enchanter') {
+            stanceProgression = {
+              arcaneSurgeTier: 0,
+              hexVeilTier: 0,
+              acquiredEnhancements: [],
+            };
+          } else {
+            // Default fallback for future passive paths
+            stanceProgression = { acquiredEnhancements: [] };
+          }
+
+          player.pathProgression = {
+            pathId: cmd.pathId,
+            pathType: 'passive',
+            stanceProgression,
           };
         }
 
@@ -411,7 +427,16 @@ export function InputSystem(_deltaMs: number): void {
           const isPowerLevel = [2, 4, 6, 8].includes(currentLevel);
 
           if (isPowerLevel) {
-            const choices = getBerserkerPowerChoices(currentLevel);
+            let choices: import('@/types/game').Power[] = [];
+            const pathId = player.path?.pathId;
+
+            if (pathId === 'berserker') {
+              choices = getBerserkerPowerChoices(currentLevel);
+            } else if (pathId === 'archmage') {
+              choices = getArchmagePowerChoices(currentLevel);
+            }
+            // TODO: Add assassin, crusader when implemented
+
             if (choices.length > 0) {
               world.addComponent(player, 'pendingPowerChoice', {
                 level: currentLevel,
@@ -540,13 +565,17 @@ export function InputSystem(_deltaMs: number): void {
       case 'SELECT_STANCE_ENHANCEMENT': {
         if (!player?.pendingStanceEnhancement || !gameState) break;
 
-        // Apply enhancement if pathProgression exists
-        if (player.pathProgression?.stanceProgression) {
-          const stanceState = player.pathProgression.stanceProgression;
-          const enhancement =
+        const pending = player.pendingStanceEnhancement;
+        const stanceState = player.pathProgression?.stanceProgression;
+        if (!stanceState) break;
+
+        let enhancement: StanceEnhancement;
+
+        if (pending.pathId === 'guardian') {
+          enhancement =
             cmd.stanceId === 'iron'
-              ? player.pendingStanceEnhancement.ironChoice
-              : player.pendingStanceEnhancement.retributionChoice;
+              ? pending.ironChoice
+              : pending.retributionChoice;
 
           // Update stance tier
           if (cmd.stanceId === 'iron') {
@@ -554,10 +583,23 @@ export function InputSystem(_deltaMs: number): void {
           } else {
             stanceState.retributionTier = enhancement.tier;
           }
+        } else {
+          // Enchanter path uses arcane_surge/hex_veil
+          enhancement =
+            cmd.stanceId === 'arcane_surge'
+              ? pending.arcaneSurgeChoice
+              : pending.hexVeilChoice;
 
-          // Track acquired enhancement
-          stanceState.acquiredEnhancements.push(enhancement.id);
+          // Update stance tier
+          if (cmd.stanceId === 'arcane_surge') {
+            stanceState.arcaneSurgeTier = enhancement.tier;
+          } else {
+            stanceState.hexVeilTier = enhancement.tier;
+          }
         }
+
+        // Track acquired enhancement
+        stanceState.acquiredEnhancements.push(enhancement.id);
 
         // Clear pending choice
         world.removeComponent(player, 'pendingStanceEnhancement');

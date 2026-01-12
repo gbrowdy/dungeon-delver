@@ -10,6 +10,7 @@ import type { Entity } from '@/ecs/components';
 import type { Power } from '@/types/game';
 import type { PowerUpgrade } from '@/data/paths/berserker-powers';
 import { getBerserkerPowerUpgrade } from '@/data/paths/berserker-powers';
+import { getArchmagePowerUpgrade } from '@/data/paths/archmage-powers';
 
 // Fields that can be overridden by upgrades
 const UPGRADE_FIELDS = [
@@ -25,14 +26,21 @@ const UPGRADE_FIELDS = [
   'buffDuration',
   'buffPower',
   'buffSpeed',
+  'buffCritChance',
   'lifesteal',
   'lifestealPercent',
   'selfDamagePercent',
   'healOnKill',
   'shieldOnOverheal',
+  'shieldOnFullHeal',
   'cooldownReductionOnKill',
   'deathImmunityDuration',
   'reflectDuringImmunity',
+  'enemyVulnerable',
+  'enemyVulnerableDuration',
+  'enemySlowPercent',
+  'chargeModify',
+  'visualMultiHit',
 ] as const;
 
 // Registry pattern for path-specific upgrade lookups
@@ -40,8 +48,8 @@ type UpgradeLookup = (powerId: string, tier: 1 | 2) => PowerUpgrade | undefined;
 
 const upgradeRegistry: Record<string, UpgradeLookup> = {
   berserker: getBerserkerPowerUpgrade,
+  archmage: getArchmagePowerUpgrade,
   // Future paths add one line here:
-  // archmage: getArchmagePowerUpgrade,
   // assassin: getAssassinPowerUpgrade,
   // crusader: getCrusaderPowerUpgrade,
 };

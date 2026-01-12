@@ -1,5 +1,5 @@
 // src/ecs/systems/__tests__/status-effect.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { world } from '../../world';
 import { StatusEffectSystem } from '../status-effect';
 import { resetTick } from '../../loop';
@@ -286,5 +286,868 @@ describe('StatusEffectSystem', () => {
 
     // Should take 5 damage (5 dps * 1s)
     expect(entity.health?.current).toBe(95);
+  });
+});
+
+describe('StatusEffectSystem - Burn Damage Percent', () => {
+  beforeEach(() => {
+    // Copy array before iterating to avoid mutation issues during iteration
+    for (const entity of [...world.entities]) {
+      world.remove(entity);
+    }
+    resetTick();
+
+    // Add game state
+    world.add({
+      gameState: true,
+      phase: 'combat',
+      combatSpeed: { multiplier: 1 },
+      floor: { number: 1, room: 1, totalRooms: 5 },
+      animationEvents: [],
+      combatLog: [],
+    });
+  });
+
+  it('should increase burn tick damage with burnDamagePercent', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: { burnDamagePercent: 50 } as any, // +50% burn damage
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame' },
+      ],
+    });
+
+    // Simulate 1 second (1 burn tick)
+    StatusEffectSystem(1000);
+
+    // Base 10 damage + 50% = 15 damage, health = 100 - 15 = 85
+    expect(enemy.health?.current).toBe(85);
+  });
+
+  it('should not modify burn damage without burnDamagePercent', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: { computed: {} as any, lastComputedTick: 0 },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame' },
+      ],
+    });
+
+    StatusEffectSystem(1000);
+
+    // Base 10 damage only
+    expect(enemy.health?.current).toBe(90);
+  });
+
+  it('should only apply burnDamagePercent to burn effects, not poison or bleed', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: { burnDamagePercent: 100 } as any, // +100% burn damage
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'poison-1', type: 'poison', damage: 10, remainingTurns: 3, icon: 'skull' },
+      ],
+    });
+
+    StatusEffectSystem(1000);
+
+    // Poison should not be affected by burnDamagePercent - still base 10 damage
+    expect(enemy.health?.current).toBe(90);
+  });
+});
+
+describe('StatusEffectSystem - Burn Tick Rate', () => {
+  beforeEach(() => {
+    // Copy array before iterating to avoid mutation issues during iteration
+    for (const entity of [...world.entities]) {
+      world.remove(entity);
+    }
+    resetTick();
+
+    // Add game state
+    world.add({
+      gameState: true,
+      phase: 'combat',
+      combatSpeed: { multiplier: 1 },
+      floor: { number: 1, room: 1, totalRooms: 5 },
+      animationEvents: [],
+      combatLog: [],
+    });
+  });
+
+  it('should apply burn damage faster when burnTickRateMultiplier > 1', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 2.0 } as any, // 2x faster = ticks every 500ms instead of 1000ms
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 0 },
+      ],
+    });
+
+    // Run for 500ms - should apply 1 tick with 2x faster rate
+    StatusEffectSystem(500);
+
+    expect(enemy.health?.current).toBe(90); // -10 from burn tick
+  });
+
+  it('should tick at normal rate when burnTickRateMultiplier is 1', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 1.0 } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 0 },
+      ],
+    });
+
+    // Run for 500ms - should NOT tick yet (needs 1000ms)
+    StatusEffectSystem(500);
+
+    expect(enemy.health?.current).toBe(100); // No damage yet
+  });
+
+  it('should apply multiple burn ticks when enough time passes', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 2.0 } as any, // 2x faster = ticks every 500ms
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 5, icon: 'flame', tickAccumulated: 0 },
+      ],
+    });
+
+    // Run for 1000ms - should apply 2 ticks at 2x rate
+    StatusEffectSystem(1000);
+
+    expect(enemy.health?.current).toBe(80); // -20 from 2 burn ticks
+  });
+
+  it('should combine burnTickRateMultiplier with burnDamagePercent', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 2.0, // 2x faster
+          burnDamagePercent: 50, // +50% damage
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 5, icon: 'flame', tickAccumulated: 0 },
+      ],
+    });
+
+    // Run for 500ms - should apply 1 tick at 2x rate with +50% damage
+    StatusEffectSystem(500);
+
+    // Base 10 damage + 50% = 15 damage
+    expect(enemy.health?.current).toBe(85);
+  });
+
+  it('should not affect poison tick rate', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 2.0 } as any, // 2x faster - but only for burns
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'poison-1', type: 'poison', damage: 10, remainingTurns: 3, icon: 'skull' },
+      ],
+    });
+
+    // Run for 500ms - poison uses continuous DPS model, should take 5 damage (10 DPS * 0.5s)
+    StatusEffectSystem(500);
+
+    expect(enemy.health?.current).toBe(95);
+  });
+
+  it('should default to 1.0 tick rate when burnTickRateMultiplier is not set', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {} as any, // No burnTickRateMultiplier
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 0 },
+      ],
+    });
+
+    // Run for 500ms - should NOT tick yet (default 1.0 needs 1000ms)
+    StatusEffectSystem(500);
+
+    expect(enemy.health?.current).toBe(100); // No damage yet
+  });
+});
+
+describe('StatusEffectSystem - Burn Execute Bonus', () => {
+  beforeEach(() => {
+    // Copy array before iterating to avoid mutation issues during iteration
+    for (const entity of [...world.entities]) {
+      world.remove(entity);
+    }
+    resetTick();
+
+    // Add game state
+    world.add({
+      gameState: true,
+      phase: 'combat',
+      combatSpeed: { multiplier: 1 },
+      floor: { number: 1, room: 1, totalRooms: 5 },
+      animationEvents: [],
+      combatLog: [],
+    });
+  });
+
+  it('should deal bonus burn damage to low HP enemies', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnExecuteBonus: 50,
+          burnExecuteThreshold: 30,
+        } as any, // +50% below 30% HP
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 25, max: 100 }, // 25% HP, below threshold
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0); // Process tick (tickAccumulated already at 1000)
+
+    // 10 base + 50% execute bonus = 15 damage, 25 - 15 = 10 HP
+    expect(enemy.health?.current).toBe(10);
+  });
+
+  it('should NOT apply execute bonus above HP threshold', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnExecuteBonus: 50,
+          burnExecuteThreshold: 30,
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 50, max: 100 }, // 50% HP, above threshold
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // Only base damage, 50 - 10 = 40 HP
+    expect(enemy.health?.current).toBe(40);
+  });
+
+  it('should stack burnExecuteBonus with burnDamagePercent', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnDamagePercent: 50, // +50% base
+          burnExecuteBonus: 100, // +100% execute
+          burnExecuteThreshold: 30,
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 20, max: 100 }, // 20% HP, below threshold
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 10 base * 1.5 (burnDamagePercent) = 15, then 15 * 2.0 (execute bonus) = 30 damage
+    // 20 - 30 = -10, clamped to 0
+    expect(enemy.health?.current).toBe(0);
+  });
+
+  it('should not apply execute bonus when threshold is 0 (disabled)', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnExecuteBonus: 50,
+          burnExecuteThreshold: 0, // disabled
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 10, max: 100 }, // 10% HP, but threshold is 0
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // No execute bonus when threshold is 0, just base 10 damage
+    expect(enemy.health?.current).toBe(0); // 10 - 10 = 0
+  });
+});
+
+describe('StatusEffectSystem - Burn Can Crit', () => {
+  beforeEach(() => {
+    // Copy array before iterating to avoid mutation issues during iteration
+    for (const entity of [...world.entities]) {
+      world.remove(entity);
+    }
+    resetTick();
+
+    // Add game state
+    world.add({
+      gameState: true,
+      phase: 'combat',
+      combatSpeed: { multiplier: 1 },
+      floor: { number: 1, room: 1, totalRooms: 5 },
+      animationEvents: [],
+      combatLog: [],
+    });
+
+    // Mock Math.random to always crit (below 50% threshold)
+    vi.spyOn(Math, 'random').mockReturnValue(0.01);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should allow burn ticks to crit when burnCanCrit is true', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      attack: {
+        baseDamage: 10,
+        critChance: 0.5, // 50% crit chance
+        critMultiplier: 2.0, // 2x crit damage
+        variance: { min: 1, max: 1 },
+      },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 1.0, burnCanCrit: true } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 10 * 2.0 crit = 20 damage
+    expect(enemy.health?.current).toBe(80);
+  });
+
+  it('should NOT crit burn ticks when burnCanCrit is false', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      attack: {
+        baseDamage: 10,
+        critChance: 0.5,
+        critMultiplier: 2.0,
+        variance: { min: 1, max: 1 },
+      },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 1.0, burnCanCrit: false } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // No crit, just base 10 damage
+    expect(enemy.health?.current).toBe(90);
+  });
+
+  it('should NOT crit when random roll is above critChance', () => {
+    // Mock random to be above crit threshold
+    vi.spyOn(Math, 'random').mockReturnValue(0.75); // Above 50% = no crit
+
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      attack: {
+        baseDamage: 10,
+        critChance: 0.5, // 50% crit chance
+        critMultiplier: 2.0,
+        variance: { min: 1, max: 1 },
+      },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 1.0, burnCanCrit: true } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // No crit because roll (0.75) > critChance (0.5)
+    expect(enemy.health?.current).toBe(90);
+  });
+
+  it('should use default critMultiplier of 1.5 if not defined', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      attack: {
+        baseDamage: 10,
+        critChance: 0.5,
+        // No critMultiplier defined
+        variance: { min: 1, max: 1 },
+      },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 1.0, burnCanCrit: true } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 10 * 1.5 (default) = 15 damage
+    expect(enemy.health?.current).toBe(85);
+  });
+
+  it('should apply crit AFTER burnDamagePercent and burnExecuteBonus', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      attack: {
+        baseDamage: 10,
+        critChance: 0.5,
+        critMultiplier: 2.0,
+        variance: { min: 1, max: 1 },
+      },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnCanCrit: true,
+          burnDamagePercent: 50, // +50% damage
+          burnExecuteBonus: 100, // +100% execute
+          burnExecuteThreshold: 30,
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 20, max: 100 }, // 20% HP, below threshold
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 10 base * 1.5 (burnDamagePercent) = 15
+    // 15 * 2.0 (execute) = 30
+    // 30 * 2.0 (crit) = 60
+    // 20 - 60 = -40, clamped to 0
+    expect(enemy.health?.current).toBe(0);
+  });
+});
+
+describe('StatusEffectSystem - Lifesteal From Burns', () => {
+  beforeEach(() => {
+    // Copy array before iterating to avoid mutation issues during iteration
+    for (const entity of [...world.entities]) {
+      world.remove(entity);
+    }
+    resetTick();
+
+    // Add game state
+    world.add({
+      gameState: true,
+      phase: 'combat',
+      combatSpeed: { multiplier: 1 },
+      floor: { number: 1, room: 1, totalRooms: 5 },
+      animationEvents: [],
+      combatLog: [],
+    });
+  });
+
+  it('should heal player from burn damage', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 50, max: 100 },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 1.0, lifestealFromBurns: 20 } as any, // 20% lifesteal
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 10 damage * 20% = 2 HP healed
+    expect(player.health?.current).toBe(52);
+  });
+
+  it('should NOT heal player from poison damage (only burns)', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 50, max: 100 },
+      passiveEffectState: {
+        computed: { lifestealFromBurns: 20 } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'poison-1', type: 'poison', damage: 10, remainingTurns: 3, icon: 'skull' },
+      ],
+    });
+
+    // Run for 1 second to process poison damage
+    StatusEffectSystem(1000);
+
+    // Should not heal from poison
+    expect(player.health?.current).toBe(50);
+  });
+
+  it('should not overheal past max HP', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 95, max: 100 },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 1.0, lifestealFromBurns: 50 } as any, // 50% lifesteal
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 20, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 20 damage * 50% = 10 HP healed, but capped at max (100)
+    // 95 + 10 = 105, capped to 100
+    expect(player.health?.current).toBe(100);
+  });
+
+  it('should apply lifesteal with enhanced burn damage', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 50, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnDamagePercent: 100, // +100% damage
+          lifestealFromBurns: 20, // 20% lifesteal
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // Base 10 * 2.0 (burnDamagePercent) = 20 damage
+    // 20 * 20% = 4 HP healed
+    expect(player.health?.current).toBe(54);
+  });
+});
+
+describe('StatusEffectSystem - Burn Ignores Armor', () => {
+  beforeEach(() => {
+    // Copy array before iterating to avoid mutation issues during iteration
+    for (const entity of [...world.entities]) {
+      world.remove(entity);
+    }
+    resetTick();
+
+    // Add game state
+    world.add({
+      gameState: true,
+      phase: 'combat',
+      combatSpeed: { multiplier: 1 },
+      floor: { number: 1, room: 1, totalRooms: 5 },
+      animationEvents: [],
+      combatLog: [],
+    });
+  });
+
+  it('should bypass armor when burnIgnoresArmor is true', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnIgnoresArmor: true,
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      defense: { value: 50 }, // Would normally reduce damage
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // Full 10 damage ignoring 50 armor
+    expect(enemy.health?.current).toBe(90);
+  });
+
+  it('should apply armor normally without burnIgnoresArmor', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnIgnoresArmor: false,
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      defense: { value: 5 }, // Reduces damage by 5
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 10 - 5 armor = 5 damage, 100 - 5 = 95 HP
+    expect(enemy.health?.current).toBe(95);
+  });
+
+  it('should deal minimum 1 damage even with high armor', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnIgnoresArmor: false,
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      defense: { value: 100 }, // Way more than burn damage
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // Minimum 1 damage even with armor > burn damage
+    expect(enemy.health?.current).toBe(99);
+  });
+
+  it('should apply armor after damage bonuses', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnIgnoresArmor: false,
+          burnDamagePercent: 50, // +50% damage
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      defense: { value: 5 }, // Reduces damage by 5
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 10 base * 1.5 = 15, then 15 - 5 armor = 10 damage
+    expect(enemy.health?.current).toBe(90);
   });
 });

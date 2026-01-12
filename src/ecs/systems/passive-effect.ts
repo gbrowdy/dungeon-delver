@@ -20,6 +20,7 @@ import type { Entity, PassiveEffectState, ComputedPassiveEffects } from '../comp
 import { getPlayer, getActiveEnemy, getGameState } from '../queries';
 import { getEffectiveDelta } from '../loop';
 import { getGuardianEnhancementById } from '@/data/paths/guardian-enhancements';
+import { getEnchanterEnhancementById } from '@/data/paths/enchanter-enhancements';
 import { getStancesForPath } from '@/data/stances';
 import { addCombatLog, queueAnimationEvent } from '../utils';
 import type { StanceEnhancementEffect } from '@/types/paths';
@@ -71,6 +72,33 @@ function createDefaultComputed(): ComputedPassiveEffects {
     conditionalDamageReduction: 0,
     conditionalReflectMultiplier: 1,
     conditionalRegenMultiplier: 1,
+
+    // Burn effects
+    burnDamagePercent: 0,
+    burnProcChance: 0,
+    burnDurationBonus: 0,
+    burnMaxStacks: 1,
+    burnTickRateMultiplier: 1,
+    damageVsBurning: 0,
+    critRefreshesBurn: false,
+    lifestealFromBurns: 0,
+    burnExecuteThreshold: 0,
+    burnExecuteBonus: 0,
+    burnIgnoresArmor: false,
+    burnCanCrit: false,
+
+    // Hex effects
+    hexDamageReduction: 0,
+    hexSlowPercent: 0,
+    hexDamageAmp: 0,
+    hexRegen: 0,
+    hexIntensityMultiplier: 1,
+    hexLifesteal: 0,
+    hexArmorReduction: 0,
+    hexReflect: 0,
+    hexDamageAura: 0,
+    hexHealOnEnemyAttack: 0,
+    hexDisableAbilities: false,
   };
 }
 
@@ -158,7 +186,11 @@ function getActiveStanceEnhancements(player: Entity): StanceEnhancementEffect[] 
   const effects: StanceEnhancementEffect[] = [];
 
   for (const enhancementId of stanceProgression.acquiredEnhancements) {
-    const enhancement = getGuardianEnhancementById(enhancementId);
+    // Try Guardian first, then Enchanter
+    let enhancement = getGuardianEnhancementById(enhancementId);
+    if (!enhancement) {
+      enhancement = getEnchanterEnhancementById(enhancementId);
+    }
     if (!enhancement) continue;
 
     // Only include enhancements for the active stance
@@ -299,6 +331,77 @@ export function recomputePassiveEffects(player: Entity): void {
       case 'armor_scaling_dr':
         // This is a dynamic effect that depends on current armor
         // Will be handled in updateConditionalEffects if needed
+        break;
+
+      // Burn effects (Arcane Surge stance)
+      case 'burn_damage_percent':
+        computed.burnDamagePercent += effect.value;
+        break;
+      case 'burn_proc_chance':
+        computed.burnProcChance += effect.value;
+        break;
+      case 'burn_duration_bonus':
+        computed.burnDurationBonus += effect.value;
+        break;
+      case 'burn_max_stacks':
+        computed.burnMaxStacks = Math.max(computed.burnMaxStacks, effect.value);
+        break;
+      case 'burn_tick_rate':
+        computed.burnTickRateMultiplier *= (1 + effect.value / 100);
+        break;
+      case 'damage_vs_burning':
+        computed.damageVsBurning += effect.value;
+        break;
+      case 'crit_refreshes_burn':
+        computed.critRefreshesBurn = effect.value;
+        break;
+      case 'lifesteal_from_burns':
+        computed.lifestealFromBurns += effect.value;
+        break;
+      case 'burn_execute_bonus':
+        computed.burnExecuteThreshold = effect.threshold;
+        computed.burnExecuteBonus = effect.value;
+        break;
+      case 'burn_ignores_armor':
+        computed.burnIgnoresArmor = effect.value;
+        break;
+      case 'burn_can_crit':
+        computed.burnCanCrit = effect.value;
+        break;
+
+      // Hex effects (Hex Veil stance)
+      case 'hex_damage_reduction':
+        computed.hexDamageReduction += effect.value;
+        break;
+      case 'hex_slow_percent':
+        computed.hexSlowPercent += effect.value;
+        break;
+      case 'hex_damage_amp':
+        computed.hexDamageAmp += effect.value;
+        break;
+      case 'hex_regen':
+        computed.hexRegen += effect.value;
+        break;
+      case 'hex_intensity':
+        computed.hexIntensityMultiplier *= (1 + effect.value / 100);
+        break;
+      case 'hex_lifesteal':
+        computed.hexLifesteal += effect.value;
+        break;
+      case 'hex_armor_reduction':
+        computed.hexArmorReduction += effect.value;
+        break;
+      case 'hex_reflect':
+        computed.hexReflect += effect.value;
+        break;
+      case 'hex_damage_aura':
+        computed.hexDamageAura += effect.value;
+        break;
+      case 'hex_heal_on_enemy_attack':
+        computed.hexHealOnEnemyAttack += effect.value;
+        break;
+      case 'hex_disable_abilities':
+        computed.hexDisableAbilities = effect.value;
         break;
     }
   }
@@ -564,6 +667,19 @@ export function PassiveEffectSystem(deltaMs: number): void {
     const enemy = getActiveEnemy();
     if (enemy?.health && !enemy.dying) {
       const auraDamage = Math.round(computed.damageAuraPerSecond * (effectiveDelta / 1000));
+      if (auraDamage > 0) {
+        enemy.health.current = Math.max(0, enemy.health.current - auraDamage);
+      }
+    }
+  }
+
+  // 3. Process hex damage aura (only in hex_veil stance)
+  // Note: getActiveEnemy() uses activeEnemyQuery which already excludes dying enemies
+  if (player.stanceState?.activeStanceId === 'hex_veil' && computed.hexDamageAura > 0) {
+    const enemy = getActiveEnemy();
+    if (enemy?.health) {
+      const hexAuraDamage = computed.hexDamageAura * computed.hexIntensityMultiplier;
+      const auraDamage = Math.round(hexAuraDamage * (effectiveDelta / 1000));
       if (auraDamage > 0) {
         enemy.health.current = Math.max(0, enemy.health.current - auraDamage);
       }

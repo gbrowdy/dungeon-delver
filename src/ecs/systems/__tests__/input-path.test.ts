@@ -522,6 +522,7 @@ describe('Passive effect recomputation', () => {
         stanceProgression: { ironTier: 0, retributionTier: 0, acquiredEnhancements: [] },
       },
       pendingStanceEnhancement: {
+        pathId: 'guardian',
         ironChoice: { id: 'iron_1_fortified_skin', name: 'Fortified Skin', tier: 1, description: '+20% Armor', stanceId: 'iron_stance', effects: [{ type: 'armor_percent', value: 20 }] },
         retributionChoice: { id: 'retribution_1_sharpened_thorns', name: 'Sharpened Thorns', tier: 1, description: '+30% Reflect', stanceId: 'retribution_stance', effects: [{ type: 'reflect_percent', value: 30 }] },
       },

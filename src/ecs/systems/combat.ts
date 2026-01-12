@@ -75,8 +75,13 @@ export function CombatSystem(_deltaMs: number): void {
     if (entity.enemy && target.player) {
       const hexReduction = getStanceBehavior(target, 'hex_aura');
       if (hexReduction > 0) {
+        const originalDamage = damage;
         damage = Math.round(damage * (1 - hexReduction));
         damage = Math.max(1, damage);
+        const reduced = originalDamage - damage;
+        if (reduced > 0) {
+          addCombatLog(`Hex Veil reduces damage by ${reduced}`);
+        }
       }
     }
 
@@ -105,6 +110,33 @@ export function CombatSystem(_deltaMs: number): void {
       }
     }
 
+    // Check for vulnerable status on target (only when player attacks enemy)
+    if (entity.player && target.statusEffects?.some(s => s.type === 'vulnerable')) {
+      const vulnEffect = target.statusEffects.find(s => s.type === 'vulnerable');
+      if (vulnEffect) {
+        damage = Math.round(damage * (1 + vulnEffect.value / 100));
+      }
+    }
+
+    // Bonus damage vs burning enemies (Arcane Surge enhancement)
+    if (entity.player && entity.stanceState?.activeStanceId === 'arcane_surge' && target.statusEffects) {
+      const hasBurn = target.statusEffects.some(e => e.type === 'burn');
+      const damageBonus = entity.passiveEffectState?.computed?.damageVsBurning ?? 0;
+      if (hasBurn && damageBonus > 0) {
+        damage = Math.round(damage * (1 + damageBonus / 100));
+      }
+    }
+
+    // Check for hex damage amp (player in hex stance attacking)
+    // Use `entity` directly - it's the attacker already in scope
+    if (entity.player && entity.stanceState?.activeStanceId === 'hex_veil') {
+      const computed = entity.passiveEffectState?.computed;
+      if (computed?.hexDamageAmp) {
+        const hexDamageAmp = computed.hexDamageAmp * (computed.hexIntensityMultiplier ?? 1);
+        damage = Math.round(damage * (1 + hexDamageAmp / 100));
+      }
+    }
+
     // Apply defense
     const defense = target.defense?.value ?? 0;
     // Apply stance armor modifier to defense (when player is target)
@@ -115,6 +147,15 @@ export function CombatSystem(_deltaMs: number): void {
         effectiveDefense = Math.round(defense * (1 + armorMod));
       }
     }
+
+    // Apply hex armor reduction when player attacks enemy in hex_veil stance
+    if (entity.player && target.enemy && entity.stanceState?.activeStanceId === 'hex_veil') {
+      const computed = entity.passiveEffectState?.computed;
+      const reduction = (computed?.hexArmorReduction ?? 0) * (computed?.hexIntensityMultiplier ?? 1);
+      if (reduction > 0) {
+        effectiveDefense = Math.round(effectiveDefense * (1 - reduction / 100));
+      }
+    }
     damage -= effectiveDefense;
     damage = Math.max(1, damage); // Minimum 1 damage
 
@@ -123,6 +164,16 @@ export function CombatSystem(_deltaMs: number): void {
       const incomingMult = getStanceDamageMultiplier(target, 'incoming');
       if (incomingMult !== 1) {
         damage = Math.round(damage * incomingMult);
+        damage = Math.max(1, damage); // Still minimum 1
+      }
+    }
+
+    // Check hex damage reduction (when player is the target)
+    if (target.player && target.stanceState?.activeStanceId === 'hex_veil') {
+      const computed = target.passiveEffectState?.computed;
+      if (computed?.hexDamageReduction) {
+        const reduction = computed.hexDamageReduction * (computed.hexIntensityMultiplier ?? 1);
+        damage = Math.round(damage * (1 - reduction / 100));
         damage = Math.max(1, damage); // Still minimum 1
       }
     }
@@ -201,28 +252,73 @@ export function CombatSystem(_deltaMs: number): void {
         }
       }
 
+      // Hex lifesteal
+      if (entity.stanceState?.activeStanceId === 'hex_veil') {
+        const computed = entity.passiveEffectState?.computed;
+        const lifesteal = (computed?.hexLifesteal ?? 0) * (computed?.hexIntensityMultiplier ?? 1);
+        if (lifesteal > 0 && entity.health) {
+          const healAmount = Math.round(damage * (lifesteal / 100));
+          if (healAmount > 0) {
+            entity.health.current = Math.min(entity.health.max, entity.health.current + healAmount);
+            addCombatLog(`Hex lifesteal heals for ${healAmount}`);
+          }
+        }
+      }
+
       // Apply arcane burn from stance (chance to deal bonus damage + apply burn DoT)
       const arcaneBurnChance = getStanceBehavior(entity, 'arcane_burn');
-      if (arcaneBurnChance > 0 && Math.random() < arcaneBurnChance) {
-        // Bonus damage: 30% of attack damage
-        const bonusDamage = Math.round(damage * 0.3);
-        if (bonusDamage > 0 && target.health) {
-          target.health.current = Math.max(0, target.health.current - bonusDamage);
-        }
+      if (arcaneBurnChance > 0) {
+        // Add burnProcChance enhancement bonus
+        const burnProcBonus = (entity.passiveEffectState?.computed?.burnProcChance ?? 0) / 100;
+        const totalChance = arcaneBurnChance + burnProcBonus;
 
-        // Apply burn DoT: 5 damage per second for 3 seconds
-        if (!target.statusEffects) {
-          target.statusEffects = [];
-        }
-        target.statusEffects.push({
-          id: `burn-${Date.now()}`,
-          type: 'burn',
-          damage: 5,
-          remainingTurns: 3,
-          icon: 'flame',
-        });
+        if (Math.random() < totalChance) {
+          // Bonus damage: 30% of attack damage
+          const bonusDamage = Math.round(damage * 0.3);
+          if (bonusDamage > 0 && target.health) {
+            target.health.current = Math.max(0, target.health.current - bonusDamage);
+          }
 
-        addCombatLog(`Arcane Burn! ${bonusDamage} bonus damage + burning for 15`);
+          // Apply burn DoT with stack limit
+          if (!target.statusEffects) {
+            target.statusEffects = [];
+          }
+          const durationBonus = entity.passiveEffectState?.computed?.burnDurationBonus ?? 0;
+          const burnDuration = 3 + durationBonus; // 3 seconds base + bonus
+          const maxStacks = entity.passiveEffectState?.computed?.burnMaxStacks ?? 1;
+
+          const existingBurns = target.statusEffects.filter(e => e.type === 'burn');
+
+          if (existingBurns.length < maxStacks) {
+            // Add new burn stack
+            target.statusEffects.push({
+              id: `burn-${Date.now()}`,
+              type: 'burn',
+              damage: bonusDamage,
+              remainingTurns: burnDuration,
+              icon: 'flame',
+            });
+          } else {
+            // Refresh oldest burn (first in array)
+            const oldestBurn = existingBurns[0];
+            oldestBurn.remainingTurns = burnDuration;
+            oldestBurn.damage = Math.max(oldestBurn.damage, bonusDamage);
+          }
+
+          addCombatLog(`Arcane Burn! ${bonusDamage} bonus damage + burning`);
+        }
+      }
+
+      // Refresh burn on crit (Arcane Surge enhancement)
+      if (attackData.isCrit && entity.stanceState?.activeStanceId === 'arcane_surge') {
+        if (entity.passiveEffectState?.computed?.critRefreshesBurn && target.statusEffects) {
+          for (const effect of target.statusEffects) {
+            if (effect.type === 'burn') {
+              const durationBonus = entity.passiveEffectState.computed.burnDurationBonus ?? 0;
+              effect.remainingTurns = 3 + durationBonus;
+            }
+          }
+        }
       }
     } else {
       // Enemy hit player
@@ -322,6 +418,28 @@ export function CombatSystem(_deltaMs: number): void {
         if (onDamagedResult.healAmount > 0 && target.health) {
           target.health.current = Math.min(target.health.max, target.health.current + onDamagedResult.healAmount);
           addCombatLog(`${targetName} heals for ${onDamagedResult.healAmount} on hit!`);
+        }
+      }
+
+      // Hex reflect - when enemy damages player in hex_veil stance
+      if (target.stanceState?.activeStanceId === 'hex_veil') {
+        const computed = target.passiveEffectState?.computed;
+        const reflect = (computed?.hexReflect ?? 0) * (computed?.hexIntensityMultiplier ?? 1);
+        if (reflect > 0 && entity.health) {
+          const reflectDmg = Math.round(damage * (reflect / 100));
+          entity.health.current = Math.max(0, entity.health.current - reflectDmg);
+          addCombatLog(`Hex reflects ${reflectDmg} damage`);
+        }
+      }
+
+      // Hex heal on enemy attack - heals player for % of max HP when enemy attacks
+      if (target.stanceState?.activeStanceId === 'hex_veil') {
+        const computed = target.passiveEffectState?.computed;
+        const healPct = (computed?.hexHealOnEnemyAttack ?? 0) * (computed?.hexIntensityMultiplier ?? 1);
+        if (healPct > 0 && target.health) {
+          const healAmt = Math.round(target.health.max * (healPct / 100));
+          target.health.current = Math.min(target.health.max, target.health.current + healAmt);
+          addCombatLog(`Hex aura heals ${healAmt}`);
         }
       }
     }

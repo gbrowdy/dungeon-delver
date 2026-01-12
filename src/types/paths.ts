@@ -315,6 +315,7 @@ export interface PlayerStanceState {
  * Guardian passive paths gain incremental enhancements to their stances
  */
 export type StanceEnhancementEffect =
+  // === GUARDIAN: IRON STANCE ===
   | { type: 'armor_percent'; value: number }
   | { type: 'damage_reduction'; value: number }
   | { type: 'hp_regen'; value: number }
@@ -328,6 +329,7 @@ export type StanceEnhancementEffect =
   | { type: 'regen_multiplier_above_hp'; threshold: number; multiplier: number }
   | { type: 'armor_reduces_dot'; value: boolean }
   | { type: 'survive_lethal'; value: boolean }
+  // === GUARDIAN: RETRIBUTION STANCE ===
   | { type: 'reflect_percent'; value: number }
   | { type: 'damage_per_hit_stack'; valuePerStack: number; maxStacks: number }
   | { type: 'heal_from_reflect'; percent: number }
@@ -340,7 +342,31 @@ export type StanceEnhancementEffect =
   | { type: 'reflect_ignores_armor'; value: boolean }
   | { type: 'on_hit_burst_chance'; chance: number; powerPercent: number }
   | { type: 'reflect_can_crit'; value: boolean }
-  | { type: 'reflect_kill_heal'; percent: number };
+  | { type: 'reflect_kill_heal'; percent: number }
+  // === ENCHANTER: ARCANE SURGE (BURN) ===
+  | { type: 'burn_damage_percent'; value: number }
+  | { type: 'burn_proc_chance'; value: number }
+  | { type: 'burn_duration_bonus'; value: number }
+  | { type: 'burn_max_stacks'; value: number }
+  | { type: 'burn_tick_rate'; value: number }
+  | { type: 'damage_vs_burning'; value: number }
+  | { type: 'crit_refreshes_burn'; value: boolean }
+  | { type: 'lifesteal_from_burns'; value: number }
+  | { type: 'burn_execute_bonus'; threshold: number; value: number }
+  | { type: 'burn_ignores_armor'; value: boolean }
+  | { type: 'burn_can_crit'; value: boolean }
+  // === ENCHANTER: HEX VEIL (DEBUFF) ===
+  | { type: 'hex_damage_reduction'; value: number }
+  | { type: 'hex_slow_percent'; value: number }
+  | { type: 'hex_damage_amp'; value: number }
+  | { type: 'hex_regen'; value: number }
+  | { type: 'hex_intensity'; value: number }
+  | { type: 'hex_lifesteal'; value: number }
+  | { type: 'hex_armor_reduction'; value: number }
+  | { type: 'hex_reflect'; value: number }
+  | { type: 'hex_damage_aura'; value: number }
+  | { type: 'hex_heal_on_enemy_attack'; value: number }
+  | { type: 'hex_disable_abilities'; value: boolean };
 
 // ============================================================================
 // PASSIVE EFFECT SYSTEM TYPES (Generic Passive Effect Processing)
@@ -415,7 +441,7 @@ export interface StanceEnhancement {
   name: string;
   tier: number;
   description: string;
-  stanceId: 'iron_stance' | 'retribution_stance';
+  stanceId: 'iron_stance' | 'retribution_stance' | 'arcane_surge' | 'hex_veil';
   effects: StanceEnhancementEffect[];
 }
 
@@ -431,8 +457,13 @@ export interface PowerUpgradeState {
  * Tracks player's stance enhancement state (passive paths)
  */
 export interface StanceProgressionState {
-  ironTier: number;        // Current tier in Iron path (0-13)
-  retributionTier: number; // Current tier in Retribution path (0-13)
+  // Guardian path tiers
+  ironTier?: number;        // Current tier in Iron path (0-13)
+  retributionTier?: number; // Current tier in Retribution path (0-13)
+  // Enchanter path tiers
+  arcaneSurgeTier?: number; // Current tier in Arcane Surge path (0-13)
+  hexVeilTier?: number;     // Current tier in Hex Veil path (0-13)
+  // Shared
   acquiredEnhancements: string[]; // IDs of acquired enhancements
 }
 

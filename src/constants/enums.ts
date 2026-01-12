@@ -24,6 +24,8 @@ export const STATUS_EFFECT_TYPE = {
   STUN: 'stun',
   SLOW: 'slow',
   BLEED: 'bleed',
+  VULNERABLE: 'vulnerable',  // Enemy takes +X% damage
+  BURN: 'burn',              // DoT with computed modifiers
 } as const;
 
 export type StatusEffectType = typeof STATUS_EFFECT_TYPE[keyof typeof STATUS_EFFECT_TYPE];

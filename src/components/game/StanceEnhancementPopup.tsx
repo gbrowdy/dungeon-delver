@@ -3,26 +3,58 @@ import { useGame, useGameActions } from '@/ecs/context/GameContext';
 import { Button } from '@/components/ui/button';
 import { PixelDivider } from '@/components/ui/PixelDivider';
 import { cn } from '@/lib/utils';
-import { Check, Shield, Flame } from 'lucide-react';
+import { Check, Shield, Flame, Sparkles, ShieldAlert } from 'lucide-react';
 import type { StanceEnhancement } from '@/types/paths';
 
 /**
  * StanceEnhancementPopup displays when the player has a pending stance enhancement choice
- * (Guardian passive path level-up progression).
+ * (passive path level-up progression for Guardian or Enchanter).
  *
- * Shows two enhancement options - one for Iron Stance (defensive) and one for
- * Retribution Stance (reflect damage). Each enhancement strengthens that specific stance.
+ * Shows two enhancement options based on the path:
+ * - Guardian: Iron Stance (defensive) and Retribution Stance (reflect damage)
+ * - Enchanter: Arcane Surge (burn DoT) and Hex Veil (debuffs)
  */
 export function StanceEnhancementPopup() {
   const { player } = useGame();
   const actions = useGameActions();
-  const [selectedStance, setSelectedStance] = useState<'iron' | 'retribution' | null>(null);
-  const [hoveredStance, setHoveredStance] = useState<'iron' | 'retribution' | null>(null);
+  const [selectedStance, setSelectedStance] = useState<string | null>(null);
+  const [hoveredStance, setHoveredStance] = useState<string | null>(null);
 
   // Don't render if no pending stance enhancement
   if (!player?.pendingStanceEnhancement) return null;
 
-  const { ironChoice, retributionChoice } = player.pendingStanceEnhancement;
+  const pending = player.pendingStanceEnhancement;
+  const isGuardian = pending.pathId === 'guardian';
+  const isEnchanter = pending.pathId === 'enchanter';
+
+  // Get the two choices based on path
+  const getChoices = (): { first: StanceEnhancement; second: StanceEnhancement; firstId: string; secondId: string } => {
+    if (isGuardian && 'ironChoice' in pending) {
+      return {
+        first: pending.ironChoice,
+        second: pending.retributionChoice,
+        firstId: 'iron',
+        secondId: 'retribution',
+      };
+    }
+    if (isEnchanter && 'arcaneSurgeChoice' in pending) {
+      return {
+        first: pending.arcaneSurgeChoice,
+        second: pending.hexVeilChoice,
+        firstId: 'arcane_surge',
+        secondId: 'hex_veil',
+      };
+    }
+    // Fallback (should not happen)
+    return {
+      first: { id: '', name: 'Unknown', tier: 0, description: '', stanceId: '', effects: [] },
+      second: { id: '', name: 'Unknown', tier: 0, description: '', stanceId: '', effects: [] },
+      firstId: 'unknown1',
+      secondId: 'unknown2',
+    };
+  };
+
+  const { first, second, firstId, secondId } = getChoices();
 
   const handleConfirm = () => {
     if (selectedStance) {
@@ -30,9 +62,10 @@ export function StanceEnhancementPopup() {
     }
   };
 
-  // Get theme colors for each stance
-  const getStanceTheme = (stance: 'iron' | 'retribution') => {
-    if (stance === 'iron') {
+  // Get theme colors for each stance based on path and stance type
+  const getStanceTheme = (stanceId: string) => {
+    // Guardian stances
+    if (stanceId === 'iron') {
       return {
         border: 'border-sky-500/30',
         borderSelected: 'border-sky-500',
@@ -52,29 +85,91 @@ export function StanceEnhancementPopup() {
         description: 'Defensive Enhancement',
       };
     }
+    if (stanceId === 'retribution') {
+      return {
+        border: 'border-orange-500/30',
+        borderSelected: 'border-orange-500',
+        bg: 'bg-orange-500/10',
+        bgHover: 'hover:bg-orange-900/40',
+        text: 'text-orange-400',
+        textLight: 'text-orange-300',
+        glow: 'shadow-orange-500/30',
+        button: {
+          selected: 'bg-orange-500 hover:bg-orange-400 border-orange-700',
+          default: 'bg-slate-600 hover:bg-slate-500 border-slate-800',
+        },
+        ring: 'focus-visible:ring-orange-500',
+        check: 'bg-orange-500',
+        icon: Flame,
+        label: 'Retribution Stance',
+        description: 'Aggressive Enhancement',
+      };
+    }
+    // Enchanter stances
+    if (stanceId === 'arcane_surge') {
+      return {
+        border: 'border-amber-500/30',
+        borderSelected: 'border-amber-500',
+        bg: 'bg-amber-500/10',
+        bgHover: 'hover:bg-amber-900/40',
+        text: 'text-amber-400',
+        textLight: 'text-amber-300',
+        glow: 'shadow-amber-500/30',
+        button: {
+          selected: 'bg-amber-500 hover:bg-amber-400 border-amber-700',
+          default: 'bg-slate-600 hover:bg-slate-500 border-slate-800',
+        },
+        ring: 'focus-visible:ring-amber-500',
+        check: 'bg-amber-500',
+        icon: Sparkles,
+        label: 'Arcane Surge',
+        description: 'Burn DoT Enhancement',
+      };
+    }
+    if (stanceId === 'hex_veil') {
+      return {
+        border: 'border-violet-500/30',
+        borderSelected: 'border-violet-500',
+        bg: 'bg-violet-500/10',
+        bgHover: 'hover:bg-violet-900/40',
+        text: 'text-violet-400',
+        textLight: 'text-violet-300',
+        glow: 'shadow-violet-500/30',
+        button: {
+          selected: 'bg-violet-500 hover:bg-violet-400 border-violet-700',
+          default: 'bg-slate-600 hover:bg-slate-500 border-slate-800',
+        },
+        ring: 'focus-visible:ring-violet-500',
+        check: 'bg-violet-500',
+        icon: ShieldAlert,
+        label: 'Hex Veil',
+        description: 'Debuff Enhancement',
+      };
+    }
+    // Fallback
     return {
-      border: 'border-orange-500/30',
-      borderSelected: 'border-orange-500',
-      bg: 'bg-orange-500/10',
-      bgHover: 'hover:bg-orange-900/40',
-      text: 'text-orange-400',
-      textLight: 'text-orange-300',
-      glow: 'shadow-orange-500/30',
+      border: 'border-slate-500/30',
+      borderSelected: 'border-slate-500',
+      bg: 'bg-slate-500/10',
+      bgHover: 'hover:bg-slate-900/40',
+      text: 'text-slate-400',
+      textLight: 'text-slate-300',
+      glow: 'shadow-slate-500/30',
       button: {
-        selected: 'bg-orange-500 hover:bg-orange-400 border-orange-700',
+        selected: 'bg-slate-500 hover:bg-slate-400 border-slate-700',
         default: 'bg-slate-600 hover:bg-slate-500 border-slate-800',
       },
-      ring: 'focus-visible:ring-orange-500',
-      check: 'bg-orange-500',
-      icon: Flame,
-      label: 'Retribution Stance',
-      description: 'Aggressive Enhancement',
+      ring: 'focus-visible:ring-slate-500',
+      check: 'bg-slate-500',
+      icon: Shield,
+      label: 'Unknown Stance',
+      description: 'Enhancement',
     };
   };
 
   const renderEnhancementCard = (
     enhancement: StanceEnhancement,
-    stanceId: 'iron' | 'retribution'
+    stanceId: string
   ) => {
     const isSelected = selectedStance === stanceId;
     const isHovered = hoveredStance === stanceId;
@@ -187,6 +282,34 @@ export function StanceEnhancementPopup() {
     );
   };
 
+  // Get header icons based on path
+  const getHeaderIcons = () => {
+    if (isGuardian) {
+      return (
+        <>
+          <Shield className="w-8 h-8 text-sky-400" />
+          <Flame className="w-8 h-8 text-orange-400" />
+        </>
+      );
+    }
+    if (isEnchanter) {
+      return (
+        <>
+          <Sparkles className="w-8 h-8 text-amber-400" />
+          <ShieldAlert className="w-8 h-8 text-violet-400" />
+        </>
+      );
+    }
+    return null;
+  };
+
+  // Get the display name for the selected stance
+  const getSelectedStanceLabel = () => {
+    if (!selectedStance) return '';
+    const theme = getStanceTheme(selectedStance);
+    return theme.label;
+  };
+
   return (
     <div
       data-testid="stance-enhancement-popup"
@@ -196,8 +319,7 @@ export function StanceEnhancementPopup() {
         {/* Header */}
         <div className="text-center mb-5">
           <div className="mb-2 flex justify-center gap-2" aria-hidden="true">
-            <Shield className="w-8 h-8 text-sky-400" />
-            <Flame className="w-8 h-8 text-orange-400" />
+            {getHeaderIcons()}
           </div>
           <h2 className="pixel-title text-base sm:text-lg md:text-xl font-bold tracking-wider uppercase mb-3">
             <span className="pixel-glow-purple bg-gradient-to-r from-purple-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
@@ -214,8 +336,8 @@ export function StanceEnhancementPopup() {
 
         {/* Enhancement Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {renderEnhancementCard(ironChoice, 'iron')}
-          {renderEnhancementCard(retributionChoice, 'retribution')}
+          {renderEnhancementCard(first, firstId)}
+          {renderEnhancementCard(second, secondId)}
         </div>
 
         {/* Confirm button */}
@@ -232,7 +354,7 @@ export function StanceEnhancementPopup() {
           )}
         >
           {selectedStance
-            ? `Enhance ${selectedStance === 'iron' ? 'Iron' : 'Retribution'} Stance`
+            ? `Enhance ${getSelectedStanceLabel()}`
             : 'Select an Enhancement'}
         </Button>
       </div>

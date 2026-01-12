@@ -113,3 +113,51 @@ describe('computeAllEffectivePowers', () => {
     expect(effective[0].value).toBe(2.4);
   });
 });
+
+// Archmage path upgrade tests
+describe('Archmage power upgrades', () => {
+  const mockMeteorStrike: Power = {
+    id: 'meteor_strike',
+    name: 'Meteor Strike',
+    description: 'Deal 450% damage. High charge cost.',
+    icon: 'power-meteor_strike',
+    resourceCost: 60,
+    cooldown: 12,
+    effect: 'damage',
+    value: 4.5,
+    category: 'spell',
+    synergies: [],
+  };
+
+  it('applies Archmage tier 1 upgrade correctly', () => {
+    const entity: Entity = {
+      powers: [mockMeteorStrike],
+      pathProgression: {
+        pathId: 'archmage',
+        pathType: 'active',
+        powerUpgrades: [{ powerId: 'meteor_strike', currentTier: 1 }],
+      },
+    };
+
+    const effective = computeEffectivePower(entity, mockMeteorStrike);
+    // Tier 1 for meteor_strike: value: 5.5 (550% damage)
+    expect(effective.value).toBe(5.5);
+  });
+
+  it('applies Archmage tier 2 upgrade cumulatively', () => {
+    const entity: Entity = {
+      powers: [mockMeteorStrike],
+      pathProgression: {
+        pathId: 'archmage',
+        pathType: 'active',
+        powerUpgrades: [{ powerId: 'meteor_strike', currentTier: 2 }],
+      },
+    };
+
+    const effective = computeEffectivePower(entity, mockMeteorStrike);
+    // Tier 1: value: 5.5
+    // Tier 2: stunDuration: 2 (stuns enemy for 2s)
+    expect(effective.value).toBe(5.5);
+    expect(effective.stunDuration).toBe(2);
+  });
+});

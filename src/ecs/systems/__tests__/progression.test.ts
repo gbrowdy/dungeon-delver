@@ -480,6 +480,9 @@ describe('ProgressionSystem', () => {
         level: 2,
       });
 
+      // Add path for Guardian (required for path-aware logic)
+      player.path = { pathId: 'guardian', abilities: [] };
+
       // Add path progression for passive path (Guardian)
       player.pathProgression = {
         pathId: 'guardian',
@@ -499,13 +502,21 @@ describe('ProgressionSystem', () => {
 
       // Should have pendingStanceEnhancement with iron and retribution choices
       expect(player.pendingStanceEnhancement).toBeDefined();
-      expect(player.pendingStanceEnhancement?.ironChoice).toBeDefined();
-      expect(player.pendingStanceEnhancement?.retributionChoice).toBeDefined();
+      expect(player.pendingStanceEnhancement?.pathId).toBe('guardian');
+
+      // Cast to Guardian type to access Guardian-specific fields
+      const pending = player.pendingStanceEnhancement as {
+        pathId: 'guardian';
+        ironChoice: { tier: number };
+        retributionChoice: { tier: number };
+      };
+      expect(pending.ironChoice).toBeDefined();
+      expect(pending.retributionChoice).toBeDefined();
 
       // Iron choice should be tier 1
-      expect(player.pendingStanceEnhancement?.ironChoice.tier).toBe(1);
+      expect(pending.ironChoice.tier).toBe(1);
       // Retribution choice should be tier 1
-      expect(player.pendingStanceEnhancement?.retributionChoice.tier).toBe(1);
+      expect(pending.retributionChoice.tier).toBe(1);
 
       // Should not have power or upgrade choices
       expect(player.pendingPowerChoice).toBeUndefined();
@@ -598,6 +609,192 @@ describe('ProgressionSystem', () => {
 
       expect(player.progression?.level).toBe(15);
       expect(player.pendingStanceEnhancement).toBeUndefined();
+    });
+  });
+
+  describe('Path-Aware Enhancement Choices', () => {
+    it('should offer Enchanter enhancements when player is Enchanter at level 3', () => {
+      // Setup player at level 2 with Enchanter path
+      const player = createPlayer({
+        xp: 150,
+        xpToNext: 150,
+        level: 2,
+      });
+
+      // Add path for Enchanter (passive path)
+      player.path = { pathId: 'enchanter', abilities: [] };
+      player.pathProgression = {
+        pathId: 'enchanter',
+        pathType: 'passive',
+        stanceProgression: {
+          arcaneSurgeTier: 0,
+          hexVeilTier: 0,
+          acquiredEnhancements: [],
+        },
+      };
+      player.stanceState = { activeStanceId: 'arcane_surge', stanceCooldownRemaining: 0 };
+
+      // Run progression system
+      ProgressionSystem(16);
+
+      // Should have leveled to 3
+      expect(player.progression?.level).toBe(3);
+
+      // Check that pendingStanceEnhancement has Enchanter enhancements
+      expect(player.pendingStanceEnhancement).toBeDefined();
+      expect(player.pendingStanceEnhancement?.pathId).toBe('enchanter');
+
+      // Enchanter tier 1 enhancements: "Searing Touch" (arcane_surge), "Weakening Hex" (hex_veil)
+      const pending = player.pendingStanceEnhancement as {
+        pathId: 'enchanter';
+        arcaneSurgeChoice: { id: string; tier: number };
+        hexVeilChoice: { id: string; tier: number };
+      };
+      expect(pending.arcaneSurgeChoice.id).toBe('arcane_surge_1_searing_touch');
+      expect(pending.arcaneSurgeChoice.tier).toBe(1);
+      expect(pending.hexVeilChoice.id).toBe('hex_veil_1_weakening_hex');
+      expect(pending.hexVeilChoice.tier).toBe(1);
+
+      // Should not have power or upgrade choices
+      expect(player.pendingPowerChoice).toBeUndefined();
+      expect(player.pendingUpgradeChoice).toBeUndefined();
+    });
+
+    it('should offer Guardian enhancements when player is Guardian at level 3', () => {
+      // Setup player at level 2 with Guardian path
+      const player = createPlayer({
+        xp: 150,
+        xpToNext: 150,
+        level: 2,
+      });
+
+      // Add path for Guardian (passive path)
+      player.path = { pathId: 'guardian', abilities: [] };
+      player.pathProgression = {
+        pathId: 'guardian',
+        pathType: 'passive',
+        stanceProgression: {
+          ironTier: 0,
+          retributionTier: 0,
+          acquiredEnhancements: [],
+        },
+      };
+      player.stanceState = { activeStanceId: 'iron', stanceCooldownRemaining: 0 };
+
+      // Run progression system
+      ProgressionSystem(16);
+
+      // Should have leveled to 3
+      expect(player.progression?.level).toBe(3);
+
+      // Check that pendingStanceEnhancement has Guardian enhancements
+      expect(player.pendingStanceEnhancement).toBeDefined();
+      expect(player.pendingStanceEnhancement?.pathId).toBe('guardian');
+
+      const pending = player.pendingStanceEnhancement as {
+        pathId: 'guardian';
+        ironChoice: { id: string; tier: number };
+        retributionChoice: { id: string; tier: number };
+      };
+      expect(pending.ironChoice.tier).toBe(1);
+      expect(pending.retributionChoice.tier).toBe(1);
+    });
+
+    it('should offer Enchanter tier 2 enhancements after selecting tier 1', () => {
+      const player = createPlayer({
+        xp: 225, // Enough to go from 3 to 4
+        xpToNext: 225,
+        level: 3,
+      });
+
+      player.path = { pathId: 'enchanter', abilities: [] };
+      player.pathProgression = {
+        pathId: 'enchanter',
+        pathType: 'passive',
+        stanceProgression: {
+          arcaneSurgeTier: 1, // Already have tier 1
+          hexVeilTier: 0,
+          acquiredEnhancements: ['arcane_surge_1_searing_touch'],
+        },
+      };
+      player.stanceState = { activeStanceId: 'arcane_surge', stanceCooldownRemaining: 0 };
+
+      ProgressionSystem(16);
+
+      expect(player.progression?.level).toBe(4);
+      expect(player.pendingStanceEnhancement).toBeDefined();
+      expect(player.pendingStanceEnhancement?.pathId).toBe('enchanter');
+
+      const pending = player.pendingStanceEnhancement as {
+        pathId: 'enchanter';
+        arcaneSurgeChoice: { tier: number };
+        hexVeilChoice: { tier: number };
+      };
+      // Arcane surge should offer tier 2 since tier 1 is already acquired
+      expect(pending.arcaneSurgeChoice.tier).toBe(2);
+      // Hex veil should still offer tier 1
+      expect(pending.hexVeilChoice.tier).toBe(1);
+    });
+  });
+
+  describe('Path-Aware Power Choices', () => {
+    it('should offer Archmage powers when player is Archmage at level 2', () => {
+      // Setup player at level 1 with Archmage path
+      const player = createPlayer({
+        xp: 100,
+        xpToNext: 100,
+        level: 1,
+      });
+
+      // Add path for Archmage
+      player.path = { pathId: 'archmage', abilities: [] };
+      player.pathProgression = {
+        pathId: 'archmage',
+        pathType: 'active',
+        powerUpgrades: [],
+      };
+
+      // Run progression system
+      ProgressionSystem(16);
+
+      // Should have leveled to 2
+      expect(player.progression?.level).toBe(2);
+
+      // Check that pendingPowerChoice has Archmage powers
+      expect(player.pendingPowerChoice).toBeDefined();
+      expect(player.pendingPowerChoice?.choices.some(p => p.id === 'arcane_bolt')).toBe(true);
+      expect(player.pendingPowerChoice?.choices.some(p => p.id === 'meteor_strike')).toBe(true);
+      // Negative: should NOT have Berserker powers
+      expect(player.pendingPowerChoice?.choices.some(p => p.id === 'rage_strike')).toBe(false);
+    });
+
+    it('should offer Berserker powers when player is Berserker at level 2', () => {
+      // Setup player at level 1 with Berserker path
+      const player = createPlayer({
+        xp: 100,
+        xpToNext: 100,
+        level: 1,
+      });
+
+      // Add path for Berserker
+      player.path = { pathId: 'berserker', abilities: [] };
+      player.pathProgression = {
+        pathId: 'berserker',
+        pathType: 'active',
+        powerUpgrades: [],
+      };
+
+      // Run progression system
+      ProgressionSystem(16);
+
+      // Should have leveled to 2
+      expect(player.progression?.level).toBe(2);
+
+      // Check that pendingPowerChoice has Berserker powers
+      expect(player.pendingPowerChoice).toBeDefined();
+      expect(player.pendingPowerChoice?.choices.some(p => p.id === 'rage_strike')).toBe(true);
+      // Negative: should NOT have Archmage powers
+      expect(player.pendingPowerChoice?.choices.some(p => p.id === 'arcane_bolt')).toBe(false);
     });
   });
 });
