@@ -6,6 +6,7 @@ import { PixelDivider } from '@/components/ui/PixelDivider';
 import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
 import { cn } from '@/lib/utils';
 import { Check, Clock, Zap } from 'lucide-react';
+import { getResourceDisplayName } from '@/data/pathResources';
 
 /**
  * PowerChoicePopup displays when the player has a pending power choice
@@ -38,9 +39,7 @@ export function PowerChoicePopup() {
   // Get the resource label based on player's path
   const getResourceLabel = (): string => {
     if (player.pathResource) {
-      // Capitalize first letter of resource type
-      const resourceType = player.pathResource.type;
-      return resourceType.charAt(0).toUpperCase() + resourceType.slice(1);
+      return getResourceDisplayName(player.pathResource.type);
     }
     return 'Resource';
   };

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGame, useGameActions } from '@/ecs/context/GameContext';
 import { getBerserkerPowerUpgrade } from '@/data/paths/berserker-powers';
 import { getArchmagePowerUpgrade } from '@/data/paths/archmage-powers';
+import { getResourceDisplayName } from '@/data/pathResources';
 import { Button } from '@/components/ui/button';
 import { PixelDivider } from '@/components/ui/PixelDivider';
 import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
@@ -43,8 +44,7 @@ export function UpgradeChoicePopup() {
   // Get the resource label for cost display
   const getResourceLabel = (): string => {
     if (player.pathResource) {
-      const resourceType = player.pathResource.type;
-      return resourceType.charAt(0).toUpperCase() + resourceType.slice(1);
+      return getResourceDisplayName(player.pathResource.type);
     }
     return 'Resource';
   };
