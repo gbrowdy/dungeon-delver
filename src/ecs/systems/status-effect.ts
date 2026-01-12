@@ -59,6 +59,12 @@ function processStatusEffect(
           }
         }
 
+        // Apply armor reduction unless burnIgnoresArmor
+        const ignoresArmor = player?.passiveEffectState?.computed?.burnIgnoresArmor ?? false;
+        if (!ignoresArmor && entity.defense) {
+          burnDamage = Math.max(1, burnDamage - entity.defense.value);
+        }
+
         if (entity.health) {
           entity.health.current = Math.max(0, entity.health.current - burnDamage);
 

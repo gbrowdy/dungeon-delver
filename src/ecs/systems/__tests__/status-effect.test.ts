@@ -693,3 +693,140 @@ describe('StatusEffectSystem - Burn Execute Bonus', () => {
     expect(enemy.health?.current).toBe(0); // 10 - 10 = 0
   });
 });
+
+describe('StatusEffectSystem - Burn Ignores Armor', () => {
+  beforeEach(() => {
+    // Copy array before iterating to avoid mutation issues during iteration
+    for (const entity of [...world.entities]) {
+      world.remove(entity);
+    }
+    resetTick();
+
+    // Add game state
+    world.add({
+      gameState: true,
+      phase: 'combat',
+      combatSpeed: { multiplier: 1 },
+      floor: { number: 1, room: 1, totalRooms: 5 },
+      animationEvents: [],
+      combatLog: [],
+    });
+  });
+
+  it('should bypass armor when burnIgnoresArmor is true', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnIgnoresArmor: true,
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      defense: { value: 50 }, // Would normally reduce damage
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // Full 10 damage ignoring 50 armor
+    expect(enemy.health?.current).toBe(90);
+  });
+
+  it('should apply armor normally without burnIgnoresArmor', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnIgnoresArmor: false,
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      defense: { value: 5 }, // Reduces damage by 5
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 10 - 5 armor = 5 damage, 100 - 5 = 95 HP
+    expect(enemy.health?.current).toBe(95);
+  });
+
+  it('should deal minimum 1 damage even with high armor', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnIgnoresArmor: false,
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      defense: { value: 100 }, // Way more than burn damage
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // Minimum 1 damage even with armor > burn damage
+    expect(enemy.health?.current).toBe(99);
+  });
+
+  it('should apply armor after damage bonuses', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnIgnoresArmor: false,
+          burnDamagePercent: 50, // +50% damage
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      defense: { value: 5 }, // Reduces damage by 5
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 10 base * 1.5 = 15, then 15 - 5 armor = 10 damage
+    expect(enemy.health?.current).toBe(90);
+  });
+});
