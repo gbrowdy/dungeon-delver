@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGame, useGameActions } from '@/ecs/context/GameContext';
 import { getBerserkerPowerUpgrade } from '@/data/paths/berserker-powers';
+import { getArchmagePowerUpgrade } from '@/data/paths/archmage-powers';
 import { Button } from '@/components/ui/button';
 import { PixelDivider } from '@/components/ui/PixelDivider';
 import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
@@ -77,7 +78,11 @@ export function UpgradeChoicePopup() {
           {upgradeablePowers.map((power) => {
             const currentTier = getPowerTier(power.id);
             const nextTier = currentTier + 1;
-            const upgradeInfo = getBerserkerPowerUpgrade(power.id, nextTier);
+            // Get upgrade info based on player's path
+            const pathId = player.path?.pathId;
+            const upgradeInfo = pathId === 'archmage'
+              ? getArchmagePowerUpgrade(power.id, nextTier)
+              : getBerserkerPowerUpgrade(power.id, nextTier);
             const isSelected = selectedPowerId === power.id;
             const isHovered = hoveredPowerId === power.id;
 
