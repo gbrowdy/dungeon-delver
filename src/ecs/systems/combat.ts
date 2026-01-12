@@ -132,7 +132,8 @@ export function CombatSystem(_deltaMs: number): void {
     if (entity.player && entity.stanceState?.activeStanceId === 'hex_veil') {
       const computed = entity.passiveEffectState?.computed;
       if (computed?.hexDamageAmp) {
-        damage = Math.round(damage * (1 + computed.hexDamageAmp / 100));
+        const hexDamageAmp = computed.hexDamageAmp * (computed.hexIntensityMultiplier ?? 1);
+        damage = Math.round(damage * (1 + hexDamageAmp / 100));
       }
     }
 
@@ -149,7 +150,8 @@ export function CombatSystem(_deltaMs: number): void {
 
     // Apply hex armor reduction when player attacks enemy in hex_veil stance
     if (entity.player && target.enemy && entity.stanceState?.activeStanceId === 'hex_veil') {
-      const reduction = entity.passiveEffectState?.computed?.hexArmorReduction ?? 0;
+      const computed = entity.passiveEffectState?.computed;
+      const reduction = (computed?.hexArmorReduction ?? 0) * (computed?.hexIntensityMultiplier ?? 1);
       if (reduction > 0) {
         effectiveDefense = Math.round(effectiveDefense * (1 - reduction / 100));
       }
@@ -252,7 +254,8 @@ export function CombatSystem(_deltaMs: number): void {
 
       // Hex lifesteal
       if (entity.stanceState?.activeStanceId === 'hex_veil') {
-        const lifesteal = entity.passiveEffectState?.computed?.hexLifesteal ?? 0;
+        const computed = entity.passiveEffectState?.computed;
+        const lifesteal = (computed?.hexLifesteal ?? 0) * (computed?.hexIntensityMultiplier ?? 1);
         if (lifesteal > 0 && entity.health) {
           const healAmount = Math.round(damage * (lifesteal / 100));
           if (healAmount > 0) {
@@ -420,7 +423,8 @@ export function CombatSystem(_deltaMs: number): void {
 
       // Hex reflect - when enemy damages player in hex_veil stance
       if (target.stanceState?.activeStanceId === 'hex_veil') {
-        const reflect = target.passiveEffectState?.computed?.hexReflect ?? 0;
+        const computed = target.passiveEffectState?.computed;
+        const reflect = (computed?.hexReflect ?? 0) * (computed?.hexIntensityMultiplier ?? 1);
         if (reflect > 0 && entity.health) {
           const reflectDmg = Math.round(damage * (reflect / 100));
           entity.health.current = Math.max(0, entity.health.current - reflectDmg);
@@ -430,7 +434,8 @@ export function CombatSystem(_deltaMs: number): void {
 
       // Hex heal on enemy attack - heals player for % of max HP when enemy attacks
       if (target.stanceState?.activeStanceId === 'hex_veil') {
-        const healPct = target.passiveEffectState?.computed?.hexHealOnEnemyAttack ?? 0;
+        const computed = target.passiveEffectState?.computed;
+        const healPct = (computed?.hexHealOnEnemyAttack ?? 0) * (computed?.hexIntensityMultiplier ?? 1);
         if (healPct > 0 && target.health) {
           const healAmt = Math.round(target.health.max * (healPct / 100));
           target.health.current = Math.min(target.health.max, target.health.current + healAmt);

@@ -74,7 +74,7 @@ function createDefaultComputed(): ComputedPassiveEffects {
     conditionalRegenMultiplier: 1,
 
     // Burn effects
-    burnDamagePercent: 100,
+    burnDamagePercent: 0,
     burnProcChance: 0,
     burnDurationBonus: 0,
     burnMaxStacks: 1,

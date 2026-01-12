@@ -26,14 +26,21 @@ const UPGRADE_FIELDS = [
   'buffDuration',
   'buffPower',
   'buffSpeed',
+  'buffCritChance',
   'lifesteal',
   'lifestealPercent',
   'selfDamagePercent',
   'healOnKill',
   'shieldOnOverheal',
+  'shieldOnFullHeal',
   'cooldownReductionOnKill',
   'deathImmunityDuration',
   'reflectDuringImmunity',
+  'enemyVulnerable',
+  'enemyVulnerableDuration',
+  'enemySlowPercent',
+  'chargeModify',
+  'visualMultiHit',
 ] as const;
 
 // Registry pattern for path-specific upgrade lookups

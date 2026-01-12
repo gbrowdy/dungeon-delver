@@ -73,7 +73,8 @@ export function RegenSystem(deltaMs: number): void {
   // Hex regen (player in hex_veil stance)
   // Don't regen if HP <= 0 (dead) - regen shouldn't resurrect
   if (player && !player.dying && player.health && player.health.current > 0 && player.stanceState?.activeStanceId === 'hex_veil') {
-    const hexRegen = player.passiveEffectState?.computed?.hexRegen ?? 0;
+    const computed = player.passiveEffectState?.computed;
+    const hexRegen = (computed?.hexRegen ?? 0) * (computed?.hexIntensityMultiplier ?? 1);
     if (hexRegen > 0) {
       const regenAmount = (hexRegen * effectiveDelta) / 1000;
       player.health.current = Math.min(player.health.max, player.health.current + regenAmount);

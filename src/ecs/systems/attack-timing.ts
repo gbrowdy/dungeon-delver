@@ -66,7 +66,8 @@ export function AttackTimingSystem(deltaMs: number): void {
 
     // Apply hex slow to enemies when player is in hex_veil stance
     if (entity.enemy && player?.stanceState?.activeStanceId === 'hex_veil') {
-      const hexSlow = player.passiveEffectState?.computed?.hexSlowPercent ?? 0;
+      const computed = player.passiveEffectState?.computed;
+      const hexSlow = (computed?.hexSlowPercent ?? 0) * (computed?.hexIntensityMultiplier ?? 1);
       if (hexSlow > 0) {
         const slowMultiplier = 1 + hexSlow / 100;
         effectiveInterval = speed.attackInterval * slowMultiplier;
