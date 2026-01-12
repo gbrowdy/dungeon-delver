@@ -888,6 +888,133 @@ describe('StatusEffectSystem - Burn Can Crit', () => {
   });
 });
 
+describe('StatusEffectSystem - Lifesteal From Burns', () => {
+  beforeEach(() => {
+    // Copy array before iterating to avoid mutation issues during iteration
+    for (const entity of [...world.entities]) {
+      world.remove(entity);
+    }
+    resetTick();
+
+    // Add game state
+    world.add({
+      gameState: true,
+      phase: 'combat',
+      combatSpeed: { multiplier: 1 },
+      floor: { number: 1, room: 1, totalRooms: 5 },
+      animationEvents: [],
+      combatLog: [],
+    });
+  });
+
+  it('should heal player from burn damage', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 50, max: 100 },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 1.0, lifestealFromBurns: 20 } as any, // 20% lifesteal
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 10 damage * 20% = 2 HP healed
+    expect(player.health?.current).toBe(52);
+  });
+
+  it('should NOT heal player from poison damage (only burns)', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 50, max: 100 },
+      passiveEffectState: {
+        computed: { lifestealFromBurns: 20 } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'poison-1', type: 'poison', damage: 10, remainingTurns: 3, icon: 'skull' },
+      ],
+    });
+
+    // Run for 1 second to process poison damage
+    StatusEffectSystem(1000);
+
+    // Should not heal from poison
+    expect(player.health?.current).toBe(50);
+  });
+
+  it('should not overheal past max HP', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 95, max: 100 },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 1.0, lifestealFromBurns: 50 } as any, // 50% lifesteal
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 20, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 20 damage * 50% = 10 HP healed, but capped at max (100)
+    // 95 + 10 = 105, capped to 100
+    expect(player.health?.current).toBe(100);
+  });
+
+  it('should apply lifesteal with enhanced burn damage', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 50, max: 100 },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnDamagePercent: 100, // +100% damage
+          lifestealFromBurns: 20, // 20% lifesteal
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // Base 10 * 2.0 (burnDamagePercent) = 20 damage
+    // 20 * 20% = 4 HP healed
+    expect(player.health?.current).toBe(54);
+  });
+});
+
 describe('StatusEffectSystem - Burn Ignores Armor', () => {
   beforeEach(() => {
     // Copy array before iterating to avoid mutation issues during iteration

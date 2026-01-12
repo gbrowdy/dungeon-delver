@@ -828,6 +828,208 @@ describe('CombatSystem', () => {
     });
   });
 
+  describe('Crit Refreshes Burn', () => {
+    it('should refresh burn duration on crit', () => {
+      world.add({
+        gameState: true,
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+        animationEvents: [],
+        combatSpeed: { multiplier: 1 },
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'mage' },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 100, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        defense: { value: 0 },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+        stanceState: { activeStanceId: 'arcane_surge', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+        passiveEffectState: {
+          computed: { critRefreshesBurn: true } as any,
+          lastComputedTick: 0,
+        },
+      });
+      world.addComponent(player, 'attackReady', { damage: 100, isCrit: true });
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 100, max: 100 },
+        defense: { value: 0 },
+        statusEffects: [
+          { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 1, icon: 'flame' }, // Almost expired
+        ],
+      });
+
+      CombatSystem(16);
+
+      const burn = enemy.statusEffects?.find(e => e.type === 'burn');
+      expect(burn?.remainingTurns).toBe(3); // Refreshed to base duration
+    });
+
+    it('should NOT refresh burn on non-crit attacks', () => {
+      world.add({
+        gameState: true,
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+        animationEvents: [],
+        combatSpeed: { multiplier: 1 },
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'mage' },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 100, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        defense: { value: 0 },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+        stanceState: { activeStanceId: 'arcane_surge', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+        passiveEffectState: {
+          computed: { critRefreshesBurn: true } as any,
+          lastComputedTick: 0,
+        },
+      });
+      world.addComponent(player, 'attackReady', { damage: 100, isCrit: false }); // Not a crit
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 200, max: 200 },
+        defense: { value: 0 },
+        statusEffects: [
+          { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 1, icon: 'flame' },
+        ],
+      });
+
+      CombatSystem(16);
+
+      const burn = enemy.statusEffects?.find(e => e.type === 'burn');
+      expect(burn?.remainingTurns).toBe(1); // Not refreshed
+    });
+
+    it('should apply burnDurationBonus when refreshing burns on crit', () => {
+      world.add({
+        gameState: true,
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+        animationEvents: [],
+        combatSpeed: { multiplier: 1 },
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'mage' },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 100, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        defense: { value: 0 },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+        stanceState: { activeStanceId: 'arcane_surge', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+        passiveEffectState: {
+          computed: { critRefreshesBurn: true, burnDurationBonus: 2 } as any, // +2 duration
+          lastComputedTick: 0,
+        },
+      });
+      world.addComponent(player, 'attackReady', { damage: 100, isCrit: true });
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 100, max: 100 },
+        defense: { value: 0 },
+        statusEffects: [
+          { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 1, icon: 'flame' },
+        ],
+      });
+
+      CombatSystem(16);
+
+      const burn = enemy.statusEffects?.find(e => e.type === 'burn');
+      expect(burn?.remainingTurns).toBe(5); // 3 base + 2 bonus
+    });
+  });
+
+  describe('Damage vs Burning', () => {
+    it('should deal bonus damage to burning enemies', () => {
+      world.add({
+        gameState: true,
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+        animationEvents: [],
+        combatSpeed: { multiplier: 1 },
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'mage' },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 100, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        defense: { value: 0 },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+        stanceState: { activeStanceId: 'arcane_surge', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+        passiveEffectState: {
+          computed: { damageVsBurning: 25 } as any, // 25% bonus
+          lastComputedTick: 0,
+        },
+      });
+      world.addComponent(player, 'attackReady', { damage: 100, isCrit: false });
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 200, max: 200 },
+        defense: { value: 0 },
+        statusEffects: [
+          { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame' },
+        ],
+      });
+
+      CombatSystem(16);
+
+      // 100 + 25% = 125 damage, 200 - 125 = 75 HP
+      expect(enemy.health?.current).toBe(75);
+    });
+
+    it('should NOT apply bonus to non-burning enemies', () => {
+      world.add({
+        gameState: true,
+        phase: 'combat' as const,
+        floor: { number: 1, room: 1, totalRooms: 5 },
+        combatLog: [],
+        animationEvents: [],
+        combatSpeed: { multiplier: 1 },
+      });
+
+      const player = world.add({
+        player: true,
+        identity: { name: 'Hero', class: 'mage' },
+        health: { current: 100, max: 100 },
+        attack: { baseDamage: 100, critChance: 0, critMultiplier: 1.5, variance: { min: 1, max: 1 } },
+        defense: { value: 0 },
+        speed: { value: 10, attackInterval: 2000, accumulated: 0 },
+        stanceState: { activeStanceId: 'arcane_surge', stanceCooldownRemaining: 0, triggerCooldowns: {} },
+        passiveEffectState: {
+          computed: { damageVsBurning: 25 } as any,
+          lastComputedTick: 0,
+        },
+      });
+      world.addComponent(player, 'attackReady', { damage: 100, isCrit: false });
+
+      const enemy = world.add({
+        enemy: { id: 'test', name: 'Test', tier: 'common' as const, isBoss: false },
+        health: { current: 200, max: 200 },
+        defense: { value: 0 },
+        statusEffects: [], // No burn
+      });
+
+      CombatSystem(16);
+
+      // Just 100 damage
+      expect(enemy.health?.current).toBe(100);
+    });
+  });
+
   describe('Hex Aura stance behavior', () => {
     it('should reduce enemy damage by 15% when hex_aura is active', () => {
       const gameState = world.add({

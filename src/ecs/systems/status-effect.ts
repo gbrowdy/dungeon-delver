@@ -89,6 +89,16 @@ function processStatusEffect(
             isCrit,
             blocked: false,
           });
+
+          // Lifesteal from burn damage (Arcane Surge enhancement)
+          const lifesteal = player?.passiveEffectState?.computed?.lifestealFromBurns ?? 0;
+          if (lifesteal > 0 && player?.health && !entity.player) {
+            const healAmount = Math.round(burnDamage * (lifesteal / 100));
+            if (healAmount > 0) {
+              player.health.current = Math.min(player.health.max, player.health.current + healAmount);
+              addCombatLog(`Burn lifesteal heals for ${healAmount}`);
+            }
+          }
         }
       }
     } else {

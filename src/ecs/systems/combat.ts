@@ -113,6 +113,15 @@ export function CombatSystem(_deltaMs: number): void {
       }
     }
 
+    // Bonus damage vs burning enemies (Arcane Surge enhancement)
+    if (entity.player && entity.stanceState?.activeStanceId === 'arcane_surge' && target.statusEffects) {
+      const hasBurn = target.statusEffects.some(e => e.type === 'burn');
+      const damageBonus = entity.passiveEffectState?.computed?.damageVsBurning ?? 0;
+      if (hasBurn && damageBonus > 0) {
+        damage = Math.round(damage * (1 + damageBonus / 100));
+      }
+    }
+
     // Check for hex damage amp (player in hex stance attacking)
     // Use `entity` directly - it's the attacker already in scope
     if (entity.player && entity.stanceState?.activeStanceId === 'hex_veil') {
@@ -289,6 +298,18 @@ export function CombatSystem(_deltaMs: number): void {
           }
 
           addCombatLog(`Arcane Burn! ${bonusDamage} bonus damage + burning`);
+        }
+      }
+
+      // Refresh burn on crit (Arcane Surge enhancement)
+      if (attackData.isCrit && entity.stanceState?.activeStanceId === 'arcane_surge') {
+        if (entity.passiveEffectState?.computed?.critRefreshesBurn && target.statusEffects) {
+          for (const effect of target.statusEffects) {
+            if (effect.type === 'burn') {
+              const durationBonus = entity.passiveEffectState.computed.burnDurationBonus ?? 0;
+              effect.remainingTurns = 3 + durationBonus;
+            }
+          }
         }
       }
     } else {
