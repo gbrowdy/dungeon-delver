@@ -75,8 +75,13 @@ export function CombatSystem(_deltaMs: number): void {
     if (entity.enemy && target.player) {
       const hexReduction = getStanceBehavior(target, 'hex_aura');
       if (hexReduction > 0) {
+        const originalDamage = damage;
         damage = Math.round(damage * (1 - hexReduction));
         damage = Math.max(1, damage);
+        const reduced = originalDamage - damage;
+        if (reduced > 0) {
+          addCombatLog(`Hex Veil reduces damage by ${reduced}`);
+        }
       }
     }
 
