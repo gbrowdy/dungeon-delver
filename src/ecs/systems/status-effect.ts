@@ -59,6 +59,17 @@ function processStatusEffect(
           }
         }
 
+        // Crit chance for burn ticks (uses player.attack.critChance)
+        let isCrit = false;
+        const canCrit = player?.passiveEffectState?.computed?.burnCanCrit ?? false;
+        if (canCrit && player?.attack?.critChance) {
+          if (Math.random() < player.attack.critChance) {
+            const critMult = player.attack.critMultiplier ?? 1.5;
+            burnDamage = Math.round(burnDamage * critMult);
+            isCrit = true;
+          }
+        }
+
         // Apply armor reduction unless burnIgnoresArmor
         const ignoresArmor = player?.passiveEffectState?.computed?.burnIgnoresArmor ?? false;
         if (!ignoresArmor && entity.defense) {
@@ -68,14 +79,14 @@ function processStatusEffect(
         if (entity.health) {
           entity.health.current = Math.max(0, entity.health.current - burnDamage);
 
-          addCombatLog(`${entityName} takes ${burnDamage} burn damage`);
+          addCombatLog(`${entityName} takes ${burnDamage}${isCrit ? ' CRIT' : ''} burn damage`);
 
           // Queue damage animation
           const isPlayer = !!entity.player;
           queueAnimationEvent(isPlayer ? 'player_hit' : 'enemy_hit', {
             type: 'damage',
             value: burnDamage,
-            isCrit: false,
+            isCrit,
             blocked: false,
           });
         }

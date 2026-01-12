@@ -1,5 +1,5 @@
 // src/ecs/systems/__tests__/status-effect.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { world } from '../../world';
 import { StatusEffectSystem } from '../status-effect';
 import { resetTick } from '../../loop';
@@ -691,6 +691,200 @@ describe('StatusEffectSystem - Burn Execute Bonus', () => {
 
     // No execute bonus when threshold is 0, just base 10 damage
     expect(enemy.health?.current).toBe(0); // 10 - 10 = 0
+  });
+});
+
+describe('StatusEffectSystem - Burn Can Crit', () => {
+  beforeEach(() => {
+    // Copy array before iterating to avoid mutation issues during iteration
+    for (const entity of [...world.entities]) {
+      world.remove(entity);
+    }
+    resetTick();
+
+    // Add game state
+    world.add({
+      gameState: true,
+      phase: 'combat',
+      combatSpeed: { multiplier: 1 },
+      floor: { number: 1, room: 1, totalRooms: 5 },
+      animationEvents: [],
+      combatLog: [],
+    });
+
+    // Mock Math.random to always crit (below 50% threshold)
+    vi.spyOn(Math, 'random').mockReturnValue(0.01);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should allow burn ticks to crit when burnCanCrit is true', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      attack: {
+        baseDamage: 10,
+        critChance: 0.5, // 50% crit chance
+        critMultiplier: 2.0, // 2x crit damage
+        variance: { min: 1, max: 1 },
+      },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 1.0, burnCanCrit: true } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 10 * 2.0 crit = 20 damage
+    expect(enemy.health?.current).toBe(80);
+  });
+
+  it('should NOT crit burn ticks when burnCanCrit is false', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      attack: {
+        baseDamage: 10,
+        critChance: 0.5,
+        critMultiplier: 2.0,
+        variance: { min: 1, max: 1 },
+      },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 1.0, burnCanCrit: false } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // No crit, just base 10 damage
+    expect(enemy.health?.current).toBe(90);
+  });
+
+  it('should NOT crit when random roll is above critChance', () => {
+    // Mock random to be above crit threshold
+    vi.spyOn(Math, 'random').mockReturnValue(0.75); // Above 50% = no crit
+
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      attack: {
+        baseDamage: 10,
+        critChance: 0.5, // 50% crit chance
+        critMultiplier: 2.0,
+        variance: { min: 1, max: 1 },
+      },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 1.0, burnCanCrit: true } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // No crit because roll (0.75) > critChance (0.5)
+    expect(enemy.health?.current).toBe(90);
+  });
+
+  it('should use default critMultiplier of 1.5 if not defined', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      attack: {
+        baseDamage: 10,
+        critChance: 0.5,
+        // No critMultiplier defined
+        variance: { min: 1, max: 1 },
+      },
+      passiveEffectState: {
+        computed: { burnTickRateMultiplier: 1.0, burnCanCrit: true } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 100, max: 100 },
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 10 * 1.5 (default) = 15 damage
+    expect(enemy.health?.current).toBe(85);
+  });
+
+  it('should apply crit AFTER burnDamagePercent and burnExecuteBonus', () => {
+    const player = world.add({
+      player: true,
+      identity: { name: 'Hero', class: 'mage' },
+      health: { current: 100, max: 100 },
+      attack: {
+        baseDamage: 10,
+        critChance: 0.5,
+        critMultiplier: 2.0,
+        variance: { min: 1, max: 1 },
+      },
+      passiveEffectState: {
+        computed: {
+          burnTickRateMultiplier: 1.0,
+          burnCanCrit: true,
+          burnDamagePercent: 50, // +50% damage
+          burnExecuteBonus: 100, // +100% execute
+          burnExecuteThreshold: 30,
+        } as any,
+        lastComputedTick: 0,
+      },
+    });
+
+    const enemy = world.add({
+      enemy: { tier: 'common', name: 'Goblin', isBoss: false, abilities: [], intent: null },
+      health: { current: 20, max: 100 }, // 20% HP, below threshold
+      statusEffects: [
+        { id: 'burn-1', type: 'burn', damage: 10, remainingTurns: 3, icon: 'flame', tickAccumulated: 1000 },
+      ],
+    });
+
+    StatusEffectSystem(0);
+
+    // 10 base * 1.5 (burnDamagePercent) = 15
+    // 15 * 2.0 (execute) = 30
+    // 30 * 2.0 (crit) = 60
+    // 20 - 60 = -40, clamped to 0
+    expect(enemy.health?.current).toBe(0);
   });
 });
 
