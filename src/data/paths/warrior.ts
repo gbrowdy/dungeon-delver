@@ -1,5 +1,14 @@
 import type { PathDefinition, PathAbility, SubpathDefinition } from '@/types/paths';
 import { COMBAT_BALANCE } from '@/constants/balance';
+import {
+  getBerserkerPowerChoices,
+  getBerserkerSubpathPower,
+  getBerserkerPowerUpgrade,
+} from './berserker-powers';
+import {
+  getGuardianEnhancementChoices,
+  getGuardianEnhancementById,
+} from './guardian-enhancements';
 
 /**
  * WARRIOR CLASS PATHS
@@ -309,7 +318,11 @@ const BERSERKER_PATH: PathDefinition = {
   icon: 'ability-paths-warrior-berserker',
   abilities: BERSERKER_ABILITIES,
   subpaths: [WARLORD_SUBPATH, EXECUTIONER_SUBPATH],
-  hasComboMechanic: true
+  hasComboMechanic: true,
+  // Lookup functions
+  getPowerChoices: getBerserkerPowerChoices,
+  getSubpathPower: getBerserkerSubpathPower,
+  getPowerUpgrade: getBerserkerPowerUpgrade,
 };
 
 // ============================================================================
@@ -539,7 +552,14 @@ const GUARDIAN_PATH: PathDefinition = {
   icon: 'ability-paths-warrior-guardian',
   abilities: GUARDIAN_ABILITIES,
   subpaths: [FORTRESS_SUBPATH, AVENGER_SUBPATH],
-  hasComboMechanic: false
+  hasComboMechanic: false,
+  // Lookup functions
+  getEnhancementChoices: (ironTier, retTier) => {
+    const choices = getGuardianEnhancementChoices(ironTier, retTier);
+    if (!choices.iron || !choices.retribution) return undefined;
+    return { stance1: choices.iron, stance2: choices.retribution };
+  },
+  getEnhancementById: getGuardianEnhancementById,
 };
 
 // ============================================================================

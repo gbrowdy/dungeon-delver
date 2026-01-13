@@ -181,6 +181,20 @@ export interface PathDefinition {
   theme?: string;                   // Optional: thematic tag for the overall path
   className?: string;               // Optional: class name for reference (can be derived from abilities)
   hasComboMechanic: boolean;        // Whether this path uses the combo system. Active paths = true, passive paths = false.
+
+  // === Lookup Functions (active paths) ===
+  /** Get power choices for a level (levels 2,4,6,8). Returns empty array if none. */
+  getPowerChoices?: (level: number) => import('@/types/game').Power[];
+  /** Get the power granted by a subpath at level 8. */
+  getSubpathPower?: (subpathId: string) => import('@/types/game').Power | undefined;
+  /** Get a power upgrade definition. */
+  getPowerUpgrade?: (powerId: string, tier: number) => unknown;
+
+  // === Lookup Functions (passive paths) ===
+  /** Get stance enhancement choices for current tier. */
+  getEnhancementChoices?: (tier1: number, tier2: number) => { stance1: StanceEnhancement; stance2: StanceEnhancement } | undefined;
+  /** Get a stance enhancement by ID. */
+  getEnhancementById?: (id: string) => StanceEnhancement | undefined;
 }
 
 /**

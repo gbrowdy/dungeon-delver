@@ -16,10 +16,7 @@ import { getTick, TICK_MS } from '../loop';
 import { LEVEL_UP_BONUSES } from '@/constants/game';
 import type { AnimationEvent, AnimationPayload } from '../components';
 import { queueAnimationEvent, addCombatLog } from '../utils';
-import { getBerserkerPowerChoices } from '@/data/paths/berserker-powers';
-import { getArchmagePowerChoices } from '@/data/paths/archmage-powers';
-import { getGuardianEnhancementChoices } from '@/data/paths/guardian-enhancements';
-import { getEnchanterEnhancementChoices } from '@/data/paths/enchanter-enhancements';
+import { getPathById } from '@/data/paths/registry';
 import { world } from '../world';
 
 export function ProgressionSystem(_deltaMs: number): void {
@@ -98,15 +95,9 @@ export function ProgressionSystem(_deltaMs: number): void {
         const isPowerLevel = [2, 4, 6, 8].includes(newLevel);
 
         if (isPowerLevel) {
-          let choices: import('@/types/game').Power[] = [];
           const pathId = player.pathProgression.pathId;
-
-          if (pathId === 'berserker') {
-            choices = getBerserkerPowerChoices(newLevel);
-          } else if (pathId === 'archmage') {
-            choices = getArchmagePowerChoices(newLevel);
-          }
-          // TODO: Add assassin, crusader when implemented
+          const pathDef = getPathById(pathId);
+          const choices = pathDef?.getPowerChoices?.(newLevel) ?? [];
 
           if (choices.length > 0) {
             world.addComponent(player, 'pendingPowerChoice', {
@@ -133,31 +124,31 @@ export function ProgressionSystem(_deltaMs: number): void {
           const pathId = player.path?.pathId;
           const stanceState = player.pathProgression.stanceProgression;
 
-          if (pathId === 'guardian' && stanceState) {
-            const choices = getGuardianEnhancementChoices(
-              stanceState.ironTier ?? 0,
-              stanceState.retributionTier ?? 0
-            );
+          if (pathId && stanceState) {
+            const pathDef = getPathById(pathId);
 
-            if (choices.iron && choices.retribution) {
-              world.addComponent(player, 'pendingStanceEnhancement', {
-                pathId: 'guardian',
-                ironChoice: choices.iron,
-                retributionChoice: choices.retribution,
-              });
-            }
-          } else if (pathId === 'enchanter' && stanceState) {
-            const choices = getEnchanterEnhancementChoices(
-              stanceState.arcaneSurgeTier ?? 0,
-              stanceState.hexVeilTier ?? 0
-            );
+            if (pathDef?.getEnhancementChoices) {
+              // Determine tier values based on path type
+              let tier1 = 0, tier2 = 0;
+              if (pathId === 'guardian') {
+                tier1 = stanceState.ironTier ?? 0;
+                tier2 = stanceState.retributionTier ?? 0;
+              } else if (pathId === 'enchanter') {
+                tier1 = stanceState.arcaneSurgeTier ?? 0;
+                tier2 = stanceState.hexVeilTier ?? 0;
+              }
 
-            if (choices.arcaneSurge && choices.hexVeil) {
-              world.addComponent(player, 'pendingStanceEnhancement', {
-                pathId: 'enchanter',
-                arcaneSurgeChoice: choices.arcaneSurge,
-                hexVeilChoice: choices.hexVeil,
-              });
+              const choices = pathDef.getEnhancementChoices(tier1, tier2);
+              if (choices) {
+                world.addComponent(player, 'pendingStanceEnhancement', {
+                  pathId,
+                  // Map to expected field names based on path
+                  ...(pathId === 'guardian'
+                    ? { ironChoice: choices.stance1, retributionChoice: choices.stance2 }
+                    : { arcaneSurgeChoice: choices.stance1, hexVeilChoice: choices.stance2 }
+                  ),
+                });
+              }
             }
           }
         }
