@@ -10,7 +10,8 @@ import type { PathDefinition, PathAbility } from '@/types/paths';
 import type { Entity } from '@/ecs/components';
 import { WARRIOR_PATHS } from './warrior';
 import { MAGE_PATHS } from './mage';
-// Rogue/Paladin will be added here when implemented
+import { ROGUE_PATHS } from './rogue';
+import { PALADIN_PATHS } from './paladin';
 
 // ============================================================================
 // REGISTRY
@@ -23,8 +24,8 @@ import { MAGE_PATHS } from './mage';
 const PATH_REGISTRY: Record<string, PathDefinition[]> = {
   warrior: Object.values(WARRIOR_PATHS),
   mage: MAGE_PATHS,
-  // rogue: Object.values(ROGUE_PATHS),
-  // paladin: Object.values(PALADIN_PATHS),
+  rogue: ROGUE_PATHS,
+  paladin: PALADIN_PATHS,
 };
 
 /**

@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { CharacterClass } from '@/types/game';
-import { PathDefinition } from '@/types/paths';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,24 +9,14 @@ import { PixelDivider } from '@/components/ui/PixelDivider';
 import { PixelIcon, IconType } from '@/components/ui/PixelIcon';
 import { PATH_SELECTION_BONUSES } from '@/constants/paths';
 
-// Import path data for all classes
-import { WARRIOR_PATHS } from '@/data/paths/warrior';
-import { MAGE_PATHS } from '@/data/paths/mage';
-import { ROGUE_PATHS } from '@/data/paths/rogue';
-import { PALADIN_PATHS } from '@/data/paths/paladin';
+// Import path data from registry
+import { getPathsForClass } from '@/data/paths/registry';
 
 interface PathSelectionScreenProps {
   characterClass: CharacterClass;
   onSelectPath: (pathId: string) => void;
 }
 
-// Map of all class paths
-const CLASS_PATHS: Record<CharacterClass, PathDefinition[]> = {
-  warrior: [WARRIOR_PATHS.berserker, WARRIOR_PATHS.guardian],
-  mage: MAGE_PATHS,
-  rogue: ROGUE_PATHS,
-  paladin: PALADIN_PATHS,
-};
 
 // Type colors matching ClassSelect component
 const TYPE_COLORS = {
@@ -60,7 +49,7 @@ export function PathSelectionScreen({ characterClass, onSelectPath }: PathSelect
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
 
-  const paths = CLASS_PATHS[characterClass];
+  const paths = getPathsForClass(characterClass);
 
   if (!paths || paths.length === 0) {
     return (
