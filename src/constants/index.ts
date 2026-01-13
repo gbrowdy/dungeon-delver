@@ -5,8 +5,8 @@
 // Game configuration constants
 export * from './game';
 
-// Animation timing constants
-export * from './animation';
+// Combat timing constants (attack durations, death animations, hit reactions)
+export * from './combatTiming';
 
 // Enum constants and string literals
 export * from './enums';
