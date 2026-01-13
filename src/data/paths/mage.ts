@@ -1,5 +1,14 @@
 // Placeholder imports - types will be defined in src/types/paths.ts (Task 2.1)
 import type { PathDefinition, PathAbility, PathAbilityEffect } from '@/types/paths';
+import {
+  getArchmagePowerChoices,
+  getArchmageSubpathPower,
+  getArchmagePowerUpgrade,
+} from './archmage-powers';
+import {
+  getEnchanterEnhancementChoices,
+  getEnchanterEnhancementById,
+} from './enchanter-enhancements';
 
 /**
  * MAGE CLASS PATHS
@@ -451,7 +460,11 @@ const ARCHMAGE_PATH: PathDefinition = {
       theme: 'burst',
     },
   ],
-  hasComboMechanic: true
+  hasComboMechanic: true,
+  // Lookup functions
+  getPowerChoices: getArchmagePowerChoices,
+  getSubpathPower: getArchmageSubpathPower,
+  getPowerUpgrade: getArchmagePowerUpgrade,
 };
 
 const ENCHANTER_PATH: PathDefinition = {
@@ -463,7 +476,14 @@ const ENCHANTER_PATH: PathDefinition = {
   icon: 'ability-paths-mage-enchanter',
   abilities: ENCHANTER_ABILITIES,
   subpaths: [], // Passive paths don't use subpaths (they use stances)
-  hasComboMechanic: false
+  hasComboMechanic: false,
+  // Lookup functions
+  getEnhancementChoices: (surgeTier, veilTier) => {
+    const choices = getEnchanterEnhancementChoices(surgeTier, veilTier);
+    if (!choices.arcaneSurge || !choices.hexVeil) return undefined;
+    return { stance1: choices.arcaneSurge, stance2: choices.hexVeil };
+  },
+  getEnhancementById: getEnchanterEnhancementById,
 };
 
 // ============================================================================
