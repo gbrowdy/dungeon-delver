@@ -1,5 +1,5 @@
 import { Player, Enemy } from '@/types/game';
-import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+import { deepClonePlayer, deepCloneEnemy } from '@/utils/cloneUtils';
 
 /**
  * Source of damage for determining how it should be processed.
