@@ -23,15 +23,11 @@ import type {
   PathAbilityEffect,
   PathAbilityTrigger,
   PathAbilityCondition,
-  PathDefinition,
   StatusApplication,
   StatModifier,
 } from '@/types/paths';
 import type { StatusEffect, EnemyStatDebuff, ActiveBuff } from '@/types/game';
-import { WARRIOR_PATHS } from '@/data/paths/warrior';
-import { MAGE_PATHS } from '@/data/paths/mage';
-import { ROGUE_PATHS } from '@/data/paths/rogue';
-import { PALADIN_PATHS } from '@/data/paths/paladin';
+import { getPathById, getPlayerActiveAbilities } from '@/data/paths/registry';
 import { queueAnimationEvent, addCombatLog } from '../utils';
 
 // ============================================================================
@@ -77,52 +73,6 @@ export function clearPathTriggerTracking(): void {
  */
 export function getPendingTriggers(): readonly PathTriggerEvent[] {
   return pendingTriggers;
-}
-
-// ============================================================================
-// PATH HELPERS
-// ============================================================================
-
-/**
- * Normalize path exports to array format.
- */
-function normalizePaths(paths: PathDefinition[] | Record<string, PathDefinition>): PathDefinition[] {
-  return Array.isArray(paths) ? paths : Object.values(paths);
-}
-
-/**
- * Get all path definitions from all classes.
- */
-function getAllPaths(): PathDefinition[] {
-  return [
-    ...normalizePaths(WARRIOR_PATHS),
-    ...normalizePaths(MAGE_PATHS),
-    ...normalizePaths(ROGUE_PATHS),
-    ...normalizePaths(PALADIN_PATHS),
-  ];
-}
-
-/**
- * Get a path definition by ID.
- */
-function getPathById(pathId: string): PathDefinition | null {
-  const allPaths = getAllPaths();
-  return allPaths.find(p => p.id === pathId) || null;
-}
-
-/**
- * Get all active abilities for a player entity.
- */
-function getActiveAbilities(player: Entity): PathAbility[] {
-  if (!player.path) return [];
-
-  const pathDef = getPathById(player.path.pathId);
-  if (!pathDef) return [];
-
-  // Filter abilities that the player has chosen
-  return pathDef.abilities.filter(ability =>
-    player.path!.abilities.includes(ability.id)
-  );
 }
 
 // ============================================================================
@@ -589,7 +539,7 @@ export function PathAbilitySystem(deltaMs: number): void {
   updateCooldowns(player, effectiveDelta);
 
   // Get active abilities
-  const abilities = getActiveAbilities(player);
+  const abilities = getPlayerActiveAbilities(player);
   if (abilities.length === 0) {
     clearPathTriggerTracking();
     return;
