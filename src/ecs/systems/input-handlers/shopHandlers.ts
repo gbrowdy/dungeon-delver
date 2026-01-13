@@ -5,7 +5,7 @@
 
 import type { Command } from '../../commands';
 import type { CommandHandler } from './types';
-import { recomputeDerivedStats } from '@/utils/statUtils';
+import { recomputeDerivedStats } from '@/utils/fortuneDerivedStats';
 
 type PurchaseItemCommand = Extract<Command, { type: 'PURCHASE_ITEM' }>;
 type EnhanceItemCommand = Extract<Command, { type: 'ENHANCE_ITEM' }>;

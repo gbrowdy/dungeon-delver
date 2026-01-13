@@ -11,7 +11,7 @@ import { FLOOR_CONFIG } from '@/constants/game';
 import { COMBAT_BALANCE } from '@/constants/balance';
 import { getStartingPower } from '@/data/startingPowers';
 import { STAMINA_RESOURCE } from '@/data/pathResources';
-import { computeDerivedStats } from '@/utils/statUtils';
+import { computeDerivedStats } from '@/utils/fortuneDerivedStats';
 
 // ============================================================================
 // Helper Functions
