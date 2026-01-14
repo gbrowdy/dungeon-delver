@@ -151,11 +151,10 @@ describe('InputSystem - Path Selection', () => {
   });
 
   it('should handle path selection for all active paths', () => {
+    // rogue and paladin removed - see docs/class-designs/ for design docs
     const activePaths = [
       { pathId: 'berserker', class: 'warrior', resourceType: 'fury' },
       { pathId: 'archmage', class: 'mage', resourceType: 'arcane_charges' },
-      { pathId: 'assassin', class: 'rogue', resourceType: 'momentum' },
-      { pathId: 'paladin_crusader', class: 'paladin', resourceType: 'zeal' },
     ] as const;
 
     for (const { pathId, class: characterClass, resourceType } of activePaths) {
@@ -183,11 +182,10 @@ describe('InputSystem - Path Selection', () => {
   });
 
   it('should handle path selection for all passive paths', () => {
+    // rogue and paladin removed - see docs/class-designs/ for design docs
     const passivePaths = [
       { pathId: 'guardian', class: 'warrior', firstStance: 'iron_stance' },
       { pathId: 'enchanter', class: 'mage', firstStance: 'arcane_surge' },
-      { pathId: 'duelist', class: 'rogue', firstStance: 'evasion_stance' },
-      { pathId: 'paladin_protector', class: 'paladin', firstStance: 'healing_stance' },
     ] as const;
 
     for (const { pathId, class: characterClass, firstStance } of passivePaths) {

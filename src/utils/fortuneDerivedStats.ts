@@ -1,4 +1,4 @@
-// src/utils/statUtils.ts
+// src/utils/fortuneDerivedStats.ts
 /**
  * Stat computation utilities for deriving combat stats.
  * Used to compute cached stats that depend on base attributes like fortune.

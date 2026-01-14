@@ -1,5 +1,5 @@
 import type { Player } from '@/types/game';
-import { deepClonePlayer } from '@/utils/stateUtils';
+import { deepClonePlayer } from '@/utils/cloneUtils';
 import { BUFF_STAT } from '@/constants/enums';
 
 /**

@@ -1,22 +1,24 @@
-import { Power, PowerUpgradeOffer } from '@/types/game';
+import type { Power } from '@/types/game';
 
-// Power upgrade configuration
-// Each upgrade level improves the power's effectiveness
-export const POWER_UPGRADE_CONFIG = {
-  MAX_UPGRADE_LEVEL: 3,
-  // Per-level bonuses
-  VALUE_INCREASE_PER_LEVEL: 0.25, // +25% power value per upgrade
-  COOLDOWN_REDUCTION_PER_LEVEL: 0.5, // -0.5s cooldown per upgrade
-  COST_REDUCTION_PER_LEVEL: 0.1, // -10% resource cost per upgrade
-  // Chance that one of the power offers will be an upgrade (if player has upgradeable powers)
-  UPGRADE_OFFER_CHANCE: 0.5,
-} as const;
+// Path synergy interface for power definitions
+export interface PowerSynergy {
+  pathId: string;
+  description: string;
+}
 
-// Union type for power choices (can be new power or upgrade)
-export type PowerChoice = Power | PowerUpgradeOffer;
-
-export function isPowerUpgrade(choice: PowerChoice): choice is PowerUpgradeOffer {
-  return 'isUpgrade' in choice && choice.isUpgrade === true;
+export interface PowerDefinition {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  resourceCost: number;
+  cooldown: number;
+  category: 'strike' | 'burst' | 'execute' | 'control' | 'buff' | 'sacrifice' | 'heal';
+  effect: 'damage' | 'heal' | 'buff' | 'debuff';
+  value: number;
+  synergies: PowerSynergy[];
+  maxLevel?: number;
+  additionalEffects?: string;
 }
 
 /**
@@ -33,34 +35,13 @@ export function isPowerUpgrade(choice: PowerChoice): choice is PowerUpgradeOffer
  * - HEAL: Restore HP (Divine Heal, Regeneration)
  */
 
-// Path synergy interface for power definitions
-interface PowerSynergy {
-  pathId: string;
-  description: string;
-}
-
-interface PowerDefinition {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  resourceCost: number;
-  cooldown: number;
-  category: 'strike' | 'burst' | 'execute' | 'control' | 'buff' | 'sacrifice' | 'heal';
-  effect: 'damage' | 'heal' | 'buff' | 'debuff';
-  value: number;
-  synergies: PowerSynergy[];
-  maxLevel?: number;
-  additionalEffects?: string;
-}
-
 /**
  * UNLOCKABLE POWERS
  *
  * Redesigned with verb-focused mechanics and path synergies.
  * Each power has a unique mechanical identity.
  */
-const POWER_DEFINITIONS: PowerDefinition[] = [
+export const POWER_DEFINITIONS: PowerDefinition[] = [
   // ============================================================================
   // STRIKE POWERS - Single reliable hits
   // ============================================================================
@@ -359,159 +340,3 @@ export const UNLOCKABLE_POWERS: Power[] = POWER_DEFINITIONS.map(def => ({
   category: def.category,
   synergies: def.synergies,
 }));
-
-export function getRandomPower(existingPowerIds: string[]): Power | null {
-  const available = UNLOCKABLE_POWERS.filter(p => !existingPowerIds.includes(p.id));
-  if (available.length === 0) return null;
-  const randomIndex = Math.floor(Math.random() * available.length);
-  const selectedPower = available[randomIndex];
-  if (!selectedPower) return null;
-  return { ...selectedPower };
-}
-
-/**
- * Get multiple random powers for player to choose from
- * Returns up to `count` powers, or fewer if not enough are available
- */
-export function getRandomPowers(existingPowerIds: string[], count: number = 2): Power[] {
-  const available = UNLOCKABLE_POWERS.filter(p => !existingPowerIds.includes(p.id));
-  if (available.length === 0) return [];
-
-  // Shuffle and take up to `count` powers
-  const shuffled = [...available].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(count, available.length)).map(p => ({ ...p }));
-}
-
-/**
- * Generate a power upgrade offer for an existing power
- */
-export function generatePowerUpgradeOffer(power: Power): PowerUpgradeOffer | null {
-  const currentLevel = power.upgradeLevel ?? 1;
-
-  // Can't upgrade past max level
-  if (currentLevel >= POWER_UPGRADE_CONFIG.MAX_UPGRADE_LEVEL) {
-    return null;
-  }
-
-  const newLevel = currentLevel + 1;
-  const valueIncrease = Math.floor(POWER_UPGRADE_CONFIG.VALUE_INCREASE_PER_LEVEL * 100);
-  const cooldownReduction = POWER_UPGRADE_CONFIG.COOLDOWN_REDUCTION_PER_LEVEL;
-  const costReduction = Math.floor(POWER_UPGRADE_CONFIG.COST_REDUCTION_PER_LEVEL * 100);
-
-  return {
-    powerId: power.id,
-    powerName: power.name,
-    powerIcon: power.icon,
-    currentLevel,
-    newLevel,
-    description: `+${valueIncrease}% power, -${cooldownReduction}s cooldown, -${costReduction}% cost`,
-    isUpgrade: true,
-  };
-}
-
-/**
- * Apply an upgrade to a power, returning the upgraded power
- */
-export function applyPowerUpgrade(power: Power): Power {
-  const currentLevel = power.upgradeLevel ?? 1;
-  const newLevel = currentLevel + 1;
-
-  // Calculate new values
-  const valueMultiplier = 1 + (POWER_UPGRADE_CONFIG.VALUE_INCREASE_PER_LEVEL * (newLevel - 1));
-  const cooldownReduction = POWER_UPGRADE_CONFIG.COOLDOWN_REDUCTION_PER_LEVEL * (newLevel - 1);
-  const costMultiplier = 1 - (POWER_UPGRADE_CONFIG.COST_REDUCTION_PER_LEVEL * (newLevel - 1));
-
-  // Find base power to get original values
-  const basePower = UNLOCKABLE_POWERS.find(p => p.id === power.id);
-  if (!basePower) return power;
-
-  const newValue = Number((basePower.value * valueMultiplier).toFixed(2));
-  const newCooldown = Math.max(1, basePower.cooldown - cooldownReduction);
-  const newCost = Math.max(5, Math.floor(basePower.resourceCost * costMultiplier));
-
-  // Generate new description based on effect type
-  let newDescription = power.description;
-  if (power.effect === 'damage') {
-    newDescription = power.description.replace(/\d+%/, `${Math.floor(newValue * 100)}%`);
-  }
-
-  return {
-    ...power,
-    value: newValue,
-    cooldown: newCooldown,
-    resourceCost: newCost,
-    description: newDescription,
-    upgradeLevel: newLevel,
-    name: newLevel > 1 ? `${basePower.name} +${newLevel - 1}` : basePower.name,
-  };
-}
-
-/**
- * Get power choices for player - mix of new powers and potential upgrades
- * @param existingPowers - Powers the player already has
- * @param count - Number of choices to offer
- */
-export function getPowerChoices(existingPowers: Power[], count: number = 2): PowerChoice[] {
-  const existingPowerIds = existingPowers.map(p => p.id);
-  const choices: PowerChoice[] = [];
-
-  // Get available new powers
-  const availableNew = UNLOCKABLE_POWERS.filter(p => !existingPowerIds.includes(p.id));
-
-  // Get upgradeable powers (not at max level)
-  const upgradeablePowers = existingPowers.filter(p => {
-    const level = p.upgradeLevel ?? 1;
-    return level < POWER_UPGRADE_CONFIG.MAX_UPGRADE_LEVEL;
-  });
-
-  // Decide how many upgrades vs new powers to offer
-  let upgradeCount = 0;
-  if (upgradeablePowers.length > 0 && Math.random() < POWER_UPGRADE_CONFIG.UPGRADE_OFFER_CHANCE) {
-    upgradeCount = 1; // Offer at least one upgrade if available
-  }
-
-  // Add upgrade offers
-  if (upgradeCount > 0 && upgradeablePowers.length > 0) {
-    const shuffledUpgradeable = [...upgradeablePowers].sort(() => Math.random() - 0.5);
-    for (let i = 0; i < upgradeCount && i < shuffledUpgradeable.length; i++) {
-      const power = shuffledUpgradeable[i];
-      if (power) {
-        const upgradeOffer = generatePowerUpgradeOffer(power);
-        if (upgradeOffer) {
-          choices.push(upgradeOffer);
-        }
-      }
-    }
-  }
-
-  // Fill remaining slots with new powers
-  const remainingSlots = count - choices.length;
-  if (remainingSlots > 0 && availableNew.length > 0) {
-    const shuffledNew = [...availableNew].sort(() => Math.random() - 0.5);
-    for (let i = 0; i < remainingSlots && i < shuffledNew.length; i++) {
-      const power = shuffledNew[i];
-      if (power) {
-        choices.push({ ...power, upgradeLevel: 1 });
-      }
-    }
-  }
-
-  // If we still don't have enough choices, fill with more upgrades
-  if (choices.length < count && upgradeablePowers.length > choices.filter(c => isPowerUpgrade(c)).length) {
-    const usedUpgradeIds = choices.filter(isPowerUpgrade).map(c => c.powerId);
-    const remainingUpgradeable = upgradeablePowers.filter(p => !usedUpgradeIds.includes(p.id));
-    const shuffled = [...remainingUpgradeable].sort(() => Math.random() - 0.5);
-
-    for (let i = 0; choices.length < count && i < shuffled.length; i++) {
-      const power = shuffled[i];
-      if (power) {
-        const upgradeOffer = generatePowerUpgradeOffer(power);
-        if (upgradeOffer) {
-          choices.push(upgradeOffer);
-        }
-      }
-    }
-  }
-
-  return choices;
-}

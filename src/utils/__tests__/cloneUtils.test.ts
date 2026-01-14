@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { deepClonePlayer, deepCloneEnemy } from '../stateUtils';
+import { deepClonePlayer, deepCloneEnemy } from '../cloneUtils';
 import type { Player, Enemy, StatusEffect, ActiveBuff, Power, Item, EnemyAbility, EnemyIntent } from '@/types/game';
 
-describe('stateUtils', () => {
+describe('cloneUtils', () => {
   describe('deepClonePlayer', () => {
     it('should create a deep clone without mutating the original player', () => {
       const originalPlayer: Player = {

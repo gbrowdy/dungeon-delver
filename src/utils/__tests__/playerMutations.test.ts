@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { restorePlayerHealth, generatePathResource, addBuffToPlayer } from '../statsUtils';
+import { restorePlayerHealth, generatePathResource, addBuffToPlayer } from '../playerMutations';
 import { BUFF_STAT } from '@/constants/enums';
 import { Player } from '@/types/game';
 

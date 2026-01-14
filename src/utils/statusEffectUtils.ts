@@ -1,7 +1,7 @@
 import { Player, Enemy, StatusEffect } from '@/types/game';
 import { STATUS_EFFECT_TYPE, StatusEffectType } from '@/constants/enums';
 import { COMBAT_BALANCE } from '@/constants/balance';
-import { deepClonePlayer, deepCloneEnemy } from '@/utils/stateUtils';
+import { deepClonePlayer, deepCloneEnemy } from '@/utils/cloneUtils';
 
 // ============================================================================
 // TYPES
