@@ -78,4 +78,25 @@ describe('gameStore', () => {
       expect(state.renderVersion).toBe(0);
     });
   });
+
+  describe('resetGame', () => {
+    it('resets all state back to initial', () => {
+      const store = useGameStore;
+      // Mutate state
+      store.getState().selectClass('warrior');
+      store.getState().startRun();
+      expect(store.getState().phase).toBe('combat');
+      expect(store.getState().enemy).not.toBeNull();
+
+      // Reset
+      store.getState().resetGame();
+      const state = store.getState();
+      expect(state.phase).toBe('menu');
+      expect(state.classId).toBe('');
+      expect(state.player.hp).toBe(0);
+      expect(state.enemy).toBeNull();
+      expect(state.floor).toBe(0);
+      expect(state.depth).toBe(0);
+    });
+  });
 });
