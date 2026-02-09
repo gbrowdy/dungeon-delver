@@ -10,6 +10,7 @@ import {
   PLAYER_BASE_LUCK,
 } from '@/math/balance';
 import { getMaxHp, getAttackInterval } from '@/math/stats';
+import { getRoomsPerFloor } from '@/math/scaling';
 
 describe('createInitialPlayer', () => {
   it('creates a player with base stats', () => {
@@ -79,5 +80,64 @@ describe('selectClass', () => {
       expect(useGameStore.getState().classId).toBe(classId);
       expect(useGameStore.getState().player.hp).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('startRun', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+    // Must select class first
+    useGameStore.getState().selectClass('warrior');
+  });
+
+  it('transitions phase to combat', () => {
+    useGameStore.getState().startRun();
+    expect(useGameStore.getState().phase).toBe('combat');
+  });
+
+  it('sets floor to 1 and room to 1', () => {
+    useGameStore.getState().startRun();
+    const state = useGameStore.getState();
+    expect(state.floor).toBe(1);
+    expect(state.room).toBe(1);
+  });
+
+  it('computes roomsPerFloor for floor 1', () => {
+    useGameStore.getState().startRun();
+    expect(useGameStore.getState().roomsPerFloor).toBe(getRoomsPerFloor(1));
+  });
+
+  it('spawns an enemy', () => {
+    useGameStore.getState().startRun();
+    const state = useGameStore.getState();
+    expect(state.enemy).not.toBeNull();
+    expect(state.enemy!.hp).toBeGreaterThan(0);
+    expect(state.enemyDefinition).not.toBeNull();
+    expect(state.enemyDefinition!.tier).toBeDefined();
+    expect(state.enemyDefinition!.modifiers).toBeDefined();
+  });
+
+  it('resets combat elapsed and fight count', () => {
+    useGameStore.getState().startRun();
+    const state = useGameStore.getState();
+    expect(state.combatElapsed).toBe(0);
+    expect(state.fightCount).toBe(1);
+  });
+
+  it('clears combat events', () => {
+    useGameStore.getState().startRun();
+    expect(useGameStore.getState().combatEvents).toEqual([]);
+  });
+
+  it('sets depth to 1', () => {
+    useGameStore.getState().startRun();
+    expect(useGameStore.getState().depth).toBe(1);
+  });
+
+  it('throws if no class selected', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    expect(() => {
+      useGameStore.getState().startRun();
+    }).toThrow();
   });
 });

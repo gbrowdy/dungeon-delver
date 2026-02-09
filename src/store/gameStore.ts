@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import type { GameState } from '@/types/game';
 import { createInitialPlayer } from './actions/setup';
 import { CLASSES } from '@/data/classes';
+import { generateEnemy } from '@/data/enemies';
+import { getRoomsPerFloor } from '@/math/scaling';
 
 // -- Actions interface (methods on the store) ---------------------------------
 export interface GameActions {
@@ -68,7 +70,7 @@ const INITIAL_STATE: GameState = {
 };
 
 // -- Store --------------------------------------------------------------------
-export const useGameStore = create<GameStore>()((set, _get) => ({
+export const useGameStore = create<GameStore>()((set, get) => ({
   ...INITIAL_STATE,
 
   selectClass: (classId: string) => {
@@ -84,7 +86,29 @@ export const useGameStore = create<GameStore>()((set, _get) => ({
   },
 
   startRun: () => {
-    // Implemented in Task 4
+    const { classId } = get();
+    if (!classId) {
+      throw new Error('Cannot start run: no class selected');
+    }
+
+    const floor = 1;
+    const generated = generateEnemy(floor);
+    const roomsPerFloor = getRoomsPerFloor(floor);
+
+    set({
+      phase: 'combat',
+      floor,
+      room: 1,
+      roomsPerFloor,
+      fightCount: 1,
+      enemy: generated.entity,
+      enemyDefinition: { tier: generated.tier, modifiers: generated.modifiers },
+      combatElapsed: 0,
+      combatEvents: [],
+      depth: 1,
+      checkpoint: 0,
+      lastDeathStats: null,
+    });
   },
 
   tick: (_dt: number) => {
