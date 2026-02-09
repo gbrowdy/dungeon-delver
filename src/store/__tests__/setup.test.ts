@@ -141,3 +141,43 @@ describe('startRun', () => {
     }).toThrow();
   });
 });
+
+describe('full setup flow: menu → class-select → combat', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+  });
+
+  it('completes the full setup flow for each class', () => {
+    for (const classId of ['warrior', 'rogue', 'mage']) {
+      useGameStore.setState(useGameStore.getInitialState());
+
+      // Start at menu
+      expect(useGameStore.getState().phase).toBe('menu');
+
+      // Select class
+      useGameStore.getState().selectClass(classId);
+      expect(useGameStore.getState().phase).toBe('class-select');
+      expect(useGameStore.getState().classId).toBe(classId);
+
+      // Start run
+      useGameStore.getState().startRun();
+      const state = useGameStore.getState();
+      expect(state.phase).toBe('combat');
+      expect(state.floor).toBe(1);
+      expect(state.room).toBe(1);
+      expect(state.enemy).not.toBeNull();
+      expect(state.player.hp).toBeGreaterThan(0);
+      expect(state.enemy!.hp).toBeGreaterThan(0);
+    }
+  });
+
+  it('reset returns to menu from mid-run', () => {
+    useGameStore.getState().selectClass('mage');
+    useGameStore.getState().startRun();
+    expect(useGameStore.getState().phase).toBe('combat');
+
+    useGameStore.getState().resetGame();
+    expect(useGameStore.getState().phase).toBe('menu');
+    expect(useGameStore.getState().enemy).toBeNull();
+  });
+});
