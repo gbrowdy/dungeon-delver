@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import type { GameState } from '@/types/game';
+import { createInitialPlayer } from './actions/setup';
+import { CLASSES } from '@/data/classes';
 
 // -- Actions interface (methods on the store) ---------------------------------
 export interface GameActions {
@@ -69,8 +71,16 @@ const INITIAL_STATE: GameState = {
 export const useGameStore = create<GameStore>()((set, _get) => ({
   ...INITIAL_STATE,
 
-  selectClass: (_classId: string) => {
-    // Implemented in Task 3
+  selectClass: (classId: string) => {
+    if (!CLASSES[classId]) {
+      throw new Error(`Unknown class: ${classId}`);
+    }
+    const player = createInitialPlayer();
+    set({
+      classId,
+      player,
+      phase: 'class-select',
+    });
   },
 
   startRun: () => {

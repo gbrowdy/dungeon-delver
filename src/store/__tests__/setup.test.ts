@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { createInitialPlayer } from '../actions/setup';
+import { useGameStore } from '../gameStore';
+import { CLASSES } from '@/data/classes';
 import {
   PLAYER_BASE_HP,
   PLAYER_BASE_POWER,
@@ -38,5 +40,44 @@ describe('createInitialPlayer', () => {
   it('starts with empty status effects', () => {
     const player = createInitialPlayer();
     expect(player.statusEffects).toEqual([]);
+  });
+});
+
+describe('selectClass', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+  });
+
+  it('sets the classId', () => {
+    useGameStore.getState().selectClass('warrior');
+    expect(useGameStore.getState().classId).toBe('warrior');
+  });
+
+  it('transitions phase to class-select', () => {
+    useGameStore.getState().selectClass('warrior');
+    expect(useGameStore.getState().phase).toBe('class-select');
+  });
+
+  it('creates the player entity with base stats', () => {
+    useGameStore.getState().selectClass('rogue');
+    const player = useGameStore.getState().player;
+    expect(player.power).toBe(PLAYER_BASE_POWER);
+    expect(player.hp).toBeGreaterThan(0);
+    expect(player.maxHp).toBe(player.hp);
+  });
+
+  it('throws on unknown classId', () => {
+    expect(() => {
+      useGameStore.getState().selectClass('necromancer');
+    }).toThrow('Unknown class: necromancer');
+  });
+
+  it('works for all three classes', () => {
+    for (const classId of ['warrior', 'rogue', 'mage']) {
+      useGameStore.setState(useGameStore.getInitialState());
+      useGameStore.getState().selectClass(classId);
+      expect(useGameStore.getState().classId).toBe(classId);
+      expect(useGameStore.getState().player.hp).toBeGreaterThan(0);
+    }
   });
 });
