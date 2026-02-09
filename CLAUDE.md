@@ -4,6 +4,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## MIGRATION IN PROGRESS: v2 Rebuild
+
+**Status:** Active rebuild. The game is being rewritten from scratch.
+
+**Source of truth:** `docs/plans/2026-02-08-game-redesign-v2.md`
+
+**Key changes:**
+- `src/` = NEW codebase (Zustand store, simple game loop, new UI)
+- `src-legacy/` = OLD codebase (miniplex ECS, 16 systems, snapshots) — REFERENCE ONLY, DO NOT MODIFY
+- The old ECS architecture, systems, snapshots, commands, and GameContext are GONE
+- New architecture: Zustand store + requestAnimationFrame + fixed timestep tick()
+- No paths, no powers, no stances, no active abilities — this is a pure auto-battler
+
+**DO NOT:**
+- Import anything from `src-legacy/` into `src/`
+- Use ECS patterns (world.addComponent, queries, snapshots) in new code
+- Reference old component names or patterns as examples for new code
+
+**DO:**
+- Reference `src-legacy/` visually to understand sprite/effect/UI patterns before adapting
+- Follow the design doc for all game mechanics and formulas
+- Use Zustand patterns (store.getState(), set(), selectors) for state management
+
+---
+
 ## ⚠️ CRITICAL: Branch Policy
 
 **ALL WORK MUST BE DONE IN FEATURE BRANCHES. NEVER COMMIT DIRECTLY TO MAIN.**
