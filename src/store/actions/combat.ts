@@ -7,7 +7,7 @@
 import type { GameState, CombatEntity, CombatEvent } from '@/types/game';
 import { calculateDamage } from '@/math/damage';
 import { getAttackInterval, getCritChance, getCritDamage, getDodgeChance } from '@/math/stats';
-import { WARRIOR_FORTITUDE_MULT, ROGUE_CRIT_MULT, MAGE_AMPLIFY_PER_LUCK, DODGE_CHANCE_CAP, MIN_SPEED } from '@/math/balance';
+import { WARRIOR_FORTITUDE_MULT, ROGUE_CRIT_MULT, MAGE_AMPLIFY_PER_LUCK, DODGE_CHANCE_CAP, MIN_SPEED, MIN_POWER } from '@/math/balance';
 import { tickStatusEffects, hasEffect, addStatusEffect } from './statusEffects';
 import { tickEnrage } from './enrage';
 import { tickModifierBehaviors } from './modifiers';
@@ -34,6 +34,14 @@ export function tickCombat(state: GameState, dt: number): void {
 
   // Tick modifier behaviors (berserker, regen, shielded)
   tickModifierBehaviors(state, dt);
+
+  // Apply curse stat reduction to enemy (3% per stack)
+  const curse = enemy.statusEffects.find(e => e.type === 'curse');
+  if (curse && curse.stacks > 0) {
+    const reductionPercent = curse.stacks * 0.03;
+    enemy.power = Math.max(MIN_POWER, Math.round(enemy.basePower * (1 - reductionPercent)));
+    enemy.speed = Math.max(MIN_SPEED, Math.round(enemy.baseSpeed * (1 - reductionPercent)));
+  }
 
   // Compute passive item effects
   const passives = processItemProcs(state, 'passive', {});
@@ -137,7 +145,19 @@ function resolvePlayerAttack(
       damageMultiplier *= (1 + bonusPercent);
     }
 
-    const finalDamage = Math.max(1, Math.round(result.final * damageMultiplier));
+    let finalDamage = Math.max(1, Math.round(result.final * damageMultiplier));
+
+    // Shield absorption — shield.stacks is the shield HP pool
+    const shield = enemy.statusEffects.find(e => e.type === 'shield');
+    if (shield && shield.stacks > 0) {
+      const absorbed = Math.min(shield.stacks, finalDamage);
+      shield.stacks -= absorbed;
+      finalDamage -= absorbed;
+      if (shield.stacks <= 0) {
+        enemy.statusEffects = enemy.statusEffects.filter(e => e.type !== 'shield');
+      }
+    }
+
     enemy.hp -= finalDamage;
     state.lastPlayerHitDamage = finalDamage;
 

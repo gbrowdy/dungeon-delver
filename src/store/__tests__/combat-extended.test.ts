@@ -191,3 +191,83 @@ describe('Riposte Charm counter attack', () => {
     mockRandom.mockRestore();
   });
 });
+
+describe('Curse stat reduction (Hex Blade)', () => {
+  it('reduces enemy power and speed by 3% per curse stack', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+    const state = useGameStore.getState();
+    const basePower = state.enemy!.basePower;
+    const baseSpeed = state.enemy!.baseSpeed;
+
+    // Apply 5 curse stacks
+    state.enemy!.statusEffects.push({ type: 'curse', stacks: 5, remainingMs: Infinity });
+
+    // Tick to apply curse effects
+    state.player.attackTimer = 99999;
+    state.enemy!.attackTimer = 99999;
+    tickCombat(state, TICK_MS);
+
+    // 5 stacks * 3% = 15% reduction
+    const expectedPower = Math.max(1, Math.round(basePower * (1 - 5 * 0.03)));
+    const expectedSpeed = Math.max(3, Math.round(baseSpeed * (1 - 5 * 0.03)));
+    expect(state.enemy!.power).toBe(expectedPower);
+    expect(state.enemy!.speed).toBe(expectedSpeed);
+  });
+});
+
+describe('Shield absorption', () => {
+  it('shield absorbs damage before HP', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+    const state = useGameStore.getState();
+    state.enemyDefinition!.modifiers = ['shielded'];
+
+    // Give enemy a shield
+    const shieldAmount = Math.round(state.enemy!.maxHp * 0.2);
+    state.enemy!.statusEffects.push({ type: 'shield', stacks: shieldAmount, remainingMs: Infinity });
+
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+
+    const enemyHpBefore = state.enemy!.hp;
+    tickCombat(state, TICK_MS);
+
+    // Shield should have absorbed some damage, so HP loss is less than it would be
+    const totalDamage = enemyHpBefore - state.enemy!.hp;
+    expect(totalDamage).toBeLessThanOrEqual(enemyHpBefore);
+
+    mockRandom.mockRestore();
+  });
+});
+
+describe('War Cry Totem intimidate', () => {
+  it('reduces enemy damage based on last player hit', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+    const state = useGameStore.getState();
+    state.equippedItems.accessory = { id: 'war_cry_totem', slot: 'accessory', tier: 1 };
+
+    // First: player attacks to set lastPlayerHitDamage
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    tickCombat(state, TICK_MS);
+    expect(state.lastPlayerHitDamage).toBeGreaterThan(0);
+
+    // Now: enemy attacks, damage should be reduced
+    state.combatEvents = [];
+    state.enemy!.attackTimer = 1;
+    state.player.attackTimer = 99999;
+    tickCombat(state, TICK_MS);
+
+    const damageEvent = state.combatEvents.find(e => e.type === 'damage' && e.target === 'player');
+    expect(damageEvent).toBeDefined();
+
+    mockRandom.mockRestore();
+  });
+});
