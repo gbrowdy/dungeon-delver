@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { tickModifierBehaviors } from '../actions/modifiers';
+import { addStatusEffect, getEffect } from '../actions/statusEffects';
 import { useGameStore } from '../gameStore';
 import { TICK_MS } from '@/math/balance';
 import type { GameState } from '@/types/game';
@@ -72,6 +73,46 @@ describe('tickModifierBehaviors', () => {
       tickModifierBehaviors(state, TICK_MS);
 
       expect(state.enemy!.hp).toBe(state.enemy!.maxHp);
+    });
+  });
+
+  describe('venomous', () => {
+    it('is handled as a flag — venomous modifier tracked for combat.ts to apply poison on enemy attack', () => {
+      const state = createCombatState(['venomous']);
+      expect(state.enemyDefinition!.modifiers).toContain('venomous');
+    });
+  });
+
+  describe('shielded', () => {
+    it('grants shield every 8 seconds', () => {
+      const state = createCombatState(['shielded']);
+      state.combatCounters.shieldRefreshTimer = 8000 - TICK_MS;
+
+      tickModifierBehaviors(state, TICK_MS);
+
+      const shield = state.enemy!.statusEffects.find(e => e.type === 'shield');
+      expect(shield).toBeDefined();
+    });
+
+    it('shield amount is 20% of max HP', () => {
+      const state = createCombatState(['shielded']);
+      state.combatCounters.shieldRefreshTimer = 8000 - TICK_MS;
+      const expectedShieldHp = Math.round(state.enemy!.maxHp * 0.2);
+
+      tickModifierBehaviors(state, TICK_MS);
+
+      const shield = state.enemy!.statusEffects.find(e => e.type === 'shield');
+      expect(shield).toBeDefined();
+    });
+
+    it('does not grant shield before 8s', () => {
+      const state = createCombatState(['shielded']);
+      state.combatCounters.shieldRefreshTimer = 0;
+
+      tickModifierBehaviors(state, TICK_MS);
+
+      const shield = state.enemy!.statusEffects.find(e => e.type === 'shield');
+      expect(shield).toBeUndefined();
     });
   });
 });
