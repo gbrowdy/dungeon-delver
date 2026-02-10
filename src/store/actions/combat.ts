@@ -7,7 +7,7 @@
 import type { GameState, CombatEntity, CombatEvent } from '@/types/game';
 import { calculateDamage } from '@/math/damage';
 import { getAttackInterval, getCritChance, getCritDamage, getDodgeChance } from '@/math/stats';
-import { WARRIOR_FORTITUDE_MULT, ROGUE_CRIT_MULT } from '@/math/balance';
+import { WARRIOR_FORTITUDE_MULT, ROGUE_CRIT_MULT, MAGE_AMPLIFY_PER_LUCK } from '@/math/balance';
 
 /**
  * Core combat tick. Mutates state in-place.
@@ -53,6 +53,13 @@ function getEffectiveCritMultiplier(multiplier: number, classId: string): number
   return multiplier;
 }
 
+function getAmplifyMultiplier(luck: number, classId: string): number {
+  if (classId === 'mage') {
+    return 1 + luck * MAGE_AMPLIFY_PER_LUCK;
+  }
+  return 1.0;
+}
+
 function resolvePlayerAttack(
   state: GameState,
   player: CombatEntity,
@@ -63,12 +70,17 @@ function resolvePlayerAttack(
     ? getEffectiveCritMultiplier(crit.multiplier, state.classId)
     : 1.0;
   const result = calculateDamage(player.power, enemy.fortitude, critMultiplier);
-  enemy.hp -= result.final;
+
+  // Mage Amplify: multiply final damage by (1 + luck * 0.005)
+  const amplify = getAmplifyMultiplier(player.luck, state.classId);
+  const finalDamage = Math.max(1, Math.round(result.final * amplify));
+
+  enemy.hp -= finalDamage;
 
   emitCombatEvent(state, {
     type: crit.isCrit ? 'crit' : 'damage',
     target: 'enemy',
-    value: result.final,
+    value: finalDamage,
     tick: state.gameTick,
   });
 }

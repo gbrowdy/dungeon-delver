@@ -4,7 +4,7 @@ import type { GameState } from '@/types/game';
 import { useGameStore } from '../gameStore';
 import { getAttackInterval, getCritChance, getCritDamage, getDodgeChance } from '@/math/stats';
 import { calculateEffectiveness } from '@/math/damage';
-import { TICK_MS, WARRIOR_FORTITUDE_MULT } from '@/math/balance';
+import { TICK_MS, WARRIOR_FORTITUDE_MULT, MAGE_AMPLIFY_PER_LUCK } from '@/math/balance';
 
 /** Helper: set up a combat-ready state */
 function createCombatState(): GameState {
@@ -323,6 +323,57 @@ describe('class innate — Warrior Toughness', () => {
 
     // Warrior should take less damage (1.5x effective fortitude)
     expect(warriorDamageTaken).toBeLessThan(rogueDamageTaken);
+
+    mockRandom.mockRestore();
+  });
+});
+
+describe('class innate — Mage Amplify', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+  });
+
+  it('mage damage is multiplied by (1 + luck * 0.005)', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('mage');
+    useGameStore.getState().startRun();
+    const state = useGameStore.getState();
+
+    state.player.luck = 20;
+    state.player.power = 50;
+    state.enemy!.fortitude = 10;
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    tickCombat(state, TICK_MS);
+
+    const damageEvent = state.combatEvents.find(e => e.target === 'enemy');
+    const effectiveness = calculateEffectiveness(50, 10);
+    const amplifyMult = 1 + 20 * MAGE_AMPLIFY_PER_LUCK; // 1.10
+    const expectedDamage = Math.max(1, Math.round(50 * effectiveness * 1.0 * amplifyMult));
+    expect(damageEvent!.value).toBe(expectedDamage);
+
+    mockRandom.mockRestore();
+  });
+
+  it('amplify does not apply to non-mage classes', () => {
+    const state = createCombatState(); // warrior
+    state.player.luck = 20;
+    state.player.power = 50;
+    state.enemy!.fortitude = 10;
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    tickCombat(state, TICK_MS);
+
+    const damageEvent = state.combatEvents.find(e => e.target === 'enemy');
+    const effectiveness = calculateEffectiveness(50, 10);
+    const expectedDamage = Math.max(1, Math.round(50 * effectiveness));
+    expect(damageEvent!.value).toBe(expectedDamage);
 
     mockRandom.mockRestore();
   });

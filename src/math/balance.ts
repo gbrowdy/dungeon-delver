@@ -66,6 +66,7 @@ export const PLAYER_BASE_LUCK = 5;
 // ── Class innates ─────────────────────────────────────────────────
 export const WARRIOR_FORTITUDE_MULT = 1.5;
 export const ROGUE_CRIT_MULT = 1.5;
+export const MAGE_AMPLIFY_PER_LUCK = 0.005;
 
 // ── Endless mode ─────────────────────────────────────────────────
 export const ENDLESS_START_FLOOR = 101;
