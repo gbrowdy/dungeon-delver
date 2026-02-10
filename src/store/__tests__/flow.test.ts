@@ -537,6 +537,20 @@ describe('resumeCombat (store action)', () => {
 
     expect(useGameStore.getState().phase).toBe('shop');
   });
+
+  it('generates shop cards when transitioning to shop on boss floor', () => {
+    const state = useGameStore.getState();
+    state.phase = 'draft';
+    state.room = 3;
+    state.roomsPerFloor = 3;
+    state.floor = 5; // boss floor
+
+    useGameStore.getState().resumeCombat();
+
+    expect(useGameStore.getState().phase).toBe('shop');
+    expect(useGameStore.getState().shopCards).toHaveLength(5);
+    expect(useGameStore.getState().selectedChoices).toEqual([]);
+  });
 });
 
 // ─── combat → flow integration ────────────────────────────────

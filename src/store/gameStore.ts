@@ -286,7 +286,13 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
     if (isBossFloor(state.floor)) {
       state.checkpoint = state.floor;
-      set({ phase: 'shop', checkpoint: state.floor });
+      const cards = generateShopCards(state);
+      set({
+        phase: 'shop',
+        checkpoint: state.floor,
+        shopCards: cards,
+        selectedChoices: [],
+      });
       return;
     }
 
