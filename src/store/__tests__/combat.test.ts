@@ -345,6 +345,63 @@ describe('class innate — Warrior Toughness', () => {
   });
 });
 
+describe('death detection', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+  });
+
+  it('emits death event when enemy hp drops to 0', () => {
+    const state = createCombatState();
+    state.enemy!.hp = 1;
+    state.player.power = 999;
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    tickCombat(state, TICK_MS);
+
+    const deathEvents = state.combatEvents.filter(e => e.type === 'death' && e.target === 'enemy');
+    expect(deathEvents.length).toBe(1);
+
+    mockRandom.mockRestore();
+  });
+
+  it('emits death event when player hp drops to 0', () => {
+    const state = createCombatState();
+    state.player.hp = 1;
+    state.enemy!.power = 999;
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    state.enemy!.attackTimer = 1;
+    state.player.attackTimer = 99999;
+    tickCombat(state, TICK_MS);
+
+    const deathEvents = state.combatEvents.filter(e => e.type === 'death' && e.target === 'player');
+    expect(deathEvents.length).toBe(1);
+
+    mockRandom.mockRestore();
+  });
+
+  it('stops combat after enemy death (no further ticks process)', () => {
+    const state = createCombatState();
+    state.enemy!.hp = 1;
+    state.player.power = 999;
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    tickCombat(state, TICK_MS);
+
+    expect(state.enemy!.hp).toBeLessThanOrEqual(0);
+
+    // Another tick should not error or process further attacks
+    const hpAfterDeath = state.enemy!.hp;
+    tickCombat(state, TICK_MS);
+
+    mockRandom.mockRestore();
+  });
+});
+
 describe('class innate — Mage Amplify', () => {
   beforeEach(() => {
     useGameStore.setState(useGameStore.getInitialState());

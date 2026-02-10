@@ -23,6 +23,9 @@ export function tickCombat(state: GameState, dt: number): void {
   const player = state.player;
   const enemy = state.enemy;
 
+  // Skip if either entity is already dead
+  if (player.hp <= 0 || enemy.hp <= 0) return;
+
   // Tick attack timers
   player.attackTimer -= dt;
   enemy.attackTimer -= dt;
@@ -37,6 +40,19 @@ export function tickCombat(state: GameState, dt: number): void {
   if (enemy.attackTimer <= 0) {
     resolveEnemyAttack(state, player, enemy);
     enemy.attackTimer = getAttackInterval(enemy.speed);
+  }
+
+  // Death checks
+  if (enemy.hp <= 0) {
+    enemy.hp = 0;
+    emitCombatEvent(state, { type: 'death', target: 'enemy', tick: state.gameTick });
+    return;
+  }
+
+  if (player.hp <= 0) {
+    player.hp = 0;
+    emitCombatEvent(state, { type: 'death', target: 'player', tick: state.gameTick });
+    return;
   }
 }
 
