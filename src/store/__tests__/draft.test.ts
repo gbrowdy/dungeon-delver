@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { generateDraftCards } from '../actions/draft';
 import { useGameStore } from '../gameStore';
-import type { GameState } from '@/types/game';
+import type { GameState, DraftCard } from '@/types/game';
 
 function createCombatState(): GameState {
   useGameStore.setState(useGameStore.getInitialState());
@@ -166,5 +166,54 @@ describe('draft store actions', () => {
     useGameStore.getState().confirmDraft();
 
     expect(useGameStore.getState().player.power).toBe(statsBefore.power);
+  });
+});
+
+// ─── impact preview formatting ──────────────────────────────────
+
+describe('impact preview formatting', () => {
+  it('power preview shows damage percentage increase', () => {
+    const state = createCombatState();
+    const cards = generateDraftCards(state);
+    const powerCard = cards.find(c => c.stat === 'power');
+    if (powerCard) {
+      expect(powerCard.impactPreview).toMatch(/\+\d+% damage/);
+    }
+  });
+
+  it('fortitude preview shows damage reduction', () => {
+    const state = createCombatState();
+    let fortCard: DraftCard | undefined;
+    for (let i = 0; i < 20 && !fortCard; i++) {
+      const cards = generateDraftCards(state);
+      fortCard = cards.find(c => c.stat === 'fortitude');
+    }
+    if (fortCard) {
+      expect(fortCard.impactPreview).toMatch(/-\d+% dmg taken/);
+    }
+  });
+
+  it('speed preview shows milliseconds off interval', () => {
+    const state = createCombatState();
+    let speedCard: DraftCard | undefined;
+    for (let i = 0; i < 20 && !speedCard; i++) {
+      const cards = generateDraftCards(state);
+      speedCard = cards.find(c => c.stat === 'speed');
+    }
+    if (speedCard) {
+      expect(speedCard.impactPreview).toMatch(/-\d+ms interval/);
+    }
+  });
+
+  it('luck preview shows crit or dodge percentage', () => {
+    const state = createCombatState();
+    let luckCard: DraftCard | undefined;
+    for (let i = 0; i < 20 && !luckCard; i++) {
+      const cards = generateDraftCards(state);
+      luckCard = cards.find(c => c.stat === 'luck');
+    }
+    if (luckCard) {
+      expect(luckCard.impactPreview).toMatch(/\+[\d.]+% (crit|dodge)/);
+    }
   });
 });
