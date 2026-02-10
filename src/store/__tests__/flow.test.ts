@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { isBossFloor, shouldTriggerDraft, getCheckpoint, spawnEnemy, handleEnemyDeath } from '../actions/flow';
+import { isBossFloor, shouldTriggerDraft, getCheckpoint, spawnEnemy, handleEnemyDeath, handlePlayerDeath } from '../actions/flow';
+import { FINAL_BOSS_FLOOR } from '@/math/balance';
 import { useGameStore } from '../gameStore';
 import type { GameState } from '@/types/game';
 
@@ -211,5 +212,65 @@ describe('handleEnemyDeath', () => {
     state.fightCount = 1;
     handleEnemyDeath(state);
     expect(state.checkpoint).toBe(5);
+  });
+});
+
+// ─── handlePlayerDeath ─────────────────────────────────────────
+
+describe('handlePlayerDeath', () => {
+  it('transitions to death phase for floors 1-100', () => {
+    const state = createCombatState();
+    state.floor = 15;
+    handlePlayerDeath(state);
+    expect(state.phase).toBe('death');
+  });
+
+  it('transitions to endless-defeat for floors 101+', () => {
+    const state = createCombatState();
+    state.floor = 105;
+    handlePlayerDeath(state);
+    expect(state.phase).toBe('endless-defeat');
+  });
+
+  it('creates death summary with correct stats', () => {
+    const state = createCombatState();
+    state.floor = 15;
+    state.room = 3;
+    state.enemy!.power = 25;
+    state.enemy!.fortitude = 20;
+    state.enemy!.speed = 12;
+    state.enemyDefinition = { tier: 'rare', modifiers: ['armored'] };
+
+    handlePlayerDeath(state);
+
+    expect(state.lastDeathStats).not.toBeNull();
+    expect(state.lastDeathStats!.floor).toBe(15);
+    expect(state.lastDeathStats!.room).toBe(3);
+    expect(state.lastDeathStats!.enemyTier).toBe('rare');
+    expect(state.lastDeathStats!.enemyModifiers).toEqual(['armored']);
+    expect(state.lastDeathStats!.playerStats.power).toBe(state.player.power);
+  });
+
+  it('death summary includes damage per hit calculations', () => {
+    const state = createCombatState();
+    state.floor = 15;
+    handlePlayerDeath(state);
+    expect(state.lastDeathStats!.playerDamagePerHit).toBeGreaterThan(0);
+    expect(state.lastDeathStats!.enemyDamagePerHit).toBeGreaterThan(0);
+  });
+
+  it('death summary includes weakness hint', () => {
+    const state = createCombatState();
+    state.floor = 15;
+    handlePlayerDeath(state);
+    expect(state.lastDeathStats!.weaknessHint).toBeTruthy();
+  });
+
+  it('records depth as high score for endless defeat', () => {
+    const state = createCombatState();
+    state.floor = 150;
+    state.depth = 120;
+    handlePlayerDeath(state);
+    expect(state.depth).toBe(150);
   });
 });

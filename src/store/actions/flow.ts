@@ -6,6 +6,8 @@ import {
   FINAL_BOSS_FLOOR,
 } from '@/math/balance';
 import { generateEnemy } from '@/data/enemies';
+import { calculateDamage } from '@/math/damage';
+import type { DeathSummary } from '@/types/game';
 
 export function isBossFloor(floor: number): boolean {
   if (floor === FIRST_BOSS_FLOOR) return true;
@@ -87,4 +89,75 @@ export function handleEnemyDeath(state: GameState): void {
 
   // Normal floor complete
   state.phase = 'floor-complete';
+}
+
+/**
+ * Handle player death. Build death summary, transition to death or endless-defeat.
+ */
+export function handlePlayerDeath(state: GameState): void {
+  state.depth = Math.max(state.depth, state.floor);
+
+  const deathSummary = buildDeathSummary(state);
+  state.lastDeathStats = deathSummary;
+
+  if (state.floor > FINAL_BOSS_FLOOR) {
+    state.phase = 'endless-defeat';
+  } else {
+    state.phase = 'death';
+  }
+}
+
+function buildDeathSummary(state: GameState): DeathSummary {
+  const player = state.player;
+  const enemy = state.enemy!;
+  const enemyDef = state.enemyDefinition!;
+
+  const playerDmg = calculateDamage(player.power, enemy.fortitude, 1.0);
+  const enemyDmg = calculateDamage(enemy.power, player.fortitude, 1.0);
+
+  const weaknessHint = generateWeaknessHint(player, enemy, enemyDef);
+
+  return {
+    floor: state.floor,
+    room: state.room,
+    enemyTier: enemyDef.tier,
+    enemyModifiers: enemyDef.modifiers,
+    playerStats: {
+      power: player.power,
+      fortitude: player.fortitude,
+      speed: player.speed,
+      luck: player.luck,
+    },
+    enemyStats: {
+      power: enemy.power,
+      fortitude: enemy.fortitude,
+      speed: enemy.speed,
+    },
+    playerDamagePerHit: playerDmg.final,
+    enemyDamagePerHit: enemyDmg.final,
+    weaknessHint,
+  };
+}
+
+function generateWeaknessHint(
+  player: { power: number; fortitude: number; speed: number; luck: number },
+  enemy: { power: number; fortitude: number; speed: number },
+  enemyDef: { tier: string; modifiers: string[] },
+): string {
+  const powerVsFort = player.power / (enemy.fortitude || 1);
+  const fortVsPower = player.fortitude / (enemy.power || 1);
+
+  if (powerVsFort < 0.7) {
+    return `Your Power (${player.power}) was significantly below the enemy's Fortitude (${enemy.fortitude}). Prioritize Power picks or DoT weapons.`;
+  }
+  if (fortVsPower < 0.7) {
+    return `Your Fortitude (${player.fortitude}) couldn't keep up with enemy Power (${enemy.power}). Consider tankier builds or lifesteal items.`;
+  }
+  if (enemyDef.modifiers.includes('berserker')) {
+    return `The Berserker modifier spiked enemy damage below 30% HP. Burst the enemy down quickly or use stun to control the phase.`;
+  }
+  if (enemyDef.modifiers.includes('regenerating')) {
+    return `The Regenerating modifier outhealed your damage. You need more DPS — consider Power picks or damage-boosting items.`;
+  }
+  return `A close fight. Keep building your stats and you'll break through.`;
 }
