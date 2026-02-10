@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { tickCombat } from '../actions/combat';
 import type { GameState } from '@/types/game';
 import { useGameStore } from '../gameStore';
-import { getAttackInterval } from '@/math/stats';
+import { getAttackInterval, getCritChance, getCritDamage } from '@/math/stats';
+import { calculateEffectiveness } from '@/math/damage';
 import { TICK_MS } from '@/math/balance';
 
 /** Helper: set up a combat-ready state */
@@ -65,13 +66,13 @@ describe('tickCombat — attack timers', () => {
     expect(state.enemy!.attackTimer).toBe(expectedInterval);
   });
 
-  it('emits a damage combat event when player attacks', () => {
+  it('emits a damage or crit combat event when player attacks', () => {
     const state = createCombatState();
     state.player.attackTimer = 1;
     state.combatEvents = [];
     tickCombat(state, TICK_MS);
     const playerAttackEvents = state.combatEvents.filter(
-      (e) => e.type === 'damage' && e.target === 'enemy',
+      (e) => (e.type === 'damage' || e.type === 'crit') && e.target === 'enemy',
     );
     expect(playerAttackEvents.length).toBe(1);
     expect(playerAttackEvents[0].value).toBeGreaterThan(0);
@@ -131,5 +132,68 @@ describe('store tick()', () => {
 
     useGameStore.getState().tick(TICK_MS);
     expect(useGameStore.getState().gameTick).toBe(tick0 + 2);
+  });
+});
+
+describe('crit mechanics', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+  });
+
+  it('applies crit multiplier when roll succeeds', () => {
+    const state = createCombatState();
+    state.player.luck = 100;
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0);
+
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    tickCombat(state, TICK_MS);
+
+    const critEvents = state.combatEvents.filter(e => e.type === 'crit');
+    expect(critEvents.length).toBe(1);
+
+    mockRandom.mockRestore();
+  });
+
+  it('does not crit when roll fails', () => {
+    const state = createCombatState();
+    state.player.luck = 5;
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    tickCombat(state, TICK_MS);
+
+    const critEvents = state.combatEvents.filter(e => e.type === 'crit');
+    expect(critEvents.length).toBe(0);
+    const damageEvents = state.combatEvents.filter(e => e.type === 'damage' && e.target === 'enemy');
+    expect(damageEvents.length).toBe(1);
+
+    mockRandom.mockRestore();
+  });
+
+  it('crit damage is higher than normal damage', () => {
+    const state = createCombatState();
+    state.player.luck = 100;
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    tickCombat(state, TICK_MS);
+    const normalDamage = state.combatEvents.find(
+      e => e.type === 'damage' && e.target === 'enemy'
+    )!.value!;
+
+    state.combatEvents = [];
+    mockRandom.mockReturnValue(0);
+    state.player.attackTimer = 1;
+    tickCombat(state, TICK_MS);
+    const critDamage = state.combatEvents.find(e => e.type === 'crit')!.value!;
+
+    expect(critDamage).toBeGreaterThan(normalDamage);
+
+    mockRandom.mockRestore();
   });
 });

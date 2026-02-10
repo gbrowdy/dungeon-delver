@@ -6,7 +6,7 @@
 
 import type { GameState, CombatEntity, CombatEvent } from '@/types/game';
 import { calculateDamage } from '@/math/damage';
-import { getAttackInterval } from '@/math/stats';
+import { getAttackInterval, getCritChance, getCritDamage } from '@/math/stats';
 
 /**
  * Core combat tick. Mutates state in-place.
@@ -36,16 +36,26 @@ export function tickCombat(state: GameState, dt: number): void {
   }
 }
 
+function rollCrit(luck: number): { isCrit: boolean; multiplier: number } {
+  const chance = getCritChance(luck);
+  const isCrit = Math.random() < chance;
+  return {
+    isCrit,
+    multiplier: isCrit ? getCritDamage(luck) : 1.0,
+  };
+}
+
 function resolvePlayerAttack(
   state: GameState,
   player: CombatEntity,
   enemy: CombatEntity,
 ): void {
-  const result = calculateDamage(player.power, enemy.fortitude, 1.0);
+  const crit = rollCrit(player.luck);
+  const result = calculateDamage(player.power, enemy.fortitude, crit.multiplier);
   enemy.hp -= result.final;
 
   emitCombatEvent(state, {
-    type: 'damage',
+    type: crit.isCrit ? 'crit' : 'damage',
     target: 'enemy',
     value: result.final,
     tick: state.gameTick,
