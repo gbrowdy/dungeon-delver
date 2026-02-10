@@ -38,6 +38,7 @@ const INITIAL_STATE: GameState = {
     speed: 0,
     luck: 0,
     basePower: 0,
+    baseSpeed: 0,
     hp: 0,
     maxHp: 0,
     attackTimer: 0,
@@ -53,6 +54,13 @@ const INITIAL_STATE: GameState = {
   // Combat state
   combatElapsed: 0,
   combatEvents: [],
+  combatCounters: {
+    playerAttackCount: 0,
+    playerHitCount: 0,
+    shieldRefreshTimer: 0,
+    curseDecayTimer: 0,
+  },
+  lastPlayerHitDamage: 0,
   speedMultiplier: 1,
   gameTick: 0,
 
@@ -106,6 +114,13 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       enemyDefinition: { tier: generated.tier, modifiers: generated.modifiers },
       combatElapsed: 0,
       combatEvents: [],
+      combatCounters: {
+        playerAttackCount: 0,
+        playerHitCount: 0,
+        shieldRefreshTimer: 0,
+        curseDecayTimer: 0,
+      },
+      lastPlayerHitDamage: 0,
       depth: 1,
       checkpoint: 0,
       lastDeathStats: null,

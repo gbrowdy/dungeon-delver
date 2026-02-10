@@ -29,6 +29,7 @@ describe('gameStore', () => {
         speed: 0,
         luck: 0,
         basePower: 0,
+        baseSpeed: 0,
         hp: 0,
         maxHp: 0,
         attackTimer: 0,

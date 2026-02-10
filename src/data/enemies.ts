@@ -186,6 +186,7 @@ export function generateEnemy(
     speed,
     luck: 0, // enemies don't have luck
     basePower: power,
+    baseSpeed: speed,
     hp: maxHp,
     maxHp,
     attackTimer: 0, // starts ready to attack immediately

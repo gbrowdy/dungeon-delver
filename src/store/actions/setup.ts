@@ -16,6 +16,7 @@ export function createInitialPlayer(): CombatEntity {
     speed: PLAYER_BASE_SPEED,
     luck: PLAYER_BASE_LUCK,
     basePower: PLAYER_BASE_POWER,
+    baseSpeed: PLAYER_BASE_SPEED,
     hp: maxHp,
     maxHp,
     attackTimer: getAttackInterval(PLAYER_BASE_SPEED),

@@ -27,6 +27,8 @@ export interface CombatEntity {
   luck: number;
   /** Original Power before enrage scaling (enemies only) */
   basePower: number;
+  /** Original Speed before curse reduction */
+  baseSpeed: number;
   hp: number;
   maxHp: number;
   /** ms accumulated toward next attack (counts down to 0) */
@@ -168,6 +170,19 @@ export type GamePhase =
   | 'endless-intro'
   | 'endless-defeat';
 
+// ── Combat Counters ─────────────────────────────────────────────
+
+export interface CombatCounters {
+  /** Player attacks landed this fight (for Flurry Ring, Shocking Edge) */
+  playerAttackCount: number;
+  /** Times player was hit this fight */
+  playerHitCount: number;
+  /** Timer for enemy shield refresh (shielded modifier) */
+  shieldRefreshTimer: number;
+  /** Timer for curse stack decay */
+  curseDecayTimer: number;
+}
+
 // ── Full Game State ─────────────────────────────────────────────
 
 export interface GameState {
@@ -191,6 +206,9 @@ export interface GameState {
   // Combat state
   combatElapsed: number;
   combatEvents: CombatEvent[];
+  combatCounters: CombatCounters;
+  /** Damage of the player's last hit (for War Cry Totem) */
+  lastPlayerHitDamage: number;
   speedMultiplier: 1 | 2 | 4;
   gameTick: number; // monotonically increasing tick counter
 
