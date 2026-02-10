@@ -116,36 +116,61 @@ function resolvePlayerAttack(
   enemy: CombatEntity,
   passives: PassiveEffects,
 ): void {
-  const crit = rollCrit(player.luck);
-  const critMultiplier = crit.isCrit
-    ? getEffectiveCritMultiplier(crit.multiplier, state.classId)
-    : 1.0;
-  const result = calculateDamage(player.power, enemy.fortitude, critMultiplier);
+  // Check for Twin Fang double hit
+  const hasTwinFang = state.equippedItems.weapon?.id === 'twin_fang';
+  const hitCount = hasTwinFang ? 2 : 1;
+  const hitDamageMult = hasTwinFang ? 0.55 : 1.0;
 
-  // Apply damage modifiers
-  const amplify = getAmplifyMultiplier(player.luck, state.classId);
-  let damageMultiplier = amplify * passives.damageMult * passives.outgoingDamageMult;
+  for (let hit = 0; hit < hitCount; hit++) {
+    const crit = rollCrit(player.luck);
+    const critMultiplier = crit.isCrit
+      ? getEffectiveCritMultiplier(crit.multiplier, state.classId)
+      : 1.0;
+    const result = calculateDamage(player.power, enemy.fortitude, critMultiplier);
 
-  // Bloodstone: +damage per missing HP
-  if (passives.damagePerMissingHpPercent > 0) {
-    const missingHpPercent = (1 - player.hp / player.maxHp) * 100;
-    const bonusPercent = Math.floor(missingHpPercent / 5) * passives.damagePerMissingHpPercent;
-    damageMultiplier *= (1 + bonusPercent);
+    let damageMultiplier = getAmplifyMultiplier(player.luck, state.classId)
+      * passives.damageMult * passives.outgoingDamageMult * hitDamageMult;
+
+    if (passives.damagePerMissingHpPercent > 0) {
+      const missingHpPercent = (1 - player.hp / player.maxHp) * 100;
+      const bonusPercent = Math.floor(missingHpPercent / 5) * passives.damagePerMissingHpPercent;
+      damageMultiplier *= (1 + bonusPercent);
+    }
+
+    const finalDamage = Math.max(1, Math.round(result.final * damageMultiplier));
+    enemy.hp -= finalDamage;
+    state.lastPlayerHitDamage = finalDamage;
+
+    emitCombatEvent(state, {
+      type: crit.isCrit ? 'crit' : 'damage',
+      target: 'enemy',
+      value: finalDamage,
+      tick: state.gameTick,
+    });
   }
 
-  const finalDamage = Math.max(1, Math.round(result.final * damageMultiplier));
-  enemy.hp -= finalDamage;
-  state.lastPlayerHitDamage = finalDamage;
-
-  emitCombatEvent(state, {
-    type: crit.isCrit ? 'crit' : 'damage',
-    target: 'enemy',
-    value: finalDamage,
-    tick: state.gameTick,
-  });
-
   // Process on_player_attack item procs
-  processItemProcs(state, 'on_player_attack', { damage: finalDamage });
+  processItemProcs(state, 'on_player_attack', { damage: state.lastPlayerHitDamage });
+
+  // Flurry Ring: bonus attack every 5th hit
+  const hasFlurryRing = state.equippedItems.accessory?.id === 'flurry_ring';
+  if (hasFlurryRing && state.combatCounters.playerAttackCount % 5 === 0) {
+    const crit = rollCrit(player.luck);
+    const critMultiplier = crit.isCrit
+      ? getEffectiveCritMultiplier(crit.multiplier, state.classId)
+      : 1.0;
+    const result = calculateDamage(player.power, enemy.fortitude, critMultiplier);
+    const amplify = getAmplifyMultiplier(player.luck, state.classId);
+    const finalDamage = Math.max(1, Math.round(result.final * amplify));
+    enemy.hp -= finalDamage;
+
+    emitCombatEvent(state, {
+      type: crit.isCrit ? 'crit' : 'damage',
+      target: 'enemy',
+      value: finalDamage,
+      tick: state.gameTick,
+    });
+  }
 }
 
 function resolveEnemyAttack(

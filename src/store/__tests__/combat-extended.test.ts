@@ -115,3 +115,54 @@ describe('integrated tickCombat', () => {
     expect(state.player.hp).toBeGreaterThan(state.player.maxHp - 50);
   });
 });
+
+describe('Twin Fang double hit', () => {
+  it('hits twice at 55% damage each', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+    const s = useGameStore.getState();
+    s.equippedItems.weapon = { id: 'twin_fang', slot: 'weapon', tier: 1 };
+    s.player.attackTimer = 1;
+    s.enemy!.attackTimer = 99999;
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+
+    tickCombat(s, TICK_MS);
+
+    // Should have 2 damage events to enemy
+    const enemyDamageEvents = s.combatEvents.filter(
+      e => (e.type === 'damage' || e.type === 'crit') && e.target === 'enemy'
+    );
+    expect(enemyDamageEvents.length).toBe(2);
+
+    mockRandom.mockRestore();
+  });
+});
+
+describe('Flurry Ring bonus attack', () => {
+  it('triggers bonus attack every 5th hit', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+    const state = useGameStore.getState();
+    state.equippedItems = { weapon: null, armor: null, accessory: { id: 'flurry_ring', slot: 'accessory', tier: 1 } };
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+
+    // Simulate 5 attacks
+    state.combatCounters.playerAttackCount = 4; // next attack will be 5th
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    state.combatEvents = [];
+
+    tickCombat(state, TICK_MS);
+
+    // Should have normal hit + bonus hit = 2 damage events
+    const enemyDamageEvents = state.combatEvents.filter(
+      e => (e.type === 'damage' || e.type === 'crit') && e.target === 'enemy'
+    );
+    expect(enemyDamageEvents.length).toBe(2);
+
+    mockRandom.mockRestore();
+  });
+});
