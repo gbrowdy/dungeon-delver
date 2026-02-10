@@ -14,6 +14,7 @@ import { tickModifierBehaviors } from './modifiers';
 import { processItemProcs } from './itemProcs';
 import type { PassiveEffects } from './itemProcs';
 import { ITEM_DEFINITIONS, getScaledValue } from '@/data/items';
+import { handleEnemyDeath, handlePlayerDeath } from './flow';
 
 /**
  * Core combat tick. Mutates state in-place.
@@ -79,11 +80,13 @@ export function tickCombat(state: GameState, dt: number): void {
   if (enemy.hp <= 0) {
     enemy.hp = 0;
     emitCombatEvent(state, { type: 'death', target: 'enemy', tick: state.gameTick });
+    handleEnemyDeath(state);
     return;
   }
   if (player.hp <= 0) {
     player.hp = 0;
     emitCombatEvent(state, { type: 'death', target: 'player', tick: state.gameTick });
+    handlePlayerDeath(state);
     return;
   }
 }

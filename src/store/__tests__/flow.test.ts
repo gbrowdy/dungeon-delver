@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { isBossFloor, shouldTriggerDraft, getCheckpoint, spawnEnemy, handleEnemyDeath, handlePlayerDeath } from '../actions/flow';
-import { FINAL_BOSS_FLOOR, ENDLESS_START_FLOOR } from '@/math/balance';
+import { FINAL_BOSS_FLOOR, ENDLESS_START_FLOOR, TICK_MS } from '@/math/balance';
+import { tickCombat } from '../actions/combat';
 import { getRoomsPerFloor } from '@/math/scaling';
 import { useGameStore } from '../gameStore';
 import type { GameState } from '@/types/game';
@@ -501,5 +502,40 @@ describe('resumeCombat (store action)', () => {
     useGameStore.getState().resumeCombat();
 
     expect(useGameStore.getState().phase).toBe('shop');
+  });
+});
+
+// ─── combat → flow integration ────────────────────────────────
+
+describe('combat → flow integration', () => {
+  it('enemy death triggers flow transition', () => {
+    const state = createCombatState();
+    state.enemy!.hp = 1;
+    state.player.power = 999;
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    state.fightCount = 2; // next fight will be 3rd → draft trigger
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    tickCombat(state, TICK_MS);
+
+    expect(state.phase).toBe('draft');
+
+    mockRandom.mockRestore();
+  });
+
+  it('player death triggers flow transition', () => {
+    const state = createCombatState();
+    state.player.hp = 1;
+    state.enemy!.power = 999;
+    state.enemy!.attackTimer = 1;
+    state.player.attackTimer = 99999;
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    tickCombat(state, TICK_MS);
+
+    expect(state.phase).toBe('death');
+
+    mockRandom.mockRestore();
   });
 });

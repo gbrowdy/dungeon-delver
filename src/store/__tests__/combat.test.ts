@@ -286,6 +286,8 @@ describe('class innate — Rogue Precision', () => {
     state.player.luck = 20;
     state.player.power = 50;
     state.enemy!.fortitude = 10;
+    state.enemy!.hp = 9999; // prevent death triggering flow
+    state.enemy!.maxHp = 9999;
 
     const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0);
 
@@ -350,18 +352,19 @@ describe('death detection', () => {
     useGameStore.setState(useGameStore.getInitialState());
   });
 
-  it('emits death event when enemy hp drops to 0', () => {
+  it('triggers flow transition when enemy hp drops to 0', () => {
     const state = createCombatState();
     state.enemy!.hp = 1;
     state.player.power = 999;
+    state.fightCount = 2; // will become 3 → draft trigger
 
     const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
     state.player.attackTimer = 1;
     state.enemy!.attackTimer = 99999;
     tickCombat(state, TICK_MS);
 
-    const deathEvents = state.combatEvents.filter(e => e.type === 'death' && e.target === 'enemy');
-    expect(deathEvents.length).toBe(1);
+    // handleEnemyDeath routes to draft on 3rd fight
+    expect(state.phase).toBe('draft');
 
     mockRandom.mockRestore();
   });
@@ -376,27 +379,29 @@ describe('death detection', () => {
     state.player.attackTimer = 99999;
     tickCombat(state, TICK_MS);
 
-    const deathEvents = state.combatEvents.filter(e => e.type === 'death' && e.target === 'player');
-    expect(deathEvents.length).toBe(1);
+    // handlePlayerDeath creates death summary and transitions
+    expect(state.phase).toBe('death');
+    expect(state.lastDeathStats).not.toBeNull();
 
     mockRandom.mockRestore();
   });
 
-  it('stops combat after enemy death (no further ticks process)', () => {
+  it('stops combat after enemy death (phase changes)', () => {
     const state = createCombatState();
     state.enemy!.hp = 1;
     state.player.power = 999;
+    state.room = 1;
+    state.roomsPerFloor = 4;
+    state.fightCount = 1; // not draft trigger
 
     const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
     state.player.attackTimer = 1;
     state.enemy!.attackTimer = 99999;
     tickCombat(state, TICK_MS);
 
-    expect(state.enemy!.hp).toBeLessThanOrEqual(0);
-
-    // Another tick should not error or process further attacks
-    const hpAfterDeath = state.enemy!.hp;
-    tickCombat(state, TICK_MS);
+    // handleEnemyDeath advances room, spawns new enemy
+    expect(state.room).toBe(2);
+    expect(state.enemy!.hp).toBeGreaterThan(0); // new enemy
 
     mockRandom.mockRestore();
   });
