@@ -1,10 +1,12 @@
-import type { CombatEntity, StatusEffectType, StatusEffect } from '@/types/game';
+import type { CombatEntity, StatusEffectType, StatusEffect, GameState } from '@/types/game';
+import { calculateDamage } from '@/math/damage';
 import {
   MAX_POISON_STACKS,
   POISON_DURATION_MS,
   STUN_DURATION_MS,
   STUN_IMMUNITY_MS,
   MAX_CURSE_STACKS,
+  CURSE_DECAY_INTERVAL_MS,
 } from '@/math/balance';
 
 export function hasEffect(entity: CombatEntity, type: StatusEffectType): boolean {
@@ -112,4 +114,82 @@ export function removeExpiredEffects(entity: CombatEntity, currentTimeMs?: numbe
     }
     return true;
   });
+}
+
+/**
+ * Tick all status effects. Order: poison → stun duration → curse decay → cleanup.
+ * Mutates state in-place.
+ */
+export function tickStatusEffects(state: GameState, dt: number): void {
+  if (!state.enemy) return;
+
+  const player = state.player;
+  const enemy = state.enemy;
+
+  // Tick poison on both entities
+  tickPoison(state, enemy, player.power, dt);
+  tickPoison(state, player, enemy.power, dt);
+
+  // Tick stun durations
+  tickStunDuration(enemy, dt, state.combatElapsed);
+  tickStunDuration(player, dt, state.combatElapsed);
+
+  // Tick curse decay timer
+  state.combatCounters.curseDecayTimer += dt;
+  if (state.combatCounters.curseDecayTimer >= CURSE_DECAY_INTERVAL_MS) {
+    state.combatCounters.curseDecayTimer -= CURSE_DECAY_INTERVAL_MS;
+    decayCurse(enemy);
+  }
+
+  // Clean up expired effects
+  removeExpiredEffects(player, state.combatElapsed);
+  removeExpiredEffects(enemy, state.combatElapsed);
+}
+
+function tickPoison(state: GameState, target: CombatEntity, sourcePower: number, dt: number): void {
+  const poison = getEffect(target, 'poison');
+  if (!poison || poison.remainingMs <= 0) return;
+
+  // Poison damage per tick: (totalDamagePerStack / totalTicks) * stacks
+  // DoT uses half-fortitude rule (isDot = true)
+  const result = calculateDamage(sourcePower, target.fortitude, 1.0, true);
+  // Damage per second = result.final, spread over POISON_DURATION_MS
+  // Per tick: result.final * stacks * dt / POISON_DURATION_MS
+  const damagePerTick = (result.final * poison.stacks * dt) / POISON_DURATION_MS;
+  const damage = Math.max(0, Math.round(damagePerTick));
+
+  if (damage > 0) {
+    target.hp -= damage;
+    state.combatEvents.push({
+      type: 'dot',
+      target: target === state.player ? 'player' : 'enemy',
+      value: damage,
+      tick: state.gameTick,
+    });
+  }
+
+  poison.remainingMs -= dt;
+}
+
+function tickStunDuration(entity: CombatEntity, dt: number, currentTimeMs: number): void {
+  const stun = getEffect(entity, 'stun');
+  if (!stun) return;
+
+  if (stun.remainingMs > 0) {
+    stun.remainingMs -= dt;
+    if (stun.remainingMs <= 0) {
+      stun.remainingMs = 0;
+      stun.immuneUntilMs = currentTimeMs + STUN_IMMUNITY_MS;
+    }
+  }
+}
+
+function decayCurse(entity: CombatEntity): void {
+  const curse = getEffect(entity, 'curse');
+  if (!curse) return;
+
+  curse.stacks -= 1;
+  if (curse.stacks <= 0) {
+    entity.statusEffects = entity.statusEffects.filter(e => e.type !== 'curse');
+  }
 }

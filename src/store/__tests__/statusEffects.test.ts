@@ -3,9 +3,11 @@ import {
   hasEffect,
   addStatusEffect,
   removeExpiredEffects,
+  tickStatusEffects,
 } from '../actions/statusEffects';
-import type { CombatEntity } from '@/types/game';
-import { MAX_POISON_STACKS, POISON_DURATION_MS, STUN_DURATION_MS, STUN_IMMUNITY_MS, MAX_CURSE_STACKS } from '@/math/balance';
+import type { CombatEntity, GameState } from '@/types/game';
+import { useGameStore } from '../gameStore';
+import { MAX_POISON_STACKS, POISON_DURATION_MS, STUN_DURATION_MS, STUN_IMMUNITY_MS, MAX_CURSE_STACKS, TICK_MS, CURSE_DECAY_INTERVAL_MS } from '@/math/balance';
 
 function createEntity(): CombatEntity {
   return {
@@ -106,5 +108,94 @@ describe('removeExpiredEffects', () => {
     const entity = createEntity();
     entity.statusEffects.push({ type: 'stun', stacks: 1, remainingMs: 0 });
     removeExpiredEffects(entity, 3000);
+  });
+});
+
+function createCombatState(): GameState {
+  useGameStore.setState(useGameStore.getInitialState());
+  useGameStore.getState().selectClass('warrior');
+  useGameStore.getState().startRun();
+  return useGameStore.getState();
+}
+
+describe('tickStatusEffects', () => {
+  describe('poison', () => {
+    it('deals damage over time to the entity', () => {
+      const state = createCombatState();
+      const enemy = state.enemy!;
+      const hpBefore = enemy.hp;
+      enemy.statusEffects.push({ type: 'poison', stacks: 1, remainingMs: POISON_DURATION_MS });
+
+      tickStatusEffects(state, TICK_MS);
+
+      expect(enemy.statusEffects[0].remainingMs).toBe(POISON_DURATION_MS - TICK_MS);
+    });
+
+    it('removes poison when duration expires', () => {
+      const state = createCombatState();
+      const enemy = state.enemy!;
+      enemy.statusEffects.push({ type: 'poison', stacks: 1, remainingMs: TICK_MS });
+
+      tickStatusEffects(state, TICK_MS);
+
+      const poison = enemy.statusEffects.find(e => e.type === 'poison' && e.remainingMs > 0);
+      expect(poison).toBeUndefined();
+    });
+
+    it('poison damage uses half-fortitude DoT rule', () => {
+      const state = createCombatState();
+      const enemy = state.enemy!;
+      enemy.hp = 1000;
+      enemy.maxHp = 1000;
+      enemy.fortitude = 100;
+      // Boost player power so per-tick poison damage rounds above 0
+      state.player.power = 500;
+
+      enemy.statusEffects.push({ type: 'poison', stacks: 1, remainingMs: POISON_DURATION_MS });
+
+      const hpBefore = enemy.hp;
+      for (let i = 0; i < 60; i++) {
+        tickStatusEffects(state, TICK_MS);
+      }
+
+      expect(enemy.hp).toBeLessThan(hpBefore);
+    });
+  });
+
+  describe('stun', () => {
+    it('decrements stun duration', () => {
+      const state = createCombatState();
+      const enemy = state.enemy!;
+      enemy.statusEffects.push({ type: 'stun', stacks: 1, remainingMs: 500 });
+
+      tickStatusEffects(state, TICK_MS);
+
+      expect(enemy.statusEffects[0].remainingMs).toBe(500 - TICK_MS);
+    });
+  });
+
+  describe('curse decay', () => {
+    it('decays one curse stack every 3 seconds', () => {
+      const state = createCombatState();
+      const enemy = state.enemy!;
+      enemy.statusEffects.push({ type: 'curse', stacks: 5, remainingMs: Infinity });
+      state.combatCounters.curseDecayTimer = CURSE_DECAY_INTERVAL_MS - TICK_MS;
+
+      tickStatusEffects(state, TICK_MS);
+
+      expect(enemy.statusEffects[0].stacks).toBe(4);
+    });
+
+    it('removes curse when stacks reach 0', () => {
+      const state = createCombatState();
+      const enemy = state.enemy!;
+      enemy.statusEffects.push({ type: 'curse', stacks: 1, remainingMs: Infinity });
+      state.combatCounters.curseDecayTimer = CURSE_DECAY_INTERVAL_MS - TICK_MS;
+
+      tickStatusEffects(state, TICK_MS);
+
+      const curse = enemy.statusEffects.find(e => e.type === 'curse');
+      expect(curse).toBeUndefined();
+    });
   });
 });
