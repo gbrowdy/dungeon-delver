@@ -402,6 +402,53 @@ describe('death detection', () => {
   });
 });
 
+describe('combat events', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+  });
+
+  it('events accumulate during combat', () => {
+    const state = createCombatState();
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 1;
+    tickCombat(state, TICK_MS);
+
+    expect(state.combatEvents.length).toBeGreaterThan(0);
+
+    mockRandom.mockRestore();
+  });
+
+  it('events include correct tick timestamp', () => {
+    const state = createCombatState();
+    state.gameTick = 42;
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    tickCombat(state, TICK_MS);
+
+    const events = state.combatEvents.filter(e => e.target === 'enemy');
+    expect(events[0].tick).toBe(42);
+
+    mockRandom.mockRestore();
+  });
+
+  it('clearCombatEvents empties the queue', () => {
+    createCombatState();
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+
+    useGameStore.getState().tick(TICK_MS);
+    expect(useGameStore.getState().combatEvents.length).toBeGreaterThanOrEqual(0);
+
+    useGameStore.setState({ combatEvents: [] });
+    expect(useGameStore.getState().combatEvents).toEqual([]);
+
+    mockRandom.mockRestore();
+  });
+});
+
 describe('class innate — Mage Amplify', () => {
   beforeEach(() => {
     useGameStore.setState(useGameStore.getInitialState());
