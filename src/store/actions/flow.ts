@@ -7,6 +7,8 @@ import {
 } from '@/math/balance';
 import { generateEnemy } from '@/data/enemies';
 import { calculateDamage } from '@/math/damage';
+import { generateDraftCards } from './draft';
+import { generateShopCards } from './shop';
 import type { DeathSummary } from '@/types/game';
 
 export function isBossFloor(floor: number): boolean {
@@ -62,6 +64,8 @@ export function handleEnemyDeath(state: GameState): void {
 
   // Draft check (every 3 fights)
   if (shouldTriggerDraft(state.fightCount)) {
+    state.draftChoices = generateDraftCards(state);
+    state.selectedChoices = [];
     state.phase = 'draft';
     return;
   }
@@ -82,7 +86,10 @@ export function handleEnemyDeath(state: GameState): void {
   }
 
   if (isBoss) {
+    // Boss floor cleared — update checkpoint, generate shop cards
     state.checkpoint = state.floor;
+    state.shopCards = generateShopCards(state);
+    state.selectedChoices = [];
     state.phase = 'shop';
     return;
   }

@@ -217,6 +217,40 @@ describe('handleEnemyDeath', () => {
   });
 });
 
+// ─── handleEnemyDeath → draft integration ─────────────────────
+
+describe('handleEnemyDeath → draft integration', () => {
+  it('generates 3 draft cards when transitioning to draft phase', () => {
+    const state = createCombatState();
+    state.fightCount = 2; // handleEnemyDeath increments → 3 → triggers draft
+
+    handleEnemyDeath(state);
+
+    expect(state.phase).toBe('draft');
+    expect(state.draftChoices).toHaveLength(3);
+    expect(state.selectedChoices).toEqual([]);
+  });
+});
+
+// ─── handleEnemyDeath → shop integration ──────────────────────
+
+describe('handleEnemyDeath → shop integration', () => {
+  it('generates 5 shop cards when transitioning to shop phase', () => {
+    const state = createCombatState();
+    state.floor = 5; // boss floor
+    state.room = 4;
+    state.roomsPerFloor = 4;
+    state.fightCount = 0; // not a draft trigger after increment
+
+    handleEnemyDeath(state);
+
+    expect(state.phase).toBe('shop');
+    expect(state.shopCards).toHaveLength(5);
+    expect(state.selectedChoices).toEqual([]);
+    expect(state.checkpoint).toBe(5);
+  });
+});
+
 // ─── handlePlayerDeath ─────────────────────────────────────────
 
 describe('handlePlayerDeath', () => {
