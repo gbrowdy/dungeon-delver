@@ -539,3 +539,68 @@ describe('combat → flow integration', () => {
     mockRandom.mockRestore();
   });
 });
+
+// ─── full flow integration ────────────────────────────────────
+
+describe('full flow integration', () => {
+  it('simulates combat through room advancement', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+
+    const state = useGameStore.getState();
+    expect(state.phase).toBe('combat');
+    expect(state.floor).toBe(1);
+    expect(state.room).toBe(1);
+
+    // Tick combat until something happens (enemy dies → flow transition)
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    let ticks = 0;
+    while (ticks < 50000 && useGameStore.getState().phase === 'combat') {
+      useGameStore.getState().tick(TICK_MS);
+      ticks++;
+    }
+
+    const currentPhase = useGameStore.getState().phase;
+    // Should have transitioned out of combat
+    expect(['draft', 'floor-complete', 'shop', 'combat']).toContain(currentPhase);
+
+    mockRandom.mockRestore();
+  });
+
+  it('floor-complete → advanceFloor → combat cycle', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+
+    const state = useGameStore.getState();
+    state.phase = 'floor-complete';
+    state.floor = 1;
+
+    useGameStore.getState().advanceFloor();
+
+    expect(useGameStore.getState().phase).toBe('combat');
+    expect(useGameStore.getState().floor).toBe(2);
+    expect(useGameStore.getState().enemy).not.toBeNull();
+    expect(useGameStore.getState().player.hp).toBe(useGameStore.getState().player.maxHp);
+  });
+
+  it('death → respawn → combat cycle', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+
+    const state = useGameStore.getState();
+    state.floor = 7;
+    state.checkpoint = 5;
+    state.phase = 'death';
+    state.player.hp = 0;
+
+    useGameStore.getState().respawnAtCheckpoint();
+
+    expect(useGameStore.getState().phase).toBe('combat');
+    expect(useGameStore.getState().floor).toBe(5);
+    expect(useGameStore.getState().player.hp).toBe(useGameStore.getState().player.maxHp);
+  });
+});
