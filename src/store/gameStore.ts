@@ -7,6 +7,8 @@ import { getRoomsPerFloor } from '@/math/scaling';
 import { tickCombat } from './actions/combat';
 import { spawnEnemy, isBossFloor } from './actions/flow';
 import { generateDraftCards } from './actions/draft';
+import { generateShopCards } from './actions/shop';
+import { ITEM_DEFINITIONS } from '@/data/items';
 import { ENDLESS_START_FLOOR, FINAL_BOSS_FLOOR, PLAYER_BASE_HP } from '@/math/balance';
 import { getMaxHp } from '@/math/stats';
 
@@ -29,6 +31,11 @@ export interface GameActions {
   openDraft: () => void;
   selectDraftCard: (index: number) => void;
   confirmDraft: () => void;
+
+  // Shop actions (3E)
+  openShop: () => void;
+  selectShopCard: (index: number) => void;
+  confirmShop: () => void;
 
   // Reset
   resetGame: () => void;
@@ -342,6 +349,80 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
     // Resume combat (calls resumeCombat which handles flow)
     get().resumeCombat();
+  },
+
+  openShop: () => {
+    const state = get();
+    const cards = generateShopCards(state);
+    set({
+      phase: 'shop',
+      shopCards: cards,
+      selectedChoices: [],
+    });
+  },
+
+  selectShopCard: (index: number) => {
+    const { selectedChoices } = get();
+    if (selectedChoices.includes(index)) {
+      // Toggle off
+      set({ selectedChoices: selectedChoices.filter(i => i !== index) });
+    } else if (selectedChoices.length < 2) {
+      // Add selection (max 2)
+      set({ selectedChoices: [...selectedChoices, index] });
+    }
+    // If already at 2, ignore
+  },
+
+  confirmShop: () => {
+    const state = get();
+    if (state.selectedChoices.length < 2) return;
+
+    for (const idx of state.selectedChoices) {
+      const card = state.shopCards[idx];
+      if (!card) continue;
+
+      if (card.type === 'stat_boost' && card.stat && card.statValue) {
+        applyStatBoost(state.player, card.stat, card.statValue);
+
+        if (card.stat === 'fortitude') {
+          const newMaxHp = getMaxHp(PLAYER_BASE_HP, state.player.fortitude);
+          const hpGain = newMaxHp - state.player.maxHp;
+          state.player.maxHp = newMaxHp;
+          state.player.hp += hpGain;
+        }
+        if (card.stat === 'power') {
+          state.player.basePower = state.player.power;
+        }
+        if (card.stat === 'speed') {
+          state.player.baseSpeed = state.player.speed;
+        }
+      }
+
+      if (card.type === 'item' && card.itemId) {
+        const itemDef = ITEM_DEFINITIONS[card.itemId];
+        const slot = itemDef.slot;
+
+        if (card.isUpgrade && state.equippedItems[slot]?.id === card.itemId) {
+          // Tier upgrade
+          state.equippedItems[slot]!.tier += 1;
+        } else {
+          // Equip new item
+          state.equippedItems[slot] = {
+            id: card.itemId,
+            slot,
+            tier: 1,
+          };
+        }
+      }
+    }
+
+    set({
+      phase: 'floor-complete',
+      shopCards: [],
+      selectedChoices: [],
+      player: { ...state.player },
+      equippedItems: { ...state.equippedItems },
+    });
   },
 
   resetGame: () => {
