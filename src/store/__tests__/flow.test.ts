@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isBossFloor, shouldTriggerDraft, getCheckpoint, spawnEnemy } from '../actions/flow';
+import { isBossFloor, shouldTriggerDraft, getCheckpoint, spawnEnemy, handleEnemyDeath } from '../actions/flow';
 import { useGameStore } from '../gameStore';
 import type { GameState } from '@/types/game';
 
@@ -131,5 +131,85 @@ describe('spawnEnemy', () => {
     ] as any;
     spawnEnemy(state, false);
     expect(state.player.statusEffects).toEqual([]);
+  });
+});
+
+// ─── handleEnemyDeath ───────────────────────────────────────────
+
+describe('handleEnemyDeath', () => {
+  it('triggers draft when fightCount is multiple of 3', () => {
+    const state = createCombatState();
+    state.fightCount = 2; // handleEnemyDeath increments first → becomes 3
+    handleEnemyDeath(state);
+    expect(state.phase).toBe('draft');
+  });
+
+  it('advances room when not last room and no draft', () => {
+    const state = createCombatState();
+    state.fightCount = 1;
+    state.room = 1;
+    state.roomsPerFloor = 4;
+    handleEnemyDeath(state);
+    expect(state.room).toBe(2);
+    expect(state.phase).toBe('combat');
+    expect(state.enemy).not.toBeNull();
+  });
+
+  it('transitions to shop on boss floor last room', () => {
+    const state = createCombatState();
+    state.floor = 5; // boss floor
+    state.room = 4;
+    state.roomsPerFloor = 4;
+    state.fightCount = 1; // not draft trigger
+    handleEnemyDeath(state);
+    expect(state.phase).toBe('shop');
+  });
+
+  it('transitions to floor-complete on non-boss floor last room', () => {
+    const state = createCombatState();
+    state.floor = 4; // not boss floor
+    state.room = 4;
+    state.roomsPerFloor = 4;
+    state.fightCount = 1;
+    handleEnemyDeath(state);
+    expect(state.phase).toBe('floor-complete');
+  });
+
+  it('transitions to endless-intro when floor 100 is complete', () => {
+    const state = createCombatState();
+    state.floor = 100;
+    state.room = 4;
+    state.roomsPerFloor = 4;
+    state.fightCount = 1;
+    handleEnemyDeath(state);
+    expect(state.phase).toBe('endless-intro');
+  });
+
+  it('increments fightCount', () => {
+    const state = createCombatState();
+    state.fightCount = 5;
+    handleEnemyDeath(state);
+    expect(state.fightCount).toBe(6);
+  });
+
+  it('updates depth if floor is higher', () => {
+    const state = createCombatState();
+    state.floor = 10;
+    state.depth = 5;
+    state.room = 1;
+    state.roomsPerFloor = 4;
+    state.fightCount = 1;
+    handleEnemyDeath(state);
+    expect(state.depth).toBe(10);
+  });
+
+  it('updates checkpoint when boss floor is completed', () => {
+    const state = createCombatState();
+    state.floor = 5;
+    state.room = 4;
+    state.roomsPerFloor = 4;
+    state.fightCount = 1;
+    handleEnemyDeath(state);
+    expect(state.checkpoint).toBe(5);
   });
 });
