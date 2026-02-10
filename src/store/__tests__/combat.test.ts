@@ -499,3 +499,54 @@ describe('class innate — Mage Amplify', () => {
     mockRandom.mockRestore();
   });
 });
+
+describe('full combat integration', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+  });
+
+  it('player or enemy dies within a reasonable number of ticks', () => {
+    const state = createCombatState();
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    let ticks = 0;
+    const maxTicks = 10000;
+
+    while (ticks < maxTicks) {
+      tickCombat(state, TICK_MS);
+      ticks++;
+
+      if (state.player.hp <= 0 || state.enemy!.hp <= 0) break;
+    }
+
+    const someoneDied = state.player.hp <= 0 || state.enemy!.hp <= 0;
+    expect(someoneDied).toBe(true);
+
+    const deathEvents = state.combatEvents.filter(e => e.type === 'death');
+    expect(deathEvents.length).toBe(1);
+
+    mockRandom.mockRestore();
+  });
+
+  it('all three classes can fight to completion', () => {
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
+    for (const classId of ['warrior', 'rogue', 'mage']) {
+      useGameStore.setState(useGameStore.getInitialState());
+      useGameStore.getState().selectClass(classId);
+      useGameStore.getState().startRun();
+      const state = useGameStore.getState();
+
+      let ticks = 0;
+      while (ticks < 10000 && state.player.hp > 0 && state.enemy!.hp > 0) {
+        tickCombat(state, TICK_MS);
+        ticks++;
+      }
+
+      const someoneDied = state.player.hp <= 0 || state.enemy!.hp <= 0;
+      expect(someoneDied).toBe(true);
+    }
+
+    mockRandom.mockRestore();
+  });
+});
