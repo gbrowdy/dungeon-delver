@@ -4,7 +4,7 @@ import type { GameState } from '@/types/game';
 import { useGameStore } from '../gameStore';
 import { getAttackInterval, getCritChance, getCritDamage, getDodgeChance } from '@/math/stats';
 import { calculateEffectiveness } from '@/math/damage';
-import { TICK_MS } from '@/math/balance';
+import { TICK_MS, WARRIOR_FORTITUDE_MULT } from '@/math/balance';
 
 /** Helper: set up a combat-ready state */
 function createCombatState(): GameState {
@@ -250,6 +250,44 @@ describe('dodge mechanics', () => {
     tickCombat(state, TICK_MS);
 
     expect(state.enemy!.hp).toBeLessThan(enemyHpBefore);
+
+    mockRandom.mockRestore();
+  });
+});
+
+describe('class innate — Warrior Toughness', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+  });
+
+  it('enemy deals less damage to warrior due to 1.5x fortitude in defense', () => {
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+
+    // Create warrior state
+    const warriorState = createCombatState(); // uses warrior
+    warriorState.player.fortitude = 10;
+    warriorState.enemy!.power = 20;
+    warriorState.enemy!.attackTimer = 1;
+    warriorState.player.attackTimer = 99999;
+    const warriorHpBefore = warriorState.player.hp;
+    tickCombat(warriorState, TICK_MS);
+    const warriorDamageTaken = warriorHpBefore - warriorState.player.hp;
+
+    // Create rogue state
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('rogue');
+    useGameStore.getState().startRun();
+    const rogueState = useGameStore.getState();
+    rogueState.player.fortitude = 10;
+    rogueState.enemy!.power = 20;
+    rogueState.enemy!.attackTimer = 1;
+    rogueState.player.attackTimer = 99999;
+    const rogueHpBefore = rogueState.player.hp;
+    tickCombat(rogueState, TICK_MS);
+    const rogueDamageTaken = rogueHpBefore - rogueState.player.hp;
+
+    // Warrior should take less damage (1.5x effective fortitude)
+    expect(warriorDamageTaken).toBeLessThan(rogueDamageTaken);
 
     mockRandom.mockRestore();
   });

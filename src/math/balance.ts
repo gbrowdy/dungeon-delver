@@ -63,6 +63,9 @@ export const PLAYER_BASE_FORTITUDE = 8;
 export const PLAYER_BASE_SPEED = 10;
 export const PLAYER_BASE_LUCK = 5;
 
+// ── Class innates ─────────────────────────────────────────────────
+export const WARRIOR_FORTITUDE_MULT = 1.5;
+
 // ── Endless mode ─────────────────────────────────────────────────
 export const ENDLESS_START_FLOOR = 101;
 export const FINAL_BOSS_FLOOR = 100;

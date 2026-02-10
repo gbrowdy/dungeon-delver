@@ -7,6 +7,7 @@
 import type { GameState, CombatEntity, CombatEvent } from '@/types/game';
 import { calculateDamage } from '@/math/damage';
 import { getAttackInterval, getCritChance, getCritDamage, getDodgeChance } from '@/math/stats';
+import { WARRIOR_FORTITUDE_MULT } from '@/math/balance';
 
 /**
  * Core combat tick. Mutates state in-place.
@@ -62,6 +63,13 @@ function resolvePlayerAttack(
   });
 }
 
+function getEffectiveFortitude(fortitude: number, classId: string, isDefender: boolean): number {
+  if (isDefender && classId === 'warrior') {
+    return Math.round(fortitude * WARRIOR_FORTITUDE_MULT);
+  }
+  return fortitude;
+}
+
 function resolveEnemyAttack(
   state: GameState,
   player: CombatEntity,
@@ -74,7 +82,8 @@ function resolveEnemyAttack(
     return;
   }
 
-  const result = calculateDamage(enemy.power, player.fortitude, 1.0);
+  const effectiveFortitude = getEffectiveFortitude(player.fortitude, state.classId, true);
+  const result = calculateDamage(enemy.power, effectiveFortitude, 1.0);
   player.hp -= result.final;
 
   emitCombatEvent(state, {
