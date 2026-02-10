@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { isBossFloor, shouldTriggerDraft, getCheckpoint, spawnEnemy, handleEnemyDeath, handlePlayerDeath } from '../actions/flow';
-import { FINAL_BOSS_FLOOR } from '@/math/balance';
+import { FINAL_BOSS_FLOOR, ENDLESS_START_FLOOR } from '@/math/balance';
+import { getRoomsPerFloor } from '@/math/scaling';
 import { useGameStore } from '../gameStore';
 import type { GameState } from '@/types/game';
 
@@ -272,5 +273,233 @@ describe('handlePlayerDeath', () => {
     state.depth = 120;
     handlePlayerDeath(state);
     expect(state.depth).toBe(150);
+  });
+});
+
+// ─── advanceFloor (store action) ───────────────────────────────
+
+describe('advanceFloor (store action)', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+  });
+
+  it('increments floor and resets room to 1', () => {
+    const state = useGameStore.getState();
+    state.phase = 'floor-complete';
+    state.floor = 3;
+
+    useGameStore.getState().advanceFloor();
+
+    expect(useGameStore.getState().floor).toBe(4);
+    expect(useGameStore.getState().room).toBe(1);
+  });
+
+  it('recomputes roomsPerFloor for the new floor', () => {
+    const state = useGameStore.getState();
+    state.phase = 'floor-complete';
+    state.floor = 49;
+
+    useGameStore.getState().advanceFloor();
+
+    const newState = useGameStore.getState();
+    expect(newState.roomsPerFloor).toBe(getRoomsPerFloor(50));
+  });
+
+  it('spawns an enemy and transitions to combat', () => {
+    const state = useGameStore.getState();
+    state.phase = 'floor-complete';
+    state.floor = 5;
+
+    useGameStore.getState().advanceFloor();
+
+    expect(useGameStore.getState().phase).toBe('combat');
+    expect(useGameStore.getState().enemy).not.toBeNull();
+  });
+
+  it('resets fightCount for the new floor', () => {
+    const state = useGameStore.getState();
+    state.fightCount = 12;
+    state.phase = 'floor-complete';
+
+    useGameStore.getState().advanceFloor();
+
+    expect(useGameStore.getState().fightCount).toBe(0);
+  });
+
+  it('restores player HP to max between floors', () => {
+    const state = useGameStore.getState();
+    state.player.hp = 50;
+    state.phase = 'floor-complete';
+
+    useGameStore.getState().advanceFloor();
+
+    expect(useGameStore.getState().player.hp).toBe(useGameStore.getState().player.maxHp);
+  });
+});
+
+// ─── respawnAtCheckpoint (store action) ────────────────────────
+
+describe('respawnAtCheckpoint (store action)', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+  });
+
+  it('respawns at checkpoint floor', () => {
+    const state = useGameStore.getState();
+    state.floor = 17;
+    state.checkpoint = 15;
+    state.phase = 'death';
+
+    useGameStore.getState().respawnAtCheckpoint();
+
+    expect(useGameStore.getState().floor).toBe(15);
+    expect(useGameStore.getState().room).toBe(1);
+  });
+
+  it('respawns at floor 1 if no checkpoint', () => {
+    const state = useGameStore.getState();
+    state.floor = 2;
+    state.checkpoint = 0;
+    state.phase = 'death';
+
+    useGameStore.getState().respawnAtCheckpoint();
+
+    expect(useGameStore.getState().floor).toBe(1);
+  });
+
+  it('restores player HP to full', () => {
+    const state = useGameStore.getState();
+    state.player.hp = 0;
+    state.checkpoint = 5;
+    state.phase = 'death';
+
+    useGameStore.getState().respawnAtCheckpoint();
+
+    expect(useGameStore.getState().player.hp).toBe(useGameStore.getState().player.maxHp);
+  });
+
+  it('keeps all stats and items', () => {
+    const state = useGameStore.getState();
+    state.player.power = 50;
+    state.equippedItems.weapon = { id: 'heavy_cleaver', slot: 'weapon', tier: 2 };
+    state.checkpoint = 5;
+    state.phase = 'death';
+
+    useGameStore.getState().respawnAtCheckpoint();
+
+    expect(useGameStore.getState().player.power).toBe(50);
+    expect(useGameStore.getState().equippedItems.weapon!.id).toBe('heavy_cleaver');
+  });
+
+  it('spawns enemy and transitions to combat', () => {
+    const state = useGameStore.getState();
+    state.checkpoint = 10;
+    state.phase = 'death';
+
+    useGameStore.getState().respawnAtCheckpoint();
+
+    expect(useGameStore.getState().phase).toBe('combat');
+    expect(useGameStore.getState().enemy).not.toBeNull();
+  });
+
+  it('clears player status effects', () => {
+    const state = useGameStore.getState();
+    state.player.statusEffects = [{ type: 'poison', stacks: 3, remainingMs: 2000 }];
+    state.checkpoint = 5;
+    state.phase = 'death';
+
+    useGameStore.getState().respawnAtCheckpoint();
+
+    expect(useGameStore.getState().player.statusEffects).toEqual([]);
+  });
+});
+
+// ─── startEndless (store action) ──────────────────────────────
+
+describe('startEndless (store action)', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+  });
+
+  it('starts at floor 101', () => {
+    const state = useGameStore.getState();
+    state.phase = 'endless-intro';
+
+    useGameStore.getState().startEndless();
+
+    expect(useGameStore.getState().floor).toBe(ENDLESS_START_FLOOR);
+  });
+
+  it('transitions to combat', () => {
+    const state = useGameStore.getState();
+    state.phase = 'endless-intro';
+
+    useGameStore.getState().startEndless();
+
+    expect(useGameStore.getState().phase).toBe('combat');
+    expect(useGameStore.getState().enemy).not.toBeNull();
+  });
+
+  it('restores player HP to full', () => {
+    const state = useGameStore.getState();
+    state.player.hp = 50;
+    state.phase = 'endless-intro';
+
+    useGameStore.getState().startEndless();
+
+    expect(useGameStore.getState().player.hp).toBe(useGameStore.getState().player.maxHp);
+  });
+});
+
+// ─── resumeCombat (store action) ──────────────────────────────
+
+describe('resumeCombat (store action)', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+  });
+
+  it('resumes combat after draft — advances room if not last room', () => {
+    const state = useGameStore.getState();
+    state.phase = 'draft';
+    state.room = 2;
+    state.roomsPerFloor = 4;
+
+    useGameStore.getState().resumeCombat();
+
+    expect(useGameStore.getState().phase).toBe('combat');
+    expect(useGameStore.getState().room).toBe(3);
+    expect(useGameStore.getState().enemy).not.toBeNull();
+  });
+
+  it('goes to floor-complete if last room of non-boss floor', () => {
+    const state = useGameStore.getState();
+    state.phase = 'draft';
+    state.room = 4;
+    state.roomsPerFloor = 4;
+    state.floor = 4; // not boss
+
+    useGameStore.getState().resumeCombat();
+
+    expect(useGameStore.getState().phase).toBe('floor-complete');
+  });
+
+  it('goes to shop if last room of boss floor', () => {
+    const state = useGameStore.getState();
+    state.phase = 'draft';
+    state.room = 4;
+    state.roomsPerFloor = 4;
+    state.floor = 5; // boss
+
+    useGameStore.getState().resumeCombat();
+
+    expect(useGameStore.getState().phase).toBe('shop');
   });
 });

@@ -5,6 +5,8 @@ import { CLASSES } from '@/data/classes';
 import { generateEnemy } from '@/data/enemies';
 import { getRoomsPerFloor } from '@/math/scaling';
 import { tickCombat } from './actions/combat';
+import { spawnEnemy, isBossFloor } from './actions/flow';
+import { ENDLESS_START_FLOOR, FINAL_BOSS_FLOOR } from '@/math/balance';
 
 // -- Actions interface (methods on the store) ---------------------------------
 export interface GameActions {
@@ -14,6 +16,12 @@ export interface GameActions {
 
   // Combat tick placeholder (3B)
   tick: (dt: number) => void;
+
+  // Flow actions (3D)
+  advanceFloor: () => void;
+  respawnAtCheckpoint: () => void;
+  startEndless: () => void;
+  resumeCombat: () => void;
 
   // Reset
   resetGame: () => void;
@@ -132,6 +140,133 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     state.gameTick += 1;
     tickCombat(state, dt);
     set({ renderVersion: state.renderVersion + 1 });
+  },
+
+  advanceFloor: () => {
+    const state = get();
+    const nextFloor = state.floor + 1;
+    const roomsPerFloor = getRoomsPerFloor(nextFloor);
+
+    state.player.hp = state.player.maxHp;
+    state.player.statusEffects = [];
+    state.floor = nextFloor;
+    state.room = 1;
+    state.roomsPerFloor = roomsPerFloor;
+    state.fightCount = 0;
+    state.depth = Math.max(state.depth, nextFloor);
+
+    spawnEnemy(state, false);
+
+    set({
+      phase: 'combat',
+      floor: nextFloor,
+      room: 1,
+      roomsPerFloor,
+      fightCount: 0,
+      player: state.player,
+      enemy: state.enemy,
+      enemyDefinition: state.enemyDefinition,
+      combatElapsed: state.combatElapsed,
+      combatEvents: state.combatEvents,
+      combatCounters: state.combatCounters,
+      lastPlayerHitDamage: state.lastPlayerHitDamage,
+      depth: state.depth,
+    });
+  },
+
+  respawnAtCheckpoint: () => {
+    const state = get();
+    const respawnFloor = Math.max(1, state.checkpoint);
+    const roomsPerFloor = getRoomsPerFloor(respawnFloor);
+
+    state.player.hp = state.player.maxHp;
+    state.player.statusEffects = [];
+    state.floor = respawnFloor;
+    state.room = 1;
+    state.roomsPerFloor = roomsPerFloor;
+    state.fightCount = 0;
+
+    spawnEnemy(state, false);
+
+    set({
+      phase: 'combat',
+      floor: respawnFloor,
+      room: 1,
+      roomsPerFloor,
+      fightCount: 0,
+      player: state.player,
+      enemy: state.enemy,
+      enemyDefinition: state.enemyDefinition,
+      combatElapsed: state.combatElapsed,
+      combatEvents: state.combatEvents,
+      combatCounters: state.combatCounters,
+      lastPlayerHitDamage: state.lastPlayerHitDamage,
+    });
+  },
+
+  startEndless: () => {
+    const state = get();
+    const floor = ENDLESS_START_FLOOR;
+    const roomsPerFloor = getRoomsPerFloor(floor);
+
+    state.player.hp = state.player.maxHp;
+    state.player.statusEffects = [];
+    state.floor = floor;
+    state.room = 1;
+    state.roomsPerFloor = roomsPerFloor;
+    state.fightCount = 0;
+
+    spawnEnemy(state, false);
+
+    set({
+      phase: 'combat',
+      floor,
+      room: 1,
+      roomsPerFloor,
+      fightCount: 0,
+      player: state.player,
+      enemy: state.enemy,
+      enemyDefinition: state.enemyDefinition,
+      combatElapsed: state.combatElapsed,
+      combatEvents: state.combatEvents,
+      combatCounters: state.combatCounters,
+      lastPlayerHitDamage: state.lastPlayerHitDamage,
+      depth: Math.max(state.depth, floor),
+    });
+  },
+
+  resumeCombat: () => {
+    const state = get();
+    const isLastRoom = state.room >= state.roomsPerFloor;
+
+    if (!isLastRoom) {
+      state.room += 1;
+      spawnEnemy(state, false);
+      set({
+        phase: 'combat',
+        room: state.room,
+        enemy: state.enemy,
+        enemyDefinition: state.enemyDefinition,
+        combatElapsed: state.combatElapsed,
+        combatEvents: state.combatEvents,
+        combatCounters: state.combatCounters,
+        lastPlayerHitDamage: state.lastPlayerHitDamage,
+      });
+      return;
+    }
+
+    if (state.floor === FINAL_BOSS_FLOOR) {
+      set({ phase: 'endless-intro' });
+      return;
+    }
+
+    if (isBossFloor(state.floor)) {
+      state.checkpoint = state.floor;
+      set({ phase: 'shop', checkpoint: state.floor });
+      return;
+    }
+
+    set({ phase: 'floor-complete' });
   },
 
   resetGame: () => {
