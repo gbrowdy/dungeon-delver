@@ -7,7 +7,7 @@
 import type { GameState, CombatEntity, CombatEvent } from '@/types/game';
 import { calculateDamage } from '@/math/damage';
 import { getAttackInterval, getCritChance, getCritDamage, getDodgeChance } from '@/math/stats';
-import { WARRIOR_FORTITUDE_MULT } from '@/math/balance';
+import { WARRIOR_FORTITUDE_MULT, ROGUE_CRIT_MULT } from '@/math/balance';
 
 /**
  * Core combat tick. Mutates state in-place.
@@ -46,13 +46,23 @@ function rollCrit(luck: number): { isCrit: boolean; multiplier: number } {
   };
 }
 
+function getEffectiveCritMultiplier(multiplier: number, classId: string): number {
+  if (classId === 'rogue') {
+    return multiplier * ROGUE_CRIT_MULT;
+  }
+  return multiplier;
+}
+
 function resolvePlayerAttack(
   state: GameState,
   player: CombatEntity,
   enemy: CombatEntity,
 ): void {
   const crit = rollCrit(player.luck);
-  const result = calculateDamage(player.power, enemy.fortitude, crit.multiplier);
+  const critMultiplier = crit.isCrit
+    ? getEffectiveCritMultiplier(crit.multiplier, state.classId)
+    : 1.0;
+  const result = calculateDamage(player.power, enemy.fortitude, critMultiplier);
   enemy.hp -= result.final;
 
   emitCombatEvent(state, {

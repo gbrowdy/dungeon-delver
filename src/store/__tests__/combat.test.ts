@@ -255,6 +255,41 @@ describe('dodge mechanics', () => {
   });
 });
 
+describe('class innate — Rogue Precision', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+  });
+
+  it('rogue crits deal 1.5x the normal crit multiplier', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('rogue');
+    useGameStore.getState().startRun();
+    const state = useGameStore.getState();
+
+    state.player.luck = 20;
+    state.player.power = 50;
+    state.enemy!.fortitude = 10;
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0);
+
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    tickCombat(state, TICK_MS);
+
+    const critEvent = state.combatEvents.find(e => e.type === 'crit');
+    expect(critEvent).toBeDefined();
+
+    // Expected: rogue's crit multiplier is getCritDamage(luck) * 1.5
+    const baseCritMult = getCritDamage(20);
+    const rogueCritMult = baseCritMult * 1.5;
+    const effectiveness = calculateEffectiveness(50, 10);
+    const expectedDamage = Math.max(1, Math.round(50 * effectiveness * rogueCritMult));
+    expect(critEvent!.value).toBe(expectedDamage);
+
+    mockRandom.mockRestore();
+  });
+});
+
 describe('class innate — Warrior Toughness', () => {
   beforeEach(() => {
     useGameStore.setState(useGameStore.getInitialState());
