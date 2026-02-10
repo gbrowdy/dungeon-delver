@@ -7,7 +7,7 @@
 import type { GameState, ShopCard, StatType, ItemId, ItemSlot, Item } from '@/types/game';
 import { getStatProbabilities } from '@/data/classes';
 import { getDraftPickValue } from '@/math/scaling';
-import { ALL_ITEMS, ITEM_DEFINITIONS } from '@/data/items';
+import { ALL_ITEMS } from '@/data/items';
 
 const ALL_STATS: StatType[] = ['power', 'fortitude', 'speed', 'luck'];
 const ITEM_SLOTS: ItemSlot[] = ['weapon', 'armor', 'accessory'];
