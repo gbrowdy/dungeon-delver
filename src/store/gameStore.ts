@@ -4,6 +4,7 @@ import { createInitialPlayer } from './actions/setup';
 import { CLASSES } from '@/data/classes';
 import { generateEnemy } from '@/data/enemies';
 import { getRoomsPerFloor } from '@/math/scaling';
+import { tickCombat } from './actions/combat';
 
 // -- Actions interface (methods on the store) ---------------------------------
 export interface GameActions {
@@ -111,8 +112,11 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
   },
 
-  tick: (_dt: number) => {
-    // Placeholder -- implemented in 3B
+  tick: (dt: number) => {
+    const state = get();
+    state.gameTick += 1;
+    tickCombat(state, dt);
+    set({ renderVersion: state.renderVersion + 1 });
   },
 
   resetGame: () => {

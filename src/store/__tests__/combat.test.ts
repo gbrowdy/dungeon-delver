@@ -107,3 +107,29 @@ describe('tickCombat — attack timers', () => {
     expect(state.player.hp).toBe(playerHpBefore);
   });
 });
+
+describe('store tick()', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+  });
+
+  it('calls tickCombat and bumps renderVersion', () => {
+    const state = createCombatState();
+    const rv0 = useGameStore.getState().renderVersion;
+
+    useGameStore.getState().tick(TICK_MS);
+
+    expect(useGameStore.getState().renderVersion).toBe(rv0 + 1);
+  });
+
+  it('increments gameTick on each call', () => {
+    createCombatState();
+    const tick0 = useGameStore.getState().gameTick;
+
+    useGameStore.getState().tick(TICK_MS);
+    expect(useGameStore.getState().gameTick).toBe(tick0 + 1);
+
+    useGameStore.getState().tick(TICK_MS);
+    expect(useGameStore.getState().gameTick).toBe(tick0 + 2);
+  });
+});
