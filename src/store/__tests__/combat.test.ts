@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { tickCombat } from '../actions/combat';
 import type { GameState } from '@/types/game';
 import { useGameStore } from '../gameStore';
-import { getAttackInterval, getCritChance, getCritDamage } from '@/math/stats';
+import { getAttackInterval, getCritChance, getCritDamage, getDodgeChance } from '@/math/stats';
 import { calculateEffectiveness } from '@/math/damage';
 import { TICK_MS } from '@/math/balance';
 
@@ -193,6 +193,63 @@ describe('crit mechanics', () => {
     const critDamage = state.combatEvents.find(e => e.type === 'crit')!.value!;
 
     expect(critDamage).toBeGreaterThan(normalDamage);
+
+    mockRandom.mockRestore();
+  });
+});
+
+describe('dodge mechanics', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+  });
+
+  it('player dodges enemy attack when roll succeeds', () => {
+    const state = createCombatState();
+    state.player.luck = 100;
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0);
+
+    state.enemy!.attackTimer = 1;
+    state.player.attackTimer = 99999;
+    const playerHpBefore = state.player.hp;
+
+    tickCombat(state, TICK_MS);
+
+    expect(state.player.hp).toBe(playerHpBefore);
+    const dodgeEvents = state.combatEvents.filter(e => e.type === 'dodge');
+    expect(dodgeEvents.length).toBe(1);
+
+    mockRandom.mockRestore();
+  });
+
+  it('player takes damage when dodge fails', () => {
+    const state = createCombatState();
+    state.player.luck = 5;
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+
+    state.enemy!.attackTimer = 1;
+    state.player.attackTimer = 99999;
+    const playerHpBefore = state.player.hp;
+
+    tickCombat(state, TICK_MS);
+
+    expect(state.player.hp).toBeLessThan(playerHpBefore);
+
+    mockRandom.mockRestore();
+  });
+
+  it('enemies cannot dodge (no dodge chance)', () => {
+    const state = createCombatState();
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0);
+
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    const enemyHpBefore = state.enemy!.hp;
+
+    tickCombat(state, TICK_MS);
+
+    expect(state.enemy!.hp).toBeLessThan(enemyHpBefore);
 
     mockRandom.mockRestore();
   });

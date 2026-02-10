@@ -6,7 +6,7 @@
 
 import type { GameState, CombatEntity, CombatEvent } from '@/types/game';
 import { calculateDamage } from '@/math/damage';
-import { getAttackInterval, getCritChance, getCritDamage } from '@/math/stats';
+import { getAttackInterval, getCritChance, getCritDamage, getDodgeChance } from '@/math/stats';
 
 /**
  * Core combat tick. Mutates state in-place.
@@ -67,6 +67,13 @@ function resolveEnemyAttack(
   player: CombatEntity,
   enemy: CombatEntity,
 ): void {
+  // Player dodge check (only player can dodge)
+  const dodgeChance = getDodgeChance(player.luck);
+  if (Math.random() < dodgeChance) {
+    emitCombatEvent(state, { type: 'dodge', target: 'player', tick: state.gameTick });
+    return;
+  }
+
   const result = calculateDamage(enemy.power, player.fortitude, 1.0);
   player.hp -= result.final;
 
