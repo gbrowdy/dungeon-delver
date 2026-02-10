@@ -255,6 +255,23 @@ describe('dodge mechanics', () => {
   });
 });
 
+describe('combat elapsed timer', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+  });
+
+  it('increments combatElapsed by dt each tick', () => {
+    const state = createCombatState();
+    expect(state.combatElapsed).toBe(0);
+
+    tickCombat(state, TICK_MS);
+    expect(state.combatElapsed).toBe(TICK_MS);
+
+    tickCombat(state, TICK_MS);
+    expect(state.combatElapsed).toBe(TICK_MS * 2);
+  });
+});
+
 describe('class innate — Rogue Precision', () => {
   beforeEach(() => {
     useGameStore.setState(useGameStore.getInitialState());

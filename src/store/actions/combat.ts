@@ -17,6 +17,9 @@ export function tickCombat(state: GameState, dt: number): void {
   if (state.phase !== 'combat') return;
   if (!state.enemy) return;
 
+  // Track combat duration
+  state.combatElapsed += dt;
+
   const player = state.player;
   const enemy = state.enemy;
 
