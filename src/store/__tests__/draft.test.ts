@@ -217,3 +217,31 @@ describe('impact preview formatting', () => {
     }
   });
 });
+
+// ─── full draft → confirm → combat cycle ────────────────────────
+
+describe('full draft → confirm → combat cycle', () => {
+  it('completes a draft cycle: generate → select → confirm → resume combat', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('rogue');
+    useGameStore.getState().startRun();
+
+    // Manually trigger draft
+    useGameStore.getState().openDraft();
+    expect(useGameStore.getState().phase).toBe('draft');
+    expect(useGameStore.getState().draftChoices).toHaveLength(3);
+
+    // Select first card
+    const card = useGameStore.getState().draftChoices[0];
+    const statBefore = useGameStore.getState().player[card.stat];
+
+    useGameStore.getState().selectDraftCard(0);
+    useGameStore.getState().confirmDraft();
+
+    // Stat should be boosted
+    expect(useGameStore.getState().player[card.stat]).toBe(statBefore + card.value);
+
+    // Should be back in combat or other flow phase
+    expect(['combat', 'floor-complete', 'shop', 'endless-intro']).toContain(useGameStore.getState().phase);
+  });
+});
