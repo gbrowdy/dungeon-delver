@@ -61,6 +61,7 @@ function computeImpactPreview(state: GameState, stat: StatType, value: number): 
     case 'power': {
       if (!enemy) return `+${value} Power`;
       const currentEff = calculateEffectiveness(player.power, enemy.fortitude);
+      if (currentEff === 0) return `+${value} Power`;
       const newEff = calculateEffectiveness(player.power + value, enemy.fortitude);
       const percentChange = Math.round((newEff / currentEff - 1) * 100);
       return `+${percentChange}% damage`;
@@ -69,6 +70,7 @@ function computeImpactPreview(state: GameState, stat: StatType, value: number): 
     case 'fortitude': {
       if (!enemy) return `+${value} Fortitude`;
       const currentEff = calculateEffectiveness(enemy.power, player.fortitude);
+      if (currentEff === 0) return `+${value} Fortitude`;
       const newEff = calculateEffectiveness(enemy.power, player.fortitude + value);
       const percentChange = Math.round((1 - newEff / currentEff) * 100);
       return `-${percentChange}% dmg taken`;

@@ -1,12 +1,14 @@
 import { create } from 'zustand';
-import type { GameState } from '@/types/game';
+import type { GameState, CombatEntity, StatType } from '@/types/game';
 import { createInitialPlayer } from './actions/setup';
 import { CLASSES } from '@/data/classes';
 import { generateEnemy } from '@/data/enemies';
 import { getRoomsPerFloor } from '@/math/scaling';
 import { tickCombat } from './actions/combat';
 import { spawnEnemy, isBossFloor } from './actions/flow';
-import { ENDLESS_START_FLOOR, FINAL_BOSS_FLOOR } from '@/math/balance';
+import { generateDraftCards } from './actions/draft';
+import { ENDLESS_START_FLOOR, FINAL_BOSS_FLOOR, PLAYER_BASE_HP } from '@/math/balance';
+import { getMaxHp } from '@/math/stats';
 
 // -- Actions interface (methods on the store) ---------------------------------
 export interface GameActions {
@@ -22,6 +24,11 @@ export interface GameActions {
   respawnAtCheckpoint: () => void;
   startEndless: () => void;
   resumeCombat: () => void;
+
+  // Draft actions (3E)
+  openDraft: () => void;
+  selectDraftCard: (index: number) => void;
+  confirmDraft: () => void;
 
   // Reset
   resetGame: () => void;
@@ -85,6 +92,16 @@ const INITIAL_STATE: GameState = {
   // Rendering
   renderVersion: 0,
 };
+
+// -- Helpers ------------------------------------------------------------------
+function applyStatBoost(player: CombatEntity, stat: StatType, value: number): void {
+  switch (stat) {
+    case 'power': player.power += value; break;
+    case 'fortitude': player.fortitude += value; break;
+    case 'speed': player.speed += value; break;
+    case 'luck': player.luck += value; break;
+  }
+}
 
 // -- Store --------------------------------------------------------------------
 export const useGameStore = create<GameStore>()((set, get) => ({
@@ -267,6 +284,64 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     }
 
     set({ phase: 'floor-complete' });
+  },
+
+  openDraft: () => {
+    const state = get();
+    const cards = generateDraftCards(state);
+    set({
+      phase: 'draft',
+      draftChoices: cards,
+      selectedChoices: [],
+    });
+  },
+
+  selectDraftCard: (index: number) => {
+    const { selectedChoices } = get();
+    if (selectedChoices.includes(index)) {
+      set({ selectedChoices: [] });
+    } else {
+      set({ selectedChoices: [index] }); // only 1 selection for draft
+    }
+  },
+
+  confirmDraft: () => {
+    const state = get();
+    if (state.selectedChoices.length === 0) return;
+
+    const card = state.draftChoices[state.selectedChoices[0]];
+    if (!card) return;
+
+    // Apply stat boost
+    applyStatBoost(state.player, card.stat, card.value);
+
+    // If fortitude was boosted, recalculate maxHp and heal proportionally
+    if (card.stat === 'fortitude') {
+      const newMaxHp = getMaxHp(PLAYER_BASE_HP, state.player.fortitude);
+      const hpGain = newMaxHp - state.player.maxHp;
+      state.player.maxHp = newMaxHp;
+      state.player.hp += hpGain;
+    }
+
+    // Update basePower if power was boosted
+    if (card.stat === 'power') {
+      state.player.basePower = state.player.power;
+    }
+
+    // Update baseSpeed if speed was boosted
+    if (card.stat === 'speed') {
+      state.player.baseSpeed = state.player.speed;
+    }
+
+    // Clear draft state
+    set({
+      draftChoices: [],
+      selectedChoices: [],
+      player: { ...state.player },
+    });
+
+    // Resume combat (calls resumeCombat which handles flow)
+    get().resumeCombat();
   },
 
   resetGame: () => {
