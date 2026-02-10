@@ -2,45 +2,70 @@
 //
 // Core combat tick. Mutates state in-place.
 // Called with a fixed dt (TICK_MS = 16ms) every logical tick.
-// Handles attack timer countdown, basic damage resolution, and combat event emission.
+// Integrates: item procs, status effects, modifiers, enrage, attack resolution.
 
 import type { GameState, CombatEntity, CombatEvent } from '@/types/game';
 import { calculateDamage } from '@/math/damage';
 import { getAttackInterval, getCritChance, getCritDamage, getDodgeChance } from '@/math/stats';
-import { WARRIOR_FORTITUDE_MULT, ROGUE_CRIT_MULT, MAGE_AMPLIFY_PER_LUCK } from '@/math/balance';
+import { WARRIOR_FORTITUDE_MULT, ROGUE_CRIT_MULT, MAGE_AMPLIFY_PER_LUCK, DODGE_CHANCE_CAP, MIN_SPEED } from '@/math/balance';
+import { tickStatusEffects, hasEffect, addStatusEffect } from './statusEffects';
+import { tickEnrage } from './enrage';
+import { tickModifierBehaviors } from './modifiers';
+import { processItemProcs } from './itemProcs';
+import type { PassiveEffects } from './itemProcs';
+import { ITEM_DEFINITIONS, getScaledValue } from '@/data/items';
 
 /**
  * Core combat tick. Mutates state in-place.
- * Called with a fixed dt (TICK_MS = 16ms) every logical tick.
  */
 export function tickCombat(state: GameState, dt: number): void {
   if (state.phase !== 'combat') return;
   if (!state.enemy) return;
 
+  const player = state.player;
+  const enemy = state.enemy;
+  if (player.hp <= 0 || enemy.hp <= 0) return;
+
   // Track combat duration
   state.combatElapsed += dt;
 
-  const player = state.player;
-  const enemy = state.enemy;
+  // Tick enrage
+  tickEnrage(state);
 
-  // Skip if either entity is already dead
-  if (player.hp <= 0 || enemy.hp <= 0) return;
+  // Tick modifier behaviors (berserker, regen, shielded)
+  tickModifierBehaviors(state, dt);
+
+  // Compute passive item effects
+  const passives = processItemProcs(state, 'passive', {});
+
+  // Tick player regen from items (no rounding — let fractions accumulate)
+  if (passives.regenPerSecond > 0) {
+    const regenPerTick = (player.maxHp * passives.regenPerSecond * dt) / 1000;
+    player.hp = Math.min(player.maxHp, player.hp + regenPerTick);
+  }
+
+  // Compute effective speed (apply item speed modifiers)
+  const playerEffectiveSpeed = Math.max(MIN_SPEED, Math.round(player.speed * passives.speedMult));
 
   // Tick attack timers
   player.attackTimer -= dt;
   enemy.attackTimer -= dt;
 
-  // Player attacks
-  if (player.attackTimer <= 0) {
-    resolvePlayerAttack(state, player, enemy);
-    player.attackTimer = getAttackInterval(player.speed);
+  // Player attacks (skip if stunned)
+  if (player.attackTimer <= 0 && !hasEffect(player, 'stun')) {
+    state.combatCounters.playerAttackCount += 1;
+    resolvePlayerAttack(state, player, enemy, passives);
+    player.attackTimer = getAttackInterval(playerEffectiveSpeed);
   }
 
-  // Enemy attacks
-  if (enemy.attackTimer <= 0) {
-    resolveEnemyAttack(state, player, enemy);
+  // Enemy attacks (skip if stunned)
+  if (enemy.attackTimer <= 0 && !hasEffect(enemy, 'stun')) {
+    resolveEnemyAttack(state, player, enemy, passives);
     enemy.attackTimer = getAttackInterval(enemy.speed);
   }
+
+  // Tick status effects (poison, curse decay, regen, shield)
+  tickStatusEffects(state, dt);
 
   // Death checks
   if (enemy.hp <= 0) {
@@ -48,7 +73,6 @@ export function tickCombat(state: GameState, dt: number): void {
     emitCombatEvent(state, { type: 'death', target: 'enemy', tick: state.gameTick });
     return;
   }
-
   if (player.hp <= 0) {
     player.hp = 0;
     emitCombatEvent(state, { type: 'death', target: 'player', tick: state.gameTick });
@@ -79,31 +103,6 @@ function getAmplifyMultiplier(luck: number, classId: string): number {
   return 1.0;
 }
 
-function resolvePlayerAttack(
-  state: GameState,
-  player: CombatEntity,
-  enemy: CombatEntity,
-): void {
-  const crit = rollCrit(player.luck);
-  const critMultiplier = crit.isCrit
-    ? getEffectiveCritMultiplier(crit.multiplier, state.classId)
-    : 1.0;
-  const result = calculateDamage(player.power, enemy.fortitude, critMultiplier);
-
-  // Mage Amplify: multiply final damage by (1 + luck * 0.005)
-  const amplify = getAmplifyMultiplier(player.luck, state.classId);
-  const finalDamage = Math.max(1, Math.round(result.final * amplify));
-
-  enemy.hp -= finalDamage;
-
-  emitCombatEvent(state, {
-    type: crit.isCrit ? 'crit' : 'damage',
-    target: 'enemy',
-    value: finalDamage,
-    tick: state.gameTick,
-  });
-}
-
 function getEffectiveFortitude(fortitude: number, classId: string, isDefender: boolean): number {
   if (isDefender && classId === 'warrior') {
     return Math.round(fortitude * WARRIOR_FORTITUDE_MULT);
@@ -111,28 +110,96 @@ function getEffectiveFortitude(fortitude: number, classId: string, isDefender: b
   return fortitude;
 }
 
+function resolvePlayerAttack(
+  state: GameState,
+  player: CombatEntity,
+  enemy: CombatEntity,
+  passives: PassiveEffects,
+): void {
+  const crit = rollCrit(player.luck);
+  const critMultiplier = crit.isCrit
+    ? getEffectiveCritMultiplier(crit.multiplier, state.classId)
+    : 1.0;
+  const result = calculateDamage(player.power, enemy.fortitude, critMultiplier);
+
+  // Apply damage modifiers
+  const amplify = getAmplifyMultiplier(player.luck, state.classId);
+  let damageMultiplier = amplify * passives.damageMult * passives.outgoingDamageMult;
+
+  // Bloodstone: +damage per missing HP
+  if (passives.damagePerMissingHpPercent > 0) {
+    const missingHpPercent = (1 - player.hp / player.maxHp) * 100;
+    const bonusPercent = Math.floor(missingHpPercent / 5) * passives.damagePerMissingHpPercent;
+    damageMultiplier *= (1 + bonusPercent);
+  }
+
+  const finalDamage = Math.max(1, Math.round(result.final * damageMultiplier));
+  enemy.hp -= finalDamage;
+  state.lastPlayerHitDamage = finalDamage;
+
+  emitCombatEvent(state, {
+    type: crit.isCrit ? 'crit' : 'damage',
+    target: 'enemy',
+    value: finalDamage,
+    tick: state.gameTick,
+  });
+
+  // Process on_player_attack item procs
+  processItemProcs(state, 'on_player_attack', { damage: finalDamage });
+}
+
 function resolveEnemyAttack(
   state: GameState,
   player: CombatEntity,
   enemy: CombatEntity,
+  passives: PassiveEffects,
 ): void {
-  // Player dodge check (only player can dodge)
-  const dodgeChance = getDodgeChance(player.luck);
-  if (Math.random() < dodgeChance) {
+  // Dodge check (base + item bonus, capped at 30%)
+  const totalDodgeChance = Math.min(
+    getDodgeChance(player.luck) + passives.dodgeBonus,
+    DODGE_CHANCE_CAP,
+  );
+  if (Math.random() < totalDodgeChance) {
     emitCombatEvent(state, { type: 'dodge', target: 'player', tick: state.gameTick });
+    // Process on_dodge procs (Riposte Charm counter attack)
+    processItemProcs(state, 'on_dodge', { damage: 0 });
     return;
   }
 
   const effectiveFortitude = getEffectiveFortitude(player.fortitude, state.classId, true);
   const result = calculateDamage(enemy.power, effectiveFortitude, 1.0);
-  player.hp -= result.final;
+
+  // Apply incoming damage modifiers
+  let incomingDamage = result.final * passives.incomingDamageMult;
+  incomingDamage *= (1 - passives.damageReduction);
+
+  // War Cry Totem (intimidate): reduce enemy damage based on last player hit
+  if (state.lastPlayerHitDamage > 0 && state.equippedItems.accessory?.id === 'war_cry_totem') {
+    const totemDef = ITEM_DEFINITIONS['war_cry_totem'];
+    const intimidateEffect = totemDef.effects.find(e => e.effect === 'intimidate')!;
+    const scaledValue = getScaledValue(intimidateEffect.value, state.equippedItems.accessory!.tier);
+    const reduction = state.lastPlayerHitDamage * scaledValue;
+    incomingDamage = Math.max(1, incomingDamage - reduction);
+  }
+
+  const finalDamage = Math.max(1, Math.round(incomingDamage));
+  player.hp -= finalDamage;
+  state.combatCounters.playerHitCount += 1;
 
   emitCombatEvent(state, {
     type: 'damage',
     target: 'player',
-    value: result.final,
+    value: finalDamage,
     tick: state.gameTick,
   });
+
+  // Process on_player_hit procs (Thorned Mail reflect)
+  processItemProcs(state, 'on_player_hit', { damage: finalDamage });
+
+  // Venomous modifier: enemy attacks apply poison to player
+  if (state.enemyDefinition?.modifiers.includes('venomous')) {
+    addStatusEffect(player, 'poison', state.combatElapsed);
+  }
 }
 
 function emitCombatEvent(state: GameState, event: CombatEvent): void {
