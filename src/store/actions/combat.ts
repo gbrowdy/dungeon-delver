@@ -186,7 +186,21 @@ function resolveEnemyAttack(
   );
   if (Math.random() < totalDodgeChance) {
     emitCombatEvent(state, { type: 'dodge', target: 'player', tick: state.gameTick });
-    // Process on_dodge procs (Riposte Charm counter attack)
+
+    // Riposte Charm: counter attack on dodge (80% player power)
+    if (state.equippedItems.accessory?.id === 'riposte_charm') {
+      const counterPower = Math.round(player.power * 0.80);
+      const counterResult = calculateDamage(counterPower, enemy.fortitude, 1.0);
+      enemy.hp -= counterResult.final;
+      emitCombatEvent(state, {
+        type: 'damage',
+        target: 'enemy',
+        value: counterResult.final,
+        tick: state.gameTick,
+      });
+    }
+
+    // Process any other on_dodge procs
     processItemProcs(state, 'on_dodge', { damage: 0 });
     return;
   }

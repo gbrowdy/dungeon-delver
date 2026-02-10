@@ -166,3 +166,28 @@ describe('Flurry Ring bonus attack', () => {
     mockRandom.mockRestore();
   });
 });
+
+describe('Riposte Charm counter attack', () => {
+  it('attacks enemy for 80% power when player dodges', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('rogue');
+    useGameStore.getState().startRun();
+    const state = useGameStore.getState();
+    state.equippedItems = { weapon: null, armor: null, accessory: { id: 'riposte_charm', slot: 'accessory', tier: 1 } };
+    state.player.luck = 100; // max dodge
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0); // dodge succeeds
+    state.enemy!.attackTimer = 1;
+    state.player.attackTimer = 99999;
+    state.combatEvents = [];
+
+    const enemyHpBefore = state.enemy!.hp;
+    tickCombat(state, TICK_MS);
+
+    const dodgeEvents = state.combatEvents.filter(e => e.type === 'dodge');
+    expect(dodgeEvents.length).toBe(1);
+    expect(state.enemy!.hp).toBeLessThan(enemyHpBefore);
+
+    mockRandom.mockRestore();
+  });
+});
