@@ -119,6 +119,14 @@ export function ClassSelect() {
       </div>
 
       <div className="relative z-10 w-full max-w-4xl space-y-6 sm:space-y-8 pt-8 sm:pt-12">
+        {/* Back button */}
+        <button
+          onClick={() => useGameStore.setState({ phase: 'menu' })}
+          className="pixel-text text-pixel-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          &larr; Back
+        </button>
+
         {/* Header */}
         <div className="text-center">
           <h1 className="pixel-title text-lg sm:text-xl font-bold text-foreground mb-2">
