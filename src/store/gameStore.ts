@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { GameState, CombatEntity, StatType } from '@/types/game';
 import { createInitialPlayer } from './actions/setup';
 import { CLASSES } from '@/data/classes';
@@ -36,6 +37,11 @@ export interface GameActions {
   openShop: () => void;
   selectShopCard: (index: number) => void;
   confirmShop: () => void;
+
+  // Loop controls (3F)
+  togglePause: () => void;
+  setSpeed: (speed: 1 | 2 | 4) => void;
+  cycleSpeed: () => void;
 
   // Reset
   resetGame: () => void;
@@ -111,7 +117,9 @@ function applyStatBoost(player: CombatEntity, stat: StatType, value: number): vo
 }
 
 // -- Store --------------------------------------------------------------------
-export const useGameStore = create<GameStore>()((set, get) => ({
+export const useGameStore = create<GameStore>()(
+  persist(
+    (set, get) => ({
   ...INITIAL_STATE,
 
   selectClass: (classId: string) => {
@@ -381,7 +389,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
   confirmShop: () => {
     const state = get();
-    if (state.selectedChoices.length < 2) return;
+    if (state.selectedChoices.length === 0) return;
 
     for (const idx of state.selectedChoices) {
       const card = state.shopCards[idx];
@@ -431,7 +439,81 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
   },
 
+  togglePause: () => {
+    set({ paused: !get().paused });
+  },
+
+  setSpeed: (speed: 1 | 2 | 4) => {
+    if (speed === 1 || speed === 2 || speed === 4) {
+      set({ speedMultiplier: speed });
+    }
+  },
+
+  cycleSpeed: () => {
+    const current = get().speedMultiplier;
+    const next = current === 1 ? 2 : current === 2 ? 4 : 1;
+    set({ speedMultiplier: next as 1 | 2 | 4 });
+  },
+
   resetGame: () => {
     set({ ...INITIAL_STATE });
   },
-}));
+    }),
+    {
+      name: 'rogue-game-state',
+      storage: createJSONStorage(() => localStorage),
+
+      // Only save on stable phase transitions, not during combat
+      partialize: (state) => {
+        // Don't save during combat or transient phases
+        if (state.phase === 'combat' || state.phase === 'menu' || state.phase === 'class-select') {
+          return {} as GameStore;
+        }
+
+        // Don't save endless mode (death ends the run)
+        if (state.floor > 100) {
+          return {} as GameStore;
+        }
+
+        // Exclude transient combat state
+        const {
+          combatElapsed: _ce,
+          combatEvents: _ev,
+          combatCounters: _cc,
+          lastPlayerHitDamage: _lp,
+          renderVersion: _rv,
+          gameTick: _gt,
+          enemy: _en,
+          enemyDefinition: _ed,
+          ...persistable
+        } = state;
+
+        return persistable as GameStore;
+      },
+
+      // Reset transient combat state when hydrating from localStorage
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.combatElapsed = 0;
+          state.combatEvents = [];
+          state.combatCounters = {
+            playerAttackCount: 0,
+            playerHitCount: 0,
+            shieldRefreshTimer: 0,
+            curseDecayTimer: 0,
+          };
+          state.lastPlayerHitDamage = 0;
+          state.renderVersion = 0;
+          state.gameTick = 0;
+          state.enemy = null;
+          state.enemyDefinition = null;
+
+          // Clear any lingering status effects from interrupted combat
+          if (state.player) {
+            state.player.statusEffects = [];
+          }
+        }
+      },
+    }
+  )
+);

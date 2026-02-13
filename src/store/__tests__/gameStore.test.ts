@@ -80,6 +80,41 @@ describe('gameStore', () => {
     });
   });
 
+  describe('pause and speed controls', () => {
+    it('togglePause toggles paused state', () => {
+      expect(useGameStore.getState().paused).toBe(false);
+      useGameStore.getState().togglePause();
+      expect(useGameStore.getState().paused).toBe(true);
+      useGameStore.getState().togglePause();
+      expect(useGameStore.getState().paused).toBe(false);
+    });
+
+    it('setSpeed changes speed multiplier', () => {
+      useGameStore.getState().setSpeed(2);
+      expect(useGameStore.getState().speedMultiplier).toBe(2);
+      useGameStore.getState().setSpeed(4);
+      expect(useGameStore.getState().speedMultiplier).toBe(4);
+    });
+
+    it('setSpeed only accepts valid values (1, 2, 4)', () => {
+      useGameStore.getState().setSpeed(1);
+      expect(useGameStore.getState().speedMultiplier).toBe(1);
+      // Invalid values should be ignored
+      useGameStore.getState().setSpeed(3 as 1 | 2 | 4);
+      expect(useGameStore.getState().speedMultiplier).toBe(1); // unchanged
+    });
+
+    it('cycleSpeed cycles through 1 → 2 → 4 → 1', () => {
+      expect(useGameStore.getState().speedMultiplier).toBe(1);
+      useGameStore.getState().cycleSpeed();
+      expect(useGameStore.getState().speedMultiplier).toBe(2);
+      useGameStore.getState().cycleSpeed();
+      expect(useGameStore.getState().speedMultiplier).toBe(4);
+      useGameStore.getState().cycleSpeed();
+      expect(useGameStore.getState().speedMultiplier).toBe(1);
+    });
+  });
+
   describe('resetGame', () => {
     it('resets all state back to initial', () => {
       const store = useGameStore;
