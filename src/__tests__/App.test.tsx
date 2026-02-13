@@ -45,13 +45,13 @@ describe('App phase router', () => {
   it('renders DraftScreen when phase is draft', () => {
     useGameStore.setState({ phase: 'draft' });
     render(<App />);
-    expect(screen.getByText('Draft Pick')).toBeDefined();
+    expect(screen.getByText('Choose a Stat Boost')).toBeDefined();
   });
 
   it('renders ShopScreen when phase is shop', () => {
     useGameStore.setState({ phase: 'shop' });
     render(<App />);
-    expect(screen.getByText('Boss Shop')).toBeDefined();
+    expect(screen.getByText('Boss Defeated')).toBeDefined();
   });
 
   it('renders FloorComplete when phase is floor-complete', () => {
