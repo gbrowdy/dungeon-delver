@@ -67,7 +67,6 @@ export function MainMenu() {
               <div className="pixel-class-dot bg-red-500" title="Warrior" />
               <div className="pixel-class-dot bg-violet-500" title="Mage" />
               <div className="pixel-class-dot bg-green-500" title="Rogue" />
-              <div className="pixel-class-dot bg-amber-500" title="Paladin" />
             </div>
 
             {/* CTA Button */}
