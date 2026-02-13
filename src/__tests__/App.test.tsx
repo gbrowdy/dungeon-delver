@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import App from '../App';
 import { useGameStore } from '@/store/gameStore';
+import { generateEnemy } from '@/data/enemies';
 
 describe('App phase router', () => {
   beforeEach(() => {
@@ -21,9 +22,24 @@ describe('App phase router', () => {
   });
 
   it('renders CombatScreen when phase is combat', () => {
-    useGameStore.setState({ phase: 'combat' });
+    const enemy = generateEnemy(1);
+    useGameStore.setState({
+      phase: 'combat',
+      floor: 1,
+      room: 1,
+      roomsPerFloor: 2,
+      classId: 'warrior',
+      player: {
+        power: 10, fortitude: 8, speed: 10, luck: 5,
+        basePower: 10, baseSpeed: 10,
+        hp: 140, maxHp: 140, attackTimer: 2500,
+        statusEffects: [],
+      },
+      enemy: enemy.entity,
+      enemyDefinition: { tier: enemy.tier, modifiers: enemy.modifiers },
+    });
     render(<App />);
-    expect(screen.getByText('Combat')).toBeDefined();
+    expect(screen.getByText(/Floor 1/)).toBeDefined();
   });
 
   it('renders DraftScreen when phase is draft', () => {

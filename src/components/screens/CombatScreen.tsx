@@ -40,6 +40,13 @@ export function CombatScreen() {
   // Floating damage numbers (React-local state)
   const [floatingNumbers, setFloatingNumbers] = useState<FloatingNum[]>([]);
 
+  // Reset floating number tracking when fight changes
+  useEffect(() => {
+    lastProcessedTick = 0;
+    floatingNumId = 0;
+    setFloatingNumbers([]);
+  }, [floor, room]);
+
   // Process new combat events into floating numbers
   useEffect(() => {
     if (combatEvents.length === 0) return;
