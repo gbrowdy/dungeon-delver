@@ -61,7 +61,17 @@ describe('App phase router', () => {
   });
 
   it('renders DeathScreen when phase is death', () => {
-    useGameStore.setState({ phase: 'death' });
+    useGameStore.setState({
+      phase: 'death',
+      checkpoint: 1,
+      lastDeathStats: {
+        floor: 5, room: 2, enemyTier: 'common', enemyModifiers: [],
+        playerStats: { power: 50, fortitude: 40, speed: 10, luck: 5 },
+        enemyStats: { power: 30, fortitude: 25, speed: 8 },
+        playerDamagePerHit: 20, enemyDamagePerHit: 15,
+        weaknessHint: 'Test hint',
+      },
+    });
     render(<App />);
     expect(screen.getByText('Defeated')).toBeDefined();
   });
