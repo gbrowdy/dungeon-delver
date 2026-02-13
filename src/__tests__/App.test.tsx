@@ -17,7 +17,7 @@ describe('App phase router', () => {
   it('renders ClassSelect when phase is class-select', () => {
     useGameStore.setState({ phase: 'class-select' });
     render(<App />);
-    expect(screen.getByText('Class Select')).toBeDefined();
+    expect(screen.getByText('Choose Your Class')).toBeDefined();
   });
 
   it('renders CombatScreen when phase is combat', () => {
