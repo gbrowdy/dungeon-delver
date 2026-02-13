@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { PixelDivider } from '@/components/ui/PixelDivider';
+import { useGameStore } from '@/store/gameStore';
 
-interface MainMenuProps {
-  onStart: () => void;
-}
-
-export function MainMenu({ onStart }: MainMenuProps) {
+export function MainMenu() {
+  const handleStart = () => {
+    useGameStore.setState({ phase: 'class-select' });
+  };
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
       {/* Dark atmospheric background */}
@@ -73,7 +73,7 @@ export function MainMenu({ onStart }: MainMenuProps) {
             {/* CTA Button */}
             <div className="pt-6 sm:pt-8">
               <Button
-                onClick={onStart}
+                onClick={handleStart}
                 size="lg"
                 className="pixel-button-main text-pixel-sm px-8 sm:px-12 py-4 sm:py-5 bg-orange-600 hover:bg-orange-500 transition-colors duration-150 border-b-4 border-orange-800 hover:border-orange-700 active:border-b-2 active:translate-y-[2px] relative uppercase font-bold"
               >
