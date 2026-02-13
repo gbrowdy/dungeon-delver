@@ -55,9 +55,9 @@ describe('App phase router', () => {
   });
 
   it('renders FloorComplete when phase is floor-complete', () => {
-    useGameStore.setState({ phase: 'floor-complete' });
+    useGameStore.setState({ phase: 'floor-complete', floor: 3 });
     render(<App />);
-    expect(screen.getByText('Floor Complete')).toBeDefined();
+    expect(screen.getByText(/Floor 3 Complete/)).toBeDefined();
   });
 
   it('renders DeathScreen when phase is death', () => {
@@ -69,12 +69,12 @@ describe('App phase router', () => {
   it('renders EndlessIntro when phase is endless-intro', () => {
     useGameStore.setState({ phase: 'endless-intro' });
     render(<App />);
-    expect(screen.getByText('Endless Mode')).toBeDefined();
+    expect(screen.getByText('Floor 100 Complete')).toBeDefined();
   });
 
   it('renders EndlessDefeat when phase is endless-defeat', () => {
     useGameStore.setState({ phase: 'endless-defeat' });
     render(<App />);
-    expect(screen.getByText('Endless Defeat')).toBeDefined();
+    expect(screen.getByText('The Depths Claimed You')).toBeDefined();
   });
 });
