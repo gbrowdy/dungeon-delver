@@ -592,6 +592,9 @@ describe('combat → flow integration', () => {
 
 describe('full flow integration', () => {
   it('simulates combat through room advancement', () => {
+    // Mock before startRun so enemy generation is deterministic (common, no modifiers)
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+
     useGameStore.setState(useGameStore.getInitialState());
     useGameStore.getState().selectClass('warrior');
     useGameStore.getState().startRun();
@@ -600,9 +603,6 @@ describe('full flow integration', () => {
     expect(state.phase).toBe('combat');
     expect(state.floor).toBe(1);
     expect(state.room).toBe(1);
-
-    // Tick combat until something happens (enemy dies → flow transition)
-    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.5);
 
     let ticks = 0;
     while (ticks < 50000 && useGameStore.getState().phase === 'combat') {

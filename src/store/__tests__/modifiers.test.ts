@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { tickModifierBehaviors } from '../actions/modifiers';
 import { addStatusEffect, getEffect } from '../actions/statusEffects';
 import { useGameStore } from '../gameStore';
-import { TICK_MS } from '@/math/balance';
+import { TICK_MS, BERSERKER_POWER_MULT } from '@/math/balance';
 import type { GameState } from '@/types/game';
 
 function createCombatState(modifiers: string[] = []): GameState {
@@ -36,15 +36,29 @@ describe('tickModifierBehaviors', () => {
       expect(state.enemy!.power).toBe(Math.round(basePower * 1.5));
     });
 
-    it('reverts power when healed above 30%', () => {
+    it('does not boost power above 30% HP (reset handled by tickCombat)', () => {
       const state = createCombatState(['berserker']);
-      state.enemy!.hp = Math.floor(state.enemy!.maxHp * 0.2);
-      tickModifierBehaviors(state, TICK_MS);
-      expect(state.enemy!.power).toBe(Math.round(state.enemy!.basePower * 1.5));
-
+      // Simulate tickCombat resetting power to basePower before calling modifiers
+      state.enemy!.power = state.enemy!.basePower;
       state.enemy!.hp = state.enemy!.maxHp;
+
       tickModifierBehaviors(state, TICK_MS);
+
+      // No berserker boost applied — power unchanged
       expect(state.enemy!.power).toBe(state.enemy!.basePower);
+    });
+
+    it('composes with existing power modifiers (e.g. enrage)', () => {
+      const state = createCombatState(['berserker']);
+      // Simulate enrage having already boosted power
+      const enragedPower = state.enemy!.basePower * 2;
+      state.enemy!.power = enragedPower;
+      state.enemy!.hp = Math.floor(state.enemy!.maxHp * 0.2);
+
+      tickModifierBehaviors(state, TICK_MS);
+
+      // Berserker multiplies the enraged power, not basePower
+      expect(state.enemy!.power).toBe(Math.round(enragedPower * BERSERKER_POWER_MULT));
     });
   });
 

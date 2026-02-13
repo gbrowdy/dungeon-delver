@@ -3,7 +3,13 @@
 // Enemy scaling, draft pick values, and floor structure formulas.
 // Design doc Sections 4 (floor structure) and 5 (enemy scaling).
 
-const DAMPING_START = 100;
+import {
+  DAMPING_START,
+  DRAFT_PICK_SCALE_COEFF,
+  DRAFT_PICK_VARIANCE_FACTOR,
+  BOSS_HP_MULT_BASE,
+  BOSS_HP_MULT_PER_FLOOR,
+} from './balance';
 
 export function getGrowthMultiplier(floor: number, baseRate: number): number {
   if (floor <= 1) return 1;
@@ -27,8 +33,8 @@ export function getDraftPickValue(floor: number, stat: ScalingStat): number {
     return Math.random() < 0.5 ? 1 : 2;
   }
 
-  const base = 3 + Math.floor(floor * 0.24);
-  const variance = Math.max(1, Math.floor(base * 0.3));
+  const base = 3 + Math.floor(floor * DRAFT_PICK_SCALE_COEFF);
+  const variance = Math.max(1, Math.floor(base * DRAFT_PICK_VARIANCE_FACTOR));
   return base + Math.floor(Math.random() * (variance * 2 + 1)) - variance;
 }
 
@@ -38,5 +44,5 @@ export function getRoomsPerFloor(floor: number): number {
 }
 
 export function getBossHpMultiplier(floor: number): number {
-  return 2.5 + floor * 0.005;
+  return BOSS_HP_MULT_BASE + floor * BOSS_HP_MULT_PER_FLOOR;
 }

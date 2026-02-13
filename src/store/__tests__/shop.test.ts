@@ -193,14 +193,31 @@ describe('shop store actions', () => {
     expect(useGameStore.getState().phase).toBe('floor-complete');
   });
 
-  it('confirmShop does nothing if less than 2 selected', () => {
+  it('confirmShop works with 1 selection', () => {
     useGameStore.getState().openShop();
+    const state = useGameStore.getState();
+    state.shopCards = [
+      { type: 'stat_boost', stat: 'power', statValue: 10 },
+      { type: 'stat_boost', stat: 'fortitude', statValue: 8 },
+      { type: 'item', itemId: 'heavy_cleaver' },
+      { type: 'stat_boost', stat: 'speed', statValue: 1 },
+      { type: 'stat_boost', stat: 'luck', statValue: 2 },
+    ];
+    const powerBefore = state.player.power;
+
     useGameStore.getState().selectShopCard(0);
+    useGameStore.getState().confirmShop();
+
+    expect(useGameStore.getState().player.power).toBe(powerBefore + 10);
+    expect(useGameStore.getState().phase).toBe('floor-complete');
+  });
+
+  it('confirmShop does nothing with 0 selections', () => {
+    useGameStore.getState().openShop();
 
     const powerBefore = useGameStore.getState().player.power;
     useGameStore.getState().confirmShop();
 
-    // Nothing should change
     expect(useGameStore.getState().player.power).toBe(powerBefore);
     expect(useGameStore.getState().phase).toBe('shop');
   });

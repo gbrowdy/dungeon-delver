@@ -7,7 +7,7 @@
 import type { GameState, CombatEntity, CombatEvent } from '@/types/game';
 import { calculateDamage } from '@/math/damage';
 import { getAttackInterval, getCritChance, getCritDamage, getDodgeChance } from '@/math/stats';
-import { WARRIOR_FORTITUDE_MULT, ROGUE_CRIT_MULT, MAGE_AMPLIFY_PER_LUCK, DODGE_CHANCE_CAP, MIN_SPEED, MIN_POWER } from '@/math/balance';
+import { WARRIOR_FORTITUDE_MULT, ROGUE_CRIT_MULT, MAGE_AMPLIFY_PER_LUCK, DODGE_CHANCE_CAP, MIN_SPEED, MIN_POWER, CURSE_REDUCTION_PER_STACK } from '@/math/balance';
 import { tickStatusEffects, hasEffect, addStatusEffect } from './statusEffects';
 import { tickEnrage } from './enrage';
 import { tickModifierBehaviors } from './modifiers';
@@ -30,18 +30,22 @@ export function tickCombat(state: GameState, dt: number): void {
   // Track combat duration
   state.combatElapsed += dt;
 
-  // Tick enrage
+  // Reset enemy power/speed to base each tick so modifiers compose cleanly
+  enemy.power = enemy.basePower;
+  enemy.speed = enemy.baseSpeed;
+
+  // Tick enrage (sets power from basePower with ramp multiplier)
   tickEnrage(state);
 
-  // Tick modifier behaviors (berserker, regen, shielded)
+  // Tick modifier behaviors (berserker multiplies current power, regen, shielded)
   tickModifierBehaviors(state, dt);
 
-  // Apply curse stat reduction to enemy (3% per stack)
+  // Apply curse stat reduction (multiplies current power — composes with enrage + berserker)
   const curse = enemy.statusEffects.find(e => e.type === 'curse');
   if (curse && curse.stacks > 0) {
-    const reductionPercent = curse.stacks * 0.03;
-    enemy.power = Math.max(MIN_POWER, Math.round(enemy.basePower * (1 - reductionPercent)));
-    enemy.speed = Math.max(MIN_SPEED, Math.round(enemy.baseSpeed * (1 - reductionPercent)));
+    const reductionPercent = curse.stacks * CURSE_REDUCTION_PER_STACK;
+    enemy.power = Math.max(MIN_POWER, Math.round(enemy.power * (1 - reductionPercent)));
+    enemy.speed = Math.max(MIN_SPEED, Math.round(enemy.speed * (1 - reductionPercent)));
   }
 
   // Compute passive item effects

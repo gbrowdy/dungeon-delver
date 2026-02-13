@@ -41,6 +41,19 @@ export const GROWTH_RATES = {
 export const BOSS_HP_MULT_BASE = 2.5;
 export const BOSS_HP_MULT_PER_FLOOR = 0.005;
 
+// ── Scaling / damping ────────────────────────────────────────────
+export const DAMPING_START = 100;
+export const DRAFT_PICK_SCALE_COEFF = 0.24;
+export const DRAFT_PICK_VARIANCE_FACTOR = 0.3;
+
+// ── Enemy modifiers ─────────────────────────────────────────────
+export const BERSERKER_POWER_MULT = 1.5;
+export const BERSERKER_HP_THRESHOLD = 0.3;
+export const REGEN_PERCENT_PER_SEC = 0.02;
+export const SHIELD_REFRESH_MS = 8000;
+export const SHIELD_HP_PERCENT = 0.2;
+export const CURSE_REDUCTION_PER_STACK = 0.03;
+
 // ── Status effects ───────────────────────────────────────────────
 export const MAX_POISON_STACKS = 5;
 export const POISON_DURATION_MS = 3_000;
