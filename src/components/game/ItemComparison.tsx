@@ -16,7 +16,7 @@ export function ItemComparison({ currentItem, newItemId, isUpgrade, onKeep, onEq
   const currentDef = currentItem ? ITEM_DEFINITIONS[currentItem.id] : null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={`${newDef.slot} comparison`}>
       <div className="pixel-panel p-6 w-full max-w-lg space-y-6 rounded-lg">
         <h3 className="pixel-title text-pixel-sm text-center text-foreground uppercase">
           {newDef.slot} Comparison

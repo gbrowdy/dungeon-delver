@@ -21,14 +21,23 @@ export function FloorComplete() {
 
   const classDef = CLASSES[classId];
 
-  // Auto-advance after 5 seconds
+  // Auto-advance after 5 seconds (guard prevents double-fire)
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const advancedRef = useRef(false);
+
   useEffect(() => {
-    timerRef.current = setTimeout(advanceFloor, 5000);
+    timerRef.current = setTimeout(() => {
+      if (!advancedRef.current) {
+        advancedRef.current = true;
+        advanceFloor();
+      }
+    }, 5000);
     return () => clearTimeout(timerRef.current);
   }, [advanceFloor]);
 
   const handleContinue = () => {
+    if (advancedRef.current) return;
+    advancedRef.current = true;
     clearTimeout(timerRef.current);
     advanceFloor();
   };

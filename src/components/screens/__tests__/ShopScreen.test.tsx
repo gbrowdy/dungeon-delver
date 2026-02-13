@@ -55,4 +55,10 @@ describe('ShopScreen', () => {
     expect(state.phase).toBe('floor-complete');
     expect(state.player.power).toBe(118); // +18 power applied
   });
+
+  it('confirm button is disabled with no selection', () => {
+    render(<ShopScreen />);
+    const btn = screen.getByText('Confirm');
+    expect(btn.closest('button')?.disabled).toBe(true);
+  });
 });

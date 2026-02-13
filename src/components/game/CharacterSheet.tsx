@@ -35,7 +35,7 @@ export function CharacterSheet({ onClose }: CharacterSheetProps) {
   const maxHp = getMaxHp(PLAYER_BASE_HP, player.fortitude);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-label="Character sheet">
       <div className="pixel-panel p-6 w-full max-w-lg space-y-5 rounded-lg my-4">
         <div className="flex items-center justify-between">
           <h3 className="pixel-title text-pixel-sm text-foreground uppercase">Character Sheet</h3>

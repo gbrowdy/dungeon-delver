@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { FloorComplete } from '../FloorComplete';
 import { useGameStore } from '@/store/gameStore';
 
 describe('FloorComplete', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     useGameStore.getState().resetGame();
     useGameStore.setState({
       phase: 'floor-complete',
@@ -22,6 +23,10 @@ describe('FloorComplete', () => {
         accessory: null,
       },
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('shows floor complete message', () => {
@@ -43,6 +48,13 @@ describe('FloorComplete', () => {
   it('continue button calls advanceFloor', () => {
     render(<FloorComplete />);
     fireEvent.click(screen.getByText(/Continue to Floor 6/));
+    expect(useGameStore.getState().floor).toBe(6);
+    expect(useGameStore.getState().phase).toBe('combat');
+  });
+
+  it('auto-advances after 5 seconds', () => {
+    render(<FloorComplete />);
+    vi.advanceTimersByTime(5000);
     expect(useGameStore.getState().floor).toBe(6);
     expect(useGameStore.getState().phase).toBe('combat');
   });
