@@ -180,6 +180,7 @@ test.describe('Draft Flow', () => {
     // Trigger draft via the store's openDraft action
     await page.evaluate(() => {
       window.__TEST_HOOKS__?.setState({ fightCount: 3 });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const state = window.__TEST_HOOKS__?.getState() as any;
       if (state?.openDraft) state.openDraft();
     });
@@ -336,6 +337,7 @@ test.describe('Boss Shop', () => {
         floor: 3,
         stats: { power: 100, fortitude: 50, speed: 30 },
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const state = window.__TEST_HOOKS__?.getState() as any;
       if (state?.openShop) state.openShop();
     });

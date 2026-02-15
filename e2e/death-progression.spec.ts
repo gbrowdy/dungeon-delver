@@ -20,6 +20,7 @@ async function setupRunOnFloor(
       window.__TEST_HOOKS__?.setupRun({
         classId: 'warrior',
         floor,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         stats: stats as any,
       });
     },

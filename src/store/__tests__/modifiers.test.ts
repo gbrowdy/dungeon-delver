@@ -10,6 +10,7 @@ function createCombatState(modifiers: string[] = []): GameState {
   useGameStore.getState().selectClass('warrior');
   useGameStore.getState().startRun();
   const state = useGameStore.getState();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   state.enemyDefinition!.modifiers = modifiers as any;
   return state;
 }

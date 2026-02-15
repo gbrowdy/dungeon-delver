@@ -131,6 +131,7 @@ describe('spawnEnemy', () => {
     const state = createCombatState();
     state.player.statusEffects = [
       { type: 'poison', value: 5, duration: 3, elapsed: 1 },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ] as any;
     spawnEnemy(state, false);
     expect(state.player.statusEffects).toEqual([]);

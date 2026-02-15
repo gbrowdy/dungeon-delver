@@ -55,6 +55,7 @@ async function setupTestRun(
       window.__TEST_HOOKS__?.setupRun({
         classId: 'warrior',
         floor: floor ?? 1,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         stats: stats as any,
       });
     },
@@ -238,6 +239,7 @@ test.describe('Mobile: Draft Screen', () => {
 
     await page.evaluate(() => {
       window.__TEST_HOOKS__?.setState({ fightCount: 3 });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const state = window.__TEST_HOOKS__?.getState() as any;
       if (state?.openDraft) state.openDraft();
     });
@@ -272,6 +274,7 @@ test.describe('Mobile: Draft Screen', () => {
 
     await page.evaluate(() => {
       window.__TEST_HOOKS__?.setState({ fightCount: 3 });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const state = window.__TEST_HOOKS__?.getState() as any;
       if (state?.openDraft) state.openDraft();
     });
@@ -294,6 +297,7 @@ test.describe('Mobile: Draft Screen', () => {
 
     await page.evaluate(() => {
       window.__TEST_HOOKS__?.setState({ fightCount: 3 });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const state = window.__TEST_HOOKS__?.getState() as any;
       if (state?.openDraft) state.openDraft();
     });
@@ -327,6 +331,7 @@ test.describe('Mobile: Shop Screen', () => {
         floor: 3,
         stats: { power: 100, fortitude: 50, speed: 30 },
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const state = window.__TEST_HOOKS__?.getState() as any;
       if (state?.openShop) state.openShop();
     });
@@ -362,6 +367,7 @@ test.describe('Mobile: Shop Screen', () => {
         floor: 3,
         stats: { power: 100, fortitude: 50, speed: 30 },
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const state = window.__TEST_HOOKS__?.getState() as any;
       if (state?.openShop) state.openShop();
     });
@@ -388,6 +394,7 @@ test.describe('Mobile: Shop Screen', () => {
         floor: 3,
         stats: { power: 100, fortitude: 50, speed: 30 },
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const state = window.__TEST_HOOKS__?.getState() as any;
       if (state?.openShop) state.openShop();
     });

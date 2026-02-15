@@ -208,6 +208,5 @@ export function initTestHooks(): void {
 
   window.__TEST_HOOKS__ = hooks;
 
-  // eslint-disable-next-line no-console
   console.log('[TestHooks] Initialized — window.__TEST_HOOKS__ available');
 }
