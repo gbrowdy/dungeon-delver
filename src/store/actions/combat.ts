@@ -190,10 +190,10 @@ function resolvePlayerAttack(
       value: finalDamage,
       tick: state.gameTick,
     });
-  }
 
-  // Process on_player_attack item procs
-  processItemProcs(state, 'on_player_attack', { damage: state.lastPlayerHitDamage });
+    // Process on_player_attack item procs per hit (so Twin Fang double-hit procs twice)
+    processItemProcs(state, 'on_player_attack', { damage: finalDamage });
+  }
 
   // Flurry Ring: bonus attack every 5th hit
   const hasFlurryRing = state.equippedItems.accessory?.id === 'flurry_ring';
