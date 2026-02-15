@@ -81,9 +81,9 @@ function ItemEquipCard({
       <div className="pixel-text text-pixel-xs text-amber-400 uppercase">{def.slot}</div>
       <div className="pixel-text text-pixel-xs text-foreground font-bold text-center">{def.name}</div>
       {isUpgrade && (
-        <div className="pixel-text text-[8px] text-green-400 uppercase">Tier Up</div>
+        <div className="pixel-text text-pixel-2xs text-green-400 uppercase">Tier Up</div>
       )}
-      <div className="pixel-text text-[8px] text-muted-foreground text-center leading-relaxed">
+      <div className="pixel-text text-pixel-2xs text-muted-foreground text-center leading-relaxed">
         {def.description}
       </div>
     </button>

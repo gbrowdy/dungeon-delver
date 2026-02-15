@@ -97,7 +97,7 @@ export function FloorComplete() {
           Continue to Floor {floor + 1}
         </Button>
 
-        <p className="pixel-text text-[8px] text-muted-foreground">
+        <p className="pixel-text text-pixel-2xs text-muted-foreground">
           Auto-continuing in 5s...
         </p>
       </div>
