@@ -8,7 +8,7 @@ export function EndlessDefeat() {
   const resetGame = useGameStore(s => s.resetGame);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-950/20 via-slate-950 to-slate-950 flex flex-col items-center justify-center p-4">
+    <div data-testid="endless-defeat" className="min-h-screen bg-gradient-to-b from-red-950/20 via-slate-950 to-slate-950 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8 text-center">
         <h2 className="pixel-title text-pixel-sm text-red-400 uppercase">
           The Depths Claimed You

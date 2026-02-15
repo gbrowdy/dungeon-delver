@@ -11,7 +11,7 @@ export function DraftScreen() {
   const confirmDraft = useGameStore(s => s.confirmDraft);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950/95 via-slate-900/95 to-slate-950/95 flex flex-col items-center justify-center p-4">
+    <div data-testid="draft-screen" className="min-h-screen bg-gradient-to-b from-slate-950/95 via-slate-900/95 to-slate-950/95 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-xl space-y-6">
         {/* Current stats bar */}
         <div className="flex flex-wrap justify-center gap-4 pixel-text text-pixel-xs text-muted-foreground">

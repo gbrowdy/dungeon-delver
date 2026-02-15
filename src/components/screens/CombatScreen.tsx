@@ -144,7 +144,7 @@ export function CombatScreen() {
           {/* Player stats */}
           <div className="space-y-2">
             <div className="pixel-text text-pixel-xs text-muted-foreground">{classId}</div>
-            <HealthBar current={player.hp} max={player.maxHp} label="HP" />
+            <HealthBar current={player.hp} max={player.maxHp} label="HP" testId="player-health" />
             <StatusEffectBadges effects={player.statusEffects} />
           </div>
 
@@ -156,7 +156,7 @@ export function CombatScreen() {
               </span>
               <ModifierBadges modifiers={enemyDef.modifiers} />
             </div>
-            <HealthBar current={enemy.hp} max={enemy.maxHp} label="HP" />
+            <HealthBar current={enemy.hp} max={enemy.maxHp} label="HP" testId="enemy-health" />
             <StatusEffectBadges effects={enemy.statusEffects} />
           </div>
         </div>

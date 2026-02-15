@@ -7,7 +7,7 @@ export function EndlessIntro() {
   const player = useGameStore(s => s.player);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-indigo-950/30 to-slate-950 flex flex-col items-center justify-center p-4">
+    <div data-testid="endless-intro" className="min-h-screen bg-gradient-to-b from-slate-950 via-indigo-950/30 to-slate-950 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8 text-center">
         <h2 className="pixel-title text-pixel-sm text-amber-400 uppercase">
           Floor 100 Complete

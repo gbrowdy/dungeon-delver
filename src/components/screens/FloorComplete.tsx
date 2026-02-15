@@ -43,10 +43,10 @@ export function FloorComplete() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4">
+    <div data-testid="floor-complete" className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6 text-center">
         <h2 className="pixel-title text-pixel-sm text-amber-400 uppercase">
-          Floor {floor} Complete
+          Floor {floor} Complete!
         </h2>
 
         <PixelDivider color="orange" />
@@ -91,6 +91,7 @@ export function FloorComplete() {
         <Button
           onClick={handleContinue}
           size="lg"
+          data-testid="continue-button"
           className="pixel-button-main text-pixel-xs px-8 py-4 bg-orange-600 hover:bg-orange-500 border-b-4 border-orange-800 uppercase font-bold"
         >
           Continue to Floor {floor + 1}

@@ -53,9 +53,12 @@ describe('tickCombat — attack timers', () => {
   it('enemy attacks when timer reaches 0 — player takes damage', () => {
     const state = createCombatState();
     state.enemy!.attackTimer = 1;
+    // Mock random high so dodge never triggers (warrior has ~4% dodge)
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
     const playerHpBefore = state.player.hp;
     tickCombat(state, TICK_MS);
     expect(state.player.hp).toBeLessThan(playerHpBefore);
+    vi.restoreAllMocks();
   });
 
   it('resets enemy attack timer after attacking', () => {

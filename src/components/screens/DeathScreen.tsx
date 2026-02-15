@@ -18,7 +18,7 @@ export function DeathScreen() {
   const ds = lastDeathStats;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-950/30 via-slate-950 to-slate-950 flex flex-col items-center justify-center p-4">
+    <div data-testid="death-screen" className="min-h-screen bg-gradient-to-b from-red-950/30 via-slate-950 to-slate-950 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Heading */}
         <div className="text-center">
@@ -91,6 +91,7 @@ export function DeathScreen() {
           <Button
             onClick={respawnAtCheckpoint}
             size="lg"
+            data-testid="retry-button"
             className="pixel-button-main text-pixel-xs px-8 py-4 bg-orange-600 hover:bg-orange-500 border-b-4 border-orange-800 uppercase font-bold"
           >
             Respawn at Floor {Math.max(1, checkpoint)}

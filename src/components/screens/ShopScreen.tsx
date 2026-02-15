@@ -49,7 +49,7 @@ export function ShopScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4">
+    <div data-testid="shop-screen" className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-3xl space-y-6">
         <div className="text-center">
           <h2 className="pixel-title text-pixel-sm text-amber-400 mb-2 uppercase">
