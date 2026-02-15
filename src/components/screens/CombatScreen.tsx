@@ -11,6 +11,7 @@ import { getAttackInterval } from '@/math/stats';
 import { getEnemySpriteType } from '@/utils/spriteMapping';
 import { useSpriteAnimation } from '@/hooks/useSpriteAnimation';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { EnrageBar } from '@/components/game/EnrageBar';
 import { cn } from '@/lib/utils';
 
 interface FloatingNum {
@@ -38,6 +39,7 @@ export function CombatScreen() {
   const floor = useGameStore(s => s.floor);
   const room = useGameStore(s => s.room);
   const combatEvents = useGameStore(s => s.combatEvents);
+  const combatElapsed = useGameStore(s => s.combatElapsed);
 
   // Sprite combat animations (lunge, hit, crit, dodge, death)
   const spriteAnims = useSpriteAnimation();
@@ -160,6 +162,9 @@ export function CombatScreen() {
             ))}
           </div>
         </div>
+
+        {/* Enrage timer */}
+        <EnrageBar combatElapsed={combatElapsed} className="max-w-2xl mt-2" />
 
         {/* Stats panel */}
         <div className="w-full max-w-2xl grid grid-cols-2 gap-4 mt-4">
