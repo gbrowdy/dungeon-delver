@@ -121,7 +121,7 @@ describe('startRun', () => {
     useGameStore.getState().startRun();
     const state = useGameStore.getState();
     expect(state.combatElapsed).toBe(0);
-    expect(state.fightCount).toBe(1);
+    expect(state.fightCount).toBe(0);
   });
 
   it('clears combat events', () => {

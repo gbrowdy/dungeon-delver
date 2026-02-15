@@ -149,7 +149,7 @@ export const useGameStore = create<GameStore>()(
       floor,
       room: 1,
       roomsPerFloor,
-      fightCount: 1,
+      fightCount: 0,
       enemy: generated.entity,
       enemyDefinition: { tier: generated.tier, modifiers: generated.modifiers },
       combatElapsed: 0,
