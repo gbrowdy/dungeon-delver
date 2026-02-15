@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useGameLoop } from '@/hooks/useGameLoop';
 import { MainMenu } from '@/components/screens/MainMenu';
@@ -40,11 +40,21 @@ function PhaseRouter({ phase }: { phase: string }) {
 function App() {
   const phase = useGameStore(s => s.phase);
   const [showCharacterSheet, setShowCharacterSheet] = useState(false);
+  const mainRef = useRef<HTMLDivElement>(null);
   useGameLoop();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      mainRef.current?.focus();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [phase]);
 
   return (
     <>
-      <PhaseRouter phase={phase} />
+      <div ref={mainRef} tabIndex={-1} className="outline-none">
+        <PhaseRouter phase={phase} />
+      </div>
 
       {/* Character sheet toggle — hidden on menu and class-select */}
       {phase !== 'menu' && phase !== 'class-select' && (

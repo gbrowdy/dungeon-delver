@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { CLASSES } from '@/data/classes';
 import { ITEM_DEFINITIONS } from '@/data/items';
@@ -18,11 +19,22 @@ interface CharacterSheetProps {
 }
 
 export function CharacterSheet({ onClose }: CharacterSheetProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
   const player = useGameStore(s => s.player);
   const classId = useGameStore(s => s.classId);
   const equippedItems = useGameStore(s => s.equippedItems);
   const depth = useGameStore(s => s.depth);
   const floor = useGameStore(s => s.floor);
+
+  useEffect(() => {
+    panelRef.current?.focus();
+  }, []);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+  };
 
   const classDef = CLASSES[classId];
   if (!classDef) return null;
@@ -35,7 +47,7 @@ export function CharacterSheet({ onClose }: CharacterSheetProps) {
   const maxHp = getMaxHp(PLAYER_BASE_HP, player.fortitude);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-label="Character sheet">
+    <div ref={panelRef} tabIndex={-1} onKeyDown={handleKeyDown} className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 overflow-y-auto outline-none" role="dialog" aria-modal="true" aria-label="Character sheet">
       <div className="pixel-panel p-6 w-full max-w-lg space-y-5 rounded-lg my-4">
         <div className="flex items-center justify-between">
           <h3 className="pixel-title text-pixel-sm text-foreground uppercase">Character Sheet</h3>
