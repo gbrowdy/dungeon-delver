@@ -11,6 +11,7 @@ import { getRoomsPerFloor } from '@/math/scaling';
 import { getMaxHp } from '@/math/stats';
 import { PLAYER_BASE_HP, FINAL_BOSS_FLOOR } from '@/math/balance';
 import { ITEM_DEFINITIONS } from '@/data/items';
+import { handlePlayerDeath, handleEnemyDeath } from '@/store/actions/flow';
 
 export interface TestHooks {
   /** Get full current game state (snapshot) */
@@ -179,12 +180,16 @@ export function initTestHooks(): void {
       const state = useGameStore.getState();
       if (state.enemy) {
         state.enemy.hp = 0;
+        handleEnemyDeath(state);
+        useGameStore.setState({ phase: state.phase, enemy: state.enemy });
       }
     },
 
     killPlayer: () => {
       const state = useGameStore.getState();
       state.player.hp = 0;
+      handlePlayerDeath(state);
+      useGameStore.setState({ phase: state.phase, lastDeathStats: state.lastDeathStats });
     },
 
     boostStat: (stat, value) => {
