@@ -189,21 +189,7 @@ export const useGameStore = create<GameStore>()(
 
     spawnEnemy(state, false);
 
-    set({
-      phase: 'combat',
-      floor: nextFloor,
-      room: 1,
-      roomsPerFloor,
-      fightCount: 0,
-      player: state.player,
-      enemy: state.enemy,
-      enemyDefinition: state.enemyDefinition,
-      combatElapsed: state.combatElapsed,
-      combatEvents: state.combatEvents,
-      combatCounters: state.combatCounters,
-      lastPlayerHitDamage: state.lastPlayerHitDamage,
-      depth: state.depth,
-    });
+    set({ phase: 'combat' });
   },
 
   respawnAtCheckpoint: () => {
@@ -220,20 +206,7 @@ export const useGameStore = create<GameStore>()(
 
     spawnEnemy(state, false);
 
-    set({
-      phase: 'combat',
-      floor: respawnFloor,
-      room: 1,
-      roomsPerFloor,
-      fightCount: 0,
-      player: state.player,
-      enemy: state.enemy,
-      enemyDefinition: state.enemyDefinition,
-      combatElapsed: state.combatElapsed,
-      combatEvents: state.combatEvents,
-      combatCounters: state.combatCounters,
-      lastPlayerHitDamage: state.lastPlayerHitDamage,
-    });
+    set({ phase: 'combat' });
   },
 
   startEndless: () => {
@@ -247,24 +220,11 @@ export const useGameStore = create<GameStore>()(
     state.room = 1;
     state.roomsPerFloor = roomsPerFloor;
     state.fightCount = 0;
+    state.depth = Math.max(state.depth, floor);
 
     spawnEnemy(state, false);
 
-    set({
-      phase: 'combat',
-      floor,
-      room: 1,
-      roomsPerFloor,
-      fightCount: 0,
-      player: state.player,
-      enemy: state.enemy,
-      enemyDefinition: state.enemyDefinition,
-      combatElapsed: state.combatElapsed,
-      combatEvents: state.combatEvents,
-      combatCounters: state.combatCounters,
-      lastPlayerHitDamage: state.lastPlayerHitDamage,
-      depth: Math.max(state.depth, floor),
-    });
+    set({ phase: 'combat' });
   },
 
   resumeCombat: () => {
