@@ -174,6 +174,41 @@ describe('tickStatusEffects', () => {
     });
   });
 
+  describe('poison — fractional accumulation', () => {
+    it('deals damage even at low power levels', () => {
+      const state = createCombatState();
+      state.enemy!.hp = 100;
+      state.enemy!.maxHp = 100;
+      state.player.power = 10;
+      state.enemy!.fortitude = 10;
+      state.enemy!.statusEffects = [{ type: 'poison', stacks: 1, remainingMs: 3000 }];
+
+      // Tick 187 times (3000ms / 16ms = ~187 ticks)
+      for (let i = 0; i < 187; i++) {
+        tickStatusEffects(state, 16);
+      }
+
+      // Poison MUST have dealt some damage (previously it dealt 0)
+      expect(state.enemy!.hp).toBeLessThan(100);
+    });
+
+    it('total poison damage over full duration matches expected value', () => {
+      const state = createCombatState();
+      state.enemy!.hp = 1000;
+      state.enemy!.maxHp = 1000;
+      state.player.power = 10;
+      state.enemy!.fortitude = 10;
+      state.enemy!.statusEffects = [{ type: 'poison', stacks: 1, remainingMs: 3000 }];
+
+      for (let i = 0; i < 200; i++) {
+        tickStatusEffects(state, 16);
+      }
+
+      const damageTaken = 1000 - state.enemy!.hp;
+      expect(damageTaken).toBeGreaterThan(0);
+    });
+  });
+
   describe('curse decay', () => {
     it('decays one curse stack every 3 seconds', () => {
       const state = createCombatState();

@@ -150,13 +150,13 @@ function tickPoison(state: GameState, target: CombatEntity, sourcePower: number,
   const poison = getEffect(target, 'poison');
   if (!poison || poison.remainingMs <= 0) return;
 
-  // Poison damage per tick: (totalDamagePerStack / totalTicks) * stacks
-  // DoT uses half-fortitude rule (isDot = true)
   const result = calculateDamage(sourcePower, target.fortitude, 1.0, true);
-  // Damage per second = result.final, spread over POISON_DURATION_MS
-  // Per tick: result.final * stacks * dt / POISON_DURATION_MS
   const damagePerTick = (result.final * poison.stacks * dt) / POISON_DURATION_MS;
-  const damage = Math.max(0, Math.round(damagePerTick));
+
+  // Accumulate fractional damage — only apply integer damage
+  const accumulator = (target.poisonDamageAccumulator ?? 0) + damagePerTick;
+  const damage = Math.floor(accumulator);
+  target.poisonDamageAccumulator = accumulator - damage;
 
   if (damage > 0) {
     target.hp -= damage;

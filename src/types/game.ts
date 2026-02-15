@@ -34,6 +34,8 @@ export interface CombatEntity {
   /** ms accumulated toward next attack (counts down to 0) */
   attackTimer: number;
   statusEffects: StatusEffect[];
+  /** Accumulates fractional poison damage between ticks */
+  poisonDamageAccumulator?: number;
 }
 
 // ── Items ───────────────────────────────────────────────────────

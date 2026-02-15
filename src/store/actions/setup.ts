@@ -21,5 +21,6 @@ export function createInitialPlayer(): CombatEntity {
     maxHp,
     attackTimer: getAttackInterval(PLAYER_BASE_SPEED),
     statusEffects: [],
+    poisonDamageAccumulator: 0,
   };
 }
