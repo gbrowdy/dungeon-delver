@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { CombatHeader } from '@/components/game/CombatHeader';
 import { HealthBar } from '@/components/game/HealthBar';
@@ -10,9 +10,6 @@ import { ItemSlots } from '@/components/game/ItemSlots';
 import { getAttackInterval } from '@/math/stats';
 import { getEnemySpriteType } from '@/utils/spriteMapping';
 
-// Track which events we've already spawned floating numbers for
-let lastProcessedTick = 0;
-
 interface FloatingNum {
   id: number;
   value: number;
@@ -23,9 +20,11 @@ interface FloatingNum {
   isMiss: boolean;
 }
 
-let floatingNumId = 0;
-
 export function CombatScreen() {
+  // Track which events we've already spawned floating numbers for
+  const lastProcessedTickRef = useRef(0);
+  const floatingNumIdRef = useRef(0);
+
   // Subscribe to renderVersion for per-frame updates
   useGameStore(s => s.renderVersion);
 
@@ -42,8 +41,8 @@ export function CombatScreen() {
 
   // Reset floating number tracking when fight changes
   useEffect(() => {
-    lastProcessedTick = 0;
-    floatingNumId = 0;
+    lastProcessedTickRef.current = 0;
+    floatingNumIdRef.current = 0;
     setFloatingNumbers([]);
   }, [floor, room]);
 
@@ -51,15 +50,15 @@ export function CombatScreen() {
   useEffect(() => {
     if (combatEvents.length === 0) return;
 
-    const newEvents = combatEvents.filter(e => e.tick > lastProcessedTick);
+    const newEvents = combatEvents.filter(e => e.tick > lastProcessedTickRef.current);
     if (newEvents.length === 0) return;
 
-    lastProcessedTick = Math.max(...newEvents.map(e => e.tick));
+    lastProcessedTickRef.current = Math.max(...newEvents.map(e => e.tick));
 
     const newNumbers: FloatingNum[] = newEvents
       .filter(e => e.value !== undefined && e.type !== 'death')
       .map(event => ({
-        id: ++floatingNumId,
+        id: ++floatingNumIdRef.current,
         value: event.value!,
         x: event.target === 'enemy' ? 70 : 30,
         y: 30 + Math.random() * 20,
