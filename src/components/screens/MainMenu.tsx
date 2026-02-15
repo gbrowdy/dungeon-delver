@@ -81,7 +81,7 @@ export function MainMenu() {
             </div>
 
             {/* Version/credit line */}
-            <p className="pixel-text text-pixel-xs text-slate-600 tracking-wider pt-4">
+            <p className="pixel-text text-pixel-xs text-slate-400 tracking-wider pt-4">
               An 8-bit Adventure Awaits
             </p>
           </div>
