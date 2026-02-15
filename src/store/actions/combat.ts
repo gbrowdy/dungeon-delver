@@ -213,6 +213,9 @@ function resolvePlayerAttack(
       value: finalDamage,
       tick: state.gameTick,
     });
+
+    state.lastPlayerHitDamage = finalDamage;
+    processItemProcs(state, 'on_player_attack', { damage: finalDamage });
   }
 }
 
