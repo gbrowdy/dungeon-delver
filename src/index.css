@@ -1366,3 +1366,94 @@ All colors MUST be HSL.
     animation: none;
   }
 }
+
+/* ================================
+   COMBAT SPRITE ANIMATIONS
+   ================================ */
+
+/* Player lunges right toward enemy */
+@keyframes combat-attack-right {
+  0% { transform: translateX(0); }
+  40% { transform: translateX(30px); }
+  100% { transform: translateX(0); }
+}
+
+/* Enemy lunges left toward player */
+@keyframes combat-attack-left {
+  0% { transform: translateX(0); }
+  40% { transform: translateX(-30px); }
+  100% { transform: translateX(0); }
+}
+
+/* Player gets hit — knocked left with flash */
+@keyframes combat-hit {
+  0% { transform: translateX(0); filter: brightness(1); }
+  30% { transform: translateX(-8px); filter: brightness(2); }
+  100% { transform: translateX(0); filter: brightness(1); }
+}
+
+/* Enemy gets hit — knocked right with flash */
+@keyframes combat-hit-left {
+  0% { transform: translateX(0); filter: brightness(1); }
+  30% { transform: translateX(8px); filter: brightness(2); }
+  100% { transform: translateX(0); filter: brightness(1); }
+}
+
+/* Player takes a crit — larger knockback and brighter flash */
+@keyframes combat-crit-hit {
+  0% { transform: translateX(0) scale(1); filter: brightness(1); }
+  20% { transform: translateX(-15px) scale(1.1); filter: brightness(2.5); }
+  100% { transform: translateX(0) scale(1); filter: brightness(1); }
+}
+
+/* Enemy takes a crit — larger knockback and brighter flash */
+@keyframes combat-crit-hit-left {
+  0% { transform: translateX(0) scale(1); filter: brightness(1); }
+  20% { transform: translateX(15px) scale(1.1); filter: brightness(2.5); }
+  100% { transform: translateX(0) scale(1); filter: brightness(1); }
+}
+
+/* Player dodges — slides right and fades briefly */
+@keyframes combat-dodge {
+  0% { transform: translateX(0); }
+  30% { transform: translateX(15px); opacity: 0.6; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* Enemy dodges — slides left and fades briefly */
+@keyframes combat-dodge-left {
+  0% { transform: translateX(0); }
+  30% { transform: translateX(-15px); opacity: 0.6; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* Death — sinks down and fades with hue shift */
+@keyframes combat-die {
+  0% { transform: translateY(0); opacity: 1; filter: hue-rotate(0deg); }
+  50% { transform: translateY(10px); opacity: 0.6; filter: hue-rotate(-30deg) saturate(2) brightness(0.7); }
+  100% { transform: translateY(20px); opacity: 0; filter: hue-rotate(-30deg) saturate(2) brightness(0.5); }
+}
+
+.animate-combat-attack-right { animation: combat-attack-right 200ms ease-out forwards; }
+.animate-combat-attack-left { animation: combat-attack-left 200ms ease-out forwards; }
+.animate-combat-hit { animation: combat-hit 150ms ease-out forwards; }
+.animate-combat-hit-left { animation: combat-hit-left 150ms ease-out forwards; }
+.animate-combat-crit-hit { animation: combat-crit-hit 200ms ease-out forwards; }
+.animate-combat-crit-hit-left { animation: combat-crit-hit-left 200ms ease-out forwards; }
+.animate-combat-dodge { animation: combat-dodge 200ms ease-out forwards; }
+.animate-combat-dodge-left { animation: combat-dodge-left 200ms ease-out forwards; }
+.animate-combat-die { animation: combat-die 400ms ease-out forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-combat-attack-right,
+  .animate-combat-attack-left,
+  .animate-combat-hit,
+  .animate-combat-hit-left,
+  .animate-combat-crit-hit,
+  .animate-combat-crit-hit-left,
+  .animate-combat-dodge,
+  .animate-combat-dodge-left,
+  .animate-combat-die {
+    animation: none;
+  }
+}

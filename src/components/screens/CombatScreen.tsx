@@ -9,6 +9,7 @@ import { ModifierBadges, StatusEffectBadges } from '@/components/game/StatusBadg
 import { ItemSlots } from '@/components/game/ItemSlots';
 import { getAttackInterval } from '@/math/stats';
 import { getEnemySpriteType } from '@/utils/spriteMapping';
+import { useSpriteAnimation } from '@/hooks/useSpriteAnimation';
 
 interface FloatingNum {
   id: number;
@@ -36,6 +37,9 @@ export function CombatScreen() {
   const room = useGameStore(s => s.room);
   const combatEvents = useGameStore(s => s.combatEvents);
 
+  // Sprite combat animations (lunge, hit, crit, dodge, death)
+  const spriteAnims = useSpriteAnimation();
+
   // Floating damage numbers (React-local state)
   const [floatingNumbers, setFloatingNumbers] = useState<FloatingNum[]>([]);
 
@@ -46,9 +50,12 @@ export function CombatScreen() {
     setFloatingNumbers([]);
   }, [floor, room]);
 
-  // Process new combat events into floating numbers
+  // Process new combat events into floating numbers and sprite animations
   useEffect(() => {
     if (combatEvents.length === 0) return;
+
+    // Process sprite animations for new events (before lastProcessedTickRef is updated)
+    spriteAnims.processEvents(combatEvents, lastProcessedTickRef.current);
 
     const newEvents = combatEvents.filter(e => e.tick > lastProcessedTickRef.current);
     if (newEvents.length === 0) return;
@@ -70,7 +77,7 @@ export function CombatScreen() {
     if (newNumbers.length > 0) {
       setFloatingNumbers(prev => [...prev, ...newNumbers]);
     }
-  }, [combatEvents]);
+  }, [combatEvents, spriteAnims]);
 
   const removeFloatingNumber = useCallback((id: number) => {
     setFloatingNumbers(prev => prev.filter(n => n.id !== id));
@@ -93,12 +100,14 @@ export function CombatScreen() {
         <div className="relative w-full max-w-2xl h-64 sm:h-80 flex items-end justify-between px-8 sm:px-16">
           {/* Player side */}
           <div className="flex flex-col items-center gap-2">
-            <AnimatedPixelSprite
-              type={classId}
-              state="idle"
-              direction="right"
-              scale={4}
-            />
+            <div className={spriteAnims.playerClass}>
+              <AnimatedPixelSprite
+                type={classId}
+                state="idle"
+                direction="right"
+                scale={4}
+              />
+            </div>
             <AttackBar
               attackTimer={player.attackTimer}
               attackInterval={playerInterval}
@@ -108,12 +117,14 @@ export function CombatScreen() {
 
           {/* Enemy side */}
           <div className="flex flex-col items-center gap-2">
-            <AnimatedPixelSprite
-              type={enemySprite}
-              state="idle"
-              direction="left"
-              scale={4}
-            />
+            <div className={spriteAnims.enemyClass}>
+              <AnimatedPixelSprite
+                type={enemySprite}
+                state="idle"
+                direction="left"
+                scale={4}
+              />
+            </div>
             <AttackBar
               attackTimer={enemy.attackTimer}
               attackInterval={enemyInterval}
