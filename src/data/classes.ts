@@ -1,98 +1,85 @@
-import { CharacterClass, ClassData } from '@/types/game';
+// src/data/classes.ts
+//
+// Class definitions. Design doc Section 3.
+// Each class is a stat weight line + one innate formula identifier.
+// Zero bespoke content — adding a new class is ~5 lines.
 
-// Player stats significantly nerfed to make early game challenging
-export const CLASS_DATA: Record<CharacterClass, ClassData> = {
+import type { StatType } from '@/types/game';
+
+export interface ClassInnate {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface ClassDefinition {
+  id: string;
+  name: string;
+  description: string;
+  /** Stat weights bias draft pick offerings toward these stats */
+  statWeights: Record<StatType, number>;
+  /** The one scaling formula that defines this class */
+  innate: ClassInnate;
+}
+
+export const CLASSES: Record<string, ClassDefinition> = {
   warrior: {
+    id: 'warrior',
     name: 'Warrior',
-    description: 'A mighty fighter with high health and strong attacks. Excels in prolonged combat.',
-    icon: 'class-warrior',
-    baseStats: {
-      health: 60,
-      maxHealth: 60,
-      power: 9,
-      armor: 4,
-      speed: 8,
-      fortune: 5,
-    },
-    startingPower: {
-      id: 'berserker-rage',
-      name: 'Berserker Rage',
-      description: 'Enter a fury, dealing 200% damage on next hit',
-      resourceCost: 20,
-      cooldown: 4,
-      effect: 'damage',
-      value: 2.0,
-      icon: 'power-reckless_swing',
-    },
-  },
-  mage: {
-    name: 'Mage',
-    description: 'A powerful spellcaster with devastating magical abilities but fragile defenses.',
-    icon: 'class-mage',
-    baseStats: {
-      health: 40,
-      maxHealth: 40,
-      power: 10,
-      armor: 2,
-      speed: 10,
-      fortune: 5,
-    },
-    startingPower: {
-      id: 'fireball',
-      name: 'Fireball',
-      description: 'Launch a devastating fireball dealing 220% damage',
-      resourceCost: 40,
-      cooldown: 3,
-      effect: 'damage',
-      value: 2.2,
-      icon: 'power-fireball',
+    description: 'A stalwart fighter who can take hits others cannot.',
+    statWeights: { power: 3, fortitude: 3, speed: 1, luck: 1 },
+    innate: {
+      id: 'toughness',
+      name: 'Toughness',
+      description: 'Fortitude counts as 1.5x in damage reduction formula.',
     },
   },
   rogue: {
+    id: 'rogue',
     name: 'Rogue',
-    description: 'A swift assassin with high critical and dodge chance. Strikes fast and deadly.',
-    icon: 'class-rogue',
-    baseStats: {
-      health: 45,
-      maxHealth: 45,
-      power: 9,
-      armor: 2,
-      speed: 14,
-      fortune: 10,
-    },
-    startingPower: {
-      id: 'shadow-strike',
-      name: 'Shadow Strike',
-      description: 'Strike from shadows with guaranteed critical hit',
-      resourceCost: 25,
-      cooldown: 3,
-      effect: 'damage',
-      value: 1.4,
-      icon: 'power-ambush',
+    description: 'A precise striker whose crits devastate enemies.',
+    statWeights: { power: 1, fortitude: 1, speed: 3, luck: 3 },
+    innate: {
+      id: 'precision',
+      name: 'Precision',
+      description: 'Crit damage multiplier increased by 50%.',
     },
   },
-  paladin: {
-    name: 'Paladin',
-    description: 'A holy knight balancing offense and defense with healing abilities.',
-    icon: 'class-paladin',
-    baseStats: {
-      health: 55,
-      maxHealth: 55,
-      power: 7,
-      armor: 5,
-      speed: 7,
-      fortune: 5,
-    },
-    hpRegen: 0.5, // Paladin's innate HP regeneration
-    startingPower: {
-      id: 'divine-heal',
-      name: 'Divine Heal',
-      description: 'Restore 40% of maximum health',
-      resourceCost: 30,
-      cooldown: 5,
-      effect: 'heal',
-      value: 0.4,
-      icon: 'power-divine_heal',
+  mage: {
+    id: 'mage',
+    name: 'Mage',
+    description: 'A channeler whose luck fuels devastating power.',
+    statWeights: { power: 3, fortitude: 1, speed: 1, luck: 3 },
+    innate: {
+      id: 'amplify',
+      name: 'Amplify',
+      description: 'All damage multiplied by 1 + (luck * 0.005).',
     },
   },
 };
+
+/** Ordered array for UI display */
+export const CLASS_LIST: ClassDefinition[] = [
+  CLASSES.warrior,
+  CLASSES.rogue,
+  CLASSES.mage,
+];
+
+/**
+ * Returns stat weights normalized to probabilities (sum to 1).
+ * Used by draft pick generation to bias offerings.
+ */
+export function getStatProbabilities(classId: string): Record<StatType, number> {
+  const classDef = CLASSES[classId];
+  if (!classDef) throw new Error(`Unknown class: ${classId}`);
+
+  const weights = classDef.statWeights;
+  const total = weights.power + weights.fortitude + weights.speed + weights.luck;
+
+  return {
+    power: weights.power / total,
+    fortitude: weights.fortitude / total,
+    speed: weights.speed / total,
+    luck: weights.luck / total,
+  };
+}

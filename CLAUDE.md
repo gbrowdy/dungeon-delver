@@ -4,236 +4,353 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
-## ⚠️ CRITICAL: Branch Policy
+## Branch Policy
 
 **ALL WORK MUST BE DONE IN FEATURE BRANCHES. NEVER COMMIT DIRECTLY TO MAIN.**
 
 - Create a feature branch before starting any work: `git checkout -b feature/your-feature-name`
 - Commit all changes to the feature branch
-- Main branch is protected - only updated via merged PRs
+- Main branch is protected -- only updated via merged PRs
 
 ---
 
 ## Build & Development Commands
 
 ```bash
-npm run dev      # Start development server with HMR
-npm run build    # Production build
-npm run lint     # Run ESLint
-npx vitest run   # Run unit tests
-npx playwright test --project="Desktop"  # Run E2E tests
+npm run dev          # Start development server with HMR
+npm run build        # Production build
+npm run lint         # Run ESLint
+npx vitest run       # Run unit tests
+npx playwright test --project="Desktop"  # Run E2E tests (desktop)
+npx playwright test --project="Mobile Portrait (320px)"  # Run E2E tests (mobile)
 ```
 
 ## Tech Stack
 
 - **Framework**: React 18.3 + TypeScript 5.8 + Vite 5.4
 - **Styling**: Tailwind CSS 3.4 with shadcn/ui components
-- **State**: ECS (Entity Component System) using miniplex + React Context for UI
-- **Testing**: Vitest + jsdom + Playwright E2E
+- **State**: Zustand with persist middleware
+- **Game Loop**: requestAnimationFrame + fixed timestep accumulator
+- **Testing**: Vitest + jsdom (unit), Playwright (E2E)
 
 ## Project Structure
 
 ```
 src/
-├── ecs/                # ECS (Entity Component System) - CORE GAME LOGIC
-│   ├── components.ts   # Component type definitions (Entity interface)
-│   ├── world.ts        # miniplex world instance
-│   ├── queries.ts      # Entity queries (getPlayer, getActiveEnemy, etc.)
-│   ├── loop.ts         # Game loop (tick system, pause, speed)
-│   ├── commands.ts     # Command types and dispatch queue
-│   ├── snapshot.ts     # Immutable snapshots for React rendering
-│   ├── systems/        # Game systems (16 systems, run in order each tick)
-│   ├── factories/      # Entity creation functions
-│   └── context/        # GameContext.tsx - React bridge
+├── main.tsx                          # Entry point + test hooks init
+├── App.tsx                           # Phase router + game loop
+├── index.css                         # Tailwind + pixel art styles
+│
+├── store/                            # Zustand store — all game state
+│   ├── gameStore.ts                  # GameState shape + actions + persist
+│   ├── index.ts                      # Re-export
+│   └── actions/                      # Action logic by domain
+│       ├── combat.ts                 # tickCombat() — full combat pipeline
+│       ├── setup.ts                  # createInitialPlayer()
+│       ├── flow.ts                   # handleEnemyDeath, handlePlayerDeath, spawnEnemy
+│       ├── draft.ts                  # generateDraftCards
+│       ├── shop.ts                   # generateShopCards
+│       ├── statusEffects.ts          # addStatusEffect, tickStatusEffects, hasEffect
+│       ├── enrage.ts                 # tickEnrage — 45s timer, power ramp
+│       ├── modifiers.ts             # tickModifierBehaviors (berserker, regen, shielded)
+│       └── itemProcs.ts             # processItemProcs — generic data-driven dispatcher
+│
+├── math/                            # Pure functions, zero dependencies
+│   ├── balance.ts                   # ALL tuning constants (single source of truth)
+│   ├── damage.ts                    # calculateEffectiveness, calculateDamage
+│   ├── stats.ts                     # getMaxHp, getAttackInterval, getCritChance, getDodgeChance
+│   ├── scaling.ts                   # getGrowthMultiplier, getDraftPickValue, getRoomsPerFloor
+│   └── index.ts                     # Barrel export
+│
+├── data/                            # Game content definitions
+│   ├── classes.ts                   # 3 classes (stat weights + innate)
+│   ├── items.ts                     # 15 items (5 weapons, 5 armors, 5 accessories)
+│   ├── enemies.ts                   # 4 tiers, 6 modifiers, generateEnemy()
+│   └── sprites.ts                   # Pixel sprite definitions
+│
+├── types/
+│   └── game.ts                      # CombatEntity, GameState, Item, StatusEffect, phases
+│
 ├── components/
-│   ├── game/           # Game-specific UI components
-│   └── ui/             # shadcn/ui component library
-├── constants/          # Configuration, balance, animations
-├── data/               # Game content (classes, enemies, powers, items, paths)
-├── hooks/              # UI hooks (useGameKeyboard, useReducedMotion)
-├── types/              # TypeScript type definitions
-└── utils/              # Utility functions
+│   ├── ui/                          # shadcn/ui components
+│   ├── screens/                     # Phase screens (one per game phase)
+│   │   ├── MainMenu.tsx
+│   │   ├── ClassSelect.tsx
+│   │   ├── CombatScreen.tsx
+│   │   ├── DraftScreen.tsx
+│   │   ├── ShopScreen.tsx
+│   │   ├── FloorComplete.tsx
+│   │   ├── DeathScreen.tsx
+│   │   ├── EndlessIntro.tsx
+│   │   └── EndlessDefeat.tsx
+│   └── game/                        # Reusable game UI components
+│       ├── HealthBar.tsx
+│       ├── AttackBar.tsx
+│       ├── CombatHeader.tsx
+│       ├── CharacterSheet.tsx
+│       ├── DraftCard.tsx, StatIcon.tsx
+│       ├── ItemCard.tsx, ItemComparison.tsx
+│       ├── StatusBadges.tsx
+│       ├── ItemSlots.tsx
+│       ├── PixelSprite.tsx
+│       └── battle-effects/          # FloatingNumbers, AttackEffects, etc.
+│
+├── hooks/
+│   ├── useGameLoop.ts              # rAF + fixed timestep accumulator
+│   └── useReducedMotion.ts
+│
+├── constants/
+│   ├── combatTiming.ts             # Animation timing
+│   └── responsive.ts              # Breakpoints
+│
+├── lib/
+│   └── utils.ts                    # cn() className merge helper
+│
+└── utils/
+    ├── spriteMapping.ts            # Sprite lookup helpers
+    └── testHooks.ts                # window.__TEST_HOOKS__ for Playwright
 ```
 
-## ECS Architecture
+## Architecture
 
-This is a roguelike browser game with auto-combat mechanics, built on an **Entity Component System (ECS)** architecture using miniplex.
+This is a roguelike auto-battler browser game. The player selects a class, fights through floors of enemies, and upgrades stats/items between fights. All combat is automatic -- no active abilities.
 
-### How It Works
+### Data Flow
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Game Loop (loop.ts)                      │
-│   Runs at ~60fps, calls systems in order, manages tick/pause     │
-└──────────────────────────────┬──────────────────────────────────┘
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                         Systems (systems/)                       │
-│   Input → AttackTiming → Combat → Power → Death → Flow → ...    │
-│   Each system queries entities and modifies component data       │
-└──────────────────────────────┬──────────────────────────────────┘
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     World + Entities (world.ts)                  │
-│   Player entity, Enemy entity, GameState entity                  │
-│   Each entity is a bag of components (health, attack, speed...)  │
-└──────────────────────────────┬──────────────────────────────────┘
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Snapshots (snapshot.ts)                       │
-│   Immutable copies of entity data for React rendering            │
-└──────────────────────────────┬──────────────────────────────────┘
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    React UI (components/game/)                   │
-│   Reads snapshots, dispatches actions via useGameActions()       │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│              useGameLoop (hooks/useGameLoop.ts)               │
+│  requestAnimationFrame → fixed timestep → store.tick(dt)     │
+└─────────────────────────────┬────────────────────────────────┘
+                              ▼
+┌──────────────────────────────────────────────────────────────┐
+│              Zustand Store (store/gameStore.ts)               │
+│  tick() → tickCombat(state, dt) → set({ renderVersion++ })  │
+└─────────────────────────────┬────────────────────────────────┘
+                              ▼
+┌──────────────────────────────────────────────────────────────┐
+│              Combat Pipeline (store/actions/combat.ts)        │
+│  enrage → modifiers → curse reduction → passives → regen    │
+│  → timers → attacks → item procs → status ticks → death     │
+└─────────────────────────────┬────────────────────────────────┘
+                              ▼
+┌──────────────────────────────────────────────────────────────┐
+│              React UI (components/screens/ + game/)           │
+│  useGameStore(selector) reads state, renders phase screen    │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### ECS Systems (execution order)
+### Game Loop
 
-| System | Responsibility |
-|--------|----------------|
-| `input.ts` | Processes user commands (class select, power use, etc.) |
-| `cooldown.ts` | Ticks down power cooldowns |
-| `attack-timing.ts` | Accumulates attack timers, sets `attackReady` flag |
-| `enemy-ability.ts` | Processes enemy abilities before combat |
-| `combat.ts` | Processes attacks when `attackReady`, applies damage |
-| `power.ts` | Executes power casts, applies effects |
-| `item-effect.ts` | Processes item proc effects (on_hit, on_crit, etc.) |
-| `path-ability.ts` | Triggers path abilities on combat events |
-| `status-effect.ts` | Ticks status effects (poison, stun, etc.) |
-| `regen.ts` | Health/mana regeneration |
-| `death.ts` | Handles entity death, rewards, phase transitions |
-| `progression.ts` | XP, level-ups |
-| `flow.ts` | Room advancement, enemy spawning, game phase changes |
-| `animation.ts` | Processes animation event lifecycle |
-| `cleanup.ts` | Clears one-frame flags, removes dead entities |
+The game loop lives in `useGameLoop.ts`:
+- **Fixed timestep**: 16ms per tick (~60fps logic)
+- **Accumulator pattern**: delta time accumulates, ticks fire in 16ms increments
+- **Speed multiplier**: 1x / 2x / 4x (scales effective delta)
+- **Catchup cap**: MAX_CATCHUP_TICKS prevents spiral after tab backgrounding
+- **renderVersion**: bumped after each tick batch so React re-renders
 
-### ⚠️ CRITICAL: miniplex Reactivity
+### Phase Flow
 
-**Direct property assignment does NOT notify miniplex queries!**
+```
+menu → class-select → combat ←→ draft → combat → ... → floor-complete
+                        |                                     |
+                        |                              (boss) shop
+                        |                                     |
+                        |                              floor-complete
+                        ↓
+                      death (or endless-defeat)
+```
+
+Phases are defined in `GamePhase` type in `src/types/game.ts`. The phase router in `App.tsx` renders the appropriate screen component.
+
+### State Management Patterns
 
 ```typescript
-// ❌ WRONG - query won't update
-entity.dying = { ... };
-delete entity.attackReady;
+// Reading state in React components (selector pattern)
+const phase = useGameStore(s => s.phase);
+const playerHp = useGameStore(s => s.player.hp);
 
-// ✅ CORRECT - query updates properly
-world.addComponent(entity, 'dying', { startedAtTick: getTick() });
-world.removeComponent(entity, 'attackReady');
+// Per-frame components subscribe to renderVersion for tick updates
+const rv = useGameStore(s => s.renderVersion);
+
+// Calling actions
+useGameStore.getState().togglePause();
+useGameStore.getState().selectClass('warrior');
+
+// Reading state outside React (in action files, tests)
+const state = useGameStore.getState();
 ```
 
-This is critical for queries like `world.with('health').without('dying')`.
+### Combat Pipeline
 
-### ⚠️ CRITICAL: Query Filtering for UI vs Game Logic
+`tickCombat(state, dt)` in `store/actions/combat.ts` runs every tick during the `combat` phase. It mutates `state` in place (Zustand Immer-style direct mutation within `set()`):
 
-**Filtered queries can hide entities that should still be visible for animations.**
+1. **Enrage** -- 45s timer, scales enemy power
+2. **Modifier behaviors** -- berserker, regen, shielded enemy behaviors
+3. **Curse reduction** -- decays enemy speed based on curse stacks
+4. **Passive innates** -- class innate effects (fortitude heal, crit boost, luck amplify)
+5. **Regen** -- ticks regen status effect
+6. **Attack timers** -- accumulates both player and enemy attack timers
+7. **Attacks** -- when timer reaches threshold, execute attack (damage calc, crit, dodge)
+8. **Item procs** -- data-driven item effects trigger on hit/crit/dodge/etc.
+9. **Status effect ticks** -- poison damage, stun expiry, etc.
+10. **Death check** -- calls `handleEnemyDeath` or `handlePlayerDeath` from flow.ts
 
-```typescript
-// queries.ts defines two enemy queries:
-export const enemyQuery = world.with('enemy', 'health');           // ALL enemies
-export const activeEnemyQuery = world.with('enemy', 'health').without('dying');  // Excludes dying
-```
+### Save/Load
 
-| Context | Query to Use | Reason |
-|---------|--------------|--------|
-| **React snapshots** | `enemyQuery.first` | Dying enemies need to be visible for death animation |
-| **Combat targeting** | `getActiveEnemy()` | Don't attack/target dying enemies |
-| **Cleanup/removal** | `world.with('enemy')` | Remove ALL enemies including dying ones |
+Zustand persist middleware saves to localStorage (`rogue-game-state` key):
+- Saves on stable phase transitions (draft, shop, floor-complete)
+- Does NOT save during combat, menu, class-select
+- Does NOT save endless mode (floor > 100)
+- Excludes transient combat state (events, counters, enemy, renderVersion)
 
-### Game Flow
+### Balance Constants
 
-Phases defined in `GameState.phase`:
-```
-menu → class-select → path-select → combat → floor-complete → combat → ... → victory/defeat
-```
+**All magic numbers live in `src/math/balance.ts`.** This is the single source of truth for tuning. Implementation files import from here -- never hardcode balance values.
 
-### Key Files
+Key formulas:
+- **Damage**: `X / (X + K)` effectiveness ratio
+- **HP scaling**: base HP + fortitude bonus
+- **Enemy scaling**: damped exponential (pure expo floors 1-100, then damping kicks in)
 
-| File | Purpose |
-|------|---------|
-| `ecs/context/GameContext.tsx` | React provider - bridges ECS to UI |
-| `components/game/Game.tsx` | Phase router, uses `useGame()` hook |
-| `components/game/CombatScreen.tsx` | Combat UI container |
-| `components/game/BattleArena.tsx` | Battle visualization with sprites |
+## Game Content
 
-## Code Patterns
+| Content | Count | File |
+|---------|-------|------|
+| Classes | 3 (Warrior, Rogue, Mage) | `src/data/classes.ts` |
+| Items | 15 (5 weapon, 5 armor, 5 accessory) | `src/data/items.ts` |
+| Enemy tiers | 4 (Common, Uncommon, Rare, Boss) | `src/data/enemies.ts` |
+| Enemy modifiers | 6 (Swift, Armored, Berserker, Regen, Venomous, Shielded) | `src/data/enemies.ts` |
+| Status effects | 5 (Poison, Stun, Shield, Curse, Regen) | `src/types/game.ts` + `store/actions/statusEffects.ts` |
 
-### Adding/Modifying ECS Components
+## How to Add Content
 
-1. **Add component type** to `ecs/components.ts` (Entity interface)
-2. **Create/update systems** in `ecs/systems/` to process the component
-3. **Update snapshots** in `ecs/snapshot.ts` if UI needs the data
-4. **Add queries** to `ecs/queries.ts` if systems need to find entities
+### Adding a New Item
 
-### Entity Modification in Systems
+1. **Define the item** in `src/data/items.ts`:
+   ```typescript
+   export const ITEM_DEFINITIONS: Record<ItemId, ItemDefinition> = {
+     // Add your item here
+     my_new_sword: {
+       id: 'my_new_sword',
+       name: 'My New Sword',
+       slot: 'weapon',
+       description: 'A sharp blade.',
+       tier1: { effect: 'on_hit', type: 'damage_bonus', value: 0.15 },
+       tier2: { effect: 'on_hit', type: 'damage_bonus', value: 0.25 },
+       tier3: { effect: 'on_hit', type: 'damage_bonus', value: 0.35 },
+     },
+   };
+   ```
 
-```typescript
-// Get entities via queries
-const player = getPlayer();
-const enemy = getActiveEnemy();
+2. **Add the ItemId** to the union type in `src/types/game.ts`
 
-// Modify component data directly (for existing components)
-player.health.current -= damage;
+3. **If new effect type**: add processing in `src/store/actions/itemProcs.ts`
 
-// Add/remove components (MUST use world methods for query reactivity)
-world.addComponent(entity, 'dying', { startedAtTick: getTick() });
-world.removeComponent(entity, 'attackReady');
-```
+4. **Write tests** in `src/data/__tests__/` and `src/store/__tests__/`
 
-### Dispatching Actions from UI
+Items are data-driven: `{ trigger, effect, value }`. The generic `processItemProcs` dispatcher handles them -- no per-item code paths needed for standard effect types.
 
-```typescript
-// In React components
-const actions = useGameActions();
+### Adding a New Class
 
-// Dispatch actions (processed by InputSystem next tick)
-actions.selectClass('warrior');
-actions.usePower('fireball');
-actions.togglePause();
-```
+1. **Define the class** in `src/data/classes.ts`:
+   ```typescript
+   export const CLASSES: Record<string, ClassDefinition> = {
+     my_class: {
+       id: 'my_class',
+       name: 'My Class',
+       description: '...',
+       statWeights: { power: 1.2, fortitude: 0.8, speed: 1.0, luck: 1.0 },
+       innate: { type: 'some_innate', value: 0.1 },
+     },
+   };
+   ```
 
-### Adding Game Content
+2. **Add innate processing** in `tickCombat` (passive innate section)
 
-| To Add | Location |
-|--------|----------|
-| New power | `data/powers.ts` |
-| New enemy | `data/enemies.ts` |
-| Combat balance | `constants/balance.ts` |
-| Timing/scaling | `constants/game.ts` |
+3. **Add class sprite** in `src/data/sprites.ts`
+
+4. **Write tests** and verify in browser
+
+### Adding a New Enemy Modifier
+
+1. **Add modifier type** to the modifier list in `src/data/enemies.ts`
+
+2. **Add behavior** in `src/store/actions/modifiers.ts`:
+   ```typescript
+   // In tickModifierBehaviors():
+   case 'my_modifier':
+     // Apply modifier effect to enemy
+     break;
+   ```
+
+3. **Write tests** in `src/store/__tests__/`
+
+### Adding a New Status Effect
+
+1. **Add type** to `StatusEffectType` union in `src/types/game.ts`
+
+2. **Add tick behavior** in `src/store/actions/statusEffects.ts`
+
+3. **Add application logic** (where/when the effect is applied in combat)
+
+4. **Add UI badge** in `src/components/game/StatusBadges.tsx`
 
 ## Testing
 
-### ⚠️ CRITICAL: Browser Validation Required
+### Browser Validation Required
 
-**ALL functionality changes MUST be validated in the browser using Playwright before being considered complete.**
+**ALL functionality changes MUST be validated in the browser using Playwright before being considered complete.** Unit tests alone are NOT sufficient for game functionality.
 
-- Unit tests alone are NOT sufficient for game functionality
-- You MUST run Playwright tests or write new ones to verify changes work in the actual browser
-- If you cannot demonstrate the fix works in a browser test, the fix is NOT done
-
-### Running Tests
+### Unit Tests (Vitest)
 
 ```bash
-npx vitest run              # All unit tests
-npx vitest run src/ecs      # ECS tests only (314 tests)
-npx playwright test --ui    # E2E tests with interactive UI
+npx vitest run                    # All tests
+npx vitest run src/store          # Store tests only
+npx vitest run src/math           # Math tests only
+npx vitest run src/data           # Data tests only
 ```
 
-**Test Hooks**: Add `?testMode=true` URL param to expose `window.__TEST_HOOKS__` for state manipulation during tests.
+Test files live alongside their source in `__tests__/` directories.
+
+**Store test pattern:**
+```typescript
+import { useGameStore } from '@/store/gameStore';
+
+beforeEach(() => {
+  useGameStore.setState(useGameStore.getInitialState());
+});
+
+test('some behavior', () => {
+  const store = useGameStore.getState();
+  store.selectClass('warrior');
+  store.startRun();
+  // Assert state
+  expect(useGameStore.getState().phase).toBe('combat');
+});
+```
+
+### E2E Tests (Playwright)
+
+```bash
+npx playwright test --project="Desktop"                  # Desktop
+npx playwright test --project="Mobile Portrait (320px)"  # Mobile
+npx playwright test --ui                                 # Interactive UI
+```
+
+**Test hooks**: Add `?testMode=true` URL param to expose `window.__TEST_HOOKS__` for direct state manipulation during E2E tests. See `src/utils/testHooks.ts` for available hooks (getState, setState, setPhase, setupRun, killEnemy, etc.).
+
+**E2E helpers**: `e2e/helpers/game-actions.ts` provides high-level actions like `startGame()`, `waitForCombat()`, etc.
 
 ## Debugging Principles
 
-### ⚠️ CRITICAL: Observe Before Fixing
-
-**Add console.logs FIRST, before writing any fix.** Mental code tracing is not debugging - runtime observation is debugging.
+**Add console.logs FIRST, before writing any fix.** Mental code tracing is not debugging -- runtime observation is debugging.
 
 | Wrong | Right |
 |-------|-------|
-| "Combat runs before Death, so..." | "Add logs - what actually happens?" |
+| "Combat runs before death, so..." | "Add logs -- what actually happens?" |
 | "Tests pass so it's fixed" | Write a test for the specific failure case |
-| "The fix worked on first try" | Be suspicious - verify with logging |
+| "The fix worked on first try" | Be suspicious -- verify with logging |
 
 ## Git Conventions
 
@@ -241,295 +358,22 @@ This project uses **conventional commits**: `type(scope): description`
 
 **Types**: `feat`, `fix`, `refactor`, `docs`, `chore`, `test`, `style`
 
-**Scopes**: `ecs`, `ui`, `combat`, `hooks`, `utils`, `types`
+**Scopes**: `store`, `ui`, `combat`, `math`, `data`, `hooks`, `utils`, `types`
 
 ```bash
-feat(ecs): add poison status effect
-fix(ui): prevent button double-click
-refactor(ecs): extract combat damage calculation
+feat(store): add new shop action
+fix(ui): prevent button double-click during draft
+refactor(combat): extract status effect tick logic
+docs: update CLAUDE.md for v2
 ```
 
 ## Task Documents
 
 Task planning documents should be stored in the `tasks/` directory (gitignored).
 
-## Path Design Principles
-
-Each class has two paths representing different playstyles. Based on the Warrior implementation (Berserker/Guardian), follow these principles:
-
-### Active vs Passive Path Philosophy
-
-| Aspect | Active Path (Berserker) | Passive Path (Guardian) |
-|--------|-------------------------|-------------------------|
-| **Player agency** | High - choose when to use powers | Low - effects trigger automatically |
-| **Skill expression** | Timing, resource management | Stance selection, build choices |
-| **Risk/reward** | Powers have costs and cooldowns | Tradeoffs baked into stances |
-| **Complexity** | Learn power combos | Understand passive synergies |
-| **Power fantasy** | "I unleash devastating attacks" | "I'm an immovable wall" |
-
-### Active Path Design (like Berserker)
-
-**Core Resource Design:**
-- Resource should create tension (spend vs save)
-- Generation should reward the path's playstyle (Fury: taking/dealing damage)
-- Powers should have meaningful cost/cooldown tradeoffs
-
-**Power Progression:**
-```
-Level 2: Choose Power 1 (two options) - Core identity
-Level 4: Choose Power 2 (two options) - Expand toolkit
-Level 6: Choose Power 3 (two options) - Specialization
-Level 8: Subpath grants Power 4 - Capstone
-```
-
-**Power Design Rules:**
-- Each choice should be viable (no trap options)
-- Options should appeal to different playstyles (burst vs sustain, offense vs utility)
-- Upgrades (T1, T2) should feel impactful but not mandatory
-- Special mechanics (guaranteed crit, lifesteal) create memorable moments
-
-### Passive Path Design (like Guardian)
-
-**Stance Design:**
-- Two stances with clear, opposite identities
-- Each stance should be viable in different situations
-- Stance-switching should feel meaningful, not constant
-
-**Enhancement Progression:**
-- Linear paths (one per stance), 13 tiers each
-- Early tiers: foundational bonuses (+armor, +reflect)
-- Mid tiers: interesting mechanics (on-hit procs, scaling)
-- Late tiers: powerful capstones (survive lethal, damage auras)
-
-**Effect Categories (Guardian example):**
-```
-Iron Stance: Defense → Mitigation → Sustain → Immunity
-Retribution Stance: Reflect → Scaling → Counter → Aura
-```
-
-**Design Rules:**
-- Effects must be expressible as data (no custom code per enhancement)
-- Computed values are pre-calculated, systems just read them
-- Conditional effects (low HP bonuses) create dynamic gameplay
-- Capstones should feel "build-defining"
-
-### Creating Meaningful Choices
-
-**At Path Selection (Level 2):**
-- Paths should feel like different games, not just stat variations
-- Active path: "I want to press buttons and make decisions"
-- Passive path: "I want to optimize my build and watch it work"
-
-**At Each Level-Up:**
-- Choices should be interesting, not obvious
-- Consider: "Would a player agonize over this choice?" (good)
-- Avoid: Clear best option or purely numerical differences (bad)
-
-**Subpath Design:**
-- Narrow the fantasy further (Berserker → Warlord vs Ravager)
-- Should synergize with earlier choices
-- Capstone power/enhancement should feel earned
-
-### Balance Principles
-
-- Test with E2E before considering complete
-- Passive paths should match active path effectiveness
-- Floor clear time is the primary balance metric
-- "Feels good" matters more than perfect math
-
-## Adding Path Powers
-
-Each class has two paths available at level 2. Paths are either **Active** (power-based gameplay) or **Passive** (stance-based, auto-mechanics).
-
-### Path Types Overview
-
-| Type | Example | Gameplay | UI | Key System |
-|------|---------|----------|----|----|
-| **Active** | Berserker | Powers with cooldowns, resource costs | PowerButton grid | `power.ts` |
-| **Passive** | Guardian | Stance toggle, auto-triggering effects | StanceToggle UI | `passive-effect.ts` |
-
-### File Structure
-
-```
-src/data/paths/
-├── warrior.ts              # Path definitions (PathDefinition, abilities)
-├── berserker-powers.ts     # Active path: Power definitions with upgrades
-├── guardian-enhancements.ts # Passive path: Stance enhancement definitions
-├── mage.ts                 # Mage paths (Archmage=active, Enchanter=passive)
-├── rogue.ts                # Rogue paths (Assassin=active, Duelist=passive)
-└── paladin.ts              # Paladin paths
-```
-
-### Adding an Active Path (like Berserker)
-
-**1. Define Powers in `src/data/paths/{class}-powers.ts`:**
-
-```typescript
-// Example: src/data/paths/assassin-powers.ts
-import type { Power } from '@/types/game';
-
-export interface AssassinPower extends Power {
-  upgrades: [PowerUpgrade, PowerUpgrade]; // T1, T2 upgrades
-}
-
-const SHADOW_STRIKE: AssassinPower = {
-  id: 'shadow_strike',
-  name: 'Shadow Strike',
-  description: 'Deal 180% damage from stealth. Guaranteed crit.',
-  icon: 'power-shadow_strike',
-  resourceCost: 40,        // Path resource cost (Momentum for Assassin)
-  cooldown: 6,
-  effect: 'damage',
-  value: 1.8,
-  category: 'strike',
-  synergies: [],
-  guaranteedCrit: true,    // Special mechanic
-  upgrades: [
-    { tier: 1, description: '220% damage', value: 2.2 },
-    { tier: 2, description: 'Refund 50% cost on kill', costRefundOnKill: 0.5 },
-  ],
-};
-
-export const ASSASSIN_POWERS = {
-  level2: [SHADOW_STRIKE, POISON_BLADE],
-  level4: [...],
-  level6: [...],
-};
-```
-
-**2. Add Power Processing in `src/ecs/systems/power.ts`:**
-
-```typescript
-// In processPowerEffect(), add case for new mechanics:
-if (power.guaranteedCrit) {
-  // Force crit logic
-}
-```
-
-**3. Register in `src/data/powers.ts`:**
-
-```typescript
-import { ASSASSIN_POWERS } from './paths/assassin-powers';
-// Add to POWER_DATA or appropriate lookup
-```
-
-**4. Add Resource Type in `src/data/pathResources.ts`:**
-
-```typescript
-export const PATH_RESOURCES: Record<string, PathResourceConfig> = {
-  assassin: {
-    type: 'momentum',
-    max: 100,
-    startingValue: 0,
-    generation: { passive: 5, onHit: 15, onCrit: 25 },
-    resourceBehavior: 'spend',
-  },
-};
-```
-
-### Adding a Passive Path (like Guardian)
-
-**1. Define Enhancements in `src/data/paths/{class}-enhancements.ts`:**
-
-```typescript
-// Example: src/data/paths/enchanter-enhancements.ts
-import type { StanceEnhancement } from '@/types/paths';
-
-export const ENCHANTER_AURA_ENHANCEMENTS: StanceEnhancement[] = [
-  {
-    id: 'aura_1_magic_shield',
-    name: 'Magic Shield',
-    tier: 1,
-    description: '+15% spell damage reduction',
-    stanceId: 'aura_stance',
-    effects: [{ type: 'damage_reduction', value: 15 }],
-  },
-  // ... more enhancements
-];
-```
-
-**2. Map Effects to PassiveEffectState in `src/ecs/systems/passive-effect.ts`:**
-
-The `recomputePassiveEffects()` function maps enhancement effects to computed values:
-
-```typescript
-// In recomputePassiveEffects(), add cases for new effect types:
-case 'spell_damage_reduction':
-  computed.spellDamageReductionPercent += effect.value;
-  break;
-```
-
-**3. Add Computed Fields to `src/ecs/components.ts`:**
-
-```typescript
-export interface ComputedPassiveEffects {
-  // ... existing fields
-  spellDamageReductionPercent: number;  // New field for Enchanter
-}
-```
-
-**4. Define Stances in `src/data/stances.ts`:**
-
-```typescript
-export const ENCHANTER_STANCES: PassiveStance[] = [
-  {
-    id: 'aura_stance',
-    name: 'Aura Stance',
-    description: 'Protective magical aura',
-    effects: [{ behavior: 'spell_shield', value: 0.1 }],
-  },
-];
-```
-
-**5. Update Snapshot in `src/ecs/snapshot.ts`:**
-
-```typescript
-// In createPlayerSnapshot(), add new computed values:
-passiveEffects: {
-  // ... existing
-  spellDamageReduction: computed.spellDamageReductionPercent,
-},
-```
-
-### Key Integration Points
-
-| System | Active Paths | Passive Paths |
-|--------|--------------|---------------|
-| `input.ts` | `USE_POWER` command | `CHANGE_STANCE` command |
-| `power.ts` | Executes power effects | — |
-| `passive-effect.ts` | — | `recomputePassiveEffects()`, combat hooks |
-| `combat.ts` | — | Reads from `passiveEffectState.computed` |
-| `resource-generation.ts` | Generates path resource | — |
-| `snapshot.ts` | Powers, cooldowns | `passiveEffects` object |
-
-### ECS Boundaries for Passive Effects
-
-**CRITICAL:** Passive effect hooks must respect ECS boundaries:
-
-```typescript
-// ✅ CORRECT: Hook returns values, system applies them
-export function processOnDamaged(player, damage): OnDamagedResult {
-  // Read from computed, mutate only passiveEffectState
-  // RETURN values for combat.ts to apply
-  return { reflectDamage: 10, healAmount: 5 };
-}
-
-// ❌ WRONG: Hook directly mutates other entities
-export function processOnDamaged(player, damage, enemy) {
-  enemy.health.current -= 10;  // NO! Return value instead
-}
-```
-
-### Testing Path Powers
-
-1. **Unit tests** in `src/data/paths/__tests__/` for data validation
-2. **ECS tests** in `src/ecs/systems/__tests__/` for system behavior
-3. **E2E tests** in `e2e/` for full integration (required for completion)
-
-See `docs/plans/2026-01-08-passive-effect-system-implementation.md` for the Guardian implementation as a reference.
-
 ## Additional References
 
-- Design documents in `docs/plans/`
-- Path aliases: `@/components`, `@/lib`, `@/hooks`, `@/types`, `@/data`, `@/constants`, `@/ecs`, `@/utils`
+- Design doc: `docs/plans/2026-02-08-game-redesign-v2.md`
+- v2 implementation plans: `docs/plans/v2/`
+- Path aliases: `@/components`, `@/lib`, `@/hooks`, `@/types`, `@/data`, `@/constants`, `@/store`, `@/math`, `@/utils`
 - shadcn/ui components: `npx shadcn@latest add <component-name>`

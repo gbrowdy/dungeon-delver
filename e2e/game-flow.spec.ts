@@ -1,451 +1,499 @@
 // e2e/game-flow.spec.ts
+// E2E tests for the full game flow: menu → class-select → combat → draft → floor-complete → boss shop
 import { test, expect } from '@playwright/test';
 import {
-  navigateToGame,
+  navigateClean,
   selectClassAndBegin,
   setSpeedToMax,
   waitForCombatOutcome,
-  waitForEnemySpawn,
-  waitForDeathAndRetry,
+  handleDraft,
+  handleShop,
+  continueFromFloorComplete,
+  handleNonCombatScreen,
 } from './helpers/game-actions';
 
-test.describe('Game Flow - Core Loop', () => {
-  test('can start game and reach combat', async ({ page }) => {
-    await navigateToGame(page);
-    await selectClassAndBegin(page, 'Warrior');
+// ---------------------------------------------------------------------------
+// 1. Main Menu → Start Game
+// ---------------------------------------------------------------------------
+test.describe('Main Menu', () => {
+  test('shows Start Game button and navigates to class select', async ({ page }) => {
+    await navigateClean(page);
 
-    // Verify combat started
-    await expect(page.getByTestId('floor-indicator')).toContainText('Floor 1');
-  });
+    const startButton = page.getByRole('button', { name: /start game/i });
+    await expect(startButton).toBeVisible();
 
-  test('stamina bar is visible for level 1 players', async ({ page }) => {
-    await navigateToGame(page);
-    await selectClassAndBegin(page, 'Warrior');
+    await startButton.click();
 
-    // Verify stamina resource bar is visible
-    const staminaBar = page.getByTestId('resource-bar-stamina');
-    await expect(staminaBar).toBeVisible({ timeout: 5000 });
-
-    // Verify it shows the correct resource type
-    await expect(staminaBar).toHaveAttribute('aria-label', /Stamina:/);
-
-    // Verify it has the correct initial values (50/50)
-    await expect(staminaBar).toHaveAttribute('aria-valuemax', '50');
-  });
-
-  test('combat plays out to an outcome (enemy dies or player dies)', async ({ page }) => {
-    await navigateToGame(page);
-    await selectClassAndBegin(page, 'Warrior');
-    await setSpeedToMax(page);
-
-    // Wait for any combat outcome
-    const outcome = await waitForCombatOutcome(page, { timeout: 120000 });
-
-    // Either outcome is valid - game is functioning
-    expect(['enemy_died', 'player_died', 'floor_complete']).toContain(outcome);
-  });
-
-  test('death screen appears and retry works', async ({ page }) => {
-    await navigateToGame(page);
-    await selectClassAndBegin(page, 'Warrior');
-    await setSpeedToMax(page);
-
-    // Wait for combat outcome - we want player death
-    const outcome = await waitForCombatOutcome(page, { timeout: 120000 });
-
-    if (outcome === 'player_died') {
-      // Verify death screen
-      await expect(page.getByTestId('death-screen')).toBeVisible();
-      await expect(page.getByTestId('death-floor-display')).toContainText('Floor 1');
-
-      // Click retry
-      await page.getByTestId('retry-button').click();
-
-      // Verify back in combat
-      await expect(page.getByTestId('floor-indicator')).toContainText('Floor 1');
-      await expect(page.getByTestId('death-screen')).not.toBeVisible();
-    } else {
-      // If enemy died first, that's also a valid test - game is working
-      expect(outcome).toBe('enemy_died');
-    }
-  });
-
-  test('killing an enemy spawns next enemy or completes floor', async ({ page }) => {
-    // Use boosted stats to ensure we kill enemy
-    await navigateToGame(page, 'devMode=true&playerAttack=50&playerDefense=20');
-    await selectClassAndBegin(page, 'Warrior');
-    await setSpeedToMax(page);
-
-    // Wait for first enemy to die
-    const outcome = await waitForCombatOutcome(page, { timeout: 60000 });
-    expect(outcome).toBe('enemy_died');
-
-    // Either next enemy spawns or floor completes
-    const nextOutcome = await Promise.race([
-      waitForEnemySpawn(page).then(() => 'enemy_spawned' as const),
-      page.getByText('FLOOR COMPLETE!').waitFor({ state: 'visible', timeout: 5000 }).then(() => 'floor_complete' as const),
-    ]);
-
-    expect(['enemy_spawned', 'floor_complete']).toContain(nextOutcome);
+    // Class select screen should appear with all three class cards
+    await expect(page.getByTestId('class-card-warrior')).toBeVisible();
+    await expect(page.getByTestId('class-card-mage')).toBeVisible();
+    await expect(page.getByTestId('class-card-rogue')).toBeVisible();
   });
 });
 
-test.describe('Game Flow - Progression', () => {
-  test('level up triggers path selection at level 2', async ({ page }) => {
-    // High XP multiplier to level up after 2-3 kills
-    // Boosted stats to survive and kill quickly
-    await navigateToGame(page, 'devMode=true&xpMultiplier=10&playerAttack=40&playerDefense=25');
-    await selectClassAndBegin(page, 'Warrior');
-    await setSpeedToMax(page);
-
-    // Kill enemies until we level up
-    let leveled = false;
-    for (let i = 0; i < 10 && !leveled; i++) {
-      const outcome = await waitForCombatOutcome(page, { timeout: 60000 });
-
-      if (outcome === 'player_died') {
-        // Retry and continue
-        await waitForDeathAndRetry(page);
-        await setSpeedToMax(page);
-        continue;
-      }
-
-      // Check for level up popup
-      const levelUpVisible = await page.getByTestId('level-up-popup').isVisible();
-      if (levelUpVisible) {
-        leveled = true;
-
-        // Dismiss level up popup
-        const closeButton = page.getByRole('button', { name: /continue|close|ok/i }).first();
-        await closeButton.click();
-
-        // Should show path selection
-        await expect(page.getByTestId('path-selection')).toBeVisible({ timeout: 5000 });
-        break;
-      }
-
-      // Wait for next enemy
-      if (outcome === 'enemy_died') {
-        await waitForEnemySpawn(page).catch(() => {});
-      }
-    }
-
-    expect(leveled).toBe(true);
+// ---------------------------------------------------------------------------
+// 2. Class Selection → Combat Start
+// ---------------------------------------------------------------------------
+test.describe('Class Selection', () => {
+  test.beforeEach(async ({ page }) => {
+    await navigateClean(page);
   });
 
-  test('selecting a path returns to combat', async ({ page }) => {
-    test.setTimeout(90000); // 90 seconds for this test
+  for (const className of ['Warrior', 'Mage', 'Rogue'] as const) {
+    test(`selecting ${className} starts combat`, async ({ page }) => {
+      await selectClassAndBegin(page, className);
 
-    await navigateToGame(page, 'devMode=true&xpMultiplier=10&playerAttack=40&playerDefense=25');
+      // Combat UI elements should be present
+      await expect(page.getByTestId('floor-indicator')).toBeVisible();
+      await expect(page.getByTestId('player-health')).toBeVisible();
+      await expect(page.getByTestId('enemy-health')).toBeVisible();
+      await expect(page.getByTestId('speed-toggle')).toBeVisible();
+      await expect(page.getByTestId('pause-toggle')).toBeVisible();
+    });
+  }
+
+  test('Begin Descent button is disabled until a class is selected', async ({ page }) => {
+    await page.getByRole('button', { name: /start game/i }).click();
+
+    const beginButton = page.getByRole('button', { name: /begin descent/i });
+    await expect(beginButton).toBeDisabled();
+
+    // Select a class
+    await page.getByTestId('class-card-warrior').click();
+    await expect(beginButton).toBeEnabled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 3. Combat Basics
+// ---------------------------------------------------------------------------
+test.describe('Combat Screen', () => {
+  test('floor indicator shows Floor 1, Room 1', async ({ page }) => {
+    await navigateClean(page, 'testMode=true');
     await selectClassAndBegin(page, 'Warrior');
+
+    const floorText = await page.getByTestId('floor-indicator').textContent();
+    expect(floorText).toContain('Floor 1');
+    expect(floorText).toContain('Room 1');
+  });
+
+  test('speed toggle cycles through 1x, 2x, 4x', async ({ page }) => {
+    await navigateClean(page, 'testMode=true');
+    await selectClassAndBegin(page, 'Warrior');
+
+    const speedButton = page.getByTestId('speed-toggle');
+
+    // Default is 1x
+    await expect(speedButton).toContainText('1x');
+
+    // Click → 2x
+    await speedButton.click();
+    await expect(speedButton).toContainText('2x');
+
+    // Click → 4x
+    await speedButton.click();
+    await expect(speedButton).toContainText('4x');
+
+    // Click → back to 1x
+    await speedButton.click();
+    await expect(speedButton).toContainText('1x');
+  });
+
+  test('pause button toggles between Pause and Play', async ({ page }) => {
+    await navigateClean(page, 'testMode=true');
+    await selectClassAndBegin(page, 'Warrior');
+
+    const pauseButton = page.getByTestId('pause-toggle');
+
+    // Default is Pause (game running)
+    await expect(pauseButton).toContainText('Pause');
+
+    await pauseButton.click();
+    await expect(pauseButton).toContainText('Play');
+
+    await pauseButton.click();
+    await expect(pauseButton).toContainText('Pause');
+  });
+
+  test('character sheet toggle is visible during combat', async ({ page }) => {
+    await navigateClean(page, 'testMode=true');
+    await selectClassAndBegin(page, 'Warrior');
+
+    await expect(page.getByTestId('character-sheet-toggle')).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 4. Draft Flow
+// ---------------------------------------------------------------------------
+test.describe('Draft Flow', () => {
+  test('draft screen appears after enemy kills and returns to combat', async ({ page }) => {
+    await navigateClean(page, 'testMode=true');
+
+    // Setup a strong player so enemies die fast
+    await page.evaluate(() => {
+      window.__TEST_HOOKS__?.setupRun({
+        classId: 'warrior',
+        floor: 1,
+        stats: { power: 200, fortitude: 100, speed: 50 },
+      });
+    });
+
+    await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
     await setSpeedToMax(page);
 
-    // Kill enemies until level up and path selection appears
-    let foundPathSelection = false;
-    for (let i = 0; i < 15 && !foundPathSelection; i++) {
-      const outcome = await waitForCombatOutcome(page, { timeout: 30000 });
+    // With high stats, we should reach a draft (after 3 enemy kills) fairly quickly
+    const outcome = await waitForCombatOutcome(page, { timeout: 30000 });
+    // Could be draft or floor-complete depending on room count
+    expect(['draft', 'floor_complete']).toContain(outcome);
 
-      if (outcome === 'player_died') {
-        await waitForDeathAndRetry(page);
-        await setSpeedToMax(page);
-        continue;
-      }
+    // If we hit a draft, handle it
+    if (outcome === 'draft') {
+      await expect(page.getByTestId('draft-screen')).toBeVisible();
 
-      // Check for level up popup
-      const levelUpVisible = await page.getByTestId('level-up-popup').isVisible();
-      if (levelUpVisible) {
-        const closeButton = page.getByRole('button', { name: /continue|close|ok/i }).first();
-        await closeButton.click();
+      // Verify draft has selectable cards
+      const cards = page.locator('[data-testid="draft-screen"] button').filter({ hasNotText: /confirm/i });
+      await expect(cards.first()).toBeVisible();
 
-        // Wait for path selection to appear (with timeout)
-        try {
-          await page.getByTestId('path-selection').waitFor({ state: 'visible', timeout: 3000 });
-          foundPathSelection = true;
-        } catch {
-          // Path selection didn't appear, continue combat
-        }
-      }
+      // Handle the draft (select first card + confirm)
+      await handleDraft(page);
 
-      if (!foundPathSelection && outcome === 'enemy_died') {
-        await waitForEnemySpawn(page).catch(() => {});
-      }
+      // Should return to combat or hit another phase
+      await expect(
+        page.getByTestId('floor-indicator')
+          .or(page.getByTestId('floor-complete'))
+          .or(page.getByTestId('shop-screen'))
+      ).toBeVisible({ timeout: 10000 });
     }
+  });
 
-    // Assert we found path selection
-    expect(foundPathSelection).toBe(true);
+  test('draft screen via testHooks: card selection and confirm', async ({ page }) => {
+    await navigateClean(page, 'testMode=true');
 
-    // Select first path by clicking "Select Path" button
-    const selectPathButton = page.getByRole('button', { name: /Select Path/i }).first();
-    await selectPathButton.click();
+    // Setup run, then force a draft phase with generated cards
+    await page.evaluate(() => {
+      window.__TEST_HOOKS__?.setupRun({ classId: 'warrior', floor: 1 });
+    });
 
-    // Click confirm button to finalize selection
-    const confirmButton = page.getByTestId('path-confirm-button');
-    await expect(confirmButton).toBeEnabled({ timeout: 2000 });
+    await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
+
+    // Trigger draft via the store's openDraft action
+    await page.evaluate(() => {
+      window.__TEST_HOOKS__?.setState({ fightCount: 3 });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const state = window.__TEST_HOOKS__?.getState() as any;
+      if (state?.openDraft) state.openDraft();
+    });
+
+    await expect(page.getByTestId('draft-screen')).toBeVisible({ timeout: 5000 });
+
+    // Verify there are draft cards rendered
+    const draftCards = page.locator('[data-testid="draft-screen"] button').filter({ hasNotText: /confirm/i });
+    const cardCount = await draftCards.count();
+    expect(cardCount).toBeGreaterThanOrEqual(3);
+
+    // Confirm button should be disabled with no selection
+    const confirmButton = page.getByRole('button', { name: /confirm/i });
+    await expect(confirmButton).toBeDisabled();
+
+    // Select first card
+    await draftCards.first().click();
+
+    // Confirm should now be enabled
+    await expect(confirmButton).toBeEnabled();
     await confirmButton.click();
 
-    // Should be back in combat
-    await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
+    // Should transition out of draft
+    await expect(page.getByTestId('draft-screen')).not.toBeVisible({ timeout: 5000 });
   });
 });
 
-test.describe('Game Flow - Floor Complete', () => {
-  test('completing a floor shows floor complete screen', async ({ page }) => {
-    test.setTimeout(120000); // 2 minutes for floor completion
+// ---------------------------------------------------------------------------
+// 5. Floor Completion
+// ---------------------------------------------------------------------------
+test.describe('Floor Completion', () => {
+  test('floor-complete screen shows after clearing last room of a non-boss floor', async ({ page }) => {
+    await navigateClean(page, 'testMode=true');
 
-    // Very strong player to clear floor quickly
-    await navigateToGame(page, 'devMode=true&playerAttack=100&playerDefense=50');
-    await selectClassAndBegin(page, 'Warrior');
+    // Setup on floor 1 (non-boss, 2 rooms) with very high stats to clear quickly
+    await page.evaluate(() => {
+      window.__TEST_HOOKS__?.setupRun({
+        classId: 'warrior',
+        floor: 1,
+        stats: { power: 500, fortitude: 200, speed: 80 },
+      });
+    });
+
+    await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
     await setSpeedToMax(page);
 
-    // Keep waiting for outcomes until we get floor complete
-    let outcome: 'enemy_died' | 'player_died' | 'floor_complete' = 'enemy_died';
-    for (let i = 0; i < 10 && outcome !== 'floor_complete'; i++) {
-      outcome = await waitForCombatOutcome(page, { timeout: 30000 });
+    // Wait for combat to resolve — could be draft or floor-complete
+    let reached = false;
+    for (let i = 0; i < 5; i++) {
+      const outcome = await waitForCombatOutcome(page, { timeout: 30000 });
+      if (outcome === 'floor_complete') {
+        reached = true;
+        break;
+      }
+      if (outcome === 'draft') {
+        await handleDraft(page);
+        continue;
+      }
+      break;
+    }
 
-      if (outcome === 'player_died') {
-        // Shouldn't happen with these stats, but handle it
-        await waitForDeathAndRetry(page);
-        await setSpeedToMax(page);
-      } else if (outcome === 'enemy_died') {
-        // Wait for next enemy or floor complete
-        await page.waitForTimeout(1000);
+    expect(reached).toBe(true);
+
+    await expect(page.getByTestId('floor-complete')).toBeVisible();
+    const text = await page.getByTestId('floor-complete').textContent();
+    expect(text).toContain('Floor');
+    expect(text).toContain('Complete');
+    await expect(page.getByTestId('continue-button')).toBeVisible();
+  });
+
+  test('continue button advances to next floor', async ({ page }) => {
+    await navigateClean(page, 'testMode=true');
+
+    // Setup a run and force floor-complete via the store
+    await page.evaluate(() => {
+      window.__TEST_HOOKS__?.setupRun({
+        classId: 'warrior',
+        floor: 2,
+        stats: { power: 500, fortitude: 200, speed: 80 },
+      });
+    });
+
+    await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
+
+    // Force floor-complete phase
+    await page.evaluate(() => {
+      window.__TEST_HOOKS__?.setPhase('floor-complete');
+    });
+
+    await expect(page.getByTestId('floor-complete')).toBeVisible({ timeout: 5000 });
+
+    // Click continue
+    await continueFromFloorComplete(page);
+
+    // Should be in combat on next floor
+    await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
+    const floorText = await page.getByTestId('floor-indicator').textContent();
+    expect(floorText).toContain('Floor 3');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6. Boss Shop Flow
+// ---------------------------------------------------------------------------
+test.describe('Boss Shop', () => {
+  test('shop screen appears after clearing boss floor (floor 3)', async ({ page }) => {
+    await navigateClean(page, 'testMode=true');
+
+    // Set up on boss floor 3 with high stats
+    await page.evaluate(() => {
+      window.__TEST_HOOKS__?.setupRun({
+        classId: 'warrior',
+        floor: 3,
+        stats: { power: 500, fortitude: 200, speed: 80 },
+      });
+    });
+
+    await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
+    await setSpeedToMax(page);
+
+    // Fight through rooms until shop appears
+    let reachedShop = false;
+    for (let i = 0; i < 10; i++) {
+      const outcome = await waitForCombatOutcome(page, { timeout: 30000 });
+      if (outcome === 'shop') {
+        reachedShop = true;
+        break;
+      }
+      if (outcome === 'draft') {
+        await handleDraft(page);
+        continue;
+      }
+      if (outcome === 'floor_complete') {
+        await continueFromFloorComplete(page);
+        continue;
+      }
+      break;
+    }
+
+    expect(reachedShop).toBe(true);
+
+    await expect(page.getByTestId('shop-screen')).toBeVisible();
+    const shopContent = await page.getByTestId('shop-screen').textContent();
+    expect(shopContent).toContain('Boss Defeated');
+  });
+
+  test('shop card selection and confirm flow', async ({ page }) => {
+    await navigateClean(page, 'testMode=true');
+
+    // Setup run and force shop phase via store
+    await page.evaluate(() => {
+      window.__TEST_HOOKS__?.setupRun({
+        classId: 'warrior',
+        floor: 3,
+        stats: { power: 100, fortitude: 50, speed: 30 },
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const state = window.__TEST_HOOKS__?.getState() as any;
+      if (state?.openShop) state.openShop();
+    });
+
+    await expect(page.getByTestId('shop-screen')).toBeVisible({ timeout: 5000 });
+
+    // Shop should have cards
+    const shopCards = page.getByTestId('shop-screen').locator('button').filter({ hasNotText: /confirm/i });
+    const cardCount = await shopCards.count();
+    expect(cardCount).toBeGreaterThanOrEqual(1);
+
+    // Confirm button should be disabled initially
+    const confirmButton = page.getByTestId('shop-screen').getByRole('button', { name: /confirm/i });
+    await expect(confirmButton).toBeDisabled();
+
+    // Select a card
+    await shopCards.first().click();
+
+    // If an item comparison modal appeared, close it by clicking "Keep"
+    const keepButton = page.getByRole('button', { name: /keep/i });
+    if (await keepButton.isVisible().catch(() => false)) {
+      await keepButton.click();
+      // Try the next card instead (it was an item card that opened comparison)
+      if (cardCount > 1) {
+        await shopCards.nth(1).click();
       }
     }
 
-    // Verify we got floor complete
-    expect(outcome).toBe('floor_complete');
+    // Confirm should be enabled after selecting at least one card
+    await expect(confirmButton).toBeEnabled({ timeout: 3000 });
+    await confirmButton.click();
 
-    // Should show floor complete screen (dynamic text like "Floor 1 Complete!")
-    await expect(page.getByText(/Floor \d+ Complete!/)).toBeVisible({ timeout: 5000 });
+    // After shop confirm, transitions to floor-complete
+    await expect(page.getByTestId('floor-complete')).toBeVisible({ timeout: 10000 });
   });
+});
 
-  test('continue from floor complete starts next floor', async ({ page }) => {
-    test.setTimeout(120000); // 2 minutes total
+// ---------------------------------------------------------------------------
+// 7. Full Flow: Start → Reach Floor 2+
+// ---------------------------------------------------------------------------
+test.describe('Full Game Flow', () => {
+  test('complete flow from start to floor 2 using testHooks for speed', async ({ page }) => {
+    await navigateClean(page, 'testMode=true');
 
-    await navigateToGame(page, 'devMode=true&playerAttack=100&playerDefense=50');
+    // Step 1: Start game, select Warrior, begin descent
     await selectClassAndBegin(page, 'Warrior');
+    await expect(page.getByTestId('floor-indicator')).toBeVisible();
+
+    // Boost player stats so combat is nearly instant
+    await page.evaluate(() => {
+      window.__TEST_HOOKS__?.setPlayerStats({
+        power: 500,
+        fortitude: 200,
+        speed: 80,
+      });
+    });
+
     await setSpeedToMax(page);
 
-    // Clear floor - wait for floor complete text (dynamic like "Floor 1 Complete!")
-    await page.getByText(/Floor \d+ Complete!/).waitFor({ state: 'visible', timeout: 90000 });
-
-    // Click continue button
-    const continueButton = page.getByTestId('continue-button');
-    await continueButton.waitFor({ state: 'visible' });
-    await continueButton.click();
-
-    // Wait for floor complete screen to disappear and combat to start
-    await page.getByText(/Floor \d+ Complete!/).waitFor({ state: 'hidden', timeout: 10000 });
-
-    // Should be on floor 2
-    await expect(page.getByTestId('floor-indicator')).toContainText('Floor 2', { timeout: 10000 });
-  });
-
-  test('floor complete resets player to full health, clears cooldowns and status', async ({ page }) => {
-    test.setTimeout(180000); // 3 minutes total
-
-    // Use stats that let player win but still take some damage on floor 1
-    // High attack to kill fast, high defense for floor 2 check (prevent immediate damage)
-    await navigateToGame(page, 'devMode=true&playerAttack=80&playerDefense=30');
-    await selectClassAndBegin(page, 'Warrior');
-    await setSpeedToMax(page);
-
-    // Helper to get player health values (only works during combat view)
-    // Health displays as "50/100" text format
-    const getPlayerHealth = async () => {
-      const healthText = page.getByTestId('player-health');
-      await healthText.waitFor({ state: 'visible', timeout: 5000 });
-      const text = await healthText.textContent();
-      const match = text?.match(/(\d+)\s*\/\s*(\d+)/);
-      return {
-        current: parseInt(match?.[1] ?? '0'),
-        max: parseInt(match?.[2] ?? '0'),
-      };
-    };
-
-    // Get initial health
-    const initialHealth = await getPlayerHealth();
-    expect(initialHealth.max).toBeGreaterThan(0);
-
-    // Track health before floor complete
-    let healthBeforeFloorComplete = { current: initialHealth.max, max: initialHealth.max };
-
-    // Clear floor 1 - keep fighting until floor complete
-    let reachedFloorComplete = false;
-    for (let i = 0; i < 20 && !reachedFloorComplete; i++) {
-      // Capture health before each combat outcome (while still in combat view)
-      try {
-        healthBeforeFloorComplete = await getPlayerHealth();
-      } catch {
-        // Health bar may not be visible during transitions
-      }
-
+    // Step 2: Fight through floor 1, handling intermediate screens
+    let floorCompleted = false;
+    for (let attempt = 0; attempt < 10; attempt++) {
       const outcome = await waitForCombatOutcome(page, { timeout: 30000 });
 
       if (outcome === 'floor_complete') {
-        reachedFloorComplete = true;
+        floorCompleted = true;
         break;
       }
 
-      if (outcome === 'player_died') {
-        // Retry and continue
-        await waitForDeathAndRetry(page);
-        await setSpeedToMax(page);
-      }
-
-      // Wait for next enemy if we killed one
-      if (outcome === 'enemy_died') {
-        await page.waitForTimeout(1000);
-      }
-    }
-
-    expect(reachedFloorComplete).toBe(true);
-
-    // Verify floor complete screen is showing
-    await expect(page.getByText(/Floor \d+ Complete!/)).toBeVisible();
-
-    // Click continue to advance to floor 2
-    const continueButton = page.getByTestId('continue-button');
-    await continueButton.click();
-
-    // Wait for combat to start on floor 2
-    await expect(page.getByTestId('floor-indicator')).toContainText('Floor 2', { timeout: 10000 });
-
-    // Pause immediately to prevent combat from dealing damage before we check
-    const pauseButton = page.getByRole('button', { name: /pause/i });
-    await pauseButton.click();
-
-    // Wait for combat view to stabilize
-    await page.waitForTimeout(500);
-
-    // Verify health is now at maximum (full reset)
-    const healthOnFloor2 = await getPlayerHealth();
-    expect(healthOnFloor2.current).toBe(healthOnFloor2.max);
-
-    // Also verify health max is consistent
-    expect(healthOnFloor2.max).toBe(initialHealth.max);
-
-    // Verify stamina is at max (resource reset)
-    const staminaBar = page.getByTestId('resource-bar-stamina');
-    if (await staminaBar.isVisible()) {
-      const staminaCurrent = await staminaBar.getAttribute('aria-valuenow');
-      const staminaMax = await staminaBar.getAttribute('aria-valuemax');
-      expect(staminaCurrent).toBe(staminaMax);
-    }
-  });
-});
-
-test.describe('Guardian passive path', () => {
-  test('should display stance UI after selecting Guardian path', async ({ page }) => {
-    test.setTimeout(120000); // 2 minutes for leveling up and path selection
-
-    // Use boosted stats and XP to survive and level up quickly
-    await navigateToGame(page, 'devMode=true&xpMultiplier=10&playerAttack=40&playerDefense=30');
-    await selectClassAndBegin(page, 'Warrior');
-    await setSpeedToMax(page);
-
-    // Kill enemies until we level up and path selection appears
-    let foundPathSelection = false;
-    for (let i = 0; i < 15 && !foundPathSelection; i++) {
-      const outcome = await waitForCombatOutcome(page, { timeout: 30000 });
-
-      if (outcome === 'player_died') {
-        await waitForDeathAndRetry(page);
-        await setSpeedToMax(page);
+      if (outcome === 'draft') {
+        await handleDraft(page);
         continue;
       }
 
-      // Check for level up popup
-      const levelUpVisible = await page.getByTestId('level-up-popup').isVisible();
-      if (levelUpVisible) {
-        const closeButton = page.getByRole('button', { name: /continue|close|ok/i }).first();
-        await closeButton.click();
+      if (outcome === 'player_died') {
+        break;
+      }
 
-        // Wait for path selection to appear
-        try {
-          await page.getByTestId('path-selection').waitFor({ state: 'visible', timeout: 3000 });
-          foundPathSelection = true;
-        } catch {
-          // Path selection didn't appear, continue combat
+      break;
+    }
+
+    expect(floorCompleted).toBe(true);
+
+    // Step 3: Continue to floor 2
+    await expect(page.getByTestId('floor-complete')).toBeVisible();
+    await continueFromFloorComplete(page);
+
+    // Step 4: Verify we're on floor 2
+    await expect(page.getByTestId('floor-indicator')).toBeVisible();
+    const floorText = await page.getByTestId('floor-indicator').textContent();
+    expect(floorText).toContain('Floor 2');
+    expect(floorText).toContain('Room 1');
+
+    // Verify combat elements are present on new floor
+    await expect(page.getByTestId('player-health')).toBeVisible();
+    await expect(page.getByTestId('enemy-health')).toBeVisible();
+  });
+
+  test('full flow through boss floor 3 with shop', async ({ page }) => {
+    await navigateClean(page, 'testMode=true');
+
+    // Start as Rogue (test a different class)
+    await selectClassAndBegin(page, 'Rogue');
+
+    // Boost stats massively
+    await page.evaluate(() => {
+      window.__TEST_HOOKS__?.setPlayerStats({
+        power: 1000,
+        fortitude: 500,
+        speed: 100,
+      });
+    });
+
+    await setSpeedToMax(page);
+
+    // Clear floors 1-3, handling all screens
+    let currentFloor = 1;
+    const MAX_ITERATIONS = 20;
+
+    for (let i = 0; i < MAX_ITERATIONS && currentFloor < 4; i++) {
+      const phase = await page.evaluate(() => window.__TEST_HOOKS__?.getState()?.phase);
+
+      if (phase === 'combat') {
+        const outcome = await waitForCombatOutcome(page, { timeout: 30000 });
+
+        if (outcome === 'draft') {
+          await handleDraft(page);
+        } else if (outcome === 'floor_complete') {
+          currentFloor++;
+          await continueFromFloorComplete(page);
+        } else if (outcome === 'shop') {
+          await expect(page.getByTestId('shop-screen')).toBeVisible();
+          await handleShop(page);
+
+          // After shop → floor-complete
+          await expect(page.getByTestId('floor-complete')).toBeVisible({ timeout: 10000 });
+          currentFloor++;
+          await continueFromFloorComplete(page);
+        } else if (outcome === 'player_died') {
+          // Re-boost and retry
+          await page.getByTestId('retry-button').click();
+          await page.evaluate(() => {
+            window.__TEST_HOOKS__?.setPlayerStats({
+              power: 1000,
+              fortitude: 500,
+              speed: 100,
+            });
+          });
         }
-      }
-
-      if (!foundPathSelection && outcome === 'enemy_died') {
-        await waitForEnemySpawn(page).catch(() => {});
+      } else {
+        const handled = await handleNonCombatScreen(page);
+        if (!handled) break;
       }
     }
 
-    // Must have found path selection
-    expect(foundPathSelection).toBe(true);
-
-    // Find and click the Guardian path card (passive type, blue badge)
-    // Guardian has "passive" badge and description about "outlast" and "survivability"
-    const guardianCard = page.locator('[role="button"][aria-label*="Guardian"]');
-    await guardianCard.click();
-
-    // Click confirm button to finalize selection
-    const confirmButton = page.getByTestId('path-confirm-button');
-    await expect(confirmButton).toBeEnabled({ timeout: 2000 });
-    await confirmButton.click();
-
-    // Should be back in combat
-    await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
-
-    // Verify stance UI is visible - Guardian has Iron Stance and Retribution Stance
-    // The StanceToggle displays stance names like "Iron Stance" with "Active" indicator
-    const stanceHeader = page.locator('h3:has-text("Stance")');
-    await expect(stanceHeader).toBeVisible({ timeout: 5000 });
-
-    // Verify at least one stance button is visible
-    // Stance buttons have aria-label that includes the stance name
-    const ironStanceButton = page.locator('button[aria-label*="Iron Stance"]');
-    const retributionStanceButton = page.locator('button[aria-label*="Retribution Stance"]');
-
-    // At least one of the stances should be visible
-    await expect(ironStanceButton.or(retributionStanceButton).first()).toBeVisible({ timeout: 5000 });
-
-    // Verify one stance is marked as Active
-    const activeStance = page.locator('button[aria-pressed="true"]').filter({ hasText: /Iron|Retribution/ });
-    await expect(activeStance).toBeVisible({ timeout: 2000 });
-  });
-});
-
-test.describe('Game Flow - Shop', () => {
-  test('shop can be opened from death screen', async ({ page }) => {
-    await navigateToGame(page, 'devMode=true&gold=500');
-    await selectClassAndBegin(page, 'Warrior');
-    await setSpeedToMax(page);
-
-    // Wait for death (normal stats, will die eventually)
-    await page.getByTestId('death-screen').waitFor({ state: 'visible', timeout: 120000 });
-
-    // Open shop
-    const shopButton = page.getByRole('button', { name: /shop/i });
-    await shopButton.click();
-
-    // Verify shop is visible
-    await expect(page.locator('text=Shop').or(page.locator('text=SHOP'))).toBeVisible({ timeout: 5000 });
-  });
-
-  test('can purchase item in shop', async ({ page }) => {
-    await navigateToGame(page, 'devMode=true&gold=1000');
-    await selectClassAndBegin(page, 'Warrior');
-    await setSpeedToMax(page);
-
-    // Wait for death
-    await page.getByTestId('death-screen').waitFor({ state: 'visible', timeout: 120000 });
-
-    // Open shop
-    await page.getByRole('button', { name: /shop/i }).click();
-    await expect(page.locator('text=Shop').or(page.locator('text=SHOP'))).toBeVisible();
-
-    // Find and click a purchasable item (first buy button)
-    const buyButton = page.getByRole('button', { name: /buy/i }).first();
-    if (await buyButton.isVisible()) {
-      await buyButton.click();
-
-      // Verify purchase happened (gold decreased or item added)
-      // This is verified by no error occurring
-    }
+    // We should have progressed beyond floor 3
+    expect(currentFloor).toBeGreaterThanOrEqual(4);
   });
 });

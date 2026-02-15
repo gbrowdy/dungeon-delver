@@ -5,7 +5,7 @@ interface PixelDividerProps {
    * Color scheme for the divider
    * @default 'orange'
    */
-  color?: 'orange' | 'amber' | 'slate' | 'purple' | 'emerald';
+  color?: 'orange' | 'amber' | 'slate' | 'purple' | 'emerald' | 'red' | 'blue';
   /**
    * Additional CSS classes to apply to the container
    */
@@ -37,6 +37,16 @@ const colorSchemes = {
     outer: 'bg-emerald-500',
     center: 'bg-emerald-400',
     gradient: 'from-emerald-500/80',
+  },
+  red: {
+    outer: 'bg-red-500',
+    center: 'bg-red-400',
+    gradient: 'from-red-500/80',
+  },
+  blue: {
+    outer: 'bg-blue-500',
+    center: 'bg-blue-400',
+    gradient: 'from-blue-500/80',
   },
 } as const;
 
