@@ -43,7 +43,8 @@ export function StatusEffectBadges({ effects }: { effects: StatusEffect[] }) {
           key={`${effect.type}-${i}`}
           className={cn('px-1.5 py-0.5 rounded text-pixel-2xs font-bold uppercase', STATUS_COLORS[effect.type])}
         >
-          {effect.type}{effect.stacks > 1 ? ` x${effect.stacks}` : ''}
+          {effect.type}
+          {effect.type === 'shield' ? ` ${effect.stacks}` : effect.stacks > 1 ? ` x${effect.stacks}` : ''}
         </span>
       ))}
     </div>
