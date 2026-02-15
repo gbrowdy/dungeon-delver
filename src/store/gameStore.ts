@@ -180,14 +180,13 @@ export const useGameStore = create<GameStore>()(
     const roomsPerFloor = getRoomsPerFloor(nextFloor);
 
     state.player.hp = state.player.maxHp;
-    state.player.statusEffects = [];
     state.floor = nextFloor;
     state.room = 1;
     state.roomsPerFloor = roomsPerFloor;
     state.fightCount = 0;
     state.depth = Math.max(state.depth, nextFloor);
 
-    spawnEnemy(state, false);
+    spawnEnemy(state, false); // also clears player.statusEffects
 
     set({ phase: 'combat' });
   },
@@ -198,13 +197,12 @@ export const useGameStore = create<GameStore>()(
     const roomsPerFloor = getRoomsPerFloor(respawnFloor);
 
     state.player.hp = state.player.maxHp;
-    state.player.statusEffects = [];
     state.floor = respawnFloor;
     state.room = 1;
     state.roomsPerFloor = roomsPerFloor;
     state.fightCount = 0;
 
-    spawnEnemy(state, false);
+    spawnEnemy(state, false); // also clears player.statusEffects
 
     set({ phase: 'combat' });
   },
@@ -215,14 +213,13 @@ export const useGameStore = create<GameStore>()(
     const roomsPerFloor = getRoomsPerFloor(floor);
 
     state.player.hp = state.player.maxHp;
-    state.player.statusEffects = [];
     state.floor = floor;
     state.room = 1;
     state.roomsPerFloor = roomsPerFloor;
     state.fightCount = 0;
     state.depth = Math.max(state.depth, floor);
 
-    spawnEnemy(state, false);
+    spawnEnemy(state, false); // also clears player.statusEffects
 
     set({ phase: 'combat' });
   },
@@ -234,16 +231,7 @@ export const useGameStore = create<GameStore>()(
     if (!isLastRoom) {
       state.room += 1;
       spawnEnemy(state, false);
-      set({
-        phase: 'combat',
-        room: state.room,
-        enemy: state.enemy,
-        enemyDefinition: state.enemyDefinition,
-        combatElapsed: state.combatElapsed,
-        combatEvents: state.combatEvents,
-        combatCounters: state.combatCounters,
-        lastPlayerHitDamage: state.lastPlayerHitDamage,
-      });
+      set({ phase: 'combat' });
       return;
     }
 
@@ -254,13 +242,9 @@ export const useGameStore = create<GameStore>()(
 
     if (isBossFloor(state.floor)) {
       state.checkpoint = state.floor;
-      const cards = generateShopCards(state);
-      set({
-        phase: 'shop',
-        checkpoint: state.floor,
-        shopCards: cards,
-        selectedChoices: [],
-      });
+      state.shopCards = generateShopCards(state);
+      state.selectedChoices = [];
+      set({ phase: 'shop' });
       return;
     }
 
