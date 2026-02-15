@@ -10,6 +10,8 @@ import { ItemSlots } from '@/components/game/ItemSlots';
 import { getAttackInterval } from '@/math/stats';
 import { getEnemySpriteType } from '@/utils/spriteMapping';
 import { useSpriteAnimation } from '@/hooks/useSpriteAnimation';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { cn } from '@/lib/utils';
 
 interface FloatingNum {
   id: number;
@@ -39,6 +41,10 @@ export function CombatScreen() {
 
   // Sprite combat animations (lunge, hit, crit, dodge, death)
   const spriteAnims = useSpriteAnimation();
+  const reducedMotion = useReducedMotion();
+
+  // Screen shake on crits
+  const [shaking, setShaking] = useState(false);
 
   // Floating damage numbers (React-local state)
   const [floatingNumbers, setFloatingNumbers] = useState<FloatingNum[]>([]);
@@ -77,6 +83,12 @@ export function CombatScreen() {
     if (newNumbers.length > 0) {
       setFloatingNumbers(prev => [...prev, ...newNumbers]);
     }
+
+    // Screen shake on critical hits
+    if (!reducedMotion && newEvents.some(e => e.type === 'crit')) {
+      setShaking(true);
+      setTimeout(() => setShaking(false), 150);
+    }
   }, [combatEvents, spriteAnims]);
 
   const removeFloatingNumber = useCallback((id: number) => {
@@ -97,7 +109,7 @@ export function CombatScreen() {
       {/* Battle arena */}
       <div className="flex-1 relative flex flex-col items-center justify-center px-4">
         {/* Sprites area */}
-        <div className="relative w-full max-w-2xl h-64 sm:h-80 flex items-end justify-between px-8 sm:px-16">
+        <div className={cn('relative w-full max-w-2xl h-64 sm:h-80 flex items-end justify-between px-8 sm:px-16', shaking && 'animate-screen-shake')}>
           {/* Player side */}
           <div className="flex flex-col items-center gap-2">
             <div className={spriteAnims.playerClass}>
