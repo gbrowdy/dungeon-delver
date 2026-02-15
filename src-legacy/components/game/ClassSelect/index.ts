@@ -1,1 +1,0 @@
-export { ClassSelect } from './ClassSelect';
