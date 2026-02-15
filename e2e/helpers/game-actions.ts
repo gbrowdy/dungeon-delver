@@ -12,6 +12,27 @@ export async function navigateToGame(page: Page, params?: string): Promise<void>
 }
 
 /**
+ * Navigate with clean state — clears localStorage then reloads.
+ * Use this at the start of each test to ensure no persisted state leaks.
+ */
+export async function navigateClean(page: Page, params?: string): Promise<void> {
+  await navigateToGame(page, params);
+  await page.evaluate(() => localStorage.removeItem('rogue-game-state'));
+  await page.reload();
+  await page.waitForLoadState('networkidle');
+}
+
+/**
+ * Parse health bar text like "HP 120 / 150" into { current, max }
+ */
+export function parseHealthText(text: string | null): { current: number; max: number } | null {
+  if (!text) return null;
+  const match = text.match(/(\d+)\s*\/\s*(\d+)/);
+  if (!match) return null;
+  return { current: parseInt(match[1]), max: parseInt(match[2]) };
+}
+
+/**
  * Select a class and begin the game.
  * V2: MainMenu → ClassSelect → Combat (no paths/levels)
  */

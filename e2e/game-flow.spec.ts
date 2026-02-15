@@ -2,7 +2,7 @@
 // E2E tests for the full game flow: menu → class-select → combat → draft → floor-complete → boss shop
 import { test, expect } from '@playwright/test';
 import {
-  navigateToGame,
+  navigateClean,
   selectClassAndBegin,
   setSpeedToMax,
   waitForCombatOutcome,
@@ -11,18 +11,6 @@ import {
   continueFromFloorComplete,
   handleNonCombatScreen,
 } from './helpers/game-actions';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Navigate with clean state — clears localStorage then loads page. */
-async function navigateClean(page: import('@playwright/test').Page, params?: string) {
-  // Load a blank page to get a context for clearing storage
-  await page.goto('about:blank');
-  await page.evaluate(() => localStorage.clear());
-  await navigateToGame(page, params);
-}
 
 // ---------------------------------------------------------------------------
 // 1. Main Menu → Start Game
