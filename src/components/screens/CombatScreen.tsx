@@ -12,6 +12,7 @@ import { getEnemySpriteType } from '@/utils/spriteMapping';
 import { useSpriteAnimation } from '@/hooks/useSpriteAnimation';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { EnrageBar } from '@/components/game/EnrageBar';
+import { ProcCounters } from '@/components/game/ProcCounters';
 import { cn } from '@/lib/utils';
 
 interface FloatingNum {
@@ -40,6 +41,8 @@ export function CombatScreen() {
   const room = useGameStore(s => s.room);
   const combatEvents = useGameStore(s => s.combatEvents);
   const combatElapsed = useGameStore(s => s.combatElapsed);
+  const equippedItems = useGameStore(s => s.equippedItems);
+  const combatCounters = useGameStore(s => s.combatCounters);
 
   // Sprite combat animations (lunge, hit, crit, dodge, death)
   const spriteAnims = useSpriteAnimation();
@@ -127,6 +130,7 @@ export function CombatScreen() {
               attackInterval={playerInterval}
               className="w-20"
             />
+            <ProcCounters equippedItems={equippedItems} counters={combatCounters} />
           </div>
 
           {/* Enemy side */}
