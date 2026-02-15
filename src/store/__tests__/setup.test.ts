@@ -9,7 +9,7 @@ import {
   PLAYER_BASE_SPEED,
   PLAYER_BASE_LUCK,
 } from '@/math/balance';
-import { getMaxHp, getAttackInterval } from '@/math/stats';
+import { getMaxHp } from '@/math/stats';
 import { getRoomsPerFloor } from '@/math/scaling';
 
 describe('createInitialPlayer', () => {
@@ -33,9 +33,9 @@ describe('createInitialPlayer', () => {
     expect(player.basePower).toBe(PLAYER_BASE_POWER);
   });
 
-  it('initializes attackTimer to the full attack interval', () => {
+  it('player starts with attackTimer at 0 for initiative', () => {
     const player = createInitialPlayer();
-    expect(player.attackTimer).toBe(getAttackInterval(PLAYER_BASE_SPEED));
+    expect(player.attackTimer).toBe(0);
   });
 
   it('starts with empty status effects', () => {

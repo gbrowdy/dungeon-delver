@@ -21,9 +21,10 @@ describe('tickCombat — attack timers', () => {
 
   it('decrements player attack timer by dt', () => {
     const state = createCombatState();
-    const initialTimer = state.player.attackTimer;
+    // Set a known timer value that won't trigger an attack this tick
+    state.player.attackTimer = 500;
     tickCombat(state, TICK_MS);
-    expect(state.player.attackTimer).toBe(initialTimer - TICK_MS);
+    expect(state.player.attackTimer).toBe(500 - TICK_MS);
   });
 
   it('decrements enemy attack timer by dt', () => {
@@ -85,6 +86,8 @@ describe('tickCombat — attack timers', () => {
   it('emits a damage combat event when enemy attacks', () => {
     const state = createCombatState();
     state.enemy!.attackTimer = 1;
+    state.player.attackTimer = 99999; // prevent player from attacking this tick
+    vi.spyOn(Math, 'random').mockReturnValue(0.99); // prevent dodge
     state.combatEvents = [];
     tickCombat(state, TICK_MS);
     const enemyAttackEvents = state.combatEvents.filter(
@@ -92,6 +95,7 @@ describe('tickCombat — attack timers', () => {
     );
     expect(enemyAttackEvents.length).toBe(1);
     expect(enemyAttackEvents[0].value).toBeGreaterThan(0);
+    vi.restoreAllMocks();
   });
 
   it('does nothing if phase is not combat', () => {
