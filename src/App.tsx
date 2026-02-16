@@ -53,7 +53,9 @@ function App() {
   return (
     <>
       <div ref={mainRef} tabIndex={-1} className="outline-none">
-        <PhaseRouter phase={phase} />
+        <div key={phase} className="animate-phase-enter">
+          <PhaseRouter phase={phase} />
+        </div>
       </div>
 
       {/* Character sheet toggle — hidden on menu and class-select */}
