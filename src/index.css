@@ -1478,6 +1478,129 @@ All colors MUST be HSL.
   }
 }
 
+/* ── MainMenu pixel art ── */
+
+/* Pixel art torch container */
+.pixel-torch {
+  position: absolute;
+  width: 8px;
+  height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Animated flame using box-shadow pixel art */
+.torch-flame {
+  width: 8px;
+  height: 12px;
+  background: #ff6b00;
+  box-shadow:
+    0 -4px 0 0 #ffaa00,
+    0 -8px 0 0 #ffdd00,
+    4px -4px 0 0 #ff8800,
+    -4px -4px 0 0 #ff8800;
+  animation: torch-flicker 1.5s infinite;
+  image-rendering: pixelated;
+}
+
+/* Torch stick */
+.torch-stick {
+  width: 4px;
+  height: 20px;
+  background: #654321;
+  box-shadow:
+    0 4px 0 0 #4a3216,
+    0 8px 0 0 #4a3216;
+}
+
+/* Pixel stars container */
+.pixel-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Dungeon frame with pixel corners */
+.dungeon-frame {
+  position: relative;
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 2px solid rgba(203, 166, 247, 0.2);
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+  --corner-size: 12px;
+}
+
+.dungeon-frame::before,
+.dungeon-frame::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #8b5cf6;
+  box-shadow:
+    0 0 0 2px rgba(139, 92, 246, 0.3),
+    0 0 12px rgba(139, 92, 246, 0.5);
+}
+
+.dungeon-frame::before {
+  top: calc(var(--corner-size) * -0.5);
+  left: calc(var(--corner-size) * -0.5);
+}
+
+.dungeon-frame::after {
+  top: calc(var(--corner-size) * -0.5);
+  right: calc(var(--corner-size) * -0.5);
+}
+
+/* Simple class color dots */
+.pixel-class-dot {
+  width: 12px;
+  height: 12px;
+  box-shadow:
+    inset -2px -2px 0 rgba(0,0,0,0.3),
+    inset 2px 2px 0 rgba(255,255,255,0.3);
+}
+
+/* Button pixel style */
+.pixel-button-main {
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  image-rendering: pixelated;
+  box-shadow:
+    inset -2px -2px 0 rgba(0,0,0,0.3),
+    inset 2px 2px 0 rgba(255,255,255,0.2);
+}
+
+/* Responsive sizes for torch and stars at sm breakpoint */
+@media (min-width: 640px) {
+  .torch-flame {
+    width: 10px;
+    height: 14px;
+  }
+  .torch-stick {
+    width: 5px;
+    height: 24px;
+  }
+  .pixel-star {
+    width: 5px;
+    height: 5px;
+    box-shadow:
+      5px 0 0 0 #ffd700,
+      -5px 0 0 0 #ffd700,
+      0 5px 0 0 #ffd700,
+      0 -5px 0 0 #ffd700;
+  }
+}
+
+/* Reduced motion support for MainMenu animations */
+@media (prefers-reduced-motion: reduce) {
+  .torch-flame,
+  [class*="animate-pulse"] {
+    animation: none;
+  }
+}
+
 /* Phase transition fade-in */
 @keyframes phase-fade-in {
   from { opacity: 0; }
