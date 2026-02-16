@@ -4,7 +4,7 @@
 // Uses refs so the component reads current animation state during its per-tick render
 // (driven by renderVersion) without needing extra re-renders.
 
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useMemo, useEffect } from 'react';
 import type { CombatEvent } from '@/types/game';
 
 type AnimState = 'idle' | 'attacking' | 'hit' | 'critting' | 'dodging' | 'dying';
@@ -142,9 +142,17 @@ export function useSpriteAnimation(): SpriteAnimationResult {
     }
   }, [setPlayerAnim, setEnemyAnim]);
 
-  return {
+  // Clean up pending timers on unmount
+  useEffect(() => {
+    return () => {
+      if (playerTimerRef.current !== null) clearTimeout(playerTimerRef.current);
+      if (enemyTimerRef.current !== null) clearTimeout(enemyTimerRef.current);
+    };
+  }, []);
+
+  return useMemo(() => ({
     get playerClass() { return playerClassRef.current; },
     get enemyClass() { return enemyClassRef.current; },
     processEvents,
-  };
+  }), [processEvents]);
 }

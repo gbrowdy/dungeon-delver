@@ -50,6 +50,14 @@ export function CombatScreen() {
 
   // Screen shake on crits
   const [shaking, setShaking] = useState(false);
+  const shakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up shake timer on unmount
+  useEffect(() => {
+    return () => {
+      if (shakeTimerRef.current !== null) clearTimeout(shakeTimerRef.current);
+    };
+  }, []);
 
   // Floating damage numbers (React-local state)
   const [floatingNumbers, setFloatingNumbers] = useState<FloatingNum[]>([]);
@@ -92,9 +100,13 @@ export function CombatScreen() {
     // Screen shake on critical hits
     if (!reducedMotion && newEvents.some(e => e.type === 'crit')) {
       setShaking(true);
-      setTimeout(() => setShaking(false), 150);
+      if (shakeTimerRef.current !== null) clearTimeout(shakeTimerRef.current);
+      shakeTimerRef.current = setTimeout(() => {
+        setShaking(false);
+        shakeTimerRef.current = null;
+      }, 150);
     }
-  }, [combatEvents, spriteAnims]);
+  }, [combatEvents, spriteAnims, reducedMotion]);
 
   const removeFloatingNumber = useCallback((id: number) => {
     setFloatingNumbers(prev => prev.filter(n => n.id !== id));
