@@ -19,10 +19,10 @@ export function AttackBar({ attackTimer, attackInterval, className }: AttackBarP
   };
 
   return (
-    <div className={cn('h-1.5 bg-slate-800 rounded-full overflow-hidden', className)}>
+    <div className={cn('pixel-progress-bar h-1.5 rounded-sm overflow-hidden', className)}>
       <div
         data-testid="attack-bar-fill"
-        className={cn('h-full rounded-full transition-colors duration-100', getBarColor())}
+        className={cn('pixel-progress-fill h-full transition-colors duration-100', getBarColor())}
         style={{ width: `${fillPercent}%` }}
       />
     </div>

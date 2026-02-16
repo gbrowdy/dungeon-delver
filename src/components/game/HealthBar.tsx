@@ -39,9 +39,9 @@ export function HealthBar({
           <span className="font-mono text-foreground">{Math.floor(current)}/{max}</span>
         )}
       </div>
-      <div className={cn('h-3 rounded-full overflow-hidden', bgColors[variant])}>
-        <div 
-          className={cn('h-full transition-all duration-300 rounded-full', barColors[variant])}
+      <div className={cn('pixel-progress-bar h-3 rounded-sm overflow-hidden', bgColors[variant])}>
+        <div
+          className={cn('pixel-progress-fill h-full transition-all duration-300', barColors[variant])}
           style={{ width: `${percentage}%` }}
         />
       </div>
