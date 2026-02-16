@@ -56,9 +56,16 @@ describe('ShopScreen', () => {
     expect(state.player.power).toBe(118); // +18 power applied
   });
 
-  it('confirm button is disabled with no selection', () => {
+  it('confirm button is disabled until 2 selections', () => {
     render(<ShopScreen />);
-    const btn = screen.getByText('Confirm');
+    const btn = screen.getByText('Select 2 more');
+    expect(btn.closest('button')?.disabled).toBe(true);
+  });
+
+  it('confirm button is disabled with only 1 selection', () => {
+    useGameStore.setState({ selectedChoices: [0] });
+    render(<ShopScreen />);
+    const btn = screen.getByText('Select 1 more');
     expect(btn.closest('button')?.disabled).toBe(true);
   });
 });
