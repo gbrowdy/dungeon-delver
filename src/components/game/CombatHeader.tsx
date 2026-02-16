@@ -1,5 +1,6 @@
 import { useGameStore } from '@/store/gameStore';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export function CombatHeader() {
   const floor = useGameStore(s => s.floor);
@@ -21,10 +22,13 @@ export function CombatHeader() {
       <div className="flex items-center gap-2">
         {/* Speed toggle */}
         <Button
-          variant="outline"
+          variant={speedMultiplier === 1 ? 'outline' : 'default'}
           size="sm"
           onClick={cycleSpeed}
-          className="pixel-text text-pixel-xs min-w-[48px] min-h-[44px]"
+          className={cn(
+            'pixel-text text-pixel-xs min-w-[48px] min-h-[44px]',
+            speedMultiplier > 1 && 'bg-amber-600 hover:bg-amber-500 text-white border-amber-700',
+          )}
           data-testid="speed-toggle"
         >
           {speedMultiplier}x
@@ -32,10 +36,13 @@ export function CombatHeader() {
 
         {/* Pause */}
         <Button
-          variant="outline"
+          variant={paused ? 'default' : 'outline'}
           size="sm"
           onClick={togglePause}
-          className="pixel-text text-pixel-xs min-w-[48px] min-h-[44px]"
+          className={cn(
+            'pixel-text text-pixel-xs min-w-[48px] min-h-[44px]',
+            paused && 'bg-blue-600 hover:bg-blue-500 text-white border-blue-700',
+          )}
           data-testid="pause-toggle"
         >
           {paused ? 'Play' : 'Pause'}

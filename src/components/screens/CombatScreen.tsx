@@ -44,6 +44,7 @@ export function CombatScreen() {
   const combatElapsed = useGameStore(s => s.combatElapsed);
   const equippedItems = useGameStore(s => s.equippedItems);
   const combatCounters = useGameStore(s => s.combatCounters);
+  const paused = useGameStore(s => s.paused);
 
   // Sprite combat animations (lunge, hit, crit, dodge, death)
   const spriteAnims = useSpriteAnimation();
@@ -125,7 +126,10 @@ export function CombatScreen() {
       <CombatHeader />
 
       {/* Battle arena */}
-      <div className="flex-1 relative flex flex-col items-center justify-center px-4">
+      <div className={cn(
+        'flex-1 relative flex flex-col items-center justify-center px-4',
+        paused && 'opacity-60 transition-opacity duration-200',
+      )}>
         {/* Sprites area */}
         <div className={cn('relative w-full max-w-2xl h-64 sm:h-80 flex items-end justify-between px-8 sm:px-16', shaking && 'animate-screen-shake')}>
           {/* Player side */}
