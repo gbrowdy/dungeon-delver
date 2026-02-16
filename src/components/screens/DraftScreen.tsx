@@ -5,6 +5,7 @@ import { PixelDivider } from '@/components/ui/PixelDivider';
 
 export function DraftScreen() {
   const player = useGameStore(s => s.player);
+  const floor = useGameStore(s => s.floor);
   const draftChoices = useGameStore(s => s.draftChoices);
   const selectedChoices = useGameStore(s => s.selectedChoices);
   const selectDraftCard = useGameStore(s => s.selectDraftCard);
@@ -13,6 +14,11 @@ export function DraftScreen() {
   return (
     <div data-testid="draft-screen" className="min-h-screen bg-gradient-to-b from-slate-950/95 via-slate-900/95 to-slate-950/95 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-xl space-y-6">
+        {/* Floor context */}
+        <div className="pixel-text text-pixel-xs text-center text-muted-foreground">
+          Floor {floor}
+        </div>
+
         {/* Current stats bar */}
         <div className="flex flex-wrap justify-center gap-4 pixel-text text-pixel-xs text-muted-foreground">
           <span>Power: {player.power}</span>
