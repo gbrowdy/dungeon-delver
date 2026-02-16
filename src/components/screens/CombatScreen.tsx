@@ -13,6 +13,7 @@ import { useSpriteAnimation } from '@/hooks/useSpriteAnimation';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { EnrageBar } from '@/components/game/EnrageBar';
 import { ProcCounters } from '@/components/game/ProcCounters';
+import { CLASSES } from '@/data/classes';
 import { cn } from '@/lib/utils';
 
 interface FloatingNum {
@@ -186,7 +187,7 @@ export function CombatScreen() {
         <div className="w-full max-w-2xl grid grid-cols-2 gap-4 mt-4">
           {/* Player stats */}
           <div className="space-y-2">
-            <div className="pixel-text text-pixel-xs text-muted-foreground">{classId}</div>
+            <div className="pixel-text text-pixel-xs text-muted-foreground">{CLASSES[classId]?.name ?? classId}</div>
             <HealthBar current={player.hp} max={player.maxHp} label="HP" testId="player-health" />
             <StatusEffectBadges effects={player.statusEffects} />
           </div>
@@ -195,7 +196,7 @@ export function CombatScreen() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="pixel-text text-pixel-xs text-muted-foreground capitalize">
-                {enemyDef.tier}
+                {enemyDef.tier} Enemy
               </span>
               <ModifierBadges modifiers={enemyDef.modifiers} />
             </div>
