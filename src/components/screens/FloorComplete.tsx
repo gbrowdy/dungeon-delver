@@ -108,7 +108,7 @@ export function FloorComplete() {
           onClick={handleContinue}
           size="lg"
           data-testid="continue-button"
-          className="pixel-button-main text-pixel-xs px-8 py-4 bg-orange-600 hover:bg-orange-500 border-b-4 border-orange-800 uppercase font-bold"
+          className="pixel-button-main text-pixel-xs px-4 sm:px-8 py-4 bg-orange-600 hover:bg-orange-500 border-b-4 border-orange-800 uppercase font-bold"
         >
           Continue to Floor {floor + 1}
         </Button>
