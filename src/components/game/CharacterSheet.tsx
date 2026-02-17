@@ -115,7 +115,7 @@ export function CharacterSheet({ onClose }: CharacterSheetProps) {
                   </span>
                 </div>
                 {def && (
-                  <p className="pixel-text text-pixel-2xs text-muted-foreground leading-relaxed">
+                  <p className="pixel-text text-pixel-xs text-muted-foreground leading-relaxed">
                     {def.description}
                   </p>
                 )}

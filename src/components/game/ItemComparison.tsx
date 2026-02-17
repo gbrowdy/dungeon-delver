@@ -43,7 +43,7 @@ export function ItemComparison({ currentItem, newItemId, isUpgrade, onKeep, onEq
                 <div className="pixel-text text-pixel-xs text-foreground font-bold">
                   {currentDef.name}{currentItem!.tier > 1 ? ` (T${currentItem!.tier})` : ''}
                 </div>
-                <div className="pixel-text text-pixel-2xs text-muted-foreground leading-relaxed">
+                <div className="pixel-text text-pixel-xs text-muted-foreground leading-relaxed">
                   {currentDef.description}
                 </div>
               </>
@@ -60,7 +60,7 @@ export function ItemComparison({ currentItem, newItemId, isUpgrade, onKeep, onEq
             <div className="pixel-text text-pixel-xs text-foreground font-bold">
               {newDef.name}{isUpgrade && currentItem ? ` (T${currentItem.tier + 1})` : ''}
             </div>
-            <div className="pixel-text text-pixel-2xs text-muted-foreground leading-relaxed">
+            <div className="pixel-text text-pixel-xs text-muted-foreground leading-relaxed">
               {newDef.description}
             </div>
           </div>

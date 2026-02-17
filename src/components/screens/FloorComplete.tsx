@@ -121,7 +121,7 @@ export function FloorComplete() {
               style={{ width: `${(countdown / 5) * 100}%` }}
             />
           </div>
-          <p className="pixel-text text-pixel-2xs text-muted-foreground mt-1">
+          <p className="pixel-text text-pixel-xs text-muted-foreground mt-1">
             Auto-continuing in {countdown}s
           </p>
         </div>

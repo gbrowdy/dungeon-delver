@@ -81,7 +81,7 @@ export function DeathScreen() {
         {/* Weakness hint */}
         <div className="pixel-panel-dark p-4 rounded">
           <div className="pixel-text text-pixel-xs text-amber-400 font-bold mb-1">Weakness</div>
-          <div className="pixel-text text-pixel-2xs text-muted-foreground leading-relaxed">
+          <div className="pixel-text text-pixel-xs text-muted-foreground leading-relaxed">
             {ds.weaknessHint}
           </div>
         </div>
