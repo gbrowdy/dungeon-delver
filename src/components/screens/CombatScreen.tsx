@@ -7,6 +7,7 @@ import { AnimatedPixelSprite } from '@/components/game/PixelSprite';
 import { DamageNumber } from '@/components/game/battle-effects/FloatingNumbers';
 import { ModifierBadges, StatusEffectBadges } from '@/components/game/StatusBadges';
 import { ItemSlots } from '@/components/game/ItemSlots';
+import { Button } from '@/components/ui/button';
 import { getAttackInterval } from '@/math/stats';
 import { getEnemySpriteType } from '@/utils/spriteMapping';
 import { useSpriteAnimation } from '@/hooks/useSpriteAnimation';
@@ -45,6 +46,8 @@ export function CombatScreen() {
   const equippedItems = useGameStore(s => s.equippedItems);
   const combatCounters = useGameStore(s => s.combatCounters);
   const paused = useGameStore(s => s.paused);
+  const abandonRun = useGameStore(s => s.abandonRun);
+  const [confirmingAbandon, setConfirmingAbandon] = useState(false);
 
   // Sprite combat animations (lunge, hit, crit, dodge, death)
   const spriteAnims = useSpriteAnimation();
@@ -60,6 +63,11 @@ export function CombatScreen() {
       if (shakeTimerRef.current !== null) clearTimeout(shakeTimerRef.current);
     };
   }, []);
+
+  // Reset abandon confirmation when unpausing
+  useEffect(() => {
+    if (!paused) setConfirmingAbandon(false);
+  }, [paused]);
 
   // Floating damage numbers (React-local state)
   const [floatingNumbers, setFloatingNumbers] = useState<FloatingNum[]>([]);
@@ -121,7 +129,7 @@ export function CombatScreen() {
   const enemySprite = getEnemySpriteType(enemyDef.tier, floor, room);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex flex-col relative">
       {/* Header */}
       <CombatHeader />
 
@@ -213,7 +221,34 @@ export function CombatScreen() {
         <div className="w-full max-w-2xl mt-4">
           <ItemSlots />
         </div>
+
       </div>
+
+      {/* Pause overlay — outside the opacity-60 container so it renders at full opacity */}
+      {paused && (
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <div className="pixel-panel p-6 space-y-4 text-center">
+            <p className="pixel-text text-pixel-sm text-muted-foreground">Game Paused</p>
+            {confirmingAbandon ? (
+              <>
+                <p className="pixel-text text-pixel-xs text-red-400">Abandon this run? Progress will be lost.</p>
+                <div className="flex gap-3 justify-center">
+                  <Button onClick={() => abandonRun()} className="pixel-button bg-red-600 hover:bg-red-500 border-b-4 border-red-800 text-pixel-xs uppercase">
+                    Confirm
+                  </Button>
+                  <Button onClick={() => setConfirmingAbandon(false)} variant="outline" className="pixel-text text-pixel-xs uppercase">
+                    Cancel
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <Button onClick={() => setConfirmingAbandon(true)} variant="outline" className="pixel-text text-pixel-xs text-red-400 border-red-800 hover:bg-red-900/30 uppercase">
+                Abandon Run
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
