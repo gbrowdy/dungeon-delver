@@ -159,7 +159,7 @@ export function CombatScreen() {
           </div>
 
           {/* Enemy side */}
-          <div className="flex flex-col items-center gap-2">
+          <div key={`${floor}-${room}`} className="flex flex-col items-center gap-2 animate-enemy-enter">
             <div className={spriteAnims.enemyClass}>
               <AnimatedPixelSprite
                 type={enemySprite}
