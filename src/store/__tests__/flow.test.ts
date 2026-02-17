@@ -76,6 +76,18 @@ describe('getCheckpoint', () => {
   });
 });
 
+// ─── fightCount initialization ──────────────────────────────────
+
+describe('fightCount initialization', () => {
+  it('fightCount starts at 0 on the first floor', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    const store = useGameStore.getState();
+    store.selectClass('warrior');
+    store.startRun();
+    expect(useGameStore.getState().fightCount).toBe(0);
+  });
+});
+
 // ─── spawnEnemy ─────────────────────────────────────────────────
 
 function createCombatState(): GameState {

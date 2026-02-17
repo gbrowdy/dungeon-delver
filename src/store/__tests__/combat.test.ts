@@ -21,9 +21,10 @@ describe('tickCombat — attack timers', () => {
 
   it('decrements player attack timer by dt', () => {
     const state = createCombatState();
-    const initialTimer = state.player.attackTimer;
+    // Set a known timer value that won't trigger an attack this tick
+    state.player.attackTimer = 500;
     tickCombat(state, TICK_MS);
-    expect(state.player.attackTimer).toBe(initialTimer - TICK_MS);
+    expect(state.player.attackTimer).toBe(500 - TICK_MS);
   });
 
   it('decrements enemy attack timer by dt', () => {
@@ -85,6 +86,8 @@ describe('tickCombat — attack timers', () => {
   it('emits a damage combat event when enemy attacks', () => {
     const state = createCombatState();
     state.enemy!.attackTimer = 1;
+    state.player.attackTimer = 99999; // prevent player from attacking this tick
+    vi.spyOn(Math, 'random').mockReturnValue(0.99); // prevent dodge
     state.combatEvents = [];
     tickCombat(state, TICK_MS);
     const enemyAttackEvents = state.combatEvents.filter(
@@ -92,6 +95,7 @@ describe('tickCombat — attack timers', () => {
     );
     expect(enemyAttackEvents.length).toBe(1);
     expect(enemyAttackEvents[0].value).toBeGreaterThan(0);
+    vi.restoreAllMocks();
   });
 
   it('does nothing if phase is not combat', () => {
@@ -505,6 +509,67 @@ describe('class innate — Mage Amplify', () => {
     expect(damageEvent!.value).toBe(expectedDamage);
 
     mockRandom.mockRestore();
+  });
+});
+
+describe('tickCombat — death guards', () => {
+  beforeEach(() => {
+    useGameStore.setState(useGameStore.getInitialState());
+  });
+
+  it('enemy cannot attack on the same tick it dies from player attack', () => {
+    const state = createCombatState();
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 1;
+    state.enemy!.hp = 1;
+    state.player.power = 999;
+    state.fightCount = 2; // becomes 3 → triggers draft, so enemy is not replaced
+    const playerHpBefore = state.player.hp;
+
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    tickCombat(state, TICK_MS);
+
+    expect(state.enemy!.hp).toBe(0);
+    expect(state.player.hp).toBe(playerHpBefore);
+    vi.restoreAllMocks();
+  });
+
+  it('player does not attack after dying from enemy attack on the same tick', () => {
+    const state = createCombatState();
+    state.player.attackTimer = 9999; // player won't attack
+    state.enemy!.attackTimer = 1;    // enemy attacks
+    state.player.hp = 1;
+    state.enemy!.power = 999;
+    const enemyHpBefore = state.enemy!.hp;
+
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    tickCombat(state, TICK_MS);
+
+    expect(state.player.hp).toBe(0);
+    expect(state.enemy!.hp).toBe(enemyHpBefore);
+    vi.restoreAllMocks();
+  });
+
+  it('enemy killed by poison triggers death handler correctly', () => {
+    const state = createCombatState();
+    state.enemy!.hp = 1;
+    state.enemy!.statusEffects = [{ type: 'poison', stacks: 50, remainingMs: 3000 }];
+    state.enemy!.attackTimer = 9999; // enemy won't attack
+    state.player.attackTimer = 9999; // player won't attack
+    state.fightCount = 2; // becomes 3 → triggers draft
+    const playerHpBefore = state.player.hp;
+
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    tickCombat(state, TICK_MS);
+
+    // Poison kills the enemy, death guard after tickStatusEffects handles it
+    expect(state.enemy!.hp).toBe(0);
+    expect(state.player.hp).toBe(playerHpBefore);
+    expect(state.phase).toBe('draft');
+    const deathEvents = state.combatEvents.filter(e => e.type === 'death');
+    expect(deathEvents.length).toBe(1);
+    expect(deathEvents[0].target).toBe('enemy');
+    vi.restoreAllMocks();
   });
 });
 

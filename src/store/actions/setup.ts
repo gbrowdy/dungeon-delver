@@ -6,7 +6,7 @@ import {
   PLAYER_BASE_SPEED,
   PLAYER_BASE_LUCK,
 } from '@/math/balance';
-import { getMaxHp, getAttackInterval } from '@/math/stats';
+import { getMaxHp } from '@/math/stats';
 
 export function createInitialPlayer(): CombatEntity {
   const maxHp = getMaxHp(PLAYER_BASE_HP, PLAYER_BASE_FORTITUDE);
@@ -19,7 +19,8 @@ export function createInitialPlayer(): CombatEntity {
     baseSpeed: PLAYER_BASE_SPEED,
     hp: maxHp,
     maxHp,
-    attackTimer: getAttackInterval(PLAYER_BASE_SPEED),
+    attackTimer: 0,
     statusEffects: [],
+    poisonDamageAccumulator: 0,
   };
 }

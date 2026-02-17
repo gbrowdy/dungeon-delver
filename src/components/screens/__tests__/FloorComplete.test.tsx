@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { FloorComplete } from '../FloorComplete';
 import { useGameStore } from '@/store/gameStore';
 
@@ -54,7 +54,9 @@ describe('FloorComplete', () => {
 
   it('auto-advances after 5 seconds', () => {
     render(<FloorComplete />);
-    vi.advanceTimersByTime(5000);
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
     expect(useGameStore.getState().floor).toBe(6);
     expect(useGameStore.getState().phase).toBe('combat');
   });

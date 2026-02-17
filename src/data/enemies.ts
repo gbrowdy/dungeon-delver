@@ -191,6 +191,7 @@ export function generateEnemy(
     maxHp,
     attackTimer: 0, // starts ready to attack immediately
     statusEffects: [],
+    poisonDamageAccumulator: 0,
   };
 
   return { entity, tier, modifiers };

@@ -71,16 +71,32 @@ export function tickCombat(state: GameState, dt: number): void {
     player.attackTimer = getAttackInterval(playerEffectiveSpeed);
   }
 
+  // Early exit if enemy died from player attack
+  if (enemy.hp <= 0) {
+    enemy.hp = 0;
+    emitCombatEvent(state, { type: 'death', target: 'enemy', tick: state.gameTick });
+    handleEnemyDeath(state);
+    return;
+  }
+
   // Enemy attacks (skip if stunned)
   if (enemy.attackTimer <= 0 && !hasEffect(enemy, 'stun')) {
     resolveEnemyAttack(state, player, enemy, passives);
     enemy.attackTimer = getAttackInterval(enemy.speed);
   }
 
+  // Early exit if player died from enemy attack
+  if (player.hp <= 0) {
+    player.hp = 0;
+    emitCombatEvent(state, { type: 'death', target: 'player', tick: state.gameTick });
+    handlePlayerDeath(state);
+    return;
+  }
+
   // Tick status effects (poison, curse decay, regen, shield)
   tickStatusEffects(state, dt);
 
-  // Death checks
+  // Death checks after status effects (poison/reflect kills)
   if (enemy.hp <= 0) {
     enemy.hp = 0;
     emitCombatEvent(state, { type: 'death', target: 'enemy', tick: state.gameTick });
@@ -174,10 +190,10 @@ function resolvePlayerAttack(
       value: finalDamage,
       tick: state.gameTick,
     });
-  }
 
-  // Process on_player_attack item procs
-  processItemProcs(state, 'on_player_attack', { damage: state.lastPlayerHitDamage });
+    // Process on_player_attack item procs per hit (so Twin Fang double-hit procs twice)
+    processItemProcs(state, 'on_player_attack', { damage: finalDamage });
+  }
 
   // Flurry Ring: bonus attack every 5th hit
   const hasFlurryRing = state.equippedItems.accessory?.id === 'flurry_ring';
@@ -197,6 +213,9 @@ function resolvePlayerAttack(
       value: finalDamage,
       tick: state.gameTick,
     });
+
+    state.lastPlayerHitDamage = finalDamage;
+    processItemProcs(state, 'on_player_attack', { damage: finalDamage });
   }
 }
 

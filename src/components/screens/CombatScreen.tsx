@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { CombatHeader } from '@/components/game/CombatHeader';
 import { HealthBar } from '@/components/game/HealthBar';
@@ -9,9 +9,12 @@ import { ModifierBadges, StatusEffectBadges } from '@/components/game/StatusBadg
 import { ItemSlots } from '@/components/game/ItemSlots';
 import { getAttackInterval } from '@/math/stats';
 import { getEnemySpriteType } from '@/utils/spriteMapping';
-
-// Track which events we've already spawned floating numbers for
-let lastProcessedTick = 0;
+import { useSpriteAnimation } from '@/hooks/useSpriteAnimation';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { EnrageBar } from '@/components/game/EnrageBar';
+import { ProcCounters } from '@/components/game/ProcCounters';
+import { CLASSES } from '@/data/classes';
+import { cn } from '@/lib/utils';
 
 interface FloatingNum {
   id: number;
@@ -23,9 +26,11 @@ interface FloatingNum {
   isMiss: boolean;
 }
 
-let floatingNumId = 0;
-
 export function CombatScreen() {
+  // Track which events we've already spawned floating numbers for
+  const lastProcessedTickRef = useRef(0);
+  const floatingNumIdRef = useRef(0);
+
   // Subscribe to renderVersion for per-frame updates
   useGameStore(s => s.renderVersion);
 
@@ -36,30 +41,52 @@ export function CombatScreen() {
   const floor = useGameStore(s => s.floor);
   const room = useGameStore(s => s.room);
   const combatEvents = useGameStore(s => s.combatEvents);
+  const combatElapsed = useGameStore(s => s.combatElapsed);
+  const equippedItems = useGameStore(s => s.equippedItems);
+  const combatCounters = useGameStore(s => s.combatCounters);
+  const paused = useGameStore(s => s.paused);
+
+  // Sprite combat animations (lunge, hit, crit, dodge, death)
+  const spriteAnims = useSpriteAnimation();
+  const reducedMotion = useReducedMotion();
+
+  // Screen shake on crits
+  const [shaking, setShaking] = useState(false);
+  const shakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up shake timer on unmount
+  useEffect(() => {
+    return () => {
+      if (shakeTimerRef.current !== null) clearTimeout(shakeTimerRef.current);
+    };
+  }, []);
 
   // Floating damage numbers (React-local state)
   const [floatingNumbers, setFloatingNumbers] = useState<FloatingNum[]>([]);
 
   // Reset floating number tracking when fight changes
   useEffect(() => {
-    lastProcessedTick = 0;
-    floatingNumId = 0;
+    lastProcessedTickRef.current = 0;
+    floatingNumIdRef.current = 0;
     setFloatingNumbers([]);
   }, [floor, room]);
 
-  // Process new combat events into floating numbers
+  // Process new combat events into floating numbers and sprite animations
   useEffect(() => {
     if (combatEvents.length === 0) return;
 
-    const newEvents = combatEvents.filter(e => e.tick > lastProcessedTick);
+    // Process sprite animations for new events (before lastProcessedTickRef is updated)
+    spriteAnims.processEvents(combatEvents, lastProcessedTickRef.current);
+
+    const newEvents = combatEvents.filter(e => e.tick > lastProcessedTickRef.current);
     if (newEvents.length === 0) return;
 
-    lastProcessedTick = Math.max(...newEvents.map(e => e.tick));
+    lastProcessedTickRef.current = Math.max(...newEvents.map(e => e.tick));
 
     const newNumbers: FloatingNum[] = newEvents
       .filter(e => e.value !== undefined && e.type !== 'death')
       .map(event => ({
-        id: ++floatingNumId,
+        id: ++floatingNumIdRef.current,
         value: event.value!,
         x: event.target === 'enemy' ? 70 : 30,
         y: 30 + Math.random() * 20,
@@ -71,7 +98,17 @@ export function CombatScreen() {
     if (newNumbers.length > 0) {
       setFloatingNumbers(prev => [...prev, ...newNumbers]);
     }
-  }, [combatEvents]);
+
+    // Screen shake on critical hits
+    if (!reducedMotion && newEvents.some(e => e.type === 'crit')) {
+      setShaking(true);
+      if (shakeTimerRef.current !== null) clearTimeout(shakeTimerRef.current);
+      shakeTimerRef.current = setTimeout(() => {
+        setShaking(false);
+        shakeTimerRef.current = null;
+      }, 150);
+    }
+  }, [combatEvents, spriteAnims, reducedMotion]);
 
   const removeFloatingNumber = useCallback((id: number) => {
     setFloatingNumbers(prev => prev.filter(n => n.id !== id));
@@ -89,32 +126,40 @@ export function CombatScreen() {
       <CombatHeader />
 
       {/* Battle arena */}
-      <div className="flex-1 relative flex flex-col items-center justify-center px-4">
+      <div className={cn(
+        'flex-1 relative flex flex-col items-center justify-center px-4',
+        paused && 'opacity-60 transition-opacity duration-200',
+      )}>
         {/* Sprites area */}
-        <div className="relative w-full max-w-2xl h-64 sm:h-80 flex items-end justify-between px-8 sm:px-16">
+        <div className={cn('relative w-full max-w-2xl h-64 sm:h-80 flex items-end justify-between px-8 sm:px-16', shaking && 'animate-screen-shake')}>
           {/* Player side */}
           <div className="flex flex-col items-center gap-2">
-            <AnimatedPixelSprite
-              type={classId}
-              state="idle"
-              direction="right"
-              scale={4}
-            />
+            <div className={spriteAnims.playerClass}>
+              <AnimatedPixelSprite
+                type={classId}
+                state="idle"
+                direction="right"
+                scale={4}
+              />
+            </div>
             <AttackBar
               attackTimer={player.attackTimer}
               attackInterval={playerInterval}
               className="w-20"
             />
+            <ProcCounters equippedItems={equippedItems} counters={combatCounters} />
           </div>
 
           {/* Enemy side */}
           <div className="flex flex-col items-center gap-2">
-            <AnimatedPixelSprite
-              type={enemySprite}
-              state="idle"
-              direction="left"
-              scale={4}
-            />
+            <div className={spriteAnims.enemyClass}>
+              <AnimatedPixelSprite
+                type={enemySprite}
+                state="idle"
+                direction="left"
+                scale={4}
+              />
+            </div>
             <AttackBar
               attackTimer={enemy.attackTimer}
               attackInterval={enemyInterval}
@@ -139,11 +184,14 @@ export function CombatScreen() {
           </div>
         </div>
 
+        {/* Enrage timer */}
+        <EnrageBar combatElapsed={combatElapsed} className="max-w-2xl mt-2" />
+
         {/* Stats panel */}
         <div className="w-full max-w-2xl grid grid-cols-2 gap-4 mt-4">
           {/* Player stats */}
           <div className="space-y-2">
-            <div className="pixel-text text-pixel-xs text-muted-foreground">{classId}</div>
+            <div className="pixel-text text-pixel-xs text-muted-foreground">{CLASSES[classId]?.name ?? classId}</div>
             <HealthBar current={player.hp} max={player.maxHp} label="HP" testId="player-health" />
             <StatusEffectBadges effects={player.statusEffects} />
           </div>
@@ -152,7 +200,7 @@ export function CombatScreen() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="pixel-text text-pixel-xs text-muted-foreground capitalize">
-                {enemyDef.tier}
+                {enemyDef.tier} Enemy
               </span>
               <ModifierBadges modifiers={enemyDef.modifiers} />
             </div>

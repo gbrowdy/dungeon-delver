@@ -1366,3 +1366,253 @@ All colors MUST be HSL.
     animation: none;
   }
 }
+
+/* ================================
+   COMBAT SPRITE ANIMATIONS
+   ================================ */
+
+/* Player lunges right toward enemy */
+@keyframes combat-attack-right {
+  0% { transform: translateX(0); }
+  40% { transform: translateX(30px); }
+  100% { transform: translateX(0); }
+}
+
+/* Enemy lunges left toward player */
+@keyframes combat-attack-left {
+  0% { transform: translateX(0); }
+  40% { transform: translateX(-30px); }
+  100% { transform: translateX(0); }
+}
+
+/* Player gets hit — knocked left with flash */
+@keyframes combat-hit {
+  0% { transform: translateX(0); filter: brightness(1); }
+  30% { transform: translateX(-8px); filter: brightness(2); }
+  100% { transform: translateX(0); filter: brightness(1); }
+}
+
+/* Enemy gets hit — knocked right with flash */
+@keyframes combat-hit-left {
+  0% { transform: translateX(0); filter: brightness(1); }
+  30% { transform: translateX(8px); filter: brightness(2); }
+  100% { transform: translateX(0); filter: brightness(1); }
+}
+
+/* Player takes a crit — larger knockback and brighter flash */
+@keyframes combat-crit-hit {
+  0% { transform: translateX(0) scale(1); filter: brightness(1); }
+  20% { transform: translateX(-15px) scale(1.1); filter: brightness(2.5); }
+  100% { transform: translateX(0) scale(1); filter: brightness(1); }
+}
+
+/* Enemy takes a crit — larger knockback and brighter flash */
+@keyframes combat-crit-hit-left {
+  0% { transform: translateX(0) scale(1); filter: brightness(1); }
+  20% { transform: translateX(15px) scale(1.1); filter: brightness(2.5); }
+  100% { transform: translateX(0) scale(1); filter: brightness(1); }
+}
+
+/* Player dodges — slides right and fades briefly */
+@keyframes combat-dodge {
+  0% { transform: translateX(0); }
+  30% { transform: translateX(15px); opacity: 0.6; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* Enemy dodges — slides left and fades briefly */
+@keyframes combat-dodge-left {
+  0% { transform: translateX(0); }
+  30% { transform: translateX(-15px); opacity: 0.6; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* Death — sinks down and fades with hue shift */
+@keyframes combat-die {
+  0% { transform: translateY(0); opacity: 1; filter: hue-rotate(0deg); }
+  50% { transform: translateY(10px); opacity: 0.6; filter: hue-rotate(-30deg) saturate(2) brightness(0.7); }
+  100% { transform: translateY(20px); opacity: 0; filter: hue-rotate(-30deg) saturate(2) brightness(0.5); }
+}
+
+.animate-combat-attack-right { animation: combat-attack-right 200ms ease-out forwards; }
+.animate-combat-attack-left { animation: combat-attack-left 200ms ease-out forwards; }
+.animate-combat-hit { animation: combat-hit 150ms ease-out forwards; }
+.animate-combat-hit-left { animation: combat-hit-left 150ms ease-out forwards; }
+.animate-combat-crit-hit { animation: combat-crit-hit 200ms ease-out forwards; }
+.animate-combat-crit-hit-left { animation: combat-crit-hit-left 200ms ease-out forwards; }
+.animate-combat-dodge { animation: combat-dodge 200ms ease-out forwards; }
+.animate-combat-dodge-left { animation: combat-dodge-left 200ms ease-out forwards; }
+.animate-combat-die { animation: combat-die 400ms ease-out forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-combat-attack-right,
+  .animate-combat-attack-left,
+  .animate-combat-hit,
+  .animate-combat-hit-left,
+  .animate-combat-crit-hit,
+  .animate-combat-crit-hit-left,
+  .animate-combat-dodge,
+  .animate-combat-dodge-left,
+  .animate-combat-die {
+    animation: none;
+  }
+}
+
+/* Screen shake on critical hits */
+@keyframes screen-shake {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-3px, 2px); }
+  40% { transform: translate(2px, -3px); }
+  60% { transform: translate(-2px, 1px); }
+  80% { transform: translate(3px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+
+.animate-screen-shake {
+  animation: screen-shake 150ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-screen-shake {
+    animation: none;
+  }
+}
+
+/* ── MainMenu pixel art ── */
+
+/* Pixel art torch container */
+.pixel-torch {
+  position: absolute;
+  width: 8px;
+  height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Animated flame using box-shadow pixel art */
+.torch-flame {
+  width: 8px;
+  height: 12px;
+  background: #ff6b00;
+  box-shadow:
+    0 -4px 0 0 #ffaa00,
+    0 -8px 0 0 #ffdd00,
+    4px -4px 0 0 #ff8800,
+    -4px -4px 0 0 #ff8800;
+  animation: torch-flicker 1.5s infinite;
+  image-rendering: pixelated;
+}
+
+/* Torch stick */
+.torch-stick {
+  width: 4px;
+  height: 20px;
+  background: #654321;
+  box-shadow:
+    0 4px 0 0 #4a3216,
+    0 8px 0 0 #4a3216;
+}
+
+/* Pixel stars container */
+.pixel-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Dungeon frame with pixel corners */
+.dungeon-frame {
+  position: relative;
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 2px solid rgba(203, 166, 247, 0.2);
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+  --corner-size: 12px;
+}
+
+.dungeon-frame::before,
+.dungeon-frame::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #8b5cf6;
+  box-shadow:
+    0 0 0 2px rgba(139, 92, 246, 0.3),
+    0 0 12px rgba(139, 92, 246, 0.5);
+}
+
+.dungeon-frame::before {
+  top: calc(var(--corner-size) * -0.5);
+  left: calc(var(--corner-size) * -0.5);
+}
+
+.dungeon-frame::after {
+  top: calc(var(--corner-size) * -0.5);
+  right: calc(var(--corner-size) * -0.5);
+}
+
+/* Simple class color dots */
+.pixel-class-dot {
+  width: 12px;
+  height: 12px;
+  box-shadow:
+    inset -2px -2px 0 rgba(0,0,0,0.3),
+    inset 2px 2px 0 rgba(255,255,255,0.3);
+}
+
+/* Button pixel style */
+.pixel-button-main {
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  image-rendering: pixelated;
+  box-shadow:
+    inset -2px -2px 0 rgba(0,0,0,0.3),
+    inset 2px 2px 0 rgba(255,255,255,0.2);
+}
+
+/* Responsive sizes for torch and stars at sm breakpoint */
+@media (min-width: 640px) {
+  .torch-flame {
+    width: 10px;
+    height: 14px;
+  }
+  .torch-stick {
+    width: 5px;
+    height: 24px;
+  }
+  .pixel-star {
+    width: 5px;
+    height: 5px;
+    box-shadow:
+      5px 0 0 0 #ffd700,
+      -5px 0 0 0 #ffd700,
+      0 5px 0 0 #ffd700,
+      0 -5px 0 0 #ffd700;
+  }
+}
+
+/* Reduced motion support for MainMenu animations */
+@media (prefers-reduced-motion: reduce) {
+  .torch-flame,
+  [class*="animate-pulse"] {
+    animation: none;
+  }
+}
+
+/* Phase transition fade-in */
+@keyframes phase-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-phase-enter {
+  animation: phase-fade-in 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-phase-enter {
+    animation: none;
+  }
+}

@@ -166,15 +166,31 @@ export async function handleDraft(page: Page): Promise<void> {
 export async function handleShop(page: Page): Promise<void> {
   await expect(page.getByTestId('shop-screen')).toBeVisible({ timeout: 5000 });
 
-  // Select first shop card
+  // Must select exactly 2 cards (shop enforces "Choose 2" before confirm is enabled)
   const cards = page.getByTestId('shop-screen').locator('[data-testid^="shop-card"]');
-  // Fallback: just click the first interactive card element
-  const firstCard = cards.first().or(
-    page.getByTestId('shop-screen').locator('button').first()
-  );
-  await firstCard.click();
+  const buttons = page.getByTestId('shop-screen').locator('button').filter({ hasNotText: /confirm|select/i });
 
-  // Confirm
+  // Try data-testid cards first, fall back to generic buttons
+  const firstCard = cards.first().or(buttons.first());
+  const secondCard = cards.nth(1).or(buttons.nth(1));
+
+  await firstCard.click();
+  // Dismiss item comparison modal if it appears
+  const keepButton = page.getByRole('button', { name: /keep current/i });
+  if (await keepButton.isVisible({ timeout: 500 }).catch(() => false)) {
+    await keepButton.click();
+    // Re-select as stat boost card instead
+    await buttons.first().click();
+  }
+
+  await secondCard.click();
+  // Dismiss item comparison modal if it appears
+  if (await keepButton.isVisible({ timeout: 500 }).catch(() => false)) {
+    await keepButton.click();
+    await buttons.nth(1).click();
+  }
+
+  // Confirm (now enabled with 2 selections)
   await page.getByRole('button', { name: /confirm/i }).click();
 }
 

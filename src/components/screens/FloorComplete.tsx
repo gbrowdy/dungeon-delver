@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { ITEM_DEFINITIONS } from '@/data/items';
 import { CLASSES } from '@/data/classes';
@@ -24,7 +24,23 @@ export function FloorComplete() {
   // Auto-advance after 5 seconds (guard prevents double-fire)
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
   const advancedRef = useRef(false);
+  const [countdown, setCountdown] = useState(5);
 
+  // Countdown tick
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto-advance after 5 seconds
   useEffect(() => {
     timerRef.current = setTimeout(() => {
       if (!advancedRef.current) {
@@ -97,9 +113,18 @@ export function FloorComplete() {
           Continue to Floor {floor + 1}
         </Button>
 
-        <p className="pixel-text text-[8px] text-muted-foreground">
-          Auto-continuing in 5s...
-        </p>
+        {/* Countdown bar */}
+        <div className="w-full max-w-xs mx-auto">
+          <div className="pixel-progress-bar h-1.5 rounded-sm overflow-hidden">
+            <div
+              className="pixel-progress-fill bg-muted-foreground transition-all duration-1000 ease-linear"
+              style={{ width: `${(countdown / 5) * 100}%` }}
+            />
+          </div>
+          <p className="pixel-text text-pixel-2xs text-muted-foreground mt-1">
+            Auto-continuing in {countdown}s
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -352,7 +352,7 @@ test.describe('Mobile: Shop Screen', () => {
     }
 
     // Verify at least the first card is visible
-    const shopCards = page.getByTestId('shop-screen').locator('button').filter({ hasNotText: /confirm/i });
+    const shopCards = page.getByTestId('shop-screen').locator('button').filter({ hasNotText: /confirm|select/i });
     const cardCount = await shopCards.count();
     expect(cardCount).toBeGreaterThanOrEqual(1);
     await expect(shopCards.first()).toBeVisible();
@@ -374,7 +374,7 @@ test.describe('Mobile: Shop Screen', () => {
 
     await expect(page.getByTestId('shop-screen')).toBeVisible({ timeout: 5000 });
 
-    const confirmButton = page.getByTestId('shop-screen').getByRole('button', { name: /confirm/i });
+    const confirmButton = page.getByTestId('shop-screen').getByRole('button', { name: /confirm|select/i });
     await confirmButton.scrollIntoViewIfNeeded();
     await expect(confirmButton).toBeVisible();
 
@@ -401,31 +401,23 @@ test.describe('Mobile: Shop Screen', () => {
 
     await expect(page.getByTestId('shop-screen')).toBeVisible({ timeout: 5000 });
 
-    // Try to select a shop card — stat_boost cards select directly, item cards open comparison
-    const shopCards = page.getByTestId('shop-screen').locator('button').filter({ hasNotText: /confirm/i });
-    await shopCards.first().click();
-
-    // Either a comparison modal appeared or the card was selected
+    // Must select exactly 2 cards (shop enforces "Choose 2" before confirm is enabled)
+    const shopCards = page.getByTestId('shop-screen').locator('button').filter({ hasNotText: /confirm|select/i });
     const keepButton = page.getByRole('button', { name: /keep/i });
-    const isComparing = await keepButton.isVisible().catch(() => false);
 
-    if (isComparing) {
-      // Comparison modal should be usable at 320px
+    // Select first card
+    await shopCards.first().click();
+    if (await keepButton.isVisible().catch(() => false)) {
       await keepButton.click();
     }
 
-    // After interaction, confirm button should eventually be usable
-    const confirmButton = page.getByTestId('shop-screen').getByRole('button', { name: /confirm/i });
-    // Select another card if first was an item comparison we dismissed
+    // Select second card
     const cardCount = await shopCards.count();
     if (cardCount > 1) {
       await shopCards.nth(1).click();
-      const keepVisible = await keepButton.isVisible().catch(() => false);
-      if (keepVisible) {
-        // Accept this item instead
+      if (await keepButton.isVisible().catch(() => false)) {
         const equipButton = page.getByRole('button', { name: /equip/i });
-        const equipVisible = await equipButton.isVisible().catch(() => false);
-        if (equipVisible) {
+        if (await equipButton.isVisible().catch(() => false)) {
           await equipButton.click();
         } else {
           await keepButton.click();
@@ -433,8 +425,8 @@ test.describe('Mobile: Shop Screen', () => {
       }
     }
 
-    // At this point we should have at least one selection
-    // Confirm and verify transition
+    // Confirm should be enabled with 2 selections
+    const confirmButton = page.getByTestId('shop-screen').getByRole('button', { name: /confirm/i });
     const isEnabled = await confirmButton.isEnabled().catch(() => false);
     if (isEnabled) {
       await confirmButton.click();

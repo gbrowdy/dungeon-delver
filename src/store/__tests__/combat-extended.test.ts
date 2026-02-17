@@ -167,6 +167,39 @@ describe('Flurry Ring bonus attack', () => {
   });
 });
 
+describe('Flurry Ring — bonus attack procs', () => {
+  it('triggers item procs on bonus attack (e.g., lifesteal)', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+    const state = useGameStore.getState();
+    state.equippedItems = {
+      weapon: null,
+      armor: { id: 'vampiric_shroud', slot: 'armor', tier: 1 },
+      accessory: { id: 'flurry_ring', slot: 'accessory', tier: 1 },
+    };
+    state.combatCounters.playerAttackCount = 4; // Next attack is 5th → bonus
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    state.player.power = 50; // High power so lifesteal heals > 0
+    state.player.basePower = 50;
+    state.player.hp = 50;
+    state.player.maxHp = 200;
+
+    // Give enemy enough HP to survive both hits so handleEnemyDeath doesn't clear events
+    state.enemy!.hp = 9999;
+    state.enemy!.maxHp = 9999;
+
+    vi.spyOn(Math, 'random').mockReturnValue(0.99); // No crit, no dodge
+    tickCombat(state, TICK_MS);
+
+    // Should have 2 heal events: one from normal attack lifesteal, one from bonus attack lifesteal
+    const healEvents = state.combatEvents.filter(e => e.type === 'heal' && e.target === 'player');
+    expect(healEvents.length).toBe(2);
+    vi.restoreAllMocks();
+  });
+});
+
 describe('Riposte Charm counter attack', () => {
   it('attacks enemy for 80% power when player dodges', () => {
     useGameStore.setState(useGameStore.getInitialState());
@@ -189,6 +222,32 @@ describe('Riposte Charm counter attack', () => {
     expect(state.enemy!.hp).toBeLessThan(enemyHpBefore);
 
     mockRandom.mockRestore();
+  });
+});
+
+describe('Twin Fang — per-hit procs', () => {
+  it('triggers item procs for each hit (2 proc chances)', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+    const state = useGameStore.getState();
+    state.equippedItems.weapon = { id: 'twin_fang', slot: 'weapon', tier: 1 };
+    state.equippedItems.armor = { id: 'vampiric_shroud', slot: 'armor', tier: 1 };
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    state.player.hp = 50;
+    state.player.maxHp = 200;
+    state.player.power = 50;
+    state.enemy!.hp = 9999;
+    state.enemy!.maxHp = 9999;
+
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    tickCombat(state, TICK_MS);
+
+    // Should have 2 heal events (one per hit) since lifesteal procs per hit
+    const healEvents = state.combatEvents.filter(e => e.type === 'heal');
+    expect(healEvents.length).toBe(2);
+    vi.restoreAllMocks();
   });
 });
 

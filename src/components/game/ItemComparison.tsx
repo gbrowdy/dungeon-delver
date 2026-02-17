@@ -1,4 +1,5 @@
 // src/components/game/ItemComparison.tsx
+import { useEffect, useRef } from 'react';
 import { ITEM_DEFINITIONS } from '@/data/items';
 import type { Item, ItemId } from '@/types/game';
 import { Button } from '@/components/ui/button';
@@ -12,11 +13,22 @@ interface ItemComparisonProps {
 }
 
 export function ItemComparison({ currentItem, newItemId, isUpgrade, onKeep, onEquip }: ItemComparisonProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
   const newDef = ITEM_DEFINITIONS[newItemId];
   const currentDef = currentItem ? ITEM_DEFINITIONS[currentItem.id] : null;
 
+  useEffect(() => {
+    panelRef.current?.focus();
+  }, []);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onKeep();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={`${newDef.slot} comparison`}>
+    <div ref={panelRef} tabIndex={-1} onKeyDown={handleKeyDown} className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 outline-none" role="dialog" aria-modal="true" aria-label={`${newDef.slot} comparison`}>
       <div className="pixel-panel p-6 w-full max-w-lg space-y-6 rounded-lg">
         <h3 className="pixel-title text-pixel-sm text-center text-foreground uppercase">
           {newDef.slot} Comparison
@@ -31,7 +43,7 @@ export function ItemComparison({ currentItem, newItemId, isUpgrade, onKeep, onEq
                 <div className="pixel-text text-pixel-xs text-foreground font-bold">
                   {currentDef.name}{currentItem!.tier > 1 ? ` (T${currentItem!.tier})` : ''}
                 </div>
-                <div className="pixel-text text-[8px] text-muted-foreground leading-relaxed">
+                <div className="pixel-text text-pixel-2xs text-muted-foreground leading-relaxed">
                   {currentDef.description}
                 </div>
               </>
@@ -48,7 +60,7 @@ export function ItemComparison({ currentItem, newItemId, isUpgrade, onKeep, onEq
             <div className="pixel-text text-pixel-xs text-foreground font-bold">
               {newDef.name}{isUpgrade && currentItem ? ` (T${currentItem.tier + 1})` : ''}
             </div>
-            <div className="pixel-text text-[8px] text-muted-foreground leading-relaxed">
+            <div className="pixel-text text-pixel-2xs text-muted-foreground leading-relaxed">
               {newDef.description}
             </div>
           </div>

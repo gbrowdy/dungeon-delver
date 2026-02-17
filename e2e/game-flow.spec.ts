@@ -345,28 +345,33 @@ test.describe('Boss Shop', () => {
     await expect(page.getByTestId('shop-screen')).toBeVisible({ timeout: 5000 });
 
     // Shop should have cards
-    const shopCards = page.getByTestId('shop-screen').locator('button').filter({ hasNotText: /confirm/i });
+    const shopCards = page.getByTestId('shop-screen').locator('button').filter({ hasNotText: /confirm|select/i });
     const cardCount = await shopCards.count();
-    expect(cardCount).toBeGreaterThanOrEqual(1);
+    expect(cardCount).toBeGreaterThanOrEqual(2);
 
-    // Confirm button should be disabled initially
-    const confirmButton = page.getByTestId('shop-screen').getByRole('button', { name: /confirm/i });
+    // Confirm button should be disabled initially (shows "Select 2 more")
+    const confirmButton = page.getByTestId('shop-screen').getByRole('button', { name: /confirm|select/i });
     await expect(confirmButton).toBeDisabled();
 
-    // Select a card
+    // Select first card
     await shopCards.first().click();
 
     // If an item comparison modal appeared, close it by clicking "Keep"
     const keepButton = page.getByRole('button', { name: /keep/i });
     if (await keepButton.isVisible().catch(() => false)) {
       await keepButton.click();
-      // Try the next card instead (it was an item card that opened comparison)
-      if (cardCount > 1) {
-        await shopCards.nth(1).click();
-      }
     }
 
-    // Confirm should be enabled after selecting at least one card
+    // Still disabled with only 1 selection (shows "Select 1 more")
+    await expect(confirmButton).toBeDisabled();
+
+    // Select second card
+    await shopCards.nth(1).click();
+    if (await keepButton.isVisible().catch(() => false)) {
+      await keepButton.click();
+    }
+
+    // Confirm should be enabled after selecting exactly 2 cards
     await expect(confirmButton).toBeEnabled({ timeout: 3000 });
     await confirmButton.click();
 

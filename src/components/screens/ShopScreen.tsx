@@ -84,10 +84,10 @@ export function ShopScreen() {
         <div className="text-center">
           <Button
             onClick={confirmShop}
-            disabled={selectedChoices.length === 0}
+            disabled={selectedChoices.length !== 2}
             className="pixel-button-main text-pixel-xs px-8 py-3 bg-orange-600 hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed border-b-4 border-orange-800 uppercase font-bold"
           >
-            Confirm
+            {selectedChoices.length === 2 ? 'Confirm' : `Select ${2 - selectedChoices.length} more`}
           </Button>
         </div>
       </div>

@@ -25,7 +25,7 @@ export function ModifierBadges({ modifiers }: { modifiers: EnemyModifier[] }) {
       {modifiers.map(mod => (
         <span
           key={mod}
-          className={cn('px-1.5 py-0.5 rounded text-[8px] font-bold uppercase', MODIFIER_COLORS[mod])}
+          className={cn('px-1.5 py-0.5 rounded text-pixel-2xs font-bold uppercase', MODIFIER_COLORS[mod])}
         >
           {mod}
         </span>
@@ -41,9 +41,10 @@ export function StatusEffectBadges({ effects }: { effects: StatusEffect[] }) {
       {effects.map((effect, i) => (
         <span
           key={`${effect.type}-${i}`}
-          className={cn('px-1.5 py-0.5 rounded text-[8px] font-bold uppercase', STATUS_COLORS[effect.type])}
+          className={cn('px-1.5 py-0.5 rounded text-pixel-2xs font-bold uppercase', STATUS_COLORS[effect.type])}
         >
-          {effect.type}{effect.stacks > 1 ? ` x${effect.stacks}` : ''}
+          {effect.type}
+          {effect.type === 'shield' ? ` ${effect.stacks}` : effect.stacks > 1 ? ` x${effect.stacks}` : ''}
         </span>
       ))}
     </div>
