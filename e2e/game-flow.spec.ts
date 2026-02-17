@@ -140,6 +140,8 @@ test.describe('Draft Flow', () => {
     });
 
     await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
+    // setupRun starts paused — unpause for combat
+    await page.evaluate(() => window.__TEST_HOOKS__?.setState({ paused: false }));
     await setSpeedToMax(page);
 
     // With high stats, we should reach a draft (after 3 enemy kills) fairly quickly
@@ -225,6 +227,8 @@ test.describe('Floor Completion', () => {
     });
 
     await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
+    // setupRun starts paused — unpause for combat
+    await page.evaluate(() => window.__TEST_HOOKS__?.setState({ paused: false }));
     await setSpeedToMax(page);
 
     // Wait for combat to resolve — could be draft or floor-complete
@@ -299,6 +303,8 @@ test.describe('Boss Shop', () => {
     });
 
     await expect(page.getByTestId('floor-indicator')).toBeVisible({ timeout: 5000 });
+    // setupRun starts paused — unpause for combat
+    await page.evaluate(() => window.__TEST_HOOKS__?.setState({ paused: false }));
     await setSpeedToMax(page);
 
     // Fight through rooms until shop appears
@@ -356,10 +362,10 @@ test.describe('Boss Shop', () => {
     // Select first card
     await shopCards.first().click();
 
-    // If an item comparison modal appeared, close it by clicking "Keep"
-    const keepButton = page.getByRole('button', { name: /keep/i });
-    if (await keepButton.isVisible().catch(() => false)) {
-      await keepButton.click();
+    // If an item comparison modal appeared, accept the item
+    const equipButton = page.getByRole('button', { name: /equip new|upgrade/i });
+    if (await equipButton.isVisible({ timeout: 500 }).catch(() => false)) {
+      await equipButton.click();
     }
 
     // Still disabled with only 1 selection (shows "Select 1 more")
@@ -367,8 +373,8 @@ test.describe('Boss Shop', () => {
 
     // Select second card
     await shopCards.nth(1).click();
-    if (await keepButton.isVisible().catch(() => false)) {
-      await keepButton.click();
+    if (await equipButton.isVisible({ timeout: 500 }).catch(() => false)) {
+      await equipButton.click();
     }
 
     // Confirm should be enabled after selecting exactly 2 cards

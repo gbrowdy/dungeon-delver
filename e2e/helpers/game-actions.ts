@@ -167,27 +167,20 @@ export async function handleShop(page: Page): Promise<void> {
   await expect(page.getByTestId('shop-screen')).toBeVisible({ timeout: 5000 });
 
   // Must select exactly 2 cards (shop enforces "Choose 2" before confirm is enabled)
-  const cards = page.getByTestId('shop-screen').locator('[data-testid^="shop-card"]');
   const buttons = page.getByTestId('shop-screen').locator('button').filter({ hasNotText: /confirm|select/i });
 
-  // Try data-testid cards first, fall back to generic buttons
-  const firstCard = cards.first().or(buttons.first());
-  const secondCard = cards.nth(1).or(buttons.nth(1));
-
-  await firstCard.click();
-  // Dismiss item comparison modal if it appears
-  const keepButton = page.getByRole('button', { name: /keep current/i });
-  if (await keepButton.isVisible({ timeout: 500 }).catch(() => false)) {
-    await keepButton.click();
-    // Re-select as stat boost card instead
-    await buttons.first().click();
+  // Select first card
+  await buttons.first().click();
+  // If item comparison modal appears, accept the item (click Equip/Upgrade)
+  const equipButton = page.getByRole('button', { name: /equip new|upgrade/i });
+  if (await equipButton.isVisible({ timeout: 500 }).catch(() => false)) {
+    await equipButton.click();
   }
 
-  await secondCard.click();
-  // Dismiss item comparison modal if it appears
-  if (await keepButton.isVisible({ timeout: 500 }).catch(() => false)) {
-    await keepButton.click();
-    await buttons.nth(1).click();
+  // Select second card
+  await buttons.nth(1).click();
+  if (await equipButton.isVisible({ timeout: 500 }).catch(() => false)) {
+    await equipButton.click();
   }
 
   // Confirm (now enabled with 2 selections)
