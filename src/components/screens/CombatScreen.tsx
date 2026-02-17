@@ -5,6 +5,7 @@ import { HealthBar } from '@/components/game/HealthBar';
 import { AttackBar } from '@/components/game/AttackBar';
 import { AnimatedPixelSprite } from '@/components/game/PixelSprite';
 import { DamageNumber } from '@/components/game/battle-effects/FloatingNumbers';
+import { HitImpact, PixelSlash } from '@/components/game/battle-effects/AttackEffects';
 import { ModifierBadges, StatusEffectBadges } from '@/components/game/StatusBadges';
 import { ItemSlots } from '@/components/game/ItemSlots';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,15 @@ interface FloatingNum {
   isCrit: boolean;
   isHeal: boolean;
   isMiss: boolean;
+}
+
+interface ActiveEffect {
+  id: number;
+  type: 'slash' | 'impact';
+  x: number;
+  y: number;
+  direction: 'left' | 'right';
+  isCrit: boolean;
 }
 
 export function CombatScreen() {
@@ -72,11 +82,17 @@ export function CombatScreen() {
   // Floating damage numbers (React-local state)
   const [floatingNumbers, setFloatingNumbers] = useState<FloatingNum[]>([]);
 
-  // Reset floating number tracking when fight changes
+  // Battle effects (slash + impact)
+  const [activeEffects, setActiveEffects] = useState<ActiveEffect[]>([]);
+  const effectIdRef = useRef(0);
+
+  // Reset floating number and effect tracking when fight changes
   useEffect(() => {
     lastProcessedTickRef.current = 0;
     floatingNumIdRef.current = 0;
+    effectIdRef.current = 0;
     setFloatingNumbers([]);
+    setActiveEffects([]);
   }, [floor, room]);
 
   // Process new combat events into floating numbers and sprite animations
@@ -107,6 +123,48 @@ export function CombatScreen() {
       setFloatingNumbers(prev => [...prev, ...newNumbers]);
     }
 
+    // Spawn battle effects for attack events
+    if (!reducedMotion) {
+      const attackEvents = newEvents.filter(e =>
+        e.type === 'damage' || e.type === 'crit'
+      );
+
+      const newEffects: ActiveEffect[] = attackEvents.flatMap(event => {
+        const targetX = event.target === 'enemy' ? 70 : 30;
+        const effects: ActiveEffect[] = [];
+
+        effects.push({
+          id: ++effectIdRef.current,
+          type: 'slash',
+          x: targetX,
+          y: 40,
+          direction: event.target === 'enemy' ? 'right' : 'left',
+          isCrit: event.type === 'crit',
+        });
+
+        effects.push({
+          id: ++effectIdRef.current,
+          type: 'impact',
+          x: targetX,
+          y: 35 + Math.random() * 15,
+          direction: event.target === 'enemy' ? 'right' : 'left',
+          isCrit: event.type === 'crit',
+        });
+
+        return effects;
+      });
+
+      if (newEffects.length > 0) {
+        setActiveEffects(prev => [...prev, ...newEffects]);
+        // Schedule removal at creation time — avoids re-render interference from reactive cleanup
+        newEffects.forEach(e => {
+          // 500ms for slashes (450ms animation + 50ms buffer), 600ms for crit impacts, 400ms for normal impacts
+          const duration = e.type === 'slash' ? 500 : e.isCrit ? 600 : 400;
+          setTimeout(() => removeEffect(e.id), duration);
+        });
+      }
+    }
+
     // Screen shake on critical hits
     if (!reducedMotion && newEvents.some(e => e.type === 'crit')) {
       setShaking(true);
@@ -120,6 +178,10 @@ export function CombatScreen() {
 
   const removeFloatingNumber = useCallback((id: number) => {
     setFloatingNumbers(prev => prev.filter(n => n.id !== id));
+  }, []);
+
+  const removeEffect = useCallback((id: number) => {
+    setActiveEffects(prev => prev.filter(e => e.id !== id));
   }, []);
 
   if (!enemy || !enemyDef) return null;
@@ -175,8 +237,35 @@ export function CombatScreen() {
             />
           </div>
 
-          {/* Floating damage numbers overlay */}
+          {/* Floating damage numbers and battle effects overlay */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {/* Battle effects */}
+            {activeEffects.map(effect => (
+              effect.type === 'impact' ? (
+                <HitImpact
+                  key={effect.id}
+                  x={effect.x}
+                  y={effect.y}
+                  isCrit={effect.isCrit}
+                />
+              ) : (
+                <div
+                  key={effect.id}
+                  className="absolute pointer-events-none"
+                  style={{
+                    left: `${effect.x}%`,
+                    top: `${effect.y}%`,
+                    transform: 'translate(-50%, -50%)',
+                  }}
+                >
+                  <PixelSlash
+                    direction={effect.direction}
+                    variant={classId === 'rogue' ? 'dagger' : classId === 'mage' ? 'staff' : 'sword'}
+                  />
+                </div>
+              )
+            ))}
+            {/* Floating damage numbers */}
             {floatingNumbers.map(num => (
               <DamageNumber
                 key={num.id}
