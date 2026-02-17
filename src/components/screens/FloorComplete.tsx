@@ -21,10 +21,10 @@ export function FloorComplete() {
 
   const classDef = CLASSES[classId];
 
-  // Auto-advance after 5 seconds (guard prevents double-fire)
+  // Auto-advance after 8 seconds (guard prevents double-fire)
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
   const advancedRef = useRef(false);
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(8);
 
   // Countdown tick
   useEffect(() => {
@@ -40,14 +40,14 @@ export function FloorComplete() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-advance after 5 seconds
+  // Auto-advance after 8 seconds
   useEffect(() => {
     timerRef.current = setTimeout(() => {
       if (!advancedRef.current) {
         advancedRef.current = true;
         advanceFloor();
       }
-    }, 5000);
+    }, 8000);
     return () => clearTimeout(timerRef.current);
   }, [advanceFloor]);
 
@@ -115,10 +115,10 @@ export function FloorComplete() {
 
         {/* Countdown bar */}
         <div className="w-full max-w-xs mx-auto">
-          <div className="pixel-progress-bar h-1.5 rounded-sm overflow-hidden">
+          <div className="pixel-progress-bar h-2.5 rounded-sm overflow-hidden">
             <div
               className="pixel-progress-fill bg-muted-foreground transition-all duration-1000 ease-linear"
-              style={{ width: `${(countdown / 5) * 100}%` }}
+              style={{ width: `${(countdown / 8) * 100}%` }}
             />
           </div>
           <p className="pixel-text text-pixel-xs text-muted-foreground mt-1">
