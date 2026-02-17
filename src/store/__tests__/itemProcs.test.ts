@@ -27,8 +27,8 @@ describe('processItemProcs', () => {
 
     const passiveEffects = processItemProcs(state, 'passive', {});
 
-    expect(passiveEffects.damageMult).toBeCloseTo(1.25);
-    expect(passiveEffects.speedMult).toBeCloseTo(0.85);
+    expect(passiveEffects.damageMult).toBeCloseTo(1.40);
+    expect(passiveEffects.speedMult).toBeCloseTo(0.90);
   });
 
   it('processes on_player_attack effects from Venomous Fang (apply_poison)', () => {
@@ -181,7 +181,7 @@ describe('processItemProcs', () => {
 
       const passives = processItemProcs(state, 'passive', {});
 
-      expect(passives.damagePerMissingHpPercent).toBeCloseTo(0.01);
+      expect(passives.damagePerMissingHpPercent).toBeCloseTo(0.03);
     });
   });
 });

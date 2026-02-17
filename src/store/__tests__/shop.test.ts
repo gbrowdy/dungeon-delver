@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { generateShopCards } from '../actions/shop';
 import { useGameStore } from '../gameStore';
+import { ITEM_DEFINITIONS } from '@/data/items';
 import type { GameState, ShopCard } from '@/types/game';
 
 function createCombatState(): GameState {
@@ -48,6 +49,42 @@ describe('generateShopCards', () => {
     for (const card of itemCards) {
       expect(card.itemId).toBeDefined();
     }
+  });
+
+  it('never offers duplicate item ids', () => {
+    const state = createCombatState();
+    for (let i = 0; i < 50; i++) {
+      const cards = generateShopCards(state);
+      const itemIds = cards
+        .filter(c => c.type === 'item' && !c.isUpgrade)
+        .map(c => c.itemId);
+      const uniqueIds = new Set(itemIds);
+      expect(uniqueIds.size).toBe(itemIds.length);
+    }
+  });
+
+  it('favors items for empty equipment slots', () => {
+    const state = createCombatState();
+    // Equip weapon and armor, leave accessory empty
+    state.equippedItems.weapon = { id: 'heavy_cleaver', slot: 'weapon', tier: 1 };
+    state.equippedItems.armor = { id: 'thorned_mail', slot: 'armor', tier: 1 };
+    state.equippedItems.accessory = null;
+
+    let accessoryCount = 0;
+    let totalItems = 0;
+    const samples = 100;
+    for (let i = 0; i < samples; i++) {
+      const cards = generateShopCards(state);
+      const itemCards = cards.filter(c => c.type === 'item' && !c.isUpgrade);
+      for (const card of itemCards) {
+        totalItems++;
+        // Check if item is an accessory (the empty slot)
+        const itemDef = ITEM_DEFINITIONS[card.itemId!];
+        if (itemDef && itemDef.slot === 'accessory') accessoryCount++;
+      }
+    }
+    // Accessories should be offered more than 1/3 of the time (random = ~33%)
+    expect(accessoryCount / totalItems).toBeGreaterThan(0.4);
   });
 
   it('can offer tier upgrade for equipped items', () => {
