@@ -47,24 +47,29 @@ describe('getGrowthMultiplier', () => {
 });
 
 describe('getDraftPickValue', () => {
-  it('returns flat 1 or 2 for speed at any floor', () => {
+  it('returns 1 or 2 for speed at floor 1', () => {
     for (let i = 0; i < 20; i++) {
       const val = getDraftPickValue(1, 'speed');
       expect(val).toBeGreaterThanOrEqual(1);
       expect(val).toBeLessThanOrEqual(2);
     }
+  });
+
+  it('speed picks scale with floor depth', () => {
+    // Floor 100: base = 1 + floor(100 * 0.03) = 4, range 4-5
     for (let i = 0; i < 20; i++) {
       const val = getDraftPickValue(100, 'speed');
-      expect(val).toBeGreaterThanOrEqual(1);
-      expect(val).toBeLessThanOrEqual(2);
+      expect(val).toBeGreaterThanOrEqual(4);
+      expect(val).toBeLessThanOrEqual(5);
     }
   });
 
-  it('returns flat 1 or 2 for luck at any floor', () => {
+  it('luck picks scale with floor depth', () => {
+    // Floor 100: base = 1 + floor(100 * 0.03) = 4, range 4-5
     for (let i = 0; i < 20; i++) {
       const val = getDraftPickValue(100, 'luck');
-      expect(val).toBeGreaterThanOrEqual(1);
-      expect(val).toBeLessThanOrEqual(2);
+      expect(val).toBeGreaterThanOrEqual(4);
+      expect(val).toBeLessThanOrEqual(5);
     }
   });
 

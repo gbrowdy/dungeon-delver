@@ -18,6 +18,23 @@ const STATUS_COLORS: Record<string, string> = {
   regen: 'bg-emerald-600 text-emerald-100',
 };
 
+const MODIFIER_DESCRIPTIONS: Record<EnemyModifier, string> = {
+  swift: 'Attacks faster than normal',
+  armored: 'Takes reduced damage',
+  berserker: 'Gains power as health drops',
+  regenerating: 'Slowly recovers health',
+  venomous: 'Attacks apply poison',
+  shielded: 'Absorbs damage with a shield',
+};
+
+const STATUS_DESCRIPTIONS: Record<string, string> = {
+  poison: 'Deals damage over time',
+  stun: 'Prevents attacking briefly',
+  curse: 'Reduces attack speed',
+  shield: 'Absorbs incoming damage',
+  regen: 'Recovers health over time',
+};
+
 export function ModifierBadges({ modifiers }: { modifiers: EnemyModifier[] }) {
   if (modifiers.length === 0) return null;
   return (
@@ -25,7 +42,8 @@ export function ModifierBadges({ modifiers }: { modifiers: EnemyModifier[] }) {
       {modifiers.map(mod => (
         <span
           key={mod}
-          className={cn('px-1.5 py-0.5 rounded text-pixel-2xs font-bold uppercase', MODIFIER_COLORS[mod])}
+          title={MODIFIER_DESCRIPTIONS[mod]}
+          className={cn('px-1.5 py-0.5 rounded text-pixel-xs font-bold uppercase', MODIFIER_COLORS[mod])}
         >
           {mod}
         </span>
@@ -41,7 +59,8 @@ export function StatusEffectBadges({ effects }: { effects: StatusEffect[] }) {
       {effects.map((effect, i) => (
         <span
           key={`${effect.type}-${i}`}
-          className={cn('px-1.5 py-0.5 rounded text-pixel-2xs font-bold uppercase', STATUS_COLORS[effect.type])}
+          title={STATUS_DESCRIPTIONS[effect.type]}
+          className={cn('px-1.5 py-0.5 rounded text-pixel-xs font-bold uppercase', STATUS_COLORS[effect.type])}
         >
           {effect.type}
           {effect.type === 'shield' ? ` ${effect.stacks}` : effect.stacks > 1 ? ` x${effect.stacks}` : ''}

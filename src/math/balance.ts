@@ -45,6 +45,7 @@ export const BOSS_HP_MULT_PER_FLOOR = 0.005;
 export const DAMPING_START = 100;
 export const DRAFT_PICK_SCALE_COEFF = 0.24;
 export const DRAFT_PICK_VARIANCE_FACTOR = 0.3;
+export const SPEED_LUCK_SCALE_COEFF = 0.03;
 
 // ── Enemy modifiers ─────────────────────────────────────────────
 export const BERSERKER_POWER_MULT = 1.5;
@@ -77,9 +78,9 @@ export const PLAYER_BASE_SPEED = 10;
 export const PLAYER_BASE_LUCK = 5;
 
 // ── Class innates ─────────────────────────────────────────────────
-export const WARRIOR_FORTITUDE_MULT = 1.5;
+export const WARRIOR_FORTITUDE_MULT = 2.0;
 export const ROGUE_CRIT_MULT = 1.5;
-export const MAGE_AMPLIFY_PER_LUCK = 0.005;
+export const MAGE_AMPLIFY_PER_LUCK = 0.01;
 
 // ── Endless mode ─────────────────────────────────────────────────
 export const ENDLESS_START_FLOOR = 101;

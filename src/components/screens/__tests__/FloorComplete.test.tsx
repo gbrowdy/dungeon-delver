@@ -52,10 +52,10 @@ describe('FloorComplete', () => {
     expect(useGameStore.getState().phase).toBe('combat');
   });
 
-  it('auto-advances after 5 seconds', () => {
+  it('auto-advances after 8 seconds', () => {
     render(<FloorComplete />);
     act(() => {
-      vi.advanceTimersByTime(5000);
+      vi.advanceTimersByTime(8000);
     });
     expect(useGameStore.getState().floor).toBe(6);
     expect(useGameStore.getState().phase).toBe('combat');

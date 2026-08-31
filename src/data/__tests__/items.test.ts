@@ -84,8 +84,8 @@ describe('item effect design: data-driven checks', () => {
 
     const damageMult = hc.effects.find(e => e.effect === 'damage_mult');
     const speedMult = hc.effects.find(e => e.effect === 'speed_mult');
-    expect(damageMult!.value).toBe(1.25);
-    expect(speedMult!.value).toBe(0.85);
+    expect(damageMult!.value).toBe(1.40);
+    expect(speedMult!.value).toBe(0.90);
   });
 
   it('Shocking Edge stuns every 4th hit', () => {

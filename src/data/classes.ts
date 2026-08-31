@@ -31,7 +31,7 @@ export const CLASSES: Record<string, ClassDefinition> = {
     innate: {
       id: 'toughness',
       name: 'Toughness',
-      description: 'Fortitude counts as 1.5x in damage reduction formula.',
+      description: 'Fortitude counts as 2x in damage reduction formula.',
     },
   },
   rogue: {
@@ -53,7 +53,7 @@ export const CLASSES: Record<string, ClassDefinition> = {
     innate: {
       id: 'amplify',
       name: 'Amplify',
-      description: 'All damage multiplied by 1 + (luck * 0.005).',
+      description: 'All damage multiplied by 1 + (luck * 0.01).',
     },
   },
 };

@@ -21,10 +21,10 @@ export function FloorComplete() {
 
   const classDef = CLASSES[classId];
 
-  // Auto-advance after 5 seconds (guard prevents double-fire)
+  // Auto-advance after 8 seconds (guard prevents double-fire)
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
   const advancedRef = useRef(false);
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(8);
 
   // Countdown tick
   useEffect(() => {
@@ -40,14 +40,14 @@ export function FloorComplete() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-advance after 5 seconds
+  // Auto-advance after 8 seconds
   useEffect(() => {
     timerRef.current = setTimeout(() => {
       if (!advancedRef.current) {
         advancedRef.current = true;
         advanceFloor();
       }
-    }, 5000);
+    }, 8000);
     return () => clearTimeout(timerRef.current);
   }, [advanceFloor]);
 
@@ -108,20 +108,20 @@ export function FloorComplete() {
           onClick={handleContinue}
           size="lg"
           data-testid="continue-button"
-          className="pixel-button-main text-pixel-xs px-8 py-4 bg-orange-600 hover:bg-orange-500 border-b-4 border-orange-800 uppercase font-bold"
+          className="pixel-button-main text-pixel-xs px-4 sm:px-8 py-4 bg-orange-600 hover:bg-orange-500 border-b-4 border-orange-800 uppercase font-bold"
         >
           Continue to Floor {floor + 1}
         </Button>
 
         {/* Countdown bar */}
         <div className="w-full max-w-xs mx-auto">
-          <div className="pixel-progress-bar h-1.5 rounded-sm overflow-hidden">
+          <div className="pixel-progress-bar h-2.5 rounded-sm overflow-hidden">
             <div
               className="pixel-progress-fill bg-muted-foreground transition-all duration-1000 ease-linear"
-              style={{ width: `${(countdown / 5) * 100}%` }}
+              style={{ width: `${(countdown / 8) * 100}%` }}
             />
           </div>
-          <p className="pixel-text text-pixel-2xs text-muted-foreground mt-1">
+          <p className="pixel-text text-pixel-xs text-muted-foreground mt-1">
             Auto-continuing in {countdown}s
           </p>
         </div>

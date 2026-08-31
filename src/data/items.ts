@@ -111,10 +111,10 @@ const HEAVY_CLEAVER: ItemDefinition = {
   name: 'Heavy Cleaver',
   slot: 'weapon',
   philosophy: 'Commitment',
-  description: '+25% damage, -15% attack speed.',
+  description: '+40% damage, -10% attack speed.',
   effects: [
-    { trigger: 'passive', effect: 'damage_mult', value: 1.25 },
-    { trigger: 'passive', effect: 'speed_mult', value: 0.85 },
+    { trigger: 'passive', effect: 'damage_mult', value: 1.40 },
+    { trigger: 'passive', effect: 'speed_mult', value: 0.90 },
   ],
 };
 
@@ -239,9 +239,9 @@ const BLOODSTONE: ItemDefinition = {
   name: 'Bloodstone',
   slot: 'accessory',
   philosophy: 'Risk/reward',
-  description: '+1% damage per 5% HP missing.',
+  description: '+3% damage per 5% HP missing.',
   effects: [
-    { trigger: 'passive', effect: 'damage_per_missing_hp', value: 0.01 },
+    { trigger: 'passive', effect: 'damage_per_missing_hp', value: 0.03 },
   ],
 };
 

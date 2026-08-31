@@ -45,6 +45,7 @@ export interface GameActions {
 
   // Reset
   resetGame: () => void;
+  abandonRun: () => void;
 }
 
 export type GameStore = GameState & GameActions;
@@ -400,6 +401,10 @@ export const useGameStore = create<GameStore>()(
   },
 
   resetGame: () => {
+    set({ ...INITIAL_STATE });
+  },
+
+  abandonRun: () => {
     set({ ...INITIAL_STATE });
   },
     }),

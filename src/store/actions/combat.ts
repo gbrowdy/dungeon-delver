@@ -203,8 +203,29 @@ function resolvePlayerAttack(
       ? getEffectiveCritMultiplier(crit.multiplier, state.classId)
       : 1.0;
     const result = calculateDamage(player.power, enemy.fortitude, critMultiplier);
-    const amplify = getAmplifyMultiplier(player.luck, state.classId);
-    const finalDamage = Math.max(1, Math.round(result.final * amplify));
+
+    let damageMultiplier = getAmplifyMultiplier(player.luck, state.classId)
+      * passives.damageMult * passives.outgoingDamageMult;
+
+    if (passives.damagePerMissingHpPercent > 0) {
+      const missingHpPercent = (1 - player.hp / player.maxHp) * 100;
+      const bonusPercent = Math.floor(missingHpPercent / 5) * passives.damagePerMissingHpPercent;
+      damageMultiplier *= (1 + bonusPercent);
+    }
+
+    let finalDamage = Math.max(1, Math.round(result.final * damageMultiplier));
+
+    // Shield absorption
+    const shield = enemy.statusEffects.find(e => e.type === 'shield');
+    if (shield && shield.stacks > 0) {
+      const absorbed = Math.min(shield.stacks, finalDamage);
+      shield.stacks -= absorbed;
+      finalDamage -= absorbed;
+      if (shield.stacks <= 0) {
+        enemy.statusEffects = enemy.statusEffects.filter(e => e.type !== 'shield');
+      }
+    }
+
     enemy.hp -= finalDamage;
 
     emitCombatEvent(state, {

@@ -36,10 +36,10 @@ describe('generateDraftCards', () => {
     const cards = generateDraftCards(state);
 
     for (const card of cards) {
-      // Speed and luck: 1 or 2
+      // Speed and luck: scale with floor (floor 50: base=2, range 2-3)
       if (card.stat === 'speed' || card.stat === 'luck') {
-        expect(card.value).toBeGreaterThanOrEqual(1);
-        expect(card.value).toBeLessThanOrEqual(2);
+        expect(card.value).toBeGreaterThanOrEqual(2);
+        expect(card.value).toBeLessThanOrEqual(3);
       }
       // Power and fortitude: scale with floor
       if (card.stat === 'power' || card.stat === 'fortitude') {

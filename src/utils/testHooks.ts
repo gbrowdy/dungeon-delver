@@ -172,7 +172,7 @@ export function initTestHooks(): void {
           curseDecayTimer: 0,
         },
         lastPlayerHitDamage: 0,
-        paused: false,
+        paused: true,
       });
     },
 

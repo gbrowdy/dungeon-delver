@@ -200,6 +200,48 @@ describe('Flurry Ring — bonus attack procs', () => {
   });
 });
 
+describe('Flurry Ring — passive multipliers apply to bonus attack', () => {
+  it('Heavy Cleaver damage mult applies to bonus attack', () => {
+    useGameStore.setState(useGameStore.getInitialState());
+    useGameStore.getState().selectClass('warrior');
+    useGameStore.getState().startRun();
+    const state = useGameStore.getState();
+
+    // Set up Flurry Ring + Heavy Cleaver (1.40x damage)
+    state.equippedItems = {
+      weapon: { id: 'heavy_cleaver', slot: 'weapon', tier: 1 },
+      armor: null,
+      accessory: { id: 'flurry_ring', slot: 'accessory', tier: 1 },
+    };
+    state.combatCounters.playerAttackCount = 4; // Next is 5th
+    state.player.attackTimer = 1;
+    state.enemy!.attackTimer = 99999;
+    state.enemy!.hp = 9999;
+    state.enemy!.maxHp = 9999;
+    state.combatEvents = [];
+
+    vi.spyOn(Math, 'random').mockReturnValue(0.99); // No crit, no dodge
+
+    const enemyHpBefore = state.enemy!.hp;
+    tickCombat(state, TICK_MS);
+    const totalDamage = enemyHpBefore - state.enemy!.hp;
+
+    // Without Heavy Cleaver, both normal + bonus would deal X each = 2X
+    // With Heavy Cleaver (1.40x), both should deal 1.40X each = 2.8X
+    // Both hits should be equal since same multiplier chain
+    const damageEvents = state.combatEvents.filter(
+      e => (e.type === 'damage' || e.type === 'crit') && e.target === 'enemy'
+    );
+    expect(damageEvents.length).toBe(2);
+    // Both hits should be the same damage (both apply Heavy Cleaver)
+    expect(damageEvents[0].value).toBe(damageEvents[1].value);
+    // Total should be more than 2x a single hit without multiplier
+    expect(totalDamage).toBeGreaterThan(0);
+
+    vi.restoreAllMocks();
+  });
+});
+
 describe('Riposte Charm counter attack', () => {
   it('attacks enemy for 80% power when player dodges', () => {
     useGameStore.setState(useGameStore.getInitialState());

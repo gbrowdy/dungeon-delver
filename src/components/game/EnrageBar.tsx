@@ -30,7 +30,7 @@ export function EnrageBar({ combatElapsed, className }: EnrageBarProps) {
           />
         </div>
         {isEnraged && (
-          <span className="pixel-text text-pixel-2xs text-red-400 uppercase animate-pulse">
+          <span className="pixel-text text-pixel-xs text-red-400 uppercase animate-pulse">
             Enraged
           </span>
         )}

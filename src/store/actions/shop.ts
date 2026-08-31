@@ -14,25 +14,32 @@ const ITEM_SLOTS: ItemSlot[] = ['weapon', 'armor', 'accessory'];
 
 /**
  * Generate 5 shop cards. At least 1 item. May include tier upgrades.
- * Player selects exactly 2.
+ * Player selects exactly 2. No duplicate items offered.
+ * Items favor empty equipment slots.
  */
 export function generateShopCards(state: GameState): ShopCard[] {
   const cards: ShopCard[] = [];
   const probs = getStatProbabilities(state.classId);
+  const offeredItemIds = new Set<ItemId>();
 
   // Guarantee at least 1 item card
-  cards.push(generateItemCard());
+  const firstItem = generateItemCard(state, offeredItemIds);
+  cards.push(firstItem);
+  if (firstItem.itemId) offeredItemIds.add(firstItem.itemId);
 
   // Maybe add a tier upgrade for an equipped item
   const upgradeCard = maybeGenerateUpgradeCard(state);
   if (upgradeCard) {
     cards.push(upgradeCard);
+    if (upgradeCard.itemId) offeredItemIds.add(upgradeCard.itemId);
   }
 
   // Fill remaining with stat boosts and maybe more items
   while (cards.length < 5) {
     if (Math.random() < 0.3 && cards.filter(c => c.type === 'item').length < 3) {
-      cards.push(generateItemCard());
+      const itemCard = generateItemCard(state, offeredItemIds);
+      cards.push(itemCard);
+      if (itemCard.itemId) offeredItemIds.add(itemCard.itemId);
     } else {
       cards.push(generateStatBoostCard(state, probs));
     }
@@ -66,8 +73,20 @@ function generateStatBoostCard(
   return { type: 'stat_boost', stat, statValue: value };
 }
 
-function generateItemCard(): ShopCard {
-  const item = ALL_ITEMS[Math.floor(Math.random() * ALL_ITEMS.length)];
+function generateItemCard(state: GameState, offeredIds: Set<ItemId>): ShopCard {
+  // Prefer items for empty equipment slots (70% chance to target empty slot)
+  const emptySlots = ITEM_SLOTS.filter(slot => !state.equippedItems[slot]);
+  const candidates = emptySlots.length > 0 && Math.random() < 0.7
+    ? ALL_ITEMS.filter(i => emptySlots.includes(i.slot) && !offeredIds.has(i.id as ItemId))
+    : ALL_ITEMS.filter(i => !offeredIds.has(i.id as ItemId));
+
+  // Fallback to any non-duplicate item, or any item if all offered
+  const pool = candidates.length > 0
+    ? candidates
+    : ALL_ITEMS.filter(i => !offeredIds.has(i.id as ItemId));
+  const finalPool = pool.length > 0 ? pool : ALL_ITEMS;
+
+  const item = finalPool[Math.floor(Math.random() * finalPool.length)];
   return { type: 'item', itemId: item.id as ItemId };
 }
 

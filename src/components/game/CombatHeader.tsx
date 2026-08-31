@@ -12,7 +12,7 @@ export function CombatHeader() {
   const togglePause = useGameStore(s => s.togglePause);
 
   return (
-    <div className="flex items-center justify-between px-3 py-2">
+    <div className="flex items-center justify-between px-3 py-2 relative z-20">
       {/* Floor/room info */}
       <div className="pixel-text text-pixel-xs text-muted-foreground" data-testid="floor-indicator">
         Floor {floor} — Room {room}/{roomsPerFloor}

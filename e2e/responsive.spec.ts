@@ -403,36 +403,30 @@ test.describe('Mobile: Shop Screen', () => {
 
     // Must select exactly 2 cards (shop enforces "Choose 2" before confirm is enabled)
     const shopCards = page.getByTestId('shop-screen').locator('button').filter({ hasNotText: /confirm|select/i });
-    const keepButton = page.getByRole('button', { name: /keep/i });
+    const equipButton = page.getByRole('button', { name: /equip new|upgrade/i });
 
     // Select first card
     await shopCards.first().click();
-    if (await keepButton.isVisible().catch(() => false)) {
-      await keepButton.click();
+    // If item comparison modal appears, accept the item
+    if (await equipButton.isVisible({ timeout: 500 }).catch(() => false)) {
+      await equipButton.click();
     }
 
     // Select second card
     const cardCount = await shopCards.count();
     if (cardCount > 1) {
       await shopCards.nth(1).click();
-      if (await keepButton.isVisible().catch(() => false)) {
-        const equipButton = page.getByRole('button', { name: /equip/i });
-        if (await equipButton.isVisible().catch(() => false)) {
-          await equipButton.click();
-        } else {
-          await keepButton.click();
-        }
+      if (await equipButton.isVisible({ timeout: 500 }).catch(() => false)) {
+        await equipButton.click();
       }
     }
 
     // Confirm should be enabled with 2 selections
     const confirmButton = page.getByTestId('shop-screen').getByRole('button', { name: /confirm/i });
-    const isEnabled = await confirmButton.isEnabled().catch(() => false);
-    if (isEnabled) {
-      await confirmButton.click();
-      // Should transition to floor-complete
-      await expect(page.getByTestId('floor-complete')).toBeVisible({ timeout: 10000 });
-    }
+    await expect(confirmButton).toBeEnabled({ timeout: 3000 });
+    await confirmButton.click();
+    // Should transition to floor-complete
+    await expect(page.getByTestId('floor-complete')).toBeVisible({ timeout: 10000 });
   });
 });
 
